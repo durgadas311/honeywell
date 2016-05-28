@@ -16,6 +16,7 @@ class PunchCardDeck extends JLabel
 	static final long serialVersionUID = 311614000000L;
 
 	Font font1 = new Font("Monospaced", Font.PLAIN, 12);
+	Font font2 = null;
 	ImageIcon _image;
 
 	byte[] _code;
@@ -29,6 +30,7 @@ class PunchCardDeck extends JLabel
 	Rectangle _top, _bottom;
 	CharConverter _cvt;
 	byte[] bb;
+	Color ink = new Color(120,0,255,175);
 
 	public JMenu getMenu() { return _menu; }
 
@@ -36,31 +38,48 @@ class PunchCardDeck extends JLabel
 	double _bit_start = 26.7;
 	double _row_spacing = 13.1;
 	double _row_start = 34.4;
-	int _bit_width = 10;
+	int _bit_width = 9;
 	int _bit_height = 20;
 	int _cols_per_card = 80;
 	int _cursor;
 
+	private int getCode(int x) {
+		int c = _code[x * 2] & 0x0ff;
+		c |= (_code[x * 2 + 1] & 0x0ff) << 8;
+		c &= 0x0fff;
+		return c;
+	}
+
 	public void paint(Graphics g) {
 		String ss;
 		Graphics2D g2d = (Graphics2D)g;
+		g2d.addRenderingHints(new RenderingHints(
+			RenderingHints.KEY_ANTIALIASING,
+			RenderingHints.VALUE_ANTIALIAS_ON));
 		super.paint(g2d);
-		g2d.setColor(Color.black);
-		g2d.setFont(font1);
+		g2d.setColor(ink);
+		g2d.setFont(font2 == null ? font1 : font2);
 		int s;
 		for (s = 0; s < _cols_per_card; ++s) {
 			int cx = _pgix * _cols_per_card + s;
 			int c = 0;
 			if (cx < _code_used) {
-				c = _code[cx * 2] & 0x0ff;
-				c |= (_code[cx * 2 + 1] & 0x0ff) << 8;
-				c &= 0x0fff;
+				c = getCode(cx);
 			}
 			double rx = s * _row_spacing + _row_start;
 			ss = _cvt.punToAscii(c);
 			if (ss != null) {
-				g2d.drawString(ss, (int)Math.round(rx), 15);
+				g2d.drawString(ss, (int)Math.round(rx), 17);
 			}
+		}
+		g2d.setColor(Color.black);
+		for (s = 0; s < _cols_per_card; ++s) {
+			int cx = _pgix * _cols_per_card + s;
+			int c = 0;
+			if (cx < _code_used) {
+				c = getCode(cx);
+			}
+			double rx = s * _row_spacing + _row_start;
 			int b;
 			for (b = 0; b < 12; ++b) {
 				double ry = (b * _bit_spacing) + _bit_start;
@@ -86,6 +105,15 @@ class PunchCardDeck extends JLabel
 		_cvt = new CharConverter();
 		bb = new byte[1];
 
+		java.io.InputStream ttf = this.getClass().getResourceAsStream("IBM029.ttf");
+		if (ttf != null) {
+			try {
+				Font font = Font.createFont(Font.TRUETYPE_FONT, ttf);
+				font2 = font.deriveFont(16f);
+			} catch (FontFormatException ee) {
+			} catch (IOException ee) {
+			}
+		}
 		_image = new ImageIcon(getClass().getResource("PunchCard.png"));
 		setIcon(_image);
 		setBackground(Color.black);
@@ -150,6 +178,9 @@ class PunchCardDeck extends JLabel
 		_title = file.getName();
 		_file = file;
 		if (file.exists()) {
+			// TEMP: lose cursor when displaying character patterns
+			_cursor = 0;
+
 			FileInputStream f;
 			try {
 				f = new FileInputStream(file);
