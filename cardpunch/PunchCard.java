@@ -15,8 +15,7 @@ class PunchCard extends JLabel
 		implements KeyListener, ActionListener, java.awt.image.ImageObserver {
 	static final long serialVersionUID = 311614000000L;
 
-	Font font1 = new Font("Sans-serif", Font.PLAIN, 18);
-	Font font2 = new Font("Sans-serif", Font.PLAIN, 11);
+	Font font1 = new Font("Monospaced", Font.PLAIN, 12);
 	ImageIcon _image;
 
 	byte[] _code;
@@ -26,17 +25,17 @@ class PunchCard extends JLabel
 	int _pgix;
 	int _npg;
 	boolean _changed;
-	java.text.SimpleDateFormat _timestamp =
-		new java.text.SimpleDateFormat("MMM" + "\u2003 " + "d" + "\u2003\u2003" + "y");
 	JMenu _menu;
 	Rectangle _top, _bottom;
+	CharConverter _cvt;
+	byte[] bb;
 
 	public JMenu getMenu() { return _menu; }
 
-	double _bit_spacing = 38.4;
-	double _bit_start = 168.0; // not including SKIP
-	double _row_spacing = 28.8;
-	double _row_start = 48.0;
+	double _bit_spacing = 37.8;
+	double _bit_start = 26.7;
+	double _row_spacing = 13.1;
+	double _row_start = 34.4;
 	int _bit_width = 10;
 	int _bit_height = 20;
 	int _cols_per_card = 80;
@@ -45,16 +44,21 @@ class PunchCard extends JLabel
 		Graphics2D g2d = (Graphics2D)g;
 		super.paint(g2d);
 		g2d.setColor(Color.black);
-		g2d.setFont(font2);
+		g2d.setFont(font1);
 		int s;
 		for (s = 0; s < _cols_per_card; ++s) {
 			int cx = _pgix * _cols_per_card + s;
 			int c = 0;
 			if (cx < _code_used) {
-				c = _code[cx * 2];
-				c |= _code[cx * 2 + 1] << 8;
+				c = _code[cx * 2] & 0x0ff;
+				c |= (_code[cx * 2 + 1] & 0x0ff) << 8;
+				c &= 0x0fff;
 			}
 			double rx = s * _row_spacing + _row_start;
+			bb[0] = _cvt.punToAscii(c);
+			if (bb[0] != 0) {
+				g2d.drawString(new String(bb), (int)Math.round(rx), 15);
+			}
 			int b;
 			for (b = 0; b < 12; ++b) {
 				double ry = (b * _bit_spacing) + _bit_start;
@@ -71,6 +75,8 @@ class PunchCard extends JLabel
 
 	public PunchCard(String pgm) {
 		super();
+		_cvt = new CharConverter();
+		bb = new byte[1];
 
 		_image = new ImageIcon(getClass().getResource("PunchCard.png"));
 		setIcon(_image);

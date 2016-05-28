@@ -20,6 +20,7 @@ public class CardPunch
 			card = new PunchCard(null);
 		}
 		frame.addKeyListener(card);
+		frame.add(card);
 
 		JMenuBar mb = new JMenuBar();
 		mb.add(card.getMenu());

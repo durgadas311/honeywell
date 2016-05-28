@@ -3,6 +3,7 @@ all: h19_fe.class h89_fe.class
 D630_CLASSES =	\
 		PunchCard.class \
 		CardPunch.class \
+		CharConverter.class \
 		SuffFileChooser.class \
 		SuffFileFilter.class
 
