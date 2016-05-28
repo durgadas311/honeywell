@@ -11,7 +11,7 @@ import java.awt.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
-class PunchCard extends JLabel
+class PunchCardDeck extends JLabel
 		implements KeyListener, ActionListener, java.awt.image.ImageObserver {
 	static final long serialVersionUID = 311614000000L;
 
@@ -39,8 +39,10 @@ class PunchCard extends JLabel
 	int _bit_width = 10;
 	int _bit_height = 20;
 	int _cols_per_card = 80;
+	int _cursor;
 
 	public void paint(Graphics g) {
+		String ss;
 		Graphics2D g2d = (Graphics2D)g;
 		super.paint(g2d);
 		g2d.setColor(Color.black);
@@ -55,9 +57,9 @@ class PunchCard extends JLabel
 				c &= 0x0fff;
 			}
 			double rx = s * _row_spacing + _row_start;
-			bb[0] = _cvt.punToAscii(c);
-			if (bb[0] != 0) {
-				g2d.drawString(new String(bb), (int)Math.round(rx), 15);
+			ss = _cvt.punToAscii(c);
+			if (ss != null) {
+				g2d.drawString(ss, (int)Math.round(rx), 15);
 			}
 			int b;
 			for (b = 0; b < 12; ++b) {
@@ -71,10 +73,16 @@ class PunchCard extends JLabel
 				}
 			}
 		}
+		if (_cursor > 0) {
+			int rx = (int)Math.round(_cursor * _row_spacing + _row_start - _row_spacing);
+			g2d.setColor(Color.red);
+			g2d.drawLine(rx, 10, rx, _bottom.y);
+		}
 	}
 
-	public PunchCard(String pgm) {
+	public PunchCardDeck(String pgm) {
 		super();
+		_cursor = 1;
 		_cvt = new CharConverter();
 		bb = new byte[1];
 
@@ -179,35 +187,23 @@ class PunchCard extends JLabel
 //		}
 	}
 
-	public void keyTyped(KeyEvent e) { }
-
-	public void keyPressed(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-			if (_pgix * _cols_per_card == _code_used && _npg > 1) {
-				--_npg;
-			}
-			--_pgix;
-			if (_pgix < 0) {
-				_pgix = 0;
-			}
-			repaint();
-		} else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-			++_pgix;
-			if (_pgix >= _npg) {
-				if (_pgix * _cols_per_card == _code_used) {
-					++_npg;
-				} else {
-					_pgix = _npg - 1;
-				}
-			}
-			// allow for adding new page???
-			repaint();
-		} else if (e.getKeyCode() == KeyEvent.VK_UP) {
-			scrollRectToVisible(_top);
-		} else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-			scrollRectToVisible(_bottom);
+	public void keyTyped(KeyEvent e) {
+		char c = e.getKeyChar();
+		int p = _cvt.asciiToPun((int)c);
+		if (p < 0) {
+			return;
 		}
+		int cx = (_cursor - 1) * 2;
+		_code[cx] = (byte)(p & 0x0ff);
+		_code[cx + 1] = (byte)((p >> 8) & 0x00f);
+		if (_cursor < 80) {
+			++_code_used;
+			++_cursor;
+		}
+		repaint();
 	}
+
+	public void keyPressed(KeyEvent e) { }
 
 	public void keyReleased(KeyEvent e) { }
 
