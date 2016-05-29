@@ -260,7 +260,7 @@ class PunchCardDeck extends JLabel
 		repaint();
 	}
 
-	private void skipCard() {
+	private void skipStart() {
 		if (_currIsProg) {
 			newCard();
 			return;
@@ -389,45 +389,7 @@ class PunchCardDeck extends JLabel
 		newCard();	// does repaint
 	}
 
-	public void keyTyped(KeyEvent e) {
-		char c = e.getKeyChar();
-		int p = 0;
-		if (c == '\n') {
-			finishCard();
-			return;
-		}
-		if (c == '\t') {
-			skipCard();
-			return;
-		}
-		if (c == '\001') {
-			_currIsProg = true;
-			_curr = _prog;
-			_cursor = 1;
-			repaint();
-			return;
-		}
-		if (c == '\b') {
-			if (_cursor > 1) {
-				--_cursor;
-				repaint();
-			}
-			return;
-		}
-		if (c == '\004') {	// DUP
-			if (_prev != null) {
-				p = getCode(_prev, _cursor - 1) & 0x0fff;
-			}
-		} else {
-			// TODO: handle ALHPA SHIFT
-			// if ((c & 0x100) == 0) {
-			// }
-			c = Character.toUpperCase(c);
-			p = _cvt.asciiToPun((int)c);
-			if (p < 0) {
-				return;
-			}
-		}
+	private void punch(int p) {
 		if (p != 0) {
 			// this corrupts 'p'...
 			if (_print_cb.isSelected()) {
@@ -446,6 +408,60 @@ class PunchCardDeck extends JLabel
 			// if ((c & 0x200) == 0) { // DUP
 			// }
 		}
+	}
+
+	private void dupStart() {
+		// If start of field, then dup entire field...
+		boolean cont = ((getCode(_prog, _cursor - 1) & 0x0800) == 0);
+		do {
+			int p = 0;
+			if (_prev != null) {
+				p = getCode(_prev, _cursor - 1) & 0x0fff;
+			}
+			punch(p);
+			cont = cont && ((getCode(_prog, _cursor - 1) & 0x0800) != 0);
+		} while (cont);
+		repaint();
+	}
+
+	public void keyTyped(KeyEvent e) {
+		char c = e.getKeyChar();
+		int p = 0;
+		if (c == '\n') {
+			finishCard();
+			return;
+		}
+		if (c == '\t') {
+			skipStart();
+			return;
+		}
+		if (c == '\001') {
+			_currIsProg = true;
+			_curr = _prog;
+			_cursor = 1;
+			repaint();
+			return;
+		}
+		if (c == '\b') {
+			if (_cursor > 1) {
+				--_cursor;
+				repaint();
+			}
+			return;
+		}
+		if (c == '\004') {	// DUP
+			dupStart();
+			return;
+		}
+		// TODO: handle ALHPA SHIFT
+		// if ((c & 0x100) == 0) {
+		// }
+		c = Character.toUpperCase(c);
+		p = _cvt.asciiToPun((int)c);
+		if (p < 0) {
+			return;
+		}
+		punch(p);
 		repaint();
 	}
 
