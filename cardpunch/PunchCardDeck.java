@@ -31,6 +31,7 @@ class PunchCardDeck extends JLabel
 	CharConverter _cvt;
 	byte[] bb;
 	Color ink = new Color(120,0,255,175);
+	Color hole;
 
 	public JMenu getMenu() { return _menu; }
 
@@ -42,6 +43,8 @@ class PunchCardDeck extends JLabel
 	int _bit_height = 20;
 	int _cols_per_card = 80;
 	int _cursor;
+
+	public Color getBg() { return hole; }
 
 	private int getCode(int x) {
 		int c = _code[x * 2] & 0x0ff;
@@ -72,7 +75,7 @@ class PunchCardDeck extends JLabel
 				g2d.drawString(ss, (int)Math.round(rx), 17);
 			}
 		}
-		g2d.setColor(Color.black);
+		g2d.setColor(hole);
 		for (s = 0; s < _cols_per_card; ++s) {
 			int cx = _pgix * _cols_per_card + s;
 			int c = 0;
@@ -116,7 +119,8 @@ class PunchCardDeck extends JLabel
 		}
 		_image = new ImageIcon(getClass().getResource("PunchCard.png"));
 		setIcon(_image);
-		setBackground(Color.black);
+		hole = Color.gray;
+		setBackground(hole);
 		setOpaque(true);
 		setPreferredSize(new Dimension(getIcon().getIconWidth(), getIcon().getIconHeight()));
 		_top = new Rectangle(0, 0, 10, 10);

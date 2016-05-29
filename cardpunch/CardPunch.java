@@ -26,7 +26,7 @@ public class CardPunch
 		mb.add(card.getMenu());
 
 		frame.setJMenuBar(mb);
-		frame.getContentPane().setBackground(Color.black);
+		frame.getContentPane().setBackground(card.getBg());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
