@@ -23,7 +23,10 @@ public class CardPunch
 		frame.add(card);
 
 		JMenuBar mb = new JMenuBar();
-		mb.add(card.getMenu());
+		JMenu[] ms = card.getMenu();
+		for (int x = 0; x < ms.length; ++x) {
+			mb.add(ms[x]);
+		}
 
 		frame.setJMenuBar(mb);
 		frame.getContentPane().setBackground(card.getBg());

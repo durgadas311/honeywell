@@ -20,10 +20,11 @@ class PunchCardDeck extends JLabel
 
 	byte[] _code;
 	String _title;
-	File _file;
+	File _progFile;
+	File _cwd;
 	int _pgix;
 	boolean _changed;
-	JMenu _menu;
+	JMenu[] _menus;
 	Rectangle _top, _bottom;
 	CharConverter _cvt;
 	byte[] bb;
@@ -36,7 +37,7 @@ class PunchCardDeck extends JLabel
 	boolean _saveImage;
 	boolean _autoSkipDup;
 
-	public JMenu getMenu() { return _menu; }
+	public JMenu[] getMenu() { return _menus; }
 
 	double _bit_spacing = 37.8;
 	double _bit_start = 26.7;
@@ -105,6 +106,7 @@ class PunchCardDeck extends JLabel
 		_cvt = new CharConverter();
 		bb = new byte[1];
 
+		_cwd = new File(System.getProperty("user.dir"));
 		java.io.InputStream ttf = this.getClass().getResourceAsStream("IBM029.ttf");
 		if (ttf != null) {
 			try {
@@ -132,7 +134,9 @@ class PunchCardDeck extends JLabel
 		_prog = new byte[2*80];
 		// TODO: initialize program card from file...
 		Arrays.fill(_prog, (byte)0);
+		_progFile = null;
 
+		_menus = new JMenu[2];
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
@@ -142,13 +146,18 @@ class PunchCardDeck extends JLabel
 		mi = new JMenuItem("Open", KeyEvent.VK_O);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Save", KeyEvent.VK_S);
-		mi.addActionListener(this);
-		mu.add(mi);
 		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
 		mi.addActionListener(this);
 		mu.add(mi);
-		_menu = mu;
+		_menus[0] = mu;
+		mu = new JMenu("Prog");
+		mi = new JMenuItem("Load", KeyEvent.VK_L);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Save", KeyEvent.VK_S);
+		mi.addActionListener(this);
+		mu.add(mi);
+		_menus[1] = mu;
 
 		if (pgm == null) {
 			newFile();
@@ -204,16 +213,13 @@ class PunchCardDeck extends JLabel
 	}
 
 	private void newFile() {
-		_title = "untitled";
-		_file = null;
 		_pgix = 0;
 		newCard();
 	}
 
-	private File pickFile(String purpose) {
+	private File pickFile(String purpose, File prev) {
 		File file;
-		SuffFileChooser ch = new SuffFileChooser(purpose,
-			null); // dir
+		SuffFileChooser ch = new SuffFileChooser(purpose, prev);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -229,7 +235,7 @@ class PunchCardDeck extends JLabel
 			return;
 		}
 		_title = file.getName();
-		_file = file;
+		//_file = file;
 		if (file.exists()) {
 			// TEMP: lose cursor when displaying character patterns
 			_cursor = 0;
@@ -251,20 +257,35 @@ class PunchCardDeck extends JLabel
 		}
 	}
 
-	private void saveFile() {
+	private void loadProg(File file) {
+		FileInputStream f;
+		try {
+			f = new FileInputStream(file);
+			int n = f.read(_prog);
+			if (n < 160) {
+				Arrays.fill(_prog, n, 160, (byte)0);
+			}
+		} catch (Exception ee) {
+			// TODO: report errors
+			ee.printStackTrace();
+		}
+	}
+
+	private void saveProg(File file) {
 		FileOutputStream f = null;
 		try {
-			f = new FileOutputStream(_file);
+			f = new FileOutputStream(file);
 		} catch (Exception ee) {
 		}
 		if (f == null) {
 			return;
 		}
-		// need to restore "EOF" marker...
-//		try {
-//			f.write(_code, 0, saved);
-//		} catch (Exception ee) {
-//		}
+		try {
+			f.write(_prog);
+		} catch (Exception ee) {
+			// TODO: report errors
+			ee.printStackTrace();
+		}
 	}
 
 	private void finishCard() {
@@ -370,18 +391,7 @@ class PunchCardDeck extends JLabel
 			if (!confirmChanges("Open File")) {
 				return;
 			}
-			setupFile(pickFile("Load Card Deck"));
-			repaint();
-			return;
-		} else if (m.getMnemonic() == KeyEvent.VK_S) {
-			if (_file == null) {
-				File nu = pickFile("Save Card Deck As");
-				if (nu == null) return;
-				_file = nu;
-				_title = _file.getName();
-			}
-			saveFile();
-			_changed = false;
+			setupFile(pickFile("Load Card Deck", null));
 			repaint();
 			return;
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
@@ -389,6 +399,21 @@ class PunchCardDeck extends JLabel
 				return;
 			}
 			System.exit(0);
+			return;
+		} else if (m.getMnemonic() == KeyEvent.VK_L) {
+			File nu = pickFile("Load Prog Card",
+				_progFile == null ? _cwd : _progFile);
+			if (nu == null) return;
+			_progFile = nu;
+			loadProg(_progFile);
+			return;
+		} else if (m.getMnemonic() == KeyEvent.VK_S) {
+			if (_progFile == null) {
+				File nu = pickFile("Save Prog Card As", _cwd);
+				if (nu == null) return;
+				_progFile = nu;
+			}
+			saveProg(_progFile);
 			return;
 		}
 	}
