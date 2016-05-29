@@ -22,6 +22,8 @@ class PunchCardDeck extends JLabel
 	String _title;
 	File _progFile;
 	File _cwd;
+	FileOutputStream _outDeck = null;
+	FileInputStream _inDeck = null;
 	int _pgix;
 	boolean _changed;
 	JMenu[] _menus;
@@ -140,10 +142,10 @@ class PunchCardDeck extends JLabel
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
-		mi = new JMenuItem("New", KeyEvent.VK_N);
+		mi = new JMenuItem("Output", KeyEvent.VK_O);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Open", KeyEvent.VK_O);
+		mi = new JMenuItem("Input", KeyEvent.VK_I);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
@@ -186,6 +188,24 @@ class PunchCardDeck extends JLabel
 		_code = new byte[2*80];
 		_curr = _code;
 		Arrays.fill(_code, (byte)0);
+		if (_inDeck != null) {
+			try {
+				int n = _inDeck.read(_code);
+				if (n <= 0) {
+					_inDeck.close();
+					_inDeck = null;
+				}
+			} catch (Exception ee) {
+				ee.printStackTrace();
+			}
+		}
+		if (_outDeck != null && _prev != null) {
+			try {
+				_outDeck.write(_prev);
+			} catch (Exception ee) {
+				ee.printStackTrace();
+			}
+		}
 		++_pgix;
 		_cursor = 1;
 		_changed = false;
@@ -230,24 +250,38 @@ class PunchCardDeck extends JLabel
 	}
 
 	private void setupFile(File file) {
+		if (_outDeck != null) {
+			try {
+				_outDeck.close();
+			} catch (Exception ee) {}
+			_outDeck = null;
+		}
+		try {
+			_outDeck = new FileOutputStream(file);
+		} catch (Exception ee) {
+			ee.printStackTrace();
+		}
+	}
+
+	private void inputFile(File file) {
 		if (file == null) {
 			// change nothing in this case...
 			return;
 		}
-		_title = file.getName();
-		//_file = file;
+		if (_inDeck != null) {
+			try {
+				_inDeck.close();
+			} catch (Exception ee) {}
+			_inDeck = null;
+		}
 		if (file.exists()) {
 			// TEMP: lose cursor when displaying character patterns
 			_cursor = 0;
 
-			FileInputStream f;
 			try {
-				f = new FileInputStream(file);
-				int n = f.read(_code);
-				if (n < 80) {
-					Arrays.fill(_prog, n, 80, (byte)0);
-				}
+				_inDeck = new FileInputStream(file);
 			} catch (Exception ee) {
+				ee.printStackTrace();
 			}
 			_changed = false;
 			_pgix = 0;
@@ -255,6 +289,7 @@ class PunchCardDeck extends JLabel
 			_pgix = 0;
 			_changed = false;
 		}
+		newCard();
 	}
 
 	private void loadProg(File file) {
@@ -380,23 +415,24 @@ class PunchCardDeck extends JLabel
 			return;
 		}
 		JMenuItem m = (JMenuItem)e.getSource();
-		if (m.getMnemonic() == KeyEvent.VK_N) {
-			if (!confirmChanges("New File")) {
-				return;
-			}
-			newFile();
-			repaint();
+		if (m.getMnemonic() == KeyEvent.VK_O) {
+			setupFile(pickFile("Set Output Card Deck", _cwd));
 			return;
-		} else if (m.getMnemonic() == KeyEvent.VK_O) {
-			if (!confirmChanges("Open File")) {
-				return;
-			}
-			setupFile(pickFile("Load Card Deck", null));
-			repaint();
+		} else if (m.getMnemonic() == KeyEvent.VK_I) {
+			inputFile(pickFile("Set Input Card Desk", _cwd));
 			return;
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
-			if (!confirmChanges("Quit")) {
-				return;
+			if (_inDeck != null) {
+				try {
+					_inDeck.close();
+				} catch (Exception ee) {}
+				_inDeck = null;
+			}
+			if (_outDeck != null) {
+				try {
+					_outDeck.close();
+				} catch (Exception ee) {}
+				_outDeck = null;
 			}
 			System.exit(0);
 			return;
