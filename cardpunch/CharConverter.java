@@ -172,10 +172,11 @@ class CharConverter {
 	}
 
 	public String punToAscii(int code) {
-		if (code == 0) {
+		int c = code & 0x0fff;
+		if (c == 0) {
 			return " ";
 		}
-		bb[0] = xlate_pun[code];
+		bb[0] = xlate_pun[c];
 		if (bb[0] == 0) {
 			return null;
 		}

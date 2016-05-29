@@ -11,16 +11,13 @@ public class CardPunch
 	public static void main(String[] args) {
 
 		JFrame frame = new JFrame("Honeywell Card Punch");
-		frame.setLayout(new FlowLayout());
 
 		PunchCardDeck card;
 		if (args.length > 0) {
-			card = new PunchCardDeck(args[0]);
+			card = new PunchCardDeck(frame, args[0]);
 		} else {
-			card = new PunchCardDeck(null);
+			card = new PunchCardDeck(frame, null);
 		}
-		frame.addKeyListener(card);
-		frame.add(card);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = card.getMenu();

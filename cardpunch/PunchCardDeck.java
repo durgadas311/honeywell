@@ -37,7 +37,12 @@ class PunchCardDeck extends JLabel
 	byte[] _curr;
 	boolean _currIsProg;
 	boolean _saveImage;
-	boolean _autoSkipDup;
+	static final int _inset = 2;
+
+	JCheckBox _autoSD_cb;
+	JCheckBox _progSel_cb;
+	JCheckBox _autoFeed_cb;
+	JCheckBox _print_cb;
 
 	public JMenu[] getMenu() { return _menus; }
 
@@ -55,7 +60,6 @@ class PunchCardDeck extends JLabel
 	private int getCode(byte[] card, int x) {
 		int c = card[x * 2] & 0x0ff;
 		c |= (card[x * 2 + 1] & 0x0ff) << 8;
-		c &= 0x0fff;
 		return c;
 	}
 
@@ -72,6 +76,9 @@ class PunchCardDeck extends JLabel
 		for (s = 0; s < _cols_per_card; ++s) {
 			int c = 0;
 			c = getCode(_curr, s);
+			if ((c & 0x1000) == 0) {
+				continue;
+			}
 			double rx = s * _row_spacing + _row_start;
 			ss = _cvt.punToAscii(c);
 			if (ss != null) {
@@ -102,7 +109,7 @@ class PunchCardDeck extends JLabel
 		}
 	}
 
-	public PunchCardDeck(String pgm) {
+	public PunchCardDeck(JFrame frame, String pgm) {
 		super();
 		_cursor = 1;
 		_cvt = new CharConverter();
@@ -131,7 +138,6 @@ class PunchCardDeck extends JLabel
 		_curr = _code;
 		_currIsProg = false;
 		_saveImage = false;
-		_autoSkipDup = false;
 		_prev = null;
 		_prog = new byte[2*80];
 		// TODO: initialize program card from file...
@@ -161,11 +167,53 @@ class PunchCardDeck extends JLabel
 		mu.add(mi);
 		_menus[1] = mu;
 
+		_autoSD_cb = new JCheckBox("Auto SKIP/DUP");
+		_autoSD_cb.setFocusable(false);
+		_progSel_cb = new JCheckBox("Prog 2 (1)");
+		_progSel_cb.setFocusable(false);
+		_autoFeed_cb = new JCheckBox("Auto Feed");
+		_autoFeed_cb.setFocusable(false);
+		_print_cb = new JCheckBox("Print");
+		_print_cb.setFocusable(false);
+		_print_cb.setSelected(true);
+		JPanel pn = new JPanel();
+		pn.setPreferredSize(new Dimension(getIcon().getIconWidth() + 2 * _inset, 30));
+		pn.add(_autoSD_cb);
+		pn.add(_progSel_cb);
+		pn.add(_autoFeed_cb);
+		pn.add(_print_cb);
+
 		if (pgm == null) {
 			newFile();
 		} else {
 			setupFile(new File(pgm));
 		}
+		GridBagLayout gridbag = new GridBagLayout();
+		frame.setLayout(gridbag);
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.NORTH;
+
+		pn.setFocusable(false);
+		gridbag.setConstraints(pn, gc);
+		frame.add(pn);
+		++gc.gridy;
+		gc.insets.bottom = _inset;
+		gc.insets.top = _inset;
+		gridbag.setConstraints(this, gc);
+		frame.add(this);
+
+		frame.addKeyListener(this);
 	}
 	private void nextCol() {
 		++_cursor;
@@ -368,7 +416,7 @@ class PunchCardDeck extends JLabel
 		}
 		if (c == '\004') {	// DUP
 			if (_prev != null) {
-				p = getCode(_prev, _cursor - 1);
+				p = getCode(_prev, _cursor - 1) & 0x0fff;
 			}
 		} else {
 			// TODO: handle ALHPA SHIFT
@@ -381,9 +429,13 @@ class PunchCardDeck extends JLabel
 			}
 		}
 		if (p != 0) {
+			// this corrupts 'p'...
+			if (_print_cb.isSelected()) {
+				p |= 0x1000;
+			}
 			int cx = (_cursor - 1) * 2;
 			_curr[cx] |= (byte)(p & 0x0ff);
-			_curr[cx + 1] |= (byte)((p >> 8) & 0x00f);
+			_curr[cx + 1] |= (byte)((p >> 8) & 0x0ff);
 		}
 		if (_cursor < 80) {
 			// TODO: auto skip to next card...
