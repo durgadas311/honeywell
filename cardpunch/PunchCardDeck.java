@@ -19,11 +19,9 @@ class PunchCardDeck extends JLabel
 	ImageIcon _image;
 
 	byte[] _code;
-	int _code_used;
 	String _title;
 	File _file;
 	int _pgix;
-	int _npg;
 	boolean _changed;
 	JMenu _menu;
 	Rectangle _top, _bottom;
@@ -31,6 +29,12 @@ class PunchCardDeck extends JLabel
 	byte[] bb;
 	Color ink = new Color(120,0,255,175);
 	Color hole;
+	byte[] _prog;
+	byte[] _prev;
+	byte[] _curr;
+	boolean _currIsProg;
+	boolean _saveImage;
+	boolean _autoSkipDup;
 
 	public JMenu getMenu() { return _menu; }
 
@@ -45,9 +49,9 @@ class PunchCardDeck extends JLabel
 
 	public Color getBg() { return hole; }
 
-	private int getCode(int x) {
-		int c = _code[x * 2] & 0x0ff;
-		c |= (_code[x * 2 + 1] & 0x0ff) << 8;
+	private int getCode(byte[] card, int x) {
+		int c = card[x * 2] & 0x0ff;
+		c |= (card[x * 2 + 1] & 0x0ff) << 8;
 		c &= 0x0fff;
 		return c;
 	}
@@ -64,9 +68,7 @@ class PunchCardDeck extends JLabel
 		int s;
 		for (s = 0; s < _cols_per_card; ++s) {
 			int c = 0;
-			if (s < _code_used) {
-				c = getCode(s);
-			}
+			c = getCode(_curr, s);
 			double rx = s * _row_spacing + _row_start;
 			ss = _cvt.punToAscii(c);
 			if (ss != null) {
@@ -76,9 +78,7 @@ class PunchCardDeck extends JLabel
 		g2d.setColor(hole);
 		for (s = 0; s < _cols_per_card; ++s) {
 			int c = 0;
-			if (s < _code_used) {
-				c = getCode(s);
-			}
+			c = getCode(_curr, s);
 			double rx = s * _row_spacing + _row_start;
 			int b;
 			for (b = 0; b < 12; ++b) {
@@ -124,6 +124,14 @@ class PunchCardDeck extends JLabel
 		_bottom = new Rectangle(0, getIcon().getIconHeight() - 10, 10, 10);
 
 		_code = new byte[2*80];
+		_curr = _code;
+		_currIsProg = false;
+		_saveImage = false;
+		_autoSkipDup = false;
+		_prev = null;
+		_prog = new byte[2*80];
+		// TODO: initialize program card from file...
+		Arrays.fill(_prog, (byte)0);
 
 		JMenu mu;
 		JMenuItem mi;
@@ -148,18 +156,57 @@ class PunchCardDeck extends JLabel
 			setupFile(new File(pgm));
 		}
 	}
+	private void nextCol() {
+		++_cursor;
+		// TODO: handle auto-skip/dup
+	}
 
 	private void newCard() {
+		if (_currIsProg) {
+			_curr = _code;
+			_currIsProg = false;
+			_cursor = 1;
+			repaint();
+			return;
+		}
+		if (_prev != null) {
+			// anything more required to free array?
+			_prev = null;
+		}
+		_prev = _code;
+		_code = new byte[2*80];
+		_curr = _code;
 		Arrays.fill(_code, (byte)0);
-		_code_used = 0;
+		++_pgix;
+		_cursor = 1;
 		_changed = false;
+		repaint();
+	}
+
+	private void skipCard() {
+		if (_currIsProg) {
+			newCard();
+			return;
+		}
+		do {
+			if (_cursor >= 80) {
+				newCard();
+				return;
+			}
+			++_cursor;
+			int c = getCode(_prog, _cursor - 1);
+			// TODO: handle "program 2"
+			if ((c & 0x800) == 0) {
+				break;
+			}
+		} while (true);
+		repaint();
 	}
 
 	private void newFile() {
 		_title = "untitled";
 		_file = null;
 		_pgix = 0;
-		_npg = 1;
 		newCard();
 	}
 
@@ -190,19 +237,16 @@ class PunchCardDeck extends JLabel
 			FileInputStream f;
 			try {
 				f = new FileInputStream(file);
-				_code_used = f.read(_code);
-				_code_used /= 2;
+				int n = f.read(_code);
+				if (n < 80) {
+					Arrays.fill(_prog, n, 80, (byte)0);
+				}
 			} catch (Exception ee) {
 			}
 			_changed = false;
 			_pgix = 0;
-			_npg = (_code_used + _cols_per_card - 1) / _cols_per_card;
-			// or, always have +1 cards?
-			if (_npg == 0) _npg = 1;
 		} else {
-			_code_used = 0;
 			_pgix = 0;
-			_npg = 1;
 			_changed = false;
 		}
 	}
@@ -217,7 +261,6 @@ class PunchCardDeck extends JLabel
 			return;
 		}
 		// need to restore "EOF" marker...
-		int saved = _code_used;
 //		try {
 //			f.write(_code, 0, saved);
 //		} catch (Exception ee) {
@@ -225,22 +268,21 @@ class PunchCardDeck extends JLabel
 	}
 
 	private void finishCard() {
-		Dimension d = getSize();
-		java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
-			d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
-		_cursor = 0;
-		paint(i.getGraphics());
-		String fn = String.format("pcard%02d.png", _pgix);
-		try {
-			javax.imageio.ImageIO.write(i, "png", new File(fn));
-		} catch (IOException ee) {
-			System.err.println("error writing " + fn);
+		if (_saveImage) {
+			Dimension d = getSize();
+			java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
+				d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+			_cursor = 0;
+			paint(i.getGraphics());
+			String fn = String.format("pcard%02d.png", _pgix);
+			try {
+				javax.imageio.ImageIO.write(i, "png", new File(fn));
+			} catch (IOException ee) {
+				System.err.println("error writing " + fn);
+			}
 		}
-		++_pgix;
-		++_npg;
-		_cursor = 1;
-		newCard();
-		repaint();
+		// TODO: save card
+		newCard();	// does repaint
 	}
 
 	public void keyTyped(KeyEvent e) {
@@ -249,17 +291,38 @@ class PunchCardDeck extends JLabel
 			finishCard();
 			return;
 		}
+		if (c == '\t') {
+			skipCard();
+			return;
+		}
+		if (c == '\001') {
+			_currIsProg = true;
+			_curr = _prog;
+			_cursor = 1;
+			repaint();
+			return;
+		}
+		// TODO: handle ALHPA SHIFT
+		// if ((c & 0x100) == 0) {
+		// }
 		c = Character.toUpperCase(c);
 		int p = _cvt.asciiToPun((int)c);
 		if (p < 0) {
 			return;
 		}
-		int cx = (_cursor - 1) * 2;
-		_code[cx] = (byte)(p & 0x0ff);
-		_code[cx + 1] = (byte)((p >> 8) & 0x00f);
+		if (p != 0) {
+			int cx = (_cursor - 1) * 2;
+			_curr[cx] |= (byte)(p & 0x0ff);
+			_curr[cx + 1] |= (byte)((p >> 8) & 0x00f);
+		}
 		if (_cursor < 80) {
-			++_code_used;
-			++_cursor;
+			// TODO: auto skip to next card...
+			nextCol();
+			// TODO: handle AUTO SKIP/DUP
+			// if ((c & 0x400) == 0) { // SKIP
+			// }
+			// if ((c & 0x200) == 0) { // DUP
+			// }
 		}
 		repaint();
 	}
@@ -269,14 +332,11 @@ class PunchCardDeck extends JLabel
 	public void keyReleased(KeyEvent e) { }
 
 	private boolean confirmChanges(String op) {
-		if (_code_used > 0 && _changed) {
 //			int res = Wang_UI.confirm(op, "Changes have not been saved. " +
 //							"Discard changes?");
 //			if (res == JOptionPane.YES_OPTION) {
 //				return true;
 //			}
-			return false;
-		}
 		return true;
 	}
 

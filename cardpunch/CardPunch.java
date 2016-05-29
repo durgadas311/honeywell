@@ -27,6 +27,7 @@ public class CardPunch
 
 		frame.setJMenuBar(mb);
 		frame.getContentPane().setBackground(card.getBg());
+		frame.setFocusTraversalKeysEnabled(false);  // allows TAB key to work...
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
