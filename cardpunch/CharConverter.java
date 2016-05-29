@@ -93,6 +93,9 @@ class CharConverter {
 		spcl_pun['\004'] = "\u00a7";	// no sym - section
 
 		xlate_char = new short[128];
+		xlate_pun[0x400] = '-';
+		xlate_char['&'] = (short)0x800;
+		xlate_char['-'] = (short)0x400;
 		xlate_char['0'] = (short)0x200;
 		xlate_char['1'] = (short)0x100;
 		xlate_char['2'] = (short)0x080;

@@ -249,6 +249,7 @@ class PunchCardDeck extends JLabel
 			finishCard();
 			return;
 		}
+		c = Character.toUpperCase(c);
 		int p = _cvt.asciiToPun((int)c);
 		if (p < 0) {
 			return;
