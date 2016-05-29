@@ -389,7 +389,7 @@ class PunchCardDeck extends JLabel
 		newCard();	// does repaint
 	}
 
-	private void punch(int p) {
+	private void punch(int p, boolean multi) {
 		if (p != 0) {
 			// this corrupts 'p'...
 			if (_print_cb.isSelected()) {
@@ -399,7 +399,7 @@ class PunchCardDeck extends JLabel
 			_curr[cx] |= (byte)(p & 0x0ff);
 			_curr[cx + 1] |= (byte)((p >> 8) & 0x0ff);
 		}
-		if (_cursor < 80) {
+		if (!multi && _cursor < 80) {
 			// TODO: auto skip to next card...
 			nextCol();
 			// TODO: handle AUTO SKIP/DUP
@@ -418,13 +418,14 @@ class PunchCardDeck extends JLabel
 			if (_prev != null) {
 				p = getCode(_prev, _cursor - 1) & 0x0fff;
 			}
-			punch(p);
+			punch(p, false);
 			cont = cont && ((getCode(_prog, _cursor - 1) & 0x0800) != 0);
 		} while (cont);
 		repaint();
 	}
 
 	public void keyTyped(KeyEvent e) {
+		boolean multi = ((e.getModifiers() & InputEvent.ALT_MASK) != 0);
 		char c = e.getKeyChar();
 		int p = 0;
 		if (c == '\n') {
@@ -461,7 +462,7 @@ class PunchCardDeck extends JLabel
 		if (p < 0) {
 			return;
 		}
-		punch(p);
+		punch(p, multi);
 		repaint();
 	}
 
