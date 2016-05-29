@@ -15,8 +15,7 @@ class PunchCardDeck extends JLabel
 		implements KeyListener, ActionListener, java.awt.image.ImageObserver {
 	static final long serialVersionUID = 311614000000L;
 
-	Font font1 = new Font("Monospaced", Font.PLAIN, 12);
-	Font font2 = null;
+	Font font1;
 	ImageIcon _image;
 
 	byte[] _code;
@@ -61,13 +60,12 @@ class PunchCardDeck extends JLabel
 			RenderingHints.VALUE_ANTIALIAS_ON));
 		super.paint(g2d);
 		g2d.setColor(ink);
-		g2d.setFont(font2 == null ? font1 : font2);
+		g2d.setFont(font1);
 		int s;
 		for (s = 0; s < _cols_per_card; ++s) {
-			int cx = _pgix * _cols_per_card + s;
 			int c = 0;
-			if (cx < _code_used) {
-				c = getCode(cx);
+			if (s < _code_used) {
+				c = getCode(s);
 			}
 			double rx = s * _row_spacing + _row_start;
 			ss = _cvt.punToAscii(c);
@@ -77,10 +75,9 @@ class PunchCardDeck extends JLabel
 		}
 		g2d.setColor(hole);
 		for (s = 0; s < _cols_per_card; ++s) {
-			int cx = _pgix * _cols_per_card + s;
 			int c = 0;
-			if (cx < _code_used) {
-				c = getCode(cx);
+			if (s < _code_used) {
+				c = getCode(s);
 			}
 			double rx = s * _row_spacing + _row_start;
 			int b;
@@ -112,9 +109,9 @@ class PunchCardDeck extends JLabel
 		if (ttf != null) {
 			try {
 				Font font = Font.createFont(Font.TRUETYPE_FONT, ttf);
-				font2 = font.deriveFont(16f);
-			} catch (FontFormatException ee) {
-			} catch (IOException ee) {
+				font1 = font.deriveFont(16f);
+			} catch (Exception ee) {
+				font1 = new Font("Monospaced", Font.PLAIN, 14);
 			}
 		}
 		_image = new ImageIcon(getClass().getResource("PunchCard.png"));
@@ -152,13 +149,18 @@ class PunchCardDeck extends JLabel
 		}
 	}
 
+	private void newCard() {
+		Arrays.fill(_code, (byte)0);
+		_code_used = 0;
+		_changed = false;
+	}
+
 	private void newFile() {
 		_title = "untitled";
 		_file = null;
-		_code_used = 0;
 		_pgix = 0;
 		_npg = 1;
-		_changed = false;
+		newCard();
 	}
 
 	private File pickFile(String purpose) {
@@ -222,8 +224,31 @@ class PunchCardDeck extends JLabel
 //		}
 	}
 
+	private void finishCard() {
+		Dimension d = getSize();
+		java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
+			d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+		_cursor = 0;
+		paint(i.getGraphics());
+		String fn = String.format("pcard%02d.png", _pgix);
+		try {
+			javax.imageio.ImageIO.write(i, "png", new File(fn));
+		} catch (IOException ee) {
+			System.err.println("error writing " + fn);
+		}
+		++_pgix;
+		++_npg;
+		_cursor = 1;
+		newCard();
+		repaint();
+	}
+
 	public void keyTyped(KeyEvent e) {
 		char c = e.getKeyChar();
+		if (c == '\n') {
+			finishCard();
+			return;
+		}
 		int p = _cvt.asciiToPun((int)c);
 		if (p < 0) {
 			return;
