@@ -287,6 +287,7 @@ class PunchCardDeck extends JLabel
 
 	public void keyTyped(KeyEvent e) {
 		char c = e.getKeyChar();
+		int p = 0;
 		if (c == '\n') {
 			finishCard();
 			return;
@@ -302,13 +303,26 @@ class PunchCardDeck extends JLabel
 			repaint();
 			return;
 		}
-		// TODO: handle ALHPA SHIFT
-		// if ((c & 0x100) == 0) {
-		// }
-		c = Character.toUpperCase(c);
-		int p = _cvt.asciiToPun((int)c);
-		if (p < 0) {
+		if (c == '\b') {
+			if (_cursor > 1) {
+				--_cursor;
+				repaint();
+			}
 			return;
+		}
+		if (c == '\004') {	// DUP
+			if (_prev != null) {
+				p = getCode(_prev, _cursor - 1);
+			}
+		} else {
+			// TODO: handle ALHPA SHIFT
+			// if ((c & 0x100) == 0) {
+			// }
+			c = Character.toUpperCase(c);
+			p = _cvt.asciiToPun((int)c);
+			if (p < 0) {
+				return;
+			}
 		}
 		if (p != 0) {
 			int cx = (_cursor - 1) * 2;
