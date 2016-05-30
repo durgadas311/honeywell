@@ -318,6 +318,13 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
+	private void repair() {
+		int cx = (_cursor - 1) * 2;
+		_curr[cx] = 0;
+		_curr[cx + 1] = 0;
+		repaint();
+	}
+
 	private void punch(int p, boolean multi) {
 		if (_endOfCard) {
 			return;
@@ -386,6 +393,10 @@ class PunchCardDeck extends PunchCard
 			}
 			if (c == '\001') {
 				finishCard(false, !_currIsProg);
+				continue;
+			}
+			if (c == 0x7f) {
+				repair();
 				continue;
 			}
 			if (c == '\b') {
