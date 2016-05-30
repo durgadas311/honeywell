@@ -525,9 +525,9 @@ class PunchCardDeck extends JLabel
 
 	public void keyReleased(KeyEvent e) { }
 
-	private File pickFile(String purpose, File prev) {
+	private File pickFile(String purpose, String sfx, String typ, File prev) {
 		File file;
-		SuffFileChooser ch = new SuffFileChooser(purpose, prev);
+		SuffFileChooser ch = new SuffFileChooser(purpose, sfx, typ, prev);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -630,9 +630,11 @@ class PunchCardDeck extends JLabel
 		}
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_O) {
-			setupFile(pickFile("Set Output Card Deck", _cwd));
+			setupFile(pickFile("Set Output Card Deck",
+					"pcd", "Punch Card Deck", _cwd));
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
-			inputFile(pickFile("Set Input Card Desk", _cwd));
+			inputFile(pickFile("Set Input Card Desk",
+					"pcd", "Punch Card Deck", _cwd));
 		} else if (m.getMnemonic() == KeyEvent.VK_B) {
 			setInputFile(null);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
@@ -651,6 +653,7 @@ class PunchCardDeck extends JLabel
 			System.exit(0);
 		} else if (m.getMnemonic() == KeyEvent.VK_L) {
 			File nu = pickFile("Load Prog Card",
+				"prc", "Program Card",
 				_progFile == null ? _cwd : _progFile);
 			if (nu != null) {
 				_progFile = nu;
@@ -658,7 +661,8 @@ class PunchCardDeck extends JLabel
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
 			if (_progFile == null) {
-				File nu = pickFile("Save Prog Card As", _cwd);
+				File nu = pickFile("Save Prog Card As",
+					"prc", "Program Card", _cwd);
 				if (nu != null) {
 					_progFile = nu;
 				}
