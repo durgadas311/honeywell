@@ -73,6 +73,8 @@ class PunchCardDeck extends JLabel
 
 	public Color getBg() { return hole; }
 
+	public void setSaveImages() { _saveImage = true; }
+
 	private int getCode(byte[] card, int x) {
 		int c = 0;
 		if (x < 80) {

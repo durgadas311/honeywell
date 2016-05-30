@@ -13,10 +13,14 @@ public class CardPunch
 		JFrame frame = new JFrame("Honeywell Card Punch");
 
 		PunchCardDeck card;
-		if (args.length > 0) {
+		boolean images = (args.length > 0 && args[0].equals("-i"));
+		if (!images && args.length > 0) {
 			card = new PunchCardDeck(frame, args[0]);
 		} else {
 			card = new PunchCardDeck(frame, null);
+		}
+		if (images) {
+			card.setSaveImages();
 		}
 
 		JMenuBar mb = new JMenuBar();
