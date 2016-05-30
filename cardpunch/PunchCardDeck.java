@@ -16,11 +16,15 @@ class PunchCardDeck extends JLabel
 		java.awt.image.ImageObserver {
 	static final long serialVersionUID = 311614000000L;
 
+	JFrame _frame;
 	Font font1;
 	ImageIcon _image;
 	java.util.concurrent.LinkedBlockingDeque<Integer> _keyQue;
 	int _tranX;
 	int _tranY;
+	boolean _noCard;
+	boolean _codeCard;
+	boolean _animate;
 
 	File _progFile;
 	File _cwd;
@@ -28,7 +32,6 @@ class PunchCardDeck extends JLabel
 	FileInputStream _inDeck = null;
 	int _pgix;
 	boolean _changed;
-	boolean _empty;
 	JMenu[] _menus;
 	Rectangle _top, _bottom;
 	CharConverter _cvt;
@@ -96,10 +99,13 @@ class PunchCardDeck extends JLabel
 		g2d.addRenderingHints(new RenderingHints(
 			RenderingHints.KEY_ANTIALIASING,
 			RenderingHints.VALUE_ANTIALIAS_ON));
-		if (_empty) {
+		if (_noCard || _animate) {
 			g2d.setColor(hole);
 			Dimension d = getSize();
 			g2d.fillRect(0, 0, d.width, d.height);
+			if (_noCard) {
+				return;
+			}
 			g2d.translate(_tranX, _tranY);
 		}
 		super.paint(g2d);
@@ -147,10 +153,12 @@ class PunchCardDeck extends JLabel
 
 	public PunchCardDeck(JFrame frame, String pgm) {
 		super();
-		_empty = false;
+		_frame = frame;
+		_animate = false;
 		_cursor = 1;
 		_cvt = new CharConverter();
 		bb = new byte[1];
+		_noCard = true;
 
 		_cwd = new File(System.getProperty("user.dir"));
 		java.io.InputStream ttf = this.getClass().getResourceAsStream("IBM029.ttf");
@@ -192,6 +200,9 @@ class PunchCardDeck extends JLabel
 		mi = new JMenuItem("Input", KeyEvent.VK_I);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Blank", KeyEvent.VK_B);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -223,12 +234,6 @@ class PunchCardDeck extends JLabel
 		pn.add(_autoFeed_cb);
 		pn.add(_print_cb);
 		pn.add(_prog_cb);
-
-		if (pgm == null) {
-			newFile();
-		} else {
-			setupFile(new File(pgm));
-		}
 		GridBagLayout gridbag = new GridBagLayout();
 		frame.setLayout(gridbag);
 		GridBagConstraints gc = new GridBagConstraints();
@@ -257,6 +262,13 @@ class PunchCardDeck extends JLabel
 		frame.addKeyListener(this);
 
 		_keyQue = new java.util.concurrent.LinkedBlockingDeque<Integer>();
+
+		if (pgm != null) {
+			setupFile(new File(pgm));
+		}
+	}
+
+	public void start() {
 		Thread t = new Thread(this);
 		t.start();
 	}
@@ -277,13 +289,6 @@ class PunchCardDeck extends JLabel
 
 	private void newCard() {
 		_endOfCard = false;
-		if (_currIsProg) {
-			_curr = _code;
-			_currIsProg = false;
-			_cursor = 1;
-			repaint();
-			return;
-		}
 		if (_prev != null) {
 			// anything more required to free array?
 			_prev = null;
@@ -292,23 +297,18 @@ class PunchCardDeck extends JLabel
 		_code = new byte[2*80];
 		_curr = _code;
 		Arrays.fill(_code, (byte)0);
+		_noCard = false;
 		if (_inDeck != null) {
 			try {
 				int n = _inDeck.read(_code);
 				if (n <= 0) {
-					_inDeck.close();
-					_inDeck = null;
+					_noCard = true;
 				}
 			} catch (Exception ee) {
 				ee.printStackTrace();
+				_noCard = true;
 			}
-		}
-		if (_outDeck != null && _prev != null) {
-			try {
-				_outDeck.write(_prev);
-			} catch (Exception ee) {
-				ee.printStackTrace();
-			}
+		} else {
 		}
 		++_pgix;
 		_cursor = 1;
@@ -318,7 +318,7 @@ class PunchCardDeck extends JLabel
 
 	private void skipStart() {
 		if (_currIsProg) {
-			newCard();
+			setProg(false);
 			return;
 		}
 		nextCol();
@@ -328,60 +328,97 @@ class PunchCardDeck extends JLabel
 		repaint();
 	}
 
-	private void finishCard(boolean auto) {
-		if (_autoSD_cb.isSelected()) {
-			// Must scan rest of program card for auto-dup fields.
-			// Let nextCol() handle that, though.
-			while (!_endOfCard) {
-				nextCol();
-			}
-			// Allow user to glipse results...
-			auto = true;
+	private void setProg(boolean in) {
+		// TODO: animate this?
+		if (in) {
+			_curr = _prog;
+			_codeCard = _noCard;
+			_noCard = false;
+		} else {
+			_curr = _code;
+			_noCard = _codeCard;
 		}
-		if (_saveImage) {
-			Dimension d = getSize();
-			java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
-				d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
-			_cursor = 0;
-			paint(i.getGraphics());
-			String fn = String.format("pcard%02d.png", _pgix);
-			try {
-				javax.imageio.ImageIO.write(i, "png", new File(fn));
-			} catch (IOException ee) {
-				System.err.println("error writing " + fn);
-			}
-		}
-		_cursor = 0;
-		if (auto) {
-			repaint();
-			try {
-				Thread.sleep(150);
-			} catch (Exception ee) {}
-		}
-		// Animate the passing of the card to the left...
-		_tranX = _tranY = 0;
-		_empty = true;
-		int tEnd = -_image.getIconWidth();
-		for (; _tranX > tEnd; _tranX -= 10) {
-			repaint();
-			try {
-				Thread.sleep(5);
-			} catch (Exception ee) {}
-		}
-		_tranX = 0;
-		_tranY = -_image.getIconHeight();
-		newCard();	// does repaint
-		_cursor = 0;
-		for (; _tranY < 0; _tranY += 10) {
-			repaint();
-			try {
-				Thread.sleep(5);
-			} catch (Exception ee) {}
-		}
+		_currIsProg = in;
+		_endOfCard = false;
 		_cursor = 1;
-		_tranY = 0;
-		_empty = false;
 		repaint();
+	}
+
+	private void finishCard(boolean auto, boolean drum) {
+		if (!_currIsProg && !_noCard) {
+			if (_autoSD_cb.isSelected()) {
+				// Must scan rest of program card for auto-dup fields.
+				// Let nextCol() handle that, though.
+				while (!_endOfCard) {
+					nextCol();
+				}
+				// Allow user to glipse results...
+				auto = true;
+			}
+			if (_saveImage) {
+				Dimension d = getSize();
+				java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
+					d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+				_cursor = 0;
+				paint(i.getGraphics());
+				String fn = String.format("pcard%02d.png", _pgix);
+				try {
+					javax.imageio.ImageIO.write(i, "png", new File(fn));
+				} catch (IOException ee) {
+					System.err.println("error writing " + fn);
+				}
+			}
+			if (_outDeck != null) {
+				try {
+					_outDeck.write(_curr);
+				} catch (Exception ee) {
+					ee.printStackTrace();
+				}
+			}
+		}
+		if (!_noCard) {
+			_cursor = 0;
+			if (auto) {
+				repaint();
+				try {
+					Thread.sleep(150);
+				} catch (Exception ee) {}
+			}
+			// Animate the passing of the card to the left...
+			_tranX = _tranY = 0;
+			_animate = true;
+			int tEnd = -_image.getIconWidth();
+			for (; _tranX > tEnd; _tranX -= 10) {
+				repaint();
+				try {
+					Thread.sleep(5);
+				} catch (Exception ee) {}
+			}
+			_tranX = 0;
+			_animate = false;
+		}
+		if (_currIsProg) {
+			setProg(false);
+		} else if (drum) {
+			setProg(true);
+		} else {
+			newCard();	// does repaint
+		}
+		if (!_noCard) {
+			_cursor = 0;
+			_tranY = -_image.getIconHeight();
+			_animate = true;
+			for (; _tranY < 0; _tranY += 10) {
+				repaint();
+				try {
+					Thread.sleep(5);
+				} catch (Exception ee) {}
+			}
+			_cursor = 1;
+			_tranY = 0;
+			_animate = false;
+			repaint();
+		}
 	}
 
 	private void punch(int p, boolean multi) {
@@ -440,21 +477,18 @@ class PunchCardDeck extends JLabel
 			c &= 0x7f;
 			int p = 0;
 			if (c == '\n') {
-				finishCard(false);
+				finishCard(false, false);
 				continue;
 			}
 			if (c == '\t') {
 				skipStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
-					finishCard(true);
+					finishCard(true, false);
 				}
 				continue;
 			}
 			if (c == '\001') {
-				_currIsProg = true;
-				_curr = _prog;
-				_cursor = 1;
-				repaint();
+				finishCard(false, !_currIsProg);
 				continue;
 			}
 			if (c == '\b') {
@@ -467,7 +501,7 @@ class PunchCardDeck extends JLabel
 			if (c == '\004') {	// DUP
 				dupStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
-					finishCard(true);
+					finishCard(true, false);
 				}
 				continue;
 			}
@@ -482,7 +516,7 @@ class PunchCardDeck extends JLabel
 			punch(p, multi);
 			repaint();
 			if (_endOfCard && _autoFeed_cb.isSelected()) {
-				finishCard(true);
+				finishCard(true, false);
 			}
 		}
 	}
@@ -490,11 +524,6 @@ class PunchCardDeck extends JLabel
 	public void keyPressed(KeyEvent e) { }
 
 	public void keyReleased(KeyEvent e) { }
-
-	private void newFile() {
-		_pgix = 0;
-		newCard();
-	}
 
 	private File pickFile(String purpose, File prev) {
 		File file;
@@ -527,16 +556,18 @@ class PunchCardDeck extends JLabel
 			// change nothing in this case...
 			return;
 		}
+		setInputFile(file);
+	}
+
+	private void setInputFile(File file) {
 		if (_inDeck != null) {
 			try {
 				_inDeck.close();
 			} catch (Exception ee) {}
 			_inDeck = null;
 		}
-		if (file.exists()) {
-			// TEMP: lose cursor when displaying character patterns
-			_cursor = 0;
-
+		// TODO: handle non-existent file as empty deck, not blanks
+		if (file != null && file.exists()) {
 			try {
 				_inDeck = new FileInputStream(file);
 			} catch (Exception ee) {
@@ -545,10 +576,12 @@ class PunchCardDeck extends JLabel
 			_changed = false;
 			_pgix = 0;
 		} else {
+			// just blank cards... infinite supply
 			_pgix = 0;
 			_changed = false;
 		}
-		newCard();
+		// cannot execute finishCard() in this thread.
+		_keyQue.add((int)'\n');
 	}
 
 	private void loadProg(File file) {
@@ -598,10 +631,10 @@ class PunchCardDeck extends JLabel
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_O) {
 			setupFile(pickFile("Set Output Card Deck", _cwd));
-			return;
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			inputFile(pickFile("Set Input Card Desk", _cwd));
-			return;
+		} else if (m.getMnemonic() == KeyEvent.VK_B) {
+			setInputFile(null);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			if (_inDeck != null) {
 				try {
@@ -616,22 +649,21 @@ class PunchCardDeck extends JLabel
 				_outDeck = null;
 			}
 			System.exit(0);
-			return;
 		} else if (m.getMnemonic() == KeyEvent.VK_L) {
 			File nu = pickFile("Load Prog Card",
 				_progFile == null ? _cwd : _progFile);
-			if (nu == null) return;
-			_progFile = nu;
-			loadProg(_progFile);
-			return;
+			if (nu != null) {
+				_progFile = nu;
+				loadProg(_progFile);
+			}
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
 			if (_progFile == null) {
 				File nu = pickFile("Save Prog Card As", _cwd);
-				if (nu == null) return;
-				_progFile = nu;
+				if (nu != null) {
+					_progFile = nu;
+				}
 			}
 			saveProg(_progFile);
-			return;
 		}
 	}
 
