@@ -19,6 +19,8 @@ class PunchCardDeck extends JLabel
 	Font font1;
 	ImageIcon _image;
 	java.util.concurrent.LinkedBlockingDeque<Integer> _keyQue;
+	int _tranX;
+	int _tranY;
 
 	File _progFile;
 	File _cwd;
@@ -91,15 +93,15 @@ class PunchCardDeck extends JLabel
 	public void paint(Graphics g) {
 		String ss;
 		Graphics2D g2d = (Graphics2D)g;
+		g2d.addRenderingHints(new RenderingHints(
+			RenderingHints.KEY_ANTIALIASING,
+			RenderingHints.VALUE_ANTIALIAS_ON));
 		if (_empty) {
 			g2d.setColor(hole);
 			Dimension d = getSize();
 			g2d.fillRect(0, 0, d.width, d.height);
-			return;
+			g2d.translate(_tranX, _tranY);
 		}
-		g2d.addRenderingHints(new RenderingHints(
-			RenderingHints.KEY_ANTIALIASING,
-			RenderingHints.VALUE_ANTIALIAS_ON));
 		super.paint(g2d);
 		g2d.setColor(ink);
 		g2d.setFont(font1);
@@ -165,9 +167,9 @@ class PunchCardDeck extends JLabel
 		hole = Color.gray;
 		setBackground(hole);
 		setOpaque(true);
-		setPreferredSize(new Dimension(getIcon().getIconWidth(), getIcon().getIconHeight()));
+		setPreferredSize(new Dimension(_image.getIconWidth(), _image.getIconHeight()));
 		_top = new Rectangle(0, 0, 10, 10);
-		_bottom = new Rectangle(0, getIcon().getIconHeight() - 10, 10, 10);
+		_bottom = new Rectangle(0, _image.getIconHeight() - 10, 10, 10);
 
 		_code = new byte[2*80];
 		_curr = _code;
@@ -215,7 +217,7 @@ class PunchCardDeck extends JLabel
 		_prog_cb = new JCheckBox("Prog");
 		_prog_cb.setFocusable(false);
 		JPanel pn = new JPanel();
-		pn.setPreferredSize(new Dimension(getIcon().getIconWidth() + 2 * _inset, 30));
+		pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 30));
 		pn.add(_autoSD_cb);
 		pn.add(_progSel_cb);
 		pn.add(_autoFeed_cb);
@@ -258,9 +260,19 @@ class PunchCardDeck extends JLabel
 		Thread t = new Thread(this);
 		t.start();
 	}
+
+	// This might recurse, but only at field start and until end of card
 	private void nextCol() {
 		++_cursor;
 		_endOfCard = !(_cursor <= 80);
+		if (!_endOfCard && _autoSD_cb.isSelected()) {
+			int p = getProg(_prog, _cursor - 1);
+			if ((p & (DUP | FIELD)) == DUP) {
+				dupStart();
+			} else if ((p & (SKIP | FIELD)) == SKIP) {
+				skipStart();
+			}
+		}
 	}
 
 	private void newCard() {
@@ -318,15 +330,13 @@ class PunchCardDeck extends JLabel
 
 	private void finishCard(boolean auto) {
 		if (_autoSD_cb.isSelected()) {
-			// Must scan rest of program card for auto-dup fields
+			// Must scan rest of program card for auto-dup fields.
+			// Let nextCol() handle that, though.
 			while (!_endOfCard) {
-				int p = getProg(_prog, _cursor - 1);
-				if ((p & (DUP | FIELD)) == DUP) {
-					dupStart();
-				} else {
-					nextCol();
-				}
+				nextCol();
 			}
+			// Allow user to glipse results...
+			auto = true;
 		}
 		if (_saveImage) {
 			Dimension d = getSize();
@@ -344,14 +354,20 @@ class PunchCardDeck extends JLabel
 		if (auto) {
 			repaint();
 			try {
-				Thread.sleep(250);
+				Thread.sleep(150);
 			} catch (Exception ee) {}
 		}
+		// Animate the passing of the card to the left...
+		_tranX = _tranY = 0;
 		_empty = true;
-		repaint();
-		try {
-			Thread.sleep(250);
-		} catch (Exception ee) {}
+		int tEnd = -_image.getIconWidth();
+		for (; _tranX > tEnd; _tranX -= 100) {
+			repaint();
+			try {
+				Thread.sleep(50);
+			} catch (Exception ee) {}
+		}
+		_tranX = 0;
 		_empty = false;
 		newCard();	// does repaint
 	}
