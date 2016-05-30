@@ -351,6 +351,7 @@ class PunchCardDeck extends JLabel
 				System.err.println("error writing " + fn);
 			}
 		}
+		_cursor = 0;
 		if (auto) {
 			repaint();
 			try {
@@ -361,15 +362,26 @@ class PunchCardDeck extends JLabel
 		_tranX = _tranY = 0;
 		_empty = true;
 		int tEnd = -_image.getIconWidth();
-		for (; _tranX > tEnd; _tranX -= 100) {
+		for (; _tranX > tEnd; _tranX -= 10) {
 			repaint();
 			try {
-				Thread.sleep(50);
+				Thread.sleep(5);
 			} catch (Exception ee) {}
 		}
 		_tranX = 0;
-		_empty = false;
+		_tranY = -_image.getIconHeight();
 		newCard();	// does repaint
+		_cursor = 0;
+		for (; _tranY < 0; _tranY += 10) {
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
+		}
+		_cursor = 1;
+		_tranY = 0;
+		_empty = false;
+		repaint();
 	}
 
 	private void punch(int p, boolean multi) {
