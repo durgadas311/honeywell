@@ -12,39 +12,48 @@ import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
 class PunchCardDeck extends JLabel
-		implements KeyListener, ActionListener, java.awt.image.ImageObserver {
+		implements KeyListener, ActionListener, Runnable,
+		java.awt.image.ImageObserver {
 	static final long serialVersionUID = 311614000000L;
 
 	Font font1;
 	ImageIcon _image;
+	java.util.concurrent.LinkedBlockingDeque<Integer> _keyQue;
 
-	byte[] _code;
-	String _title;
 	File _progFile;
 	File _cwd;
 	FileOutputStream _outDeck = null;
 	FileInputStream _inDeck = null;
 	int _pgix;
 	boolean _changed;
+	boolean _empty;
 	JMenu[] _menus;
 	Rectangle _top, _bottom;
 	CharConverter _cvt;
 	byte[] bb;
 	Color ink = new Color(120,0,255,175);
 	Color hole;
+	static final int _inset = 2;
+
+	byte[] _code;
 	byte[] _prog;
 	byte[] _prev;
 	byte[] _curr;
 	boolean _currIsProg;
 	boolean _saveImage;
-	static final int _inset = 2;
+	boolean _endOfCard;
 
 	JCheckBox _autoSD_cb;
 	JCheckBox _progSel_cb;
 	JCheckBox _autoFeed_cb;
 	JCheckBox _print_cb;
+	JCheckBox _prog_cb;
 
-	public JMenu[] getMenu() { return _menus; }
+	// Program card punches - prog2 are shifted to match
+	static final int FIELD = 0x0800;
+	static final int SKIP  = 0x0400;
+	static final int DUP   = 0x0200;
+	static final int ALPHA = 0x0100; // not needed?
 
 	double _bit_spacing = 37.8;
 	double _bit_start = 26.7;
@@ -55,17 +64,39 @@ class PunchCardDeck extends JLabel
 	int _cols_per_card = 80;
 	int _cursor;
 
+	public JMenu[] getMenu() { return _menus; }
+
 	public Color getBg() { return hole; }
 
 	private int getCode(byte[] card, int x) {
-		int c = card[x * 2] & 0x0ff;
-		c |= (card[x * 2 + 1] & 0x0ff) << 8;
+		int c = 0;
+		if (x < 80) {
+			c = card[x * 2] & 0x0ff;
+			c |= (card[x * 2 + 1] & 0x0ff) << 8;
+		}
+		return c;
+	}
+
+	private int getProg(byte[] card, int x) {
+		int c = 0;
+		if (_prog_cb.isSelected()) {
+			c = getCode(card, x);
+			if (_progSel_cb.isSelected()) {
+				c <<= 6;
+			}
+		}
 		return c;
 	}
 
 	public void paint(Graphics g) {
 		String ss;
 		Graphics2D g2d = (Graphics2D)g;
+		if (_empty) {
+			g2d.setColor(hole);
+			Dimension d = getSize();
+			g2d.fillRect(0, 0, d.width, d.height);
+			return;
+		}
 		g2d.addRenderingHints(new RenderingHints(
 			RenderingHints.KEY_ANTIALIASING,
 			RenderingHints.VALUE_ANTIALIAS_ON));
@@ -103,6 +134,9 @@ class PunchCardDeck extends JLabel
 			}
 		}
 		if (_cursor > 0) {
+			if (_cursor > 81) {
+				_cursor = 81;
+			}
 			int rx = (int)Math.round(_cursor * _row_spacing + _row_start - _row_spacing);
 			g2d.setColor(Color.red);
 			g2d.drawLine(rx, 10, rx, _bottom.y);
@@ -111,6 +145,7 @@ class PunchCardDeck extends JLabel
 
 	public PunchCardDeck(JFrame frame, String pgm) {
 		super();
+		_empty = false;
 		_cursor = 1;
 		_cvt = new CharConverter();
 		bb = new byte[1];
@@ -138,6 +173,7 @@ class PunchCardDeck extends JLabel
 		_curr = _code;
 		_currIsProg = false;
 		_saveImage = false;
+		_endOfCard = false;
 		_prev = null;
 		_prog = new byte[2*80];
 		// TODO: initialize program card from file...
@@ -176,12 +212,15 @@ class PunchCardDeck extends JLabel
 		_print_cb = new JCheckBox("Print");
 		_print_cb.setFocusable(false);
 		_print_cb.setSelected(true);
+		_prog_cb = new JCheckBox("Prog");
+		_prog_cb.setFocusable(false);
 		JPanel pn = new JPanel();
 		pn.setPreferredSize(new Dimension(getIcon().getIconWidth() + 2 * _inset, 30));
 		pn.add(_autoSD_cb);
 		pn.add(_progSel_cb);
 		pn.add(_autoFeed_cb);
 		pn.add(_print_cb);
+		pn.add(_prog_cb);
 
 		if (pgm == null) {
 			newFile();
@@ -214,13 +253,18 @@ class PunchCardDeck extends JLabel
 		frame.add(this);
 
 		frame.addKeyListener(this);
+
+		_keyQue = new java.util.concurrent.LinkedBlockingDeque<Integer>();
+		Thread t = new Thread(this);
+		t.start();
 	}
 	private void nextCol() {
 		++_cursor;
-		// TODO: handle auto-skip/dup
+		_endOfCard = !(_cursor <= 80);
 	}
 
 	private void newCard() {
+		_endOfCard = false;
 		if (_currIsProg) {
 			_curr = _code;
 			_currIsProg = false;
@@ -265,20 +309,159 @@ class PunchCardDeck extends JLabel
 			newCard();
 			return;
 		}
-		do {
-			if (_cursor >= 80) {
-				newCard();
-				return;
-			}
-			++_cursor;
-			int c = getCode(_prog, _cursor - 1);
-			// TODO: handle "program 2"
-			if ((c & 0x800) == 0) {
-				break;
-			}
-		} while (true);
+		nextCol();
+		while ((getProg(_prog, _cursor - 1) & FIELD) != 0) {
+			nextCol();
+		}
 		repaint();
 	}
+
+	private void finishCard(boolean auto) {
+		if (_autoSD_cb.isSelected()) {
+			// Must scan rest of program card for auto-dup fields
+			while (!_endOfCard) {
+				int p = getProg(_prog, _cursor - 1);
+				if ((p & (DUP | FIELD)) == DUP) {
+					dupStart();
+				} else {
+					nextCol();
+				}
+			}
+		}
+		if (_saveImage) {
+			Dimension d = getSize();
+			java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
+				d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+			_cursor = 0;
+			paint(i.getGraphics());
+			String fn = String.format("pcard%02d.png", _pgix);
+			try {
+				javax.imageio.ImageIO.write(i, "png", new File(fn));
+			} catch (IOException ee) {
+				System.err.println("error writing " + fn);
+			}
+		}
+		if (auto) {
+			repaint();
+			try {
+				Thread.sleep(250);
+			} catch (Exception ee) {}
+		}
+		_empty = true;
+		repaint();
+		try {
+			Thread.sleep(250);
+		} catch (Exception ee) {}
+		_empty = false;
+		newCard();	// does repaint
+	}
+
+	private void punch(int p, boolean multi) {
+		if (_endOfCard) {
+			return;
+		}
+		if (p != 0) {
+			// this corrupts 'p'...
+			if (_print_cb.isSelected()) {
+				p |= 0x1000;
+			}
+			int cx = (_cursor - 1) * 2;
+			_curr[cx] |= (byte)(p & 0x0ff);
+			_curr[cx + 1] |= (byte)((p >> 8) & 0x0ff);
+		}
+		if (!multi) {
+			nextCol();
+		}
+	}
+
+	private void dupStart() {
+		// If start of field, then dup entire field...
+		boolean cont = ((getProg(_prog, _cursor - 1) & FIELD) == 0);
+		do {
+			int p = 0;
+			if (_prev != null) {
+				p = getCode(_prev, _cursor - 1) & 0x0fff;
+			}
+			punch(p, false);
+			cont = cont &&
+				((getProg(_prog, _cursor - 1) & FIELD) != 0);
+		} while (cont);
+		repaint();
+	}
+
+	// Must not tie-up the Event Dispatch Thread... queue-up key and return...
+	public void keyTyped(KeyEvent e) {
+		boolean multi = ((e.getModifiers() & InputEvent.ALT_MASK) != 0);
+		char c = e.getKeyChar();
+		int evt = (int)c;
+		if (multi) {
+			evt |= 0x1000;
+		}
+		_keyQue.add(evt);
+	}
+
+	public void run() {
+		int c = 0;
+		while (true) {
+			try {
+				c = _keyQue.take();
+			} catch (Exception ee) {
+				break;
+			}
+			boolean multi = ((c & 0x1000) != 0);
+			c &= 0x7f;
+			int p = 0;
+			if (c == '\n') {
+				finishCard(false);
+				continue;
+			}
+			if (c == '\t') {
+				skipStart();
+				if (_endOfCard && _autoFeed_cb.isSelected()) {
+					finishCard(true);
+				}
+				continue;
+			}
+			if (c == '\001') {
+				_currIsProg = true;
+				_curr = _prog;
+				_cursor = 1;
+				repaint();
+				continue;
+			}
+			if (c == '\b') {
+				if (_cursor > 1) {
+					--_cursor;
+					repaint();
+				}
+				continue;
+			}
+			if (c == '\004') {	// DUP
+				dupStart();
+				if (_endOfCard && _autoFeed_cb.isSelected()) {
+					finishCard(true);
+				}
+				continue;
+			}
+			// TODO: handle ALHPA SHIFT
+			// if ((c & 0x100) == 0) {
+			// }
+			c = Character.toUpperCase(c);
+			p = _cvt.asciiToPun((int)c);
+			if (p < 0) {
+				continue;
+			}
+			punch(p, multi);
+			repaint();
+			if (_endOfCard && _autoFeed_cb.isSelected()) {
+				finishCard(true);
+			}
+		}
+	}
+
+	public void keyPressed(KeyEvent e) { }
+
+	public void keyReleased(KeyEvent e) { }
 
 	private void newFile() {
 		_pgix = 0;
@@ -370,105 +553,6 @@ class PunchCardDeck extends JLabel
 			ee.printStackTrace();
 		}
 	}
-
-	private void finishCard() {
-		if (_saveImage) {
-			Dimension d = getSize();
-			java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
-				d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
-			_cursor = 0;
-			paint(i.getGraphics());
-			String fn = String.format("pcard%02d.png", _pgix);
-			try {
-				javax.imageio.ImageIO.write(i, "png", new File(fn));
-			} catch (IOException ee) {
-				System.err.println("error writing " + fn);
-			}
-		}
-		// TODO: save card
-		newCard();	// does repaint
-	}
-
-	private void punch(int p, boolean multi) {
-		if (p != 0) {
-			// this corrupts 'p'...
-			if (_print_cb.isSelected()) {
-				p |= 0x1000;
-			}
-			int cx = (_cursor - 1) * 2;
-			_curr[cx] |= (byte)(p & 0x0ff);
-			_curr[cx + 1] |= (byte)((p >> 8) & 0x0ff);
-		}
-		if (!multi && _cursor < 80) {
-			// TODO: auto skip to next card...
-			nextCol();
-			// TODO: handle AUTO SKIP/DUP
-			// if ((c & 0x400) == 0) { // SKIP
-			// }
-			// if ((c & 0x200) == 0) { // DUP
-			// }
-		}
-	}
-
-	private void dupStart() {
-		// If start of field, then dup entire field...
-		boolean cont = ((getCode(_prog, _cursor - 1) & 0x0800) == 0);
-		do {
-			int p = 0;
-			if (_prev != null) {
-				p = getCode(_prev, _cursor - 1) & 0x0fff;
-			}
-			punch(p, false);
-			cont = cont && ((getCode(_prog, _cursor - 1) & 0x0800) != 0);
-		} while (cont);
-		repaint();
-	}
-
-	public void keyTyped(KeyEvent e) {
-		boolean multi = ((e.getModifiers() & InputEvent.ALT_MASK) != 0);
-		char c = e.getKeyChar();
-		int p = 0;
-		if (c == '\n') {
-			finishCard();
-			return;
-		}
-		if (c == '\t') {
-			skipStart();
-			return;
-		}
-		if (c == '\001') {
-			_currIsProg = true;
-			_curr = _prog;
-			_cursor = 1;
-			repaint();
-			return;
-		}
-		if (c == '\b') {
-			if (_cursor > 1) {
-				--_cursor;
-				repaint();
-			}
-			return;
-		}
-		if (c == '\004') {	// DUP
-			dupStart();
-			return;
-		}
-		// TODO: handle ALHPA SHIFT
-		// if ((c & 0x100) == 0) {
-		// }
-		c = Character.toUpperCase(c);
-		p = _cvt.asciiToPun((int)c);
-		if (p < 0) {
-			return;
-		}
-		punch(p, multi);
-		repaint();
-	}
-
-	public void keyPressed(KeyEvent e) { }
-
-	public void keyReleased(KeyEvent e) { }
 
 	private boolean confirmChanges(String op) {
 //			int res = Wang_UI.confirm(op, "Changes have not been saved. " +
