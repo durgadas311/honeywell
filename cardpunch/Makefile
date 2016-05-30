@@ -5,12 +5,18 @@ D630_CLASSES =	\
 		PunchCardDeck.class \
 		CardPunch.class \
 		Punch.class \
+		PunchPS.class \
 		CharConverter.class \
 		SuffFileChooser.class \
 		SuffFileFilter.class
 
 SUPP_CLASSES = \
-		SuffFileChooser$$TapeProt.class
+		SuffFileChooser$$TapeProt.class \
+		PunchPS$$DocPaperSize.class \
+		PunchPS$$ReqPaperSize.class \
+		sun/print/PSxStreamPrintService.class \
+		sun/print/PSxStreamPrinterFactory.class \
+		sun/print/PSxStreamPrintJob.class
 
 %.class: %.java
 	javac $?
