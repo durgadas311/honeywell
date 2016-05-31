@@ -1,6 +1,12 @@
 #include <stdio.h>
 
+#if defined(IBM026)
+#include "myfont026.h"
+#elif defined(IBM029)
+#include "myfont029.h"
+#else
 #include "myfont.h"
+#endif
 
 // values are 10x
 #define DOT_WIDTH 1152
