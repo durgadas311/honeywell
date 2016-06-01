@@ -79,6 +79,7 @@ Flags: HW
 LayerCount: 2
 EndChar
 
+
 StartChar: uni0021
 Encoding: 33 33 0
 Width: 768
@@ -3347,6 +3348,11 @@ Flags: HW
 LayerCount: 2
 Fore
 SplineSet
+0 768 m 0
+ 0 883 l 1
+ 115 883 l 1
+ 115 768 l 1
+ 0 768 l 1
 128 768 m 0
  128 883 l 1
  243 883 l 1
@@ -3362,6 +3368,11 @@ SplineSet
  499 883 l 1
  499 768 l 1
  384 768 l 1
+512 768 m 0
+ 512 883 l 1
+ 627 883 l 1
+ 627 768 l 1
+ 512 768 l 1
 0 640 m 0
  0 755 l 1
  115 755 l 1
@@ -3412,6 +3423,11 @@ SplineSet
  627 243 l 1
  627 128 l 1
  512 128 l 1
+0 0 m 0
+ 0 115 l 1
+ 115 115 l 1
+ 115 0 l 1
+ 0 0 l 1
 128 0 m 0
  128 115 l 1
  243 115 l 1
@@ -3427,6 +3443,11 @@ SplineSet
  499 115 l 1
  499 0 l 1
  384 0 l 1
+512 0 m 0
+ 512 115 l 1
+ 627 115 l 1
+ 627 0 l 1
+ 512 0 l 1
 EndSplineSet
 EndChar
 StartChar: uni0050
