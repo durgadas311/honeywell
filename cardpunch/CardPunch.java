@@ -13,19 +13,26 @@ public class CardPunch
 		JFrame frame = new JFrame("Honeywell Card Punch");
 
 		PunchCardDeck card;
-		boolean images = (args.length > 0 && args[0].equals("-i"));
-		if (!images && args.length > 0) {
-			card = new PunchCardDeck(frame, args[0]);
-		} else {
-			card = new PunchCardDeck(frame, null);
+		CardPunchOptions opts = new CardPunchOptions();
+		int x;
+		for (x = 0; x < args.length; ++x) {
+			if (!args[x].startsWith("-")) {
+				break;
+			}
+			if (args[x].equals("-i")) {
+				opts.images = true;
+			} else if (args[x].equals("-r")) {
+				opts.ibm026 = true;
+			}
 		}
-		if (images) {
-			card.setSaveImages();
+		if (!opts.images && x < args.length) {
+			opts.output = args[x];
 		}
+		card = new PunchCardDeck(frame, opts);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = card.getMenu();
-		for (int x = 0; x < ms.length; ++x) {
+		for (x = 0; x < ms.length; ++x) {
 			mb.add(ms[x]);
 		}
 

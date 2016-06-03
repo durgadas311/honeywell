@@ -54,8 +54,6 @@ class PunchCardDeck extends PunchCard
 
 	public Color getBg() { return hole; }
 
-	public void setSaveImages() { _saveImage = true; }
-
 	private int getProg(byte[] card, int x) {
 		int c = 0;
 		if (_prog_cb.isSelected()) {
@@ -67,8 +65,9 @@ class PunchCardDeck extends PunchCard
 		return c;
 	}
 
-	public PunchCardDeck(JFrame frame, String pgm) {
-		super();
+	public PunchCardDeck(JFrame frame, CardPunchOptions opts) {
+		super(opts);
+		_saveImage = opts.images;
 		_frame = frame;
 		bb = new byte[1];
 
@@ -160,8 +159,8 @@ class PunchCardDeck extends PunchCard
 
 		_keyQue = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 
-		if (pgm != null) {
-			setupFile(new File(pgm));
+		if (opts.output != null) {
+			setupFile(new File(opts.output));
 		}
 	}
 
@@ -318,6 +317,14 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
+	private void interpret() {
+		int x;
+		for (x = 0; x < _curr.length; x += 2) {
+			_curr[x + 1] |= 0x10;
+		}
+		repaint();
+	}
+
 	private void repair() {
 		int cx = (_cursor - 1) * 2;
 		_curr[cx] = 0;
@@ -380,19 +387,32 @@ class PunchCardDeck extends PunchCard
 			boolean multi = ((c & 0x1000) != 0);
 			c &= 0x7f;
 			int p = 0;
+			if (c == '\005') {	// ^E
+				interpret();
+				continue;
+			}
+			if (c == '\002') {	// ^B
+				_cursor = 0;
+				repaint();
+				continue;
+			}
 			if (c == '\n') {
 				finishCard(false, false);
 				continue;
+			}
+			if (c == '\001') {	// ^A
+				finishCard(false, !_currIsProg);
+				continue;
+			}
+			// From here on, we must have a valid _cursor...
+			if (_cursor < 1) {
+				_cursor = 1;
 			}
 			if (c == '\t') {
 				skipStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
 					finishCard(true, false);
 				}
-				continue;
-			}
-			if (c == '\001') {
-				finishCard(false, !_currIsProg);
 				continue;
 			}
 			if (c == 0x7f) {

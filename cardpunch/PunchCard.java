@@ -104,14 +104,18 @@ class PunchCard extends JLabel
 		}
 	}
 
-	public PunchCard() {
+	public PunchCard(CardPunchOptions opts) {
 		super();
 		_animate = false;
 		_cursor = 1;
-		_cvt = new CharConverter();
+		_cvt = new CharConverter(opts.ibm026);
 		_noCard = true;
 
-		java.io.InputStream ttf = this.getClass().getResourceAsStream("IBM029.ttf");
+		String fn = "IBM029.ttf";
+		if (opts.ibm026) {
+			fn = "IBM026.ttf";
+		}
+		java.io.InputStream ttf = this.getClass().getResourceAsStream(fn);
 		if (ttf != null) {
 			try {
 				Font font = Font.createFont(Font.TRUETYPE_FONT, ttf);

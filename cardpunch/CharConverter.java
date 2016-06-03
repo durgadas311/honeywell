@@ -11,7 +11,7 @@ class CharConverter {
 	private byte[] hw2lp;
 	private byte[] bb = new byte[1];
 
-	private void setup_xlate() {
+	private void setup_xlate(boolean char48) {
 		xlate_pun = new byte[4096];
 		Arrays.fill(xlate_pun, (byte)0);
 		xlate_pun[0x000] = ' ';
@@ -82,12 +82,29 @@ class CharConverter {
 		xlate_pun[0x40a] = ';';
 		xlate_pun[0x406] = '\002';	// broken bar (not HW)
 
-		xlate_pun[0x282] = '\004';	// No keypunch symbol
+		xlate_pun[0x282] = 0;	// No keypunch symbol
 		xlate_pun[0x242] = ',';
 		xlate_pun[0x222] = '%';
 		xlate_pun[0x212] = '_';
 		xlate_pun[0x20a] = '>';
 		xlate_pun[0x206] = '?';
+		if (char48) {
+			xlate_pun[0x822] = '\004'; // op-loz
+			xlate_pun[0x882] = 0;
+			xlate_pun[0x806] = 0;
+			xlate_pun[0x80a] = 0;
+			xlate_pun[0x482] = 0;
+			xlate_pun[0x412] = 0;
+			xlate_pun[0x40a] = 0;
+			xlate_pun[0x406] = 0;
+			xlate_pun[0x212] = 0;
+			xlate_pun[0x20a] = 0;
+			xlate_pun[0x206] = 0;
+			xlate_pun[0x082] = 0;
+			xlate_pun[0x012] = 0;
+			xlate_pun[0x00a] = 0;
+			xlate_pun[0x006] = 0;
+		}
 
 		spcl_pun = new String[10];
 		spcl_pun['\001'] = "\u00a2";	// cent
@@ -324,8 +341,8 @@ class CharConverter {
 		hw2lp[077] = '\001';	// cent
 	}
 
-	public CharConverter() {
-		setup_xlate();
+	public CharConverter(boolean char48) {
+		setup_xlate(char48);
 	}
 
 	public String punToAscii(int code) {
