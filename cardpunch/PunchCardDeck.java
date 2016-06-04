@@ -43,6 +43,7 @@ class PunchCardDeck extends PunchCard
 	JCheckBox _autoFeed_cb;
 	JCheckBox _print_cb;
 	JCheckBox _prog_cb;
+	JLabel _col_lb;
 
 	// Program card punches - prog2 are shifted to match
 	static final int FIELD = 0x0800;
@@ -112,6 +113,11 @@ class PunchCardDeck extends PunchCard
 		mu.add(mi);
 		_menus[1] = mu;
 
+		_col_lb = new JLabel();
+		_col_lb.setPreferredSize(new Dimension(20, 20));
+		_col_lb.setBackground(Color.white);
+		_col_lb.setOpaque(true);
+		_col_lb.setFocusable(false);
 		_autoSD_cb = new JCheckBox("Auto SKIP/DUP");
 		_autoSD_cb.setFocusable(false);
 		_progSel_cb = new JCheckBox("Prog 2 (1)");
@@ -125,8 +131,11 @@ class PunchCardDeck extends PunchCard
 		_prog_cb.setFocusable(false);
 		JPanel pn = new JPanel();
 		pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 30));
+		pn.add(_col_lb);
 		pn.add(_autoSD_cb);
-		pn.add(_progSel_cb);
+		if (!opts.ibm026) {
+			pn.add(_progSel_cb);
+		}
 		pn.add(_autoFeed_cb);
 		pn.add(_print_cb);
 		pn.add(_prog_cb);
@@ -169,9 +178,14 @@ class PunchCardDeck extends PunchCard
 		t.start();
 	}
 
+	private void setCursor(int curs) {
+		_cursor = curs;
+		_col_lb.setText(Integer.toString(_cursor));
+	}
+
 	// This might recurse, but only at field start and until end of card
 	private void nextCol() {
-		++_cursor;
+		setCursor(_cursor + 1);
 		_endOfCard = !(_cursor <= 80);
 		if (!_endOfCard && _autoSD_cb.isSelected()) {
 			int p = getProg(_prog, _cursor - 1);
@@ -207,7 +221,7 @@ class PunchCardDeck extends PunchCard
 		} else {
 		}
 		++_pgix;
-		_cursor = 1;
+		setCursor(1);
 		_changed = false;
 		repaint();
 	}
@@ -236,7 +250,7 @@ class PunchCardDeck extends PunchCard
 		}
 		_currIsProg = in;
 		_endOfCard = false;
-		_cursor = 1;
+		setCursor(1);
 		repaint();
 	}
 
@@ -310,7 +324,7 @@ class PunchCardDeck extends PunchCard
 					Thread.sleep(5);
 				} catch (Exception ee) {}
 			}
-			_cursor = 1;
+			setCursor(1);
 			_tranY = 0;
 			_animate = false;
 			repaint();
@@ -406,7 +420,7 @@ class PunchCardDeck extends PunchCard
 			}
 			// From here on, we must have a valid _cursor...
 			if (_cursor < 1) {
-				_cursor = 1;
+				setCursor(1);
 			}
 			if (c == '\t') {
 				skipStart();
@@ -421,7 +435,7 @@ class PunchCardDeck extends PunchCard
 			}
 			if (c == '\b') {
 				if (_cursor > 1) {
-					--_cursor;
+					setCursor(_cursor - 1);
 					repaint();
 				}
 				continue;
