@@ -22,7 +22,7 @@ class PunchCard extends JLabel
 	protected boolean _noCard;
 	protected boolean _animate;
 	protected CharConverter _cvt;
-	protected Color ink = new Color(120,0,255,175);
+	protected Color ink;
 	protected Color hole;
 	protected byte[] _curr;
 	protected int _cursor;
@@ -113,11 +113,14 @@ class PunchCard extends JLabel
 
 		String fn = "IBM029.ttf";
 		if (opts.ibm026) {
+			ink = new Color(120,0,255,175);
 			if (opts.fortran) {
 				fn = "IBM026f.ttf";
 			} else {
 				fn = "IBM026.ttf";
 			}
+		} else {
+			ink = new Color(0,0,0,128);
 		}
 		java.io.InputStream ttf = this.getClass().getResourceAsStream(fn);
 		if (ttf != null) {
