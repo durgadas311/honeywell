@@ -431,6 +431,10 @@ class PunchCardDeck extends PunchCard
 			}
 			return;
 		}
+		if (_cursor <= 1) {
+			_cursor = 0;
+			nextCol();
+		}
 	}
 
 	// Must not tie-up the Event Dispatch Thread... queue-up key and return...
