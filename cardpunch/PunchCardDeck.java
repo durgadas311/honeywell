@@ -99,6 +99,9 @@ class PunchCardDeck extends PunchCard
 		mi = new JMenuItem("Output", KeyEvent.VK_O);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Discard", KeyEvent.VK_D);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Input", KeyEvent.VK_I);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -275,13 +278,106 @@ class PunchCardDeck extends PunchCard
 			_curr = _prog;
 			_codeCard = _noCard;
 			_noCard = false;
+			_col_lb.setBackground(Color.yellow);
 		} else {
 			_curr = _code;
 			_noCard = _codeCard;
+			_col_lb.setBackground(Color.white);
 		}
 		_currIsProg = in;
 		_endOfCard = false;
 		setCursor(1);
+		repaint();
+	}
+
+	// Animate movement of card out of sight to the left.
+	private void cardOutLeft() {
+		_cursor = 0;
+		_tranX = _tranY = 0;
+		_animate = true;
+		int tEnd = -_image.getIconWidth();
+		for (; _tranX > tEnd; _tranX -= 10) {
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
+		}
+		_tranX = 0;
+		_animate = false;
+	}
+
+	// Animate movement of card into sight from the top (moving down).
+	private void cardInDown() {
+		_cursor = 0;
+		_tranY = -_image.getIconHeight();
+		_animate = true;
+		for (; _tranY < 0; _tranY += 10) {
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
+		}
+		_tranY = 0;
+		_animate = false;
+	}
+
+	// Animate movement of card out of sight to the top (moving up).
+	private void cardOutUp() {
+		_cursor = 0;
+		_tranX = _tranY = 0;
+		int tEnd = -_image.getIconHeight();
+		_animate = true;
+		for (; _tranY >= tEnd; _tranY -= 10) {
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
+		}
+		_tranY = 0;
+		_animate = false;
+	}
+
+	private void cardOutRight() {
+		_cursor = 0;
+		_tranX = _tranY = 0;
+		_animate = true;
+		int tEnd = _image.getIconWidth();
+		for (; _tranX <= tEnd; _tranX += 10) {
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
+		}
+		_tranX = 0;
+		_animate = false;
+	}
+
+	private void cardInRight() {
+		_cursor = 0;
+		_tranY = 0;
+		_tranX = _image.getIconWidth();
+		_animate = true;
+		for (; _tranX > 0; _tranX -= 10) {
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
+		}
+		_tranX = 0;
+		_animate = false;
+	}
+
+	private void shred() {
+		if (!_noCard) {
+			// Animate the destruction of the card to the right...
+			cardOutRight();
+		}
+		if (_currIsProg) {
+			setProg(false);
+			Arrays.fill(_prog, (byte)0);
+			_prog_cb.setSelected(false);
+		}
+		_noCard = true;
 		repaint();
 	}
 
@@ -325,18 +421,13 @@ class PunchCardDeck extends PunchCard
 					Thread.sleep(150);
 				} catch (Exception ee) {}
 			}
-			// Animate the passing of the card to the left...
-			_tranX = _tranY = 0;
-			_animate = true;
-			int tEnd = -_image.getIconWidth();
-			for (; _tranX > tEnd; _tranX -= 10) {
-				repaint();
-				try {
-					Thread.sleep(5);
-				} catch (Exception ee) {}
+			if (drum) {
+				// saving current card, back into hopper...
+				cardOutUp();
+			} else {
+				// Animate the passing of the card to the left...
+				cardOutLeft();
 			}
-			_tranX = 0;
-			_animate = false;
 		}
 		if (_currIsProg) {
 			setProg(false);
@@ -349,18 +440,12 @@ class PunchCardDeck extends PunchCard
 			newCard();	// does repaint
 		}
 		if (!_noCard) {
-			_cursor = 0;
-			_tranY = -_image.getIconHeight();
-			_animate = true;
-			for (; _tranY < 0; _tranY += 10) {
-				repaint();
-				try {
-					Thread.sleep(5);
-				} catch (Exception ee) {}
+			if (_currIsProg) {
+				cardInRight();
+			} else {
+				cardInDown();
 			}
 			setCursor(1);
-			_tranY = 0;
-			_animate = false;
 			repaint();
 		}
 	}
@@ -480,6 +565,10 @@ class PunchCardDeck extends PunchCard
 				repaint();
 				continue;
 			}
+			if (c == '\030') {	// ^X
+				shred();
+				continue;
+			}
 			if (c == '\n') {
 				finishCard(false, false, false);
 				_keyQue.add(0x2000);
@@ -559,6 +648,9 @@ class PunchCardDeck extends PunchCard
 				_outDeck.close();
 			} catch (Exception ee) {}
 			_outDeck = null;
+		}
+		if (file == null) {
+			return;
 		}
 		try {
 			_outDeck = new FileOutputStream(file);
@@ -655,6 +747,8 @@ class PunchCardDeck extends PunchCard
 		if (m.getMnemonic() == KeyEvent.VK_O) {
 			setupFile(pickFile("Set Output Card Deck",
 					"pcd", "Punch Card Deck", _cwd));
+		} else if (m.getMnemonic() == KeyEvent.VK_D) {
+			setupFile(null);
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			inputFile(pickFile("Set Input Card Desk",
 					"pcd", "Punch Card Deck", _cwd));
