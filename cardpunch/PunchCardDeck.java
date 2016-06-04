@@ -2,6 +2,7 @@
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.geom.AffineTransform;
 import java.io.*;
 import java.awt.event.*;
@@ -38,10 +39,14 @@ class PunchCardDeck extends PunchCard
 	boolean _saveImage;
 	boolean _endOfCard;
 
+	JCheckBox _interp_cb;
 	JCheckBox _autoSD_cb;
 	JCheckBox _progSel_cb;
 	JCheckBox _autoFeed_cb;
 	JCheckBox _print_cb;
+	JCheckBox _lzprint_cb;
+	JButton _clear_bn;
+
 	JCheckBox _prog_cb;
 	JLabel _col_lb;
 
@@ -118,6 +123,10 @@ class PunchCardDeck extends PunchCard
 		_col_lb.setBackground(Color.white);
 		_col_lb.setOpaque(true);
 		_col_lb.setFocusable(false);
+		_col_lb.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+
+		_interp_cb = new JCheckBox("Interpret (Punch)");
+		_interp_cb.setFocusable(false);
 		_autoSD_cb = new JCheckBox("Auto SKIP/DUP");
 		_autoSD_cb.setFocusable(false);
 		_progSel_cb = new JCheckBox("Prog 2 (1)");
@@ -127,18 +136,40 @@ class PunchCardDeck extends PunchCard
 		_print_cb = new JCheckBox("Print");
 		_print_cb.setFocusable(false);
 		_print_cb.setSelected(true);
+		_lzprint_cb = new JCheckBox("LZ Print");
+		_lzprint_cb.setFocusable(false);
 		_prog_cb = new JCheckBox("Prog");
 		_prog_cb.setFocusable(false);
+		_clear_bn = new JButton("Clear");
+		_clear_bn.addActionListener(this);
+		_clear_bn.setFocusable(false);
+
 		JPanel pn = new JPanel();
-		pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 30));
+		pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 35));
 		pn.add(_col_lb);
+		pn.add(_prog_cb);
+		JPanel spc = new JPanel();
+		spc.setPreferredSize(new Dimension(35, 20));
+		pn.add(spc);
+		if (!opts.ibm026) {
+			pn.add(_interp_cb);
+		}
 		pn.add(_autoSD_cb);
 		if (!opts.ibm026) {
+			spc = new JPanel();
+			spc.setPreferredSize(new Dimension(35, 20));
+			pn.add(spc);
 			pn.add(_progSel_cb);
 		}
 		pn.add(_autoFeed_cb);
 		pn.add(_print_cb);
-		pn.add(_prog_cb);
+		if (!opts.ibm026) {
+			pn.add(_lzprint_cb);
+			spc = new JPanel();
+			spc.setPreferredSize(new Dimension(35, 20));
+			pn.add(spc);
+			pn.add(_clear_bn);
+		}
 		GridBagLayout gridbag = new GridBagLayout();
 		frame.setLayout(gridbag);
 		GridBagConstraints gc = new GridBagConstraints();
@@ -254,7 +285,7 @@ class PunchCardDeck extends PunchCard
 		repaint();
 	}
 
-	private void finishCard(boolean auto, boolean drum) {
+	private void finishCard(boolean auto, boolean drum, boolean noFeed) {
 		if (!_currIsProg && !_noCard) {
 			if (_autoSD_cb.isSelected()) {
 				// Must scan rest of program card for auto-dup fields.
@@ -311,6 +342,9 @@ class PunchCardDeck extends PunchCard
 			setProg(false);
 		} else if (drum) {
 			setProg(true);
+		} else if (noFeed) {
+			_noCard = true;
+			repaint();
 		} else {
 			newCard();	// does repaint
 		}
@@ -333,10 +367,14 @@ class PunchCardDeck extends PunchCard
 
 	private void interpret() {
 		int x;
-		for (x = 0; x < _curr.length; x += 2) {
-			_curr[x + 1] |= 0x10;
+		while (_cursor <= 80) {
+			// TODO: handle program card...
+			punch(0x1000, false);
+			repaint();
+			try {
+				Thread.sleep(5);
+			} catch (Exception ee) {}
 		}
-		repaint();
 	}
 
 	private void repair() {
@@ -351,6 +389,7 @@ class PunchCardDeck extends PunchCard
 			return;
 		}
 		if (p != 0) {
+			p &= 0x0fff;
 			// this corrupts 'p'...
 			if (_print_cb.isSelected()) {
 				p |= 0x1000;
@@ -379,6 +418,21 @@ class PunchCardDeck extends PunchCard
 		repaint();
 	}
 
+	public void newCheck() {
+		if (_noCard) {
+			return;
+		}
+		if (_interp_cb.isSelected()) {
+			interpret();
+			// We know we are at end of card now...
+			if (_autoFeed_cb.isSelected()) {
+				finishCard(true, false, false);
+				_keyQue.add(0x2000);
+			}
+			return;
+		}
+	}
+
 	// Must not tie-up the Event Dispatch Thread... queue-up key and return...
 	public void keyTyped(KeyEvent e) {
 		boolean multi = ((e.getModifiers() & InputEvent.ALT_MASK) != 0);
@@ -398,6 +452,18 @@ class PunchCardDeck extends PunchCard
 			} catch (Exception ee) {
 				break;
 			}
+			if (c == 0x3000) {
+				finishCard(true, false, true);
+				// We never feed a new card here, so no need
+				// to check for any automated tasks.
+				continue;
+			}
+			if (c == 0x2000) {
+				// starting new card, check for automated tasks
+				// (includes interpret).
+				newCheck();
+				continue;
+			}
 			boolean multi = ((c & 0x1000) != 0);
 			c &= 0x7f;
 			int p = 0;
@@ -411,11 +477,12 @@ class PunchCardDeck extends PunchCard
 				continue;
 			}
 			if (c == '\n') {
-				finishCard(false, false);
+				finishCard(false, false, false);
+				_keyQue.add(0x2000);
 				continue;
 			}
 			if (c == '\001') {	// ^A
-				finishCard(false, !_currIsProg);
+				finishCard(false, !_currIsProg, true);
 				continue;
 			}
 			// From here on, we must have a valid _cursor...
@@ -425,7 +492,8 @@ class PunchCardDeck extends PunchCard
 			if (c == '\t') {
 				skipStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
-					finishCard(true, false);
+					finishCard(true, false, false);
+					_keyQue.add(0x2000);
 				}
 				continue;
 			}
@@ -443,7 +511,8 @@ class PunchCardDeck extends PunchCard
 			if (c == '\004') {	// DUP
 				dupStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
-					finishCard(true, false);
+					finishCard(true, false, false);
+					_keyQue.add(0x2000);
 				}
 				continue;
 			}
@@ -458,7 +527,8 @@ class PunchCardDeck extends PunchCard
 			punch(p, multi);
 			repaint();
 			if (_endOfCard && _autoFeed_cb.isSelected()) {
-				finishCard(true, false);
+				finishCard(true, false, false);
+				_keyQue.add(0x2000);
 			}
 		}
 	}
@@ -567,7 +637,14 @@ class PunchCardDeck extends PunchCard
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		if (!(e.getSource() instanceof JMenuItem)) {
+		if (e.getSource() instanceof JButton) {
+			JButton butt = (JButton)e.getSource();
+			if (!butt.equals(_clear_bn)) {
+				return;
+			}
+			_keyQue.add(0x3000);
+			return;
+		} else if (!(e.getSource() instanceof JMenuItem)) {
 			return;
 		}
 		JMenuItem m = (JMenuItem)e.getSource();

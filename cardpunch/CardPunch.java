@@ -10,7 +10,6 @@ public class CardPunch
 {
 	public static void main(String[] args) {
 
-		JFrame frame = new JFrame("Honeywell Card Punch");
 
 		PunchCardDeck card;
 		CardPunchOptions opts = new CardPunchOptions();
@@ -30,6 +29,17 @@ public class CardPunch
 		if (!opts.images && x < args.length) {
 			opts.output = args[x];
 		}
+		String s;
+		if (opts.ibm026) {
+			s = "IBM 026";
+			if (opts.fortran) {
+				s += "-H";
+			}
+		} else {
+			s = "IBM 029";
+		}
+
+		JFrame frame = new JFrame(s + " Card Punch");
 		card = new PunchCardDeck(frame, opts);
 
 		JMenuBar mb = new JMenuBar();
