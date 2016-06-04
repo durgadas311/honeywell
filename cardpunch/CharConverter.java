@@ -389,11 +389,11 @@ class CharConverter {
 
 	// Converts Hollerith-based punch code to compact code (NOT binary punch!).
 	// Returns byte "0yxznnnn" where 'y' is zone 12, 'x' is zone 11,
-	// 'z' is zone zero, 'nnnn' = 1-9 is exactly one punch 1-9,
+	// 'z' is zone zero, 'nnnn' = 1-9 if exactly one punch 1-9,
 	// 'nnnn' = 10-15 for punch [8][2-7], 'nnnn' = 0 if none (zone only).
 	// Returns 1xxxxxxx for invalid punch codes.
 	public byte punToCode(int pun) {
-		// some HW punch codes have 2 zone punches (12,0 and 11,0).
+		// some HW punch codes have 2 zone punches ([12][0] and [11][0]).
 		byte b = (byte)((pun & 0x0e00) >> 5); // -yxz----
 		int p = (pun & 0x01ff);
 		if (p == 0) { // zone-only
@@ -404,7 +404,7 @@ class CharConverter {
 			b |= (byte)(9 - n);	// 1-9 for punches 1-9
 			return b;
 		}
-		if ((p & 0x0003) == 0x0002) { // [8]+
+		if ((p & 0x0103) == 0x0002) { // [8]+ but no [1] or [9]
 			p &= ~0x0002;
 			if ((p & (p - 1)) == 0) { // only one other punch... valid
 				int n = Integer.numberOfTrailingZeros(p);
