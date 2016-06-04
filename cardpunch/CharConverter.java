@@ -11,7 +11,7 @@ class CharConverter {
 	private byte[] hw2lp;
 	private byte[] bb = new byte[1];
 
-	private void setup_xlate(boolean char48) {
+	private void setup_xlate(CardPunchOptions opts) {
 		xlate_pun = new byte[4096];
 		Arrays.fill(xlate_pun, (byte)0);
 		xlate_pun[0x000] = ' ';
@@ -88,9 +88,10 @@ class CharConverter {
 		xlate_pun[0x212] = '_';
 		xlate_pun[0x20a] = '>';
 		xlate_pun[0x206] = '?';
-		if (char48) {
+		if (opts.ibm026) {
 			xlate_pun[0x822] = '\004'; // op-loz
 			xlate_pun[0x882] = 0;
+			xlate_pun[0x812] = 0;
 			xlate_pun[0x806] = 0;
 			xlate_pun[0x80a] = 0;
 			xlate_pun[0x482] = 0;
@@ -104,6 +105,13 @@ class CharConverter {
 			xlate_pun[0x012] = 0;
 			xlate_pun[0x00a] = 0;
 			xlate_pun[0x006] = 0;
+			if (opts.fortran) {
+				xlate_pun[0x042] = '=';
+				xlate_pun[0x022] = '\'';
+				xlate_pun[0x222] = '(';
+				xlate_pun[0x822] = ')';
+				xlate_pun[0x800] = '+';
+			}
 		}
 
 		spcl_pun = new String[10];
@@ -192,6 +200,37 @@ class CharConverter {
 		xlate_char['_'] = (short)0x212;
 		xlate_char['>'] = (short)0x20a;
 		xlate_char['?'] = (short)0x206;
+		if (opts.ibm026) {
+			xlate_char['<'] = (short)0x1000;
+			xlate_char['\001'] = (short)0x1000;
+			xlate_char['|'] = (short)0x1000;
+			xlate_char['!'] = (short)0x1000;
+			xlate_char[';'] = (short)0x1000;
+			xlate_char['\002'] = (short)0x1000;	// broken bar
+			xlate_char['_'] = (short)0x1000;
+			xlate_char['>'] = (short)0x1000;
+			xlate_char['?'] = (short)0x1000;
+			xlate_char[':'] = (short)0x1000;
+			xlate_char['"'] = (short)0x1000;
+			if (opts.fortran) {
+				xlate_char['&'] = (short)0x1000;
+				xlate_char['+'] = (short)0x800;
+				xlate_char[')'] = (short)0x822;
+				xlate_char['%'] = (short)0x1000;
+				xlate_char['('] = (short)0x222;
+				xlate_char['#'] = (short)0x1000;
+				xlate_char['='] = (short)0x042;
+				xlate_char['@'] = (short)0x1000;
+				xlate_char['\''] = (short)0x022;
+			} else {
+				xlate_char['('] = (short)0x1000;
+				xlate_char[')'] = (short)0x1000;
+				xlate_char['+'] = (short)0x1000;
+				xlate_char['^'] = (short)0x822;
+				xlate_char['\''] = (short)0x1000;
+				xlate_char['='] = (short)0x1000;
+			}
+		}
 
 		xlate_hw = new byte[128];
 		Arrays.fill(xlate_hw, (byte)0200);
@@ -341,8 +380,8 @@ class CharConverter {
 		hw2lp[077] = '\001';	// cent
 	}
 
-	public CharConverter(boolean char48) {
-		setup_xlate(char48);
+	public CharConverter(CardPunchOptions opts) {
+		setup_xlate(opts);
 	}
 
 	public String punToAscii(int code) {

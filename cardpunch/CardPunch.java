@@ -23,6 +23,8 @@ public class CardPunch
 				opts.images = true;
 			} else if (args[x].equals("-r")) {
 				opts.ibm026 = true;
+			} else if (args[x].equals("-F")) {
+				opts.fortran = true;
 			}
 		}
 		if (!opts.images && x < args.length) {

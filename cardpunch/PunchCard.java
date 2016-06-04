@@ -108,12 +108,16 @@ class PunchCard extends JLabel
 		super();
 		_animate = false;
 		_cursor = 1;
-		_cvt = new CharConverter(opts.ibm026);
+		_cvt = new CharConverter(opts);
 		_noCard = true;
 
 		String fn = "IBM029.ttf";
 		if (opts.ibm026) {
-			fn = "IBM026.ttf";
+			if (opts.fortran) {
+				fn = "IBM026f.ttf";
+			} else {
+				fn = "IBM026.ttf";
+			}
 		}
 		java.io.InputStream ttf = this.getClass().getResourceAsStream(fn);
 		if (ttf != null) {

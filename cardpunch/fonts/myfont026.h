@@ -137,7 +137,7 @@ unsigned char fontTable[0x1000] = {
 	0b11111,
 	0b10001,
 	0b10001,
-#ifdef ALT026
+#ifdef FORTRAN
 	0x2b,	//  3,2	'+'
 	0b00100,
 	0b00100,
@@ -260,7 +260,7 @@ unsigned char fontTable[0x1000] = {
 	0b01100,
 	0b00100,
 	0b01000,
-#ifdef ALT026
+#ifdef FORTRAN
 	0x28,	//  5,4	'('
 	0b00010,
 	0b00100,
@@ -351,7 +351,7 @@ unsigned char fontTable[0x1000] = {
 	0b00000,
 	0b01100,
 	0b01100,
-#ifdef ALT026
+#ifdef FORTRAN
 	0x29,	//  5,6	')'
 	0b01000,
 	0b00100,
@@ -394,7 +394,7 @@ unsigned char fontTable[0x1000] = {
 	0b10001,
 	0b10001,
 	0b01110,
-#ifdef ALT026
+#ifdef FORTRAN
 	0x3d,	//  4,7	'='
 	0b00000,
 	0b00000,
