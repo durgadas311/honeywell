@@ -20,8 +20,10 @@ public class HW2000
 	double[] AC;
 
 	int op_flags;
+	int op_xflags;
 	Instruction op_exec;
 	byte[] op_xtra;
+
 	int iaar;	// needed by branch instructions
 	int am_mask;	// populated by CAM instruction
 	int am_shift;	// populated by CAM instruction
@@ -44,6 +46,9 @@ public class HW2000
 	private boolean hasV() { return ((op_flags & InstrDecode.OP_HAS_V) != 0); }
 	private boolean inval() { return ((op_flags & InstrDecode.OP_INVAL) != 0); }
 	private boolean priv() { return ((op_flags & InstrDecode.OP_PRIV) != 0); }
+	private boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
+	private boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
+	private boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
 
 	private void setOp(byte op) {
 		op_exec = null;
@@ -57,24 +62,24 @@ public class HW2000
 		op_exec = idc.getExec(op);
 	}
 
-	private int incrAAR(int inc) {
+	public void incrAAR(int inc) {
 		int a = ((AAR & am_mask) + inc) & am_mask;
 		AAR = (AAR & ~am_mask) | a;
 	}
 
-	private int incrBAR(int inc) {
+	public void incrBAR(int inc) {
 		int a = (BAR + inc) & am_mask;
 		BAR = (BAR & ~am_mask) | a;
 	}
 
-	private byte readMem(int adr) {
+	public byte readMem(int adr) {
 		if (adr < adr_min || adr >= adr_max) {
 			throw new RuntimeException("Address violation");
 		}
 		return mem[adr];
 	}
 
-	private void writeMem(int adr, byte val) {
+	public void writeMem(int adr, byte val) {
 		if (adr < adr_min || adr >= adr_max) {
 			throw new RuntimeException("Address violation");
 		}
@@ -119,23 +124,42 @@ public class HW2000
 		if (!hasA() || limit - SR < am_na) {
 			return;
 		}
+		op_xflags |= InstrDecode.OP_HAS_A;
 		iaar = AAR;
 		AAR = fetchAddr(SR);
 		SR += am_na;
 	}
 
+	public void setV(byte v) {
+		CTL[0] = (CTL[0] & 0300) | (v & 0077);
+	}
+
+	public byte getV() {
+		return (CTL[0] & 0077);
+	}
+
 	public void fetchBAR(int limit) {
-		if (!hasB() || limit - SR < am_na) {
+		if (!hadA() || !hasB() || limit - SR < am_na) {
 			if (dupA()) {
 				BAR = AAR;
 			}
 			return;
 		}
+		op_xflags |= InstrDecode.OP_HAS_B;
 		BAR = fetchAddr(SR);
 		SR += am_na;
 	}
 
 	public void fetch() {
+		// It appears to be common practice to use CW/SW on instructions
+		// to turn off/on various pieces of code. So, this routine must
+		// allow for "garbage" after an instruction - scan to next word mark
+		// and ignore extra bytes. It appears, in most cases, the instruction
+		// preceeding will be NOP to avoid confusion about operands.
+		// In any case, it is programmer's responsibility to ensure
+		// there is no confusion when the instruction is turned off.
+
+		// TODO: how to avoid including garbage in variant array.
 		int isr = (SR + 1) & 0x1ffff;
 		while (isr != 0 && (mem[isr] & M_WM) == 0) {
 			isr = (isr + 1) & 0x1ffff;
@@ -149,7 +173,9 @@ public class HW2000
 		setOp(readMem(SR++));	// might throw illegal op-code
 		fetchAAR(isr);	// might throw exceptions
 		fetchBAR(isr);	// might throw exceptions
-		if (hasV()) {
+		if (isr - SR > 0) {
+			// just get all extra characters, let implementations
+			// sort it out...
 			op_xtra = new byte[isr - SR];
 			for (int x = 0; x < op_xtra.length; ++x) {
 				op_xtra[x] = readMem(SR + x);
