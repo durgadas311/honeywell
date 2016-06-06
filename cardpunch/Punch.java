@@ -29,7 +29,10 @@ class Punch
 	}
 
 	public Punch(String out) {
-		_cvt = new CharConverter();
+		CardPunchOptions opts = new CardPunchOptions();
+		opts.ibm026 = true;
+		opts.fortran = true;
+		_cvt = new CharConverter(opts);
 		bb = new byte[1];
 		_code = new byte[2*80];
 		setupFile(new File(out));
