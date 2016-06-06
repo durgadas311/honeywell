@@ -1,0 +1,5 @@
+#!/bin/bash
+exit 1
+
+pdftotext -layout -fixed 6 MACHIN.PDF
+tr -d '\014' <MACHIN.txt | colrm 1 33
