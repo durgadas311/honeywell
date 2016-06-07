@@ -8,12 +8,16 @@ public class HW2000
 
 	byte[] mem;
 
+	int[] CLC;
+	int[] SLC;
+	int ATR;
+	int CSR;
+	int EIR;
 	int AAR;
 	int BAR;
-	int SR;
 	int IIR;
-	int EIR;
-	int CSR;
+	int SR;
+
 	byte IBR;
 	byte BRR;
 	HW2000CCR CTL;
@@ -24,6 +28,7 @@ public class HW2000
 	Instruction op_exec;
 	byte[] op_xtra;
 
+	private int fsr;
 	int iaar;	// needed by branch instructions
 	int am_mask;	// populated by CAM instruction
 	int am_shift;	// populated by CAM instruction
@@ -38,6 +43,8 @@ public class HW2000
 		AC = new double[4];
 		mem = new byte[524288]; // TODO: mmap file
 		idc = new InstrDecode();
+		CLC = new int[16];
+		SLC = new int[16];
 	}
 
 	private boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
@@ -62,6 +69,38 @@ public class HW2000
 		op_exec = idc.getExec(op);
 	}
 
+	// 'am' contains adr mode bits, in final position.
+	// Typically called with values AIR_AM_2C, AIR_AM_3C, or AIR_AM_4C
+	public void setAM(byte am) {
+		CTL.setAM(am);
+		switch(am & HW2000CCR.AIR_AM) {
+		case HW2000CCR.AIR_AM_2C:
+			am_mask = 0x0fff;
+			am_shift = 12;
+			am_na = 2;
+			break;
+		case HW2000CCR.AIR_AM_4C:
+			am_mask = 0x07ffff;
+			am_shift = 19;
+			am_na = 4;
+			break;
+		default:
+			am_mask = 0x07fff;
+			am_shift = 15;
+			am_na = 3;
+			break;
+		}
+	}
+
+	public void storeToAAR(int v) {
+		int val = (v & am_mask);
+		for (int x = 0; x < am_na; ++x) {
+			writeMem(AAR, val & 077);
+			incrAAR(-1);
+			val >>= 6;
+		}
+	}
+
 	public void incrAAR(int inc) {
 		int a = ((AAR & am_mask) + inc) & am_mask;
 		AAR = (AAR & ~am_mask) | a;
@@ -83,6 +122,7 @@ public class HW2000
 		if (adr < adr_min || adr >= adr_max) {
 			throw new RuntimeException("Address violation");
 		}
+		// TODO: preserve punctuation?
 		mem[adr] = val;
 	}
 
@@ -126,16 +166,14 @@ public class HW2000
 		}
 		op_xflags |= InstrDecode.OP_HAS_A;
 		iaar = AAR;
-		AAR = fetchAddr(SR);
-		SR += am_na;
+		AAR = fetchAddr(fsr);
+		fsr += am_na;
 	}
 
-	public void setV(byte v) {
-		CTL[0] = (CTL[0] & 0300) | (v & 0077);
-	}
-
-	public byte getV() {
-		return (CTL[0] & 0077);
+	public void restoreAAR() {
+		if (iaar >= 0) {
+			AAR = iaar;
+		}
 	}
 
 	public void fetchBAR(int limit) {
@@ -146,11 +184,37 @@ public class HW2000
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_B;
-		BAR = fetchAddr(SR);
-		SR += am_na;
+		BAR = fetchAddr(fsr);
+		fsr += am_na;
+	}
+
+	private void fetchXtra(int limit) {
+		if (limit - fsr <= 0) {
+			return;
+		}
+		op_xtra = new byte[limit - fsr];
+		for (int x = 0; x < op_xtra.length; ++x) {
+			op_xtra[x] = readMem(fsr + x);
+		}
+	}
+
+	private void checkIntr() {
+		if (CTL.isEI()) {
+			// AIR already saved...
+			setAM(HW2000CCR.AIR_AM_3C);
+			int t = EIR;
+			EIR = SR;
+			SR = t;
+		} else if (CTL.isII()) {
+			int t = IIR;
+			IIR = SR;
+			SR = t;
+		}
 	}
 
 	public void fetch() {
+		checkIntr(); // might get diverted here...
+
 		// It appears to be common practice to use CW/SW on instructions
 		// to turn off/on various pieces of code. So, this routine must
 		// allow for "garbage" after an instruction - scan to next word mark
@@ -159,28 +223,29 @@ public class HW2000
 		// In any case, it is programmer's responsibility to ensure
 		// there is no confusion when the instruction is turned off.
 
+		fsr = SR;
 		// TODO: how to avoid including garbage in variant array.
-		int isr = (SR + 1) & 0x1ffff;
+		int isr = (fsr + 1) & 0x1ffff;
 		while (isr != 0 && (mem[isr] & M_WM) == 0) {
 			isr = (isr + 1) & 0x1ffff;
 		}
-		if (isr == 0) {
-			// ran off end of memory...
-			throw new RuntimeException("Ran off end of memory");
-		}
 		iaar = -1;
 		op_xtra = null;
-		setOp(readMem(SR++));	// might throw illegal op-code
+		// Caller handles exceptions, leave SR at start of instruction
+		// (if during fetch/extract). Exceptions during execute
+		// terminate instruction and leave SR at next.
+		if (isr == 0) {
+			// ran off end of memory... need to halt...
+			halt = true;
+			throw new RuntimeException("ran off end of memory");
+		}
+		setOp(readMem(fsr++));	// might throw illegal op-code
 		fetchAAR(isr);	// might throw exceptions
 		fetchBAR(isr);	// might throw exceptions
-		if (isr - SR > 0) {
-			// just get all extra characters, let implementations
-			// sort it out...
-			op_xtra = new byte[isr - SR];
-			for (int x = 0; x < op_xtra.length; ++x) {
-				op_xtra[x] = readMem(SR + x);
-			}
-		}
+		// just get all extra characters, let implementations
+		// sort it out...
+		fetchXtra(isr);
+		CTL.clrPROCEED();
 		SR = isr;
 	}
 
@@ -189,9 +254,14 @@ public class HW2000
 	}
 
 	public void run() {
-		while (!isHalted()) {
-			fetch();
-			execute();
+		while (!halt) {
+			try {
+				fetch();
+				execute();
+			} catch (Exception ee) {
+				// Loop around, either we're halted or there
+				// is a pending interrupt.
+			}
 		}
 	}
 }

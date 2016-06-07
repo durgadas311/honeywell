@@ -38,6 +38,8 @@ public class I_B_BCT implements Instruction {
 		if (taken) {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
+		} else {
+			sys.restoreAAR();
 		}
 	}
 }
