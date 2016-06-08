@@ -95,7 +95,7 @@ public class HW2000
 	public void storeToAAR(int v) {
 		int val = (v & am_mask);
 		for (int x = 0; x < am_na; ++x) {
-			writeMem(AAR, val & 077);
+			writeChar(AAR, val & 077);
 			incrAAR(-1);
 			val >>= 6;
 		}
@@ -118,12 +118,22 @@ public class HW2000
 		return mem[adr];
 	}
 
+	public byte readChar(int adr) {
+		return readMem(adr) & 077;
+	}
+
 	public void writeMem(int adr, byte val) {
 		if (adr < adr_min || adr >= adr_max) {
 			throw new RuntimeException("Address violation");
 		}
-		// TODO: preserve punctuation?
 		mem[adr] = val;
+	}
+
+	public void writeChar(int adr, byte val) {
+		if (adr < adr_min || adr >= adr_max) {
+			throw new RuntimeException("Address violation");
+		}
+		mem[adr] = (mem[adr] & 0300) | (val & 077);
 	}
 
 	// 
