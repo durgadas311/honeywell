@@ -1,4 +1,6 @@
 public class I_PCB implements Instruction {
+	// Peripheral Control and Branch
+
 	// Format: PCB/A,C1,C2,C3,...
 	// Format: PCB/A,C1,CE,C2,C3,...
 	//

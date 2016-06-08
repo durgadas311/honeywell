@@ -124,6 +124,60 @@ public class InstrDecode {
 		// FPU
 		i_flags[OP_FMA] = OP_HAS_A | OP_HAS_V;
 		i_flags[OP_FAA] = OP_HAS_V;
+
+		// ---------------------------------------------------
+		i_exec[OP_A] = new I_A();
+		i_exec[OP_S] = new I_S();
+		i_exec[OP_BA] = new I_BA();
+		i_exec[OP_BS] = new I_BS();
+		i_exec[OP_ZA] = new I_ZA();
+		i_exec[OP_ZS] = new I_ZS();
+		i_exec[OP_M] = new I_M();
+		i_exec[OP_D] = new I_D();
+
+		i_exec[OP_EXT] = new I_EXT();
+		i_exec[OP_HA] = new I_HA();
+		i_exec[OP_SST] = new I_SST();
+		i_exec[OP_C] = new I_C();
+
+		i_exec[OP_B] = new I_B_BCT(); // B and BCT
+		i_exec[OP_BCC] = new I_BCC();
+		i_exec[OP_BCE] = new I_BCE();
+		i_exec[OP_BBE] = new I_BBE();
+
+		i_exec[OP_SW] = new I_SW();
+		i_exec[OP_SI] = new I_SI();
+		i_exec[OP_CW] = new I_CW();
+		i_exec[OP_CI] = new I_CI();
+		i_exec[OP_H] = new I_H();
+		i_exec[OP_NOP] = new I_NOP();
+		i_exec[OP_MCW] = new I_MCW();
+		i_exec[OP_LCA] = new I_LCA();
+		i_exec[OP_SCR] = new I_SCR();
+		i_exec[OP_LCR] = new I_LCR();
+		i_exec[OP_CAM] = new I_CAM();
+		i_exec[OP_CSM] = new I_CSM();
+		i_exec[OP_EXM] = new I_EXM();
+		i_exec[OP_MAT] = new I_MAT();
+		i_exec[OP_MIT] = new I_MIT();
+		i_exec[OP_LIB] = new I_LIB();
+		i_exec[OP_SIB] = new I_SIB();
+		i_exec[OP_TLU] = new I_TLU();
+
+		i_exec[OP_SVI] = new I_SVI();
+		i_exec[OP_RVI] = new I_RVI();
+		i_exec[OP_MC] = new I_MC();
+		i_exec[OP_RNM] = new I_RNM();
+
+		i_exec[OP_MCE] = new I_MCE();
+
+		i_exec[OP_PDT] = new I_PDT();
+		i_exec[OP_PCB] = new I_PCB();
+
+		i_exec[OP_IIC] = new I_IIC();
+		// FPU
+		i_exec[OP_FMA] = new I_FMA();
+		i_exec[OP_FAA] = new I_FAA();
 	}
 
 	public int getFlags(byte op) {

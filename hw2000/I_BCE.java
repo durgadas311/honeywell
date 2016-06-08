@@ -1,0 +1,19 @@
+public class I_BCE implements Instruction {
+	// Branch on Character Equal
+	public void execute(HW2000 sys) {
+		if (sys.op_xtra.length > 0) {
+			sys.CTL.setV(sys.op_xtra[0]);
+		}
+		byte v = sys.CTL.getV();
+		byte b = sys.readChar(sys.BAR);
+		sys.incrBAR(-1);
+		if (sys.CTL.isS_MODE()) {
+			sys.CTL.setCompare((b < v), (b == v));
+		}
+		boolean taken = (b == v);
+		if (taken) {
+			sys.BAR = sys.SR;
+			sys.SR = sys.AAR;
+		}
+	}
+}

@@ -1,4 +1,5 @@
 public class I_CAM implements Instruction {
+	// Change Address Mode
 	public void execute(HW2000 sys) {
 		if (sys.op_xtra.length > 0) {
 			sys.CTL.setV(sys.op_xtra[0]);

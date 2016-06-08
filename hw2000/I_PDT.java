@@ -1,4 +1,6 @@
 public class I_PDT implements Instruction {
+	// Peripheral Data Transfer
+
 	// Format: PDT/A,C1,C2,C3,...
 	// Format: PDT/A,C1,CE,C2,C3,...
 	//

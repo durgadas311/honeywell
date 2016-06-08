@@ -118,6 +118,19 @@ public class HW2000CCR {
 		}
 	}
 
+	public void setCompare(boolean lt, boolean eq) {
+		if (lt || eq) {
+			ccr[AIR] |= AIR_LE;
+		} else {
+			ccr[AIR] &= ~AIR_LE;
+		}
+		if (eq) {
+			ccr[AIR] |= AIR_EQ;
+		} else {
+			ccr[AIR] &= ~AIR_EQ;
+		}
+	}
+
 	public void setEI(byte typ) {
 		eIntr = true;
 		ccr[EIR] |= typ;

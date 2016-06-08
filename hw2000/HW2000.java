@@ -101,14 +101,17 @@ public class HW2000
 		}
 	}
 
+	public int incrAdr(int adr, int inc) {
+		int a = (adr + inc) & am_mask;
+		return (adr & ~am_mask) | a;
+	}
+
 	public void incrAAR(int inc) {
-		int a = ((AAR & am_mask) + inc) & am_mask;
-		AAR = (AAR & ~am_mask) | a;
+		AAR = incrAdr(AAR, inc);
 	}
 
 	public void incrBAR(int inc) {
-		int a = (BAR + inc) & am_mask;
-		BAR = (BAR & ~am_mask) | a;
+		BAR = incrAdr(BAR, inc);
 	}
 
 	public byte readMem(int adr) {
