@@ -7,9 +7,9 @@ public class I_B_BCT implements Instruction {
 			taken = false;
 			if (sys.hadA()) {
 				// must have V then...
-				sys.setV(sys.op_xtra[0]);
+				sys.CTL.setV(sys.op_xtra[0]);
 			}
-			byte v = sys.getV();
+			byte v = sys.CTL.getV();
 			if (v & 040) != 0) {
 				// Arith/logic conditions -
 				// Note: AIR bits are "A<=B" and "A=B"

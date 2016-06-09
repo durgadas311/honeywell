@@ -67,6 +67,7 @@ public class HW2000CCR {
 	private byte[] clr;
 	private boolean eIntr;
 	private boolean iIntr;
+	private byte varLIB;
 
 	public HW2000CCR() {
 		ccr = new byte[7];
@@ -80,6 +81,7 @@ public class HW2000CCR {
 		clr[PIR] = PIR_VLEAR;
 		clr[EIR] = EIR_VLEAR;
 		clr[IIR] = IIR_VLEAR;
+		varLIB = 0;
 		eIntr = false;
 		iIntr = false;
 	}
@@ -93,6 +95,7 @@ public class HW2000CCR {
 	public boolean isTIMOUT() { return ((ccr[PIR] & PIR_TIMOUT) != 0); }
 	public boolean isPROCEED() { return ((ccr[PIR] & PIR_PROCEED) != 0); }
 	public boolean isRELOC() { return ((ccr[PIR] & PIR_RELOC) != 0); }
+	public boolean allowLCR() { return ((varLIB & 004) != 0); }
 
 	public void clrPROCEED() { ccr[PIR] &= ~PIR_PROCEED; }
 
@@ -101,6 +104,8 @@ public class HW2000CCR {
 	public void setAM(byte am) {
 		ccr[AIR] = (ccr[AIR] & ~AIR_AM) | (am & AIR_AM);
 	}
+
+	public void setLIB(byte var) { varLIB = var; }
 
 	public void setS_MODE(boolean sm) {
 		if (sm) {
@@ -129,6 +134,10 @@ public class HW2000CCR {
 		} else {
 			ccr[AIR] &= ~AIR_EQ;
 		}
+	}
+
+	public boolean inStdMode() {
+		return ((ccr[EIR] & (EIR_EI | EIR_II)) == 0);
 	}
 
 	public void setEI(byte typ) {

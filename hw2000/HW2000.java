@@ -94,11 +94,23 @@ public class HW2000
 
 	public void storeToAAR(int v) {
 		int val = (v & am_mask);
+		int aar = AAR;
 		for (int x = 0; x < am_na; ++x) {
-			writeChar(AAR, val & 077);
-			incrAAR(-1);
+			writeChar(aar, val & 077);
+			aar = incrAdr(aar, -1);
 			val >>= 6;
 		}
+	}
+
+	public int loadFromAAR() {
+		int val = 0;
+		int aar = incrAdr(AAR, -am_na);
+		for (int x = 0; x < am_na; ++x) {
+			aar = incrAdr(aar, 1);
+			val <<= 6;
+			val |= readChar(aar);
+		}
+		return (val & am_mask);
 	}
 
 	public int incrAdr(int adr, int inc) {
