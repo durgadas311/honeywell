@@ -145,6 +145,20 @@ public class HW2000CCR {
 		ccr[EIR] |= typ;
 	}
 
+	// Returns EIR_EI, EIR_II, or 0
+	public byte clearIntr() {
+		byte r = 0;
+		if ((ccr[EIR] & EIR_EI) != 0) {
+			ccr[EIR] &= ~EIR_EI;
+			ccr[AIR] = ccr[XIR];
+			r = EIR_EI;
+		} else if ((ccr[EIR] & EIR_II) != 0) {
+			ccr[EIR] &= ~EIR_II;
+			r = EIR_II;
+		}
+		return r;
+	}
+
 	public void setII(byte typ) {
 		iIntr = true;
 		ccr[IIR] |= typ;

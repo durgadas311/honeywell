@@ -6,6 +6,8 @@ public class HW2000
 	static final byte M_DIGIT = 0x0f;
 	static final byte M_CHAR = 0x3f;
 
+	public static final byte LOR = 007;
+
 	byte[] mem;
 
 	int[] CLC;
@@ -40,11 +42,13 @@ public class HW2000
 
 	public HW2000() {
 		CTL = new HW2000CCR();
-		AC = new double[4];
+		AC = new double[8];
 		mem = new byte[524288]; // TODO: mmap file
 		idc = new InstrDecode();
 		CLC = new int[16];
 		SLC = new int[16];
+		adr_min = 0;
+		adr_max = 0x80000;
 	}
 
 	private boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
@@ -152,19 +156,19 @@ public class HW2000
 	}
 
 	// 
-	private int fetchAddr(int ptr) {
+	private int fetchAddr(int ptr, int ref) {
 		int a = 0;
 		for (int n = am_na; n > 0; --n) {
-			a = (a << 6) | (readMem(ptr++) & M_CHAR);
+			a = (a << 6) | readChar(ptr++);
 		}
 		am = (a >> am_shift);
-		a &= am_mask;
+		a = (a & am_mask) | (ref & ~am_mask);
 		if (am == 0) {
 			return a;
 		}
 		if (am_na == 3 && am == 0x07 || am == 0x10) {
 			// Indirect...
-			return fetchAddr(a);
+			return fetchAddr(a, a);
 		}
 		// Indexed... determine which index register
 		ix = (((am & 0x0f) - 1) * 4);
@@ -179,7 +183,7 @@ public class HW2000
 		}
 		int ax = 0;
 		for (int n = 4; n > 0; --n) {
-			ax = (ax << 6) | (readMem(ix++) & M_CHAR);
+			ax = (ax << 6) | readChar(ix++);
 		}
 		a = (a + ax) & 0x7ffff;
 		return a;
@@ -191,7 +195,7 @@ public class HW2000
 		}
 		op_xflags |= InstrDecode.OP_HAS_A;
 		iaar = AAR;
-		AAR = fetchAddr(fsr);
+		AAR = fetchAddr(fsr, AAR);
 		fsr += am_na;
 	}
 
@@ -209,7 +213,7 @@ public class HW2000
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_B;
-		BAR = fetchAddr(fsr);
+		BAR = fetchAddr(fsr, BAR);
 		fsr += am_na;
 	}
 
@@ -234,6 +238,20 @@ public class HW2000
 			int t = IIR;
 			IIR = SR;
 			SR = t;
+		}
+	}
+
+	private void clearIntr() {
+		byte i = CTL.clearIntr();
+		int t;
+		if (i == HW2000CCR.EIR_EI) {
+			t = SR;
+			SR = EIR;
+			EIR = t;
+		} else if (i == HW2000CCR.EIR_II) {
+			t = SR;
+			SR = IIR;
+			IIR = t;
 		}
 	}
 
