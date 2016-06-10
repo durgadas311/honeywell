@@ -5,8 +5,8 @@ public class I_A implements Instruction {
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);
-		byte aw = (a & 0100);
-		byte bw = (b & 0100);
+		byte aw = (byte)(a & 0100);
+		byte bw = (byte)(b & 0100);
 		byte c = 0;
 		boolean negA = ((a & 0060) == 0040);
 		if (sub) {
@@ -16,7 +16,7 @@ public class I_A implements Instruction {
 		a &= 017;
 		b &= 017;
 		boolean trueAdd = (negA == negB);
-		byte s = (negB ? 040 : 000);
+		byte s = (byte)(negB ? 040 : 020);
 		byte cy = 0;
 		if (!trueAdd) {
 			cy = 1;
@@ -31,12 +31,14 @@ public class I_A implements Instruction {
 				b = 0;
 			}
 			if (!trueAdd) {
-				b = 9 - b;
+				b = (byte)(9 - b);
 			}
-			c = a + b + cy;
+			c = (byte)(a + b + cy);
 			if (c > 9) {
 				cy = 1;
 				c -= 10;
+			} else {
+				cy = 0;
 			}
 			z |= c;
 			sys.writeChar(sys.BAR, s | c);
@@ -51,28 +53,35 @@ public class I_A implements Instruction {
 			} else {
 				a = sys.readMem(sys.AAR);
 				sys.incrAAR(-1);
-				aw = (a & 0100);
+				aw = (byte)(a & 0100);
 				a &= 017;
 			}
 			b = sys.readMem(sys.BAR);
-			bw = (b & 0100);
+			bw = (byte)(b & 0100);
 			if (sys.CTL.isS_MODE()) {
 				s = (b & 060);
 			}
 			b &= 017;
 		}
 		if (!trueAdd && cy != 0) {
+			b = sys.readChar(bar);
+			b ^= 060;
+			sys.writeChar(bar, b);
+			cy = 0;
+		} else if (!trueAdd && cy == 0) {
 			b = sys.readMem(bar);
-			bw = (b & 0100);
+			bw = (byte)(b & 0100);
+			s = (byte)(b & 060);
 			b &= 017;
 			cy = 1;
-			s = (negB ? 000 : 040);
 			z = 0;
 			while (true) {
-				c = 9 - b + cy;
+				c = (byte)(9 - b + cy);
 				if (c > 9) {
 					cy = 1;
 					c -= 10;
+				} else {
+					cy = 0;
 				}
 				z |= c;
 				sys.writeChar(bar, s | c);
@@ -82,7 +91,7 @@ public class I_A implements Instruction {
 					break;
 				}
 				b = sys.readMem(bar);
-				bw = (b & 0100);
+				bw = (byte)(b & 0100);
 				if (!first && sys.CTL.isS_MODE()) {
 					s = (b & 060);
 				}
