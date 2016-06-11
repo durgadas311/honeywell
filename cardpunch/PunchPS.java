@@ -44,7 +44,7 @@ class PunchPS extends PunchCard implements Printable {
 	}
 
 	public PunchPS() {
-		super();
+		super(new CardPunchOptions());
 		_code = new byte[2*80];
 		_curr = _code;
 		_noCard = false;
