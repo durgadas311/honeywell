@@ -22,8 +22,10 @@ public class CardPunch
 				opts.images = true;
 			} else if (args[x].equals("-r")) {
 				opts.ibm026 = true;
-			} else if (args[x].equals("-F")) {
+			} else if (args[x].equals("-F") || args[x].equals("-H")) {
 				opts.fortran = true;
+			} else if (args[x].equals("-d")) {
+				opts.dots = true;
 			}
 		}
 		if (!opts.images && x < args.length) {
