@@ -15,7 +15,7 @@ public class I_M implements Instruction {
 	public static BigDecimal hwToNative(HW2000 sys, int lsd, int msd) {
 		char[] ch;
 		// TODO: worry about wrap-around?
-		ch = new char[msd - lsd + 1];
+		ch = new char[lsd - msd + 1];
 		int x = 0;
 		byte b = sys.readMem(lsd);
 		if ((b & 060) == 040) {
@@ -24,7 +24,7 @@ public class I_M implements Instruction {
 			ch[x++] = '+';
 		}
 		int a = msd;
-		while (a > lsd) {
+		while (a < lsd) {
 			a = sys.incrAdr(a, 1);
 			b = sys.readMem(a);
 			ch[x++] = (char)('0' + (b & 017));
@@ -49,7 +49,7 @@ public class I_M implements Instruction {
 		byte c;
 		byte z = 0;
 		// TODO: verify space for result?
-		while (y > x) {
+		while (y >= x) {
 			c = (byte)(num.charAt(y) & 017);
 			z |= c;
 			sys.writeChar(a, (byte)(s | c));

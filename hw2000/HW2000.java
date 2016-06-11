@@ -52,6 +52,7 @@ public class HW2000
 		adr_min = 0;
 		adr_max = 0x80000;
 		halt = false;
+		setAM((byte)000);
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
