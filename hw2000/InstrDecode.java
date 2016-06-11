@@ -165,6 +165,7 @@ public class InstrDecode {
 		i_exec[OP_LIB] = new I_LIB();
 		i_exec[OP_SIB] = new I_SIB();
 		i_exec[OP_TLU] = new I_TLU();
+		i_exec[OP_MOS] = new I_MOS();
 
 		i_exec[OP_SVI] = new I_SVI();
 		i_exec[OP_RVI] = new I_RVI();

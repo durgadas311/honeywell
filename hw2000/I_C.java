@@ -1,6 +1,9 @@
 public class I_C implements Instruction {
 	// Compare
-	public void execute(HW2000 sys) {
+
+	// compares AAR to BAR...
+	// returns true if BAR is shorter.
+	public static boolean compare(HW2000 sys, boolean enda) {
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);
@@ -12,7 +15,6 @@ public class I_C implements Instruction {
 		b &= 077;
 		boolean lt = false;
 		byte z = 0;
-		boolean aDone = false;
 		while (true) {
 			c = (byte)(a ^ b);
 			z |= c;	// will be 0 at end if B=A
@@ -23,8 +25,10 @@ public class I_C implements Instruction {
 			if (bw != 0) {
 				break;
 			}
-			aDone = (aDone || aw != 0);
-			if (aDone) {
+			if (aw != 0) {
+				if (enda) {
+					break;
+				}
 				a = 0;
 			} else {
 				a = sys.readMem(sys.AAR);
@@ -38,5 +42,10 @@ public class I_C implements Instruction {
 			b &= 077;
 		}
 		sys.CTL.setCompare(lt, (z == 0));
+		return (bw != 0 && aw == 0);
+	}
+
+	public void execute(HW2000 sys) {
+		I_C.compare(sys, false);
 	}
 }
