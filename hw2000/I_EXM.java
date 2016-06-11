@@ -1,5 +1,5 @@
 public class I_EXM implements Instruction {
-	// Load Characters to A-field word mark
+	// EXtended Move
 	public void execute(HW2000 sys) {
 		if (sys.hadB() && sys.op_xtra.length > 0) {
 			sys.CTL.setV(sys.op_xtra[0]);
