@@ -10,7 +10,7 @@ public class I_SST implements Instruction {
 		byte c = sys.CTL.getV();
 		a &= c;
 		b &= ~c;
-		c = a | b;
+		c = (byte)(a | b);
 		sys.writeChar(sys.BAR, c);
 		sys.incrBAR(-1);
 	}

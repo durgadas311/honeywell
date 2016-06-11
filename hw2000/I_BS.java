@@ -4,8 +4,8 @@ public class I_BS implements Instruction {
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);
-		byte aw = (a & 0100);
-		byte bw = (b & 0100);
+		byte aw = (byte)(a & 0100);
+		byte bw = (byte)(b & 0100);
 		byte c = 0;
 		a &= 077;
 		b &= 077;
@@ -13,8 +13,8 @@ public class I_BS implements Instruction {
 		boolean aDone = false;
 		byte z = 0;
 		while (true) {
-			c = (a ^ 077) + b + cy;
-			cy = (c >> 6);
+			c = (byte)((a ^ 077) + b + cy);
+			cy = (byte)(c >> 6);
 			c &= 077;
 			z |= c;
 			sys.writeChar(sys.BAR, c);
@@ -28,11 +28,11 @@ public class I_BS implements Instruction {
 			} else {
 				a = sys.readMem(sys.AAR);
 				sys.incrAAR(-1);
-				aw = (a & 0100);
+				aw = (byte)(a & 0100);
 				a &= 077;
 			}
 			b = sys.readMem(sys.BAR);
-			bw = (b & 0100);
+			bw = (byte)(b & 0100);
 			b &= 077;
 		}
 		sys.CTL.setZB(z == 0);

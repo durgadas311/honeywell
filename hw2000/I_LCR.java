@@ -41,7 +41,6 @@ public class I_LCR implements Instruction {
 			default:
 				// throw?
 				break;
-			}
 		}
 	}
 }

@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class InstrDecode {
 	public static final int OP_HAS_A = 0x0001;
 	public static final int OP_HAS_B = 0x0002;
@@ -86,7 +88,7 @@ public class InstrDecode {
 		i_flags[OP_SST] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_C] = OP_HAS_A | OP_HAS_B;
 
-		i_flags[OP_B] = OP_HAS_A | OP_HAS_V; // B and BCT
+		i_flags[OP_B] = OP_HAS_A | OP_HAS_V; // B, and BCT (conditionally priv)
 		i_flags[OP_BCC] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_BCE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_BBE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
@@ -100,7 +102,7 @@ public class InstrDecode {
 		i_flags[OP_MCW] = OP_HAS_A | OP_HAS_B;
 		i_flags[OP_LCA] = OP_HAS_A | OP_HAS_B;
 		i_flags[OP_SCR] = OP_HAS_A | OP_HAS_V;
-		i_flags[OP_LCR] = OP_HAS_A | OP_HAS_V | OP_PRIV;
+		i_flags[OP_LCR] = OP_HAS_A | OP_HAS_V; // conditionally privileged
 		i_flags[OP_CAM] = OP_HAS_V;
 		i_flags[OP_CSM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_EXM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;

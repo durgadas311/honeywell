@@ -34,7 +34,6 @@ public class I_SCR implements Instruction {
 			default:
 				// throw?
 				break;
-			}
 		}
 		sys.storeToAAR(reg);
 		sys.restoreAAR();

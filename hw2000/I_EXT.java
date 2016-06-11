@@ -4,13 +4,13 @@ public class I_EXT implements Instruction {
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);
-		byte aw = (a & 0100);
-		byte bw = (b & 0100);
+		byte aw = (byte)(a & 0100);
+		byte bw = (byte)(b & 0100);
 		byte c = 0;
 		a &= 077;
 		b &= 077;
 		while (true) {
-			c = a & b;
+			c = (byte)(a & b);
 			sys.writeChar(sys.BAR, c);
 			sys.incrBAR(-1);
 			if (bw != 0 || aw != 0) {
@@ -18,10 +18,10 @@ public class I_EXT implements Instruction {
 			}
 			a = sys.readMem(sys.AAR);
 			sys.incrAAR(-1);
-			aw = (a & 0100);
+			aw = (byte)(a & 0100);
 			a &= 077;
 			b = sys.readMem(sys.BAR);
-			bw = (b & 0100);
+			bw = (byte)(b & 0100);
 			b &= 077;
 		}
 	}

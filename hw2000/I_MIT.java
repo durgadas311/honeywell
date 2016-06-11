@@ -7,7 +7,7 @@ public class I_MIT implements Instruction {
 			v = sys.op_xtra[2];
 			// TODO: how to tell between 2-char C-address and V1,V2
 			c = (((sys.op_xtra[0] & 077) << 6) | (sys.op_xtra[1] & 077)) << 6;
-			if (am_na == 4) {
+			if (sys.am_na == 4) {
 				c |= (sys.AAR & 0x40000);
 			} else {
 				c = (c & 0x7fff) | (sys.AAR & 0x78000);
@@ -31,14 +31,14 @@ public class I_MIT implements Instruction {
 		int ca;
 		do {
 			a = sys.readMem(sys.AAR);
-			ai = (a & 0200);
+			ai = (byte)(a & 0200);
 			a &= 077;
 			sys.incrAAR(1);
 			if ((v & 001) != 0) {
 				t = sys.readMem(sys.AAR);
 				sys.incrAAR(1);
 				ai |= (t & 0200);
-				a = (a << 6) | (t & 077);
+				a = (byte)((a << 6) | (t & 077));
 			}
 			if ((v & 002) != 0) {
 				ca = c | (a << 1);
@@ -51,10 +51,10 @@ public class I_MIT implements Instruction {
 					sys.CSR = ca;
 					break;
 				}
-				b = (b & 077) | (sys.readMem(sys.BAR) & 0300);
+				b = (byte)((b & 077) | (sys.readMem(sys.BAR) & 0300));
 				sys.writeMem(sys.BAR, b);
 				sys.incrBAR(1);
-				b2 = (b2 & 077) | (sys.readMem(sys.BAR) & 0300);
+				b2 = (byte)((b2 & 077) | (sys.readMem(sys.BAR) & 0300));
 				sys.writeMem(sys.BAR, b2);
 				sys.incrBAR(1);
 			} else {
@@ -67,7 +67,7 @@ public class I_MIT implements Instruction {
 					sys.CSR = ca;
 					break;
 				}
-				b = (b & 077) | (sys.readMem(sys.BAR) & 0300);
+				b = (byte)((b & 077) | (sys.readMem(sys.BAR) & 0300));
 				sys.writeMem(sys.BAR, b);
 				sys.incrBAR(1);
 			}

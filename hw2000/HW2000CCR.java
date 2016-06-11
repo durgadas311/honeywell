@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class HW2000CCR {
 
 	public static final byte VR = (byte)0;
@@ -74,13 +76,13 @@ public class HW2000CCR {
 		Arrays.fill(ccr, (byte)0);
 		// TODO: set defaults
 		clr = new byte[7];
-		clr[VR] = VR_VLEAR;
-		clr[AIR] = AIR_VLEAR;
-		clr[XIR] = XIR_VLEAR;
-		clr[IOR] = IOR_VLEAR;
-		clr[PIR] = PIR_VLEAR;
-		clr[EIR] = EIR_VLEAR;
-		clr[IIR] = IIR_VLEAR;
+		clr[VR] = VR_CLEAR;
+		clr[AIR] = AIR_CLEAR;
+		clr[XIR] = XIR_CLEAR;
+		clr[IOR] = IOR_CLEAR;
+		clr[PIR] = PIR_CLEAR;
+		clr[EIR] = EIR_CLEAR;
+		clr[IIR] = IIR_CLEAR;
 		varLIB = 0;
 		eIntr = false;
 		iIntr = false;
@@ -89,12 +91,35 @@ public class HW2000CCR {
 	public boolean isEQ() { return ((ccr[AIR] & AIR_EQ) != 0); }
 	public boolean isLE() { return ((ccr[AIR] & AIR_LE) != 0); }
 	public boolean isZB() { return ((ccr[AIR] & AIR_ZB) != 0); }
-	public boolean isOVR() { return ((ccr[AIR] & AIR_OVR) != 0); }
+
+	// CAUTION: these are destructive
+	public boolean isOVR() {
+		boolean r = ((ccr[AIR] & AIR_OVR) != 0);
+		ccr[AIR] &= ~AIR_OVR;
+		return r;
+	}
+	public boolean isDVC() {
+		boolean r = ((ccr[IOR] & IOR_DVC) != 0);
+		ccr[IOR] &= ~IOR_DVC;
+		return r;
+	}
+	public boolean isMPO() {
+		boolean r = ((ccr[IOR] & IOR_MPO) != 0);
+		ccr[IOR] &= ~IOR_MPO;
+		return r;
+	}
+	public boolean isEXO() {
+		boolean r = ((ccr[IOR] & IOR_EXO) != 0);
+		ccr[IOR] &= ~IOR_EXO;
+		return r;
+	}
 
 	public boolean isPROTECT() { return ((ccr[PIR] & PIR_PROTECT) != 0); }
 	public boolean isTIMOUT() { return ((ccr[PIR] & PIR_TIMOUT) != 0); }
 	public boolean isPROCEED() { return ((ccr[PIR] & PIR_PROCEED) != 0); }
 	public boolean isRELOC() { return ((ccr[PIR] & PIR_RELOC) != 0); }
+	public boolean isS_MODE() { return ((ccr[PIR] & PIR_S_MODE) != 0); }
+	public boolean privBCT() { return ((ccr[VR] & VR_BCT) != 0); }
 	public boolean allowLCR() { return ((varLIB & 004) != 0); }
 
 	public void clrPROCEED() { ccr[PIR] &= ~PIR_PROCEED; }
@@ -102,24 +127,24 @@ public class HW2000CCR {
 	// 'am' contains adr mode bits, in final position.
 	// Typically called with values AIR_AM_2C, AIR_AM_3C, or AIR_AM_4C
 	public void setAM(byte am) {
-		ccr[AIR] = (ccr[AIR] & ~AIR_AM) | (am & AIR_AM);
+		ccr[AIR] = (byte)((ccr[AIR] & ~AIR_AM) | (am & AIR_AM));
 	}
 
 	public void setLIB(byte var) { varLIB = var; }
 
 	public void setS_MODE(boolean sm) {
 		if (sm) {
-			ccr[PIR] &= ~PIR_S_MODE;
-		} else {
 			ccr[PIR] |= PIR_S_MODE;
+		} else {
+			ccr[PIR] &= ~PIR_S_MODE;
 		}
 	}
 
 	public void setTRAP(boolean tr) {
 		if (tr) {
-			ccr[AIR] &= ~AIR_TRAP;
-		} else {
 			ccr[AIR] |= AIR_TRAP;
+		} else {
+			ccr[AIR] &= ~AIR_TRAP;
 		}
 	}
 
@@ -133,6 +158,46 @@ public class HW2000CCR {
 			ccr[AIR] |= AIR_EQ;
 		} else {
 			ccr[AIR] &= ~AIR_EQ;
+		}
+	}
+
+	public void setZB(boolean tr) {
+		if (tr) {
+			ccr[AIR] |= AIR_ZB;
+		} else {
+			ccr[AIR] &= ~AIR_ZB;
+		}
+	}
+
+	public void setOVR(boolean tr) {
+		if (tr) {
+			ccr[AIR] |= AIR_OVR;
+		} else {
+			ccr[AIR] &= ~AIR_OVR;
+		}
+	}
+
+	public void setDVC(boolean tr) {
+		if (tr) {
+			ccr[IOR] |= IOR_DVC;
+		} else {
+			ccr[IOR] &= ~IOR_DVC;
+		}
+	}
+
+	public void setMPO(boolean tr) {
+		if (tr) {
+			ccr[IOR] |= IOR_MPO;
+		} else {
+			ccr[IOR] &= ~IOR_MPO;
+		}
+	}
+
+	public void setEXO(boolean tr) {
+		if (tr) {
+			ccr[IOR] |= IOR_EXO;
+		} else {
+			ccr[IOR] &= ~IOR_EXO;
 		}
 	}
 
@@ -209,12 +274,12 @@ public class HW2000CCR {
 				if ((ccr[EIR] & EIR_II) == 0) {
 					return 0;
 				}
-				x = IIR
+				x = IIR;
 				ccr[x] |= EIR_II;
 			}
 		}
 		v = ccr[x];
-		ccr[x] = (ccr[x] & ~clr[x]);
+		ccr[x] = (byte)(ccr[x] & ~clr[x]);
 		return v;
 	}
 
@@ -228,10 +293,10 @@ public class HW2000CCR {
 	}
 
 	public void setV(byte v) {
-		ccr[VR] = (ccr[VR] & 0200) | (v & 0077);
+		ccr[VR] = (byte)((ccr[VR] & 0200) | (v & 0077));
 	}
 
 	public byte getV() {
-		return (ccr[VR] & 0077);
+		return (byte)(ccr[VR] & 0077);
 	}
 }

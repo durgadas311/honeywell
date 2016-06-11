@@ -1,10 +1,10 @@
 public class HW2000
 {
-	static final byte M_IM = 0x80;
-	static final byte M_WM = 0x40;
-	static final byte M_SIGN = 0x30;
-	static final byte M_DIGIT = 0x0f;
-	static final byte M_CHAR = 0x3f;
+	public static final byte M_IM = (byte)0x80;
+	public static final byte M_WM = 0x40;
+	public static final byte M_SIGN = 0x30;
+	public static final byte M_DIGIT = 0x0f;
+	public static final byte M_CHAR = 0x3f;
 
 	public static final byte LOR = 007;
 
@@ -13,30 +13,32 @@ public class HW2000
 	int[] CLC;
 	int[] SLC;
 	int ATR;
-	int CSR;
-	int EIR;
-	int AAR;
-	int BAR;
-	int IIR;
-	int SR;
+	public int CSR;
+	public int EIR;
+	public int AAR;
+	public int BAR;
+	public int IIR;
+	public int SR;
 
-	byte IBR;
-	byte BRR;
-	HW2000CCR CTL;
-	double[] AC;
+	public byte IBR;
+	public byte BRR;
+	public HW2000CCR CTL;
+	public double[] AC;
 
+	public int oSR;
 	int op_flags;
 	int op_xflags;
+	public byte[] op_xtra;
 	Instruction op_exec;
-	byte[] op_xtra;
+	public boolean halt;
 
 	private int fsr;
-	int iaar;	// needed by branch instructions
-	int am_mask;	// populated by CAM instruction
-	int am_shift;	// populated by CAM instruction
-	int am_na;	// populated by CAM instruction
-	int adr_min;	// set by changes in PROTECT, based on IBR/BRR (RVI instr)
-	int adr_max;	// set by changes in PROTECT, based on IBR/BRR (RVI instr)
+	public int iaar;	// needed by branch instructions
+	public int am_mask;	// populated by CAM instruction
+	public int am_shift;	// populated by CAM instruction
+	public int am_na;	// populated by CAM instruction
+	public int adr_min;	// set by changes in PROTECT, based on IBR/BRR (RVI instr)
+	public int adr_max;	// set by changes in PROTECT, based on IBR/BRR (RVI instr)
 
 	InstrDecode idc;
 
@@ -49,17 +51,18 @@ public class HW2000
 		SLC = new int[16];
 		adr_min = 0;
 		adr_max = 0x80000;
+		halt = false;
 	}
 
-	private boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
-	private boolean hasB() { return ((op_flags & InstrDecode.OP_HAS_B) != 0); }
-	private boolean dupA() { return ((op_flags & InstrDecode.OP_DUP_A) != 0); }
-	private boolean hasV() { return ((op_flags & InstrDecode.OP_HAS_V) != 0); }
-	private boolean inval() { return ((op_flags & InstrDecode.OP_INVAL) != 0); }
-	private boolean priv() { return ((op_flags & InstrDecode.OP_PRIV) != 0); }
-	private boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
-	private boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
-	private boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
+	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
+	public boolean hasB() { return ((op_flags & InstrDecode.OP_HAS_B) != 0); }
+	public boolean dupA() { return ((op_flags & InstrDecode.OP_DUP_A) != 0); }
+	public boolean hasV() { return ((op_flags & InstrDecode.OP_HAS_V) != 0); }
+	public boolean inval() { return ((op_flags & InstrDecode.OP_INVAL) != 0); }
+	public boolean priv() { return ((op_flags & InstrDecode.OP_PRIV) != 0); }
+	public boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
+	public boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
+	public boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
 
 	private void setOp(byte op) {
 		op_exec = null;
@@ -100,7 +103,7 @@ public class HW2000
 		int val = (v & am_mask);
 		int aar = AAR;
 		for (int x = 0; x < am_na; ++x) {
-			writeChar(aar, val & 077);
+			writeChar(aar, (byte)(val & 077));
 			aar = incrAdr(aar, -1);
 			val >>= 6;
 		}
@@ -138,7 +141,7 @@ public class HW2000
 	}
 
 	public byte readChar(int adr) {
-		return readMem(adr) & 077;
+		return (byte)(readMem(adr) & 077);
 	}
 
 	public void writeMem(int adr, byte val) {
@@ -152,7 +155,7 @@ public class HW2000
 		if (adr < adr_min || adr >= adr_max) {
 			throw new RuntimeException("Address violation");
 		}
-		mem[adr] = (mem[adr] & 0300) | (val & 077);
+		mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
 	}
 
 	// 
@@ -161,7 +164,7 @@ public class HW2000
 		for (int n = am_na; n > 0; --n) {
 			a = (a << 6) | readChar(ptr++);
 		}
-		am = (a >> am_shift);
+		byte am = (byte)(a >> am_shift);
 		a = (a & am_mask) | (ref & ~am_mask);
 		if (am == 0) {
 			return a;
@@ -171,10 +174,10 @@ public class HW2000
 			return fetchAddr(a, a);
 		}
 		// Indexed... determine which index register
-		ix = (((am & 0x0f) - 1) * 4);
+		int ix = (((am & 0x0f) - 1) * 4);
 		if (am > 0x10) {
 			// must be 4-char addr mode
-			ix += (ibr << 12);	// Y1-Y15
+			ix += (IBR << 12);	// Y1-Y15
 		} else if (am_na == 4) {
 			// no further adjustment for X1-X15
 		} else {
@@ -227,7 +230,7 @@ public class HW2000
 		}
 	}
 
-	private void checkIntr() {
+	public void checkIntr() {
 		if (CTL.isEI()) {
 			// AIR already saved...
 			setAM(HW2000CCR.AIR_AM_3C);
@@ -241,7 +244,7 @@ public class HW2000
 		}
 	}
 
-	private void clearIntr() {
+	public void clearIntr() {
 		byte i = CTL.clearIntr();
 		int t;
 		if (i == HW2000CCR.EIR_EI) {
@@ -266,6 +269,7 @@ public class HW2000
 		// In any case, it is programmer's responsibility to ensure
 		// there is no confusion when the instruction is turned off.
 
+		oSR = SR;
 		fsr = SR;
 		// TODO: how to avoid including garbage in variant array.
 		int isr = (fsr + 1) & 0x1ffff;

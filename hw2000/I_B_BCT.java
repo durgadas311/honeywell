@@ -10,7 +10,7 @@ public class I_B_BCT implements Instruction {
 				sys.CTL.setV(sys.op_xtra[0]);
 			}
 			byte v = sys.CTL.getV();
-			if (v & 040) != 0) {
+			if ((v & 040) != 0) {
 				// Arith/logic conditions -
 				// Note: AIR bits are "A<=B" and "A=B"
 
@@ -36,7 +36,9 @@ public class I_B_BCT implements Instruction {
 				}
 			} else {
 				// SENSE - privileged
-				if (!sys.privBCT()) {
+				if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
+						!sys.CTL.isPROCEED() &&
+						!sys.CTL.privBCT()) {
 					throw new RuntimeException("BCT Violation");
 				}
 				// for now, sensors are never active...

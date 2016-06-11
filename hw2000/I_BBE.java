@@ -7,7 +7,7 @@ public class I_BBE implements Instruction {
 		byte v = sys.CTL.getV();
 		byte b = sys.readChar(sys.BAR);
 		sys.incrBAR(-1);
-		byte c = (b & v);
+		byte c = (byte)(b & v);
 		boolean taken = (c != 0);
 		if (taken) {
 			sys.BAR = sys.SR;

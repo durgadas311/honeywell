@@ -5,9 +5,9 @@ public class I_FAA implements Instruction {
 		if (sys.op_xtra.length != 2) {
 			throw new RuntimeException("FAA malformed");
 		}
-		byte x = sys.op_xtra[0] & 070;
-		byte y = sys.op_xtra[0] & 007;
-		byte op = sys.op_xtra[1] & 077;
+		byte x = (byte)(sys.op_xtra[0] & 070);
+		byte y = (byte)(sys.op_xtra[0] & 007);
+		byte op = (byte)(sys.op_xtra[1] & 077);
 
 		switch(op) {
 		case 000:	// Store Acc
@@ -25,18 +25,33 @@ public class I_FAA implements Instruction {
 		case 010:	// Add
 			sys.AC[y] += sys.AC[x];
 			sys.AC[HW2000.LOR] = 0.0; // what is this
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		case 011:	// Subtract
 			sys.AC[y] = sys.AC[x] - sys.AC[y];
 			sys.AC[HW2000.LOR] = 0.0; // what is this
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		case 013:	// Multiply
 			sys.AC[y] *= sys.AC[x];
 			sys.AC[HW2000.LOR] = 0.0; // what is this
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		case 012:	// Divide
+			if (sys.AC[x] == 0.0) {
+				sys.CTL.setDVC(true);
+			}
 			sys.AC[HW2000.LOR] = sys.AC[y] % sys.AC[x]; // remainder
 			sys.AC[y] /= sys.AC[x];
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		// TODO:
 		//	Binary Mantissa Shift

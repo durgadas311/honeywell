@@ -5,8 +5,8 @@ public class I_C implements Instruction {
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);
 		sys.incrBAR(-1);
-		byte aw = (a & 0100);
-		byte bw = (b & 0100);
+		byte aw = (byte)(a & 0100);
+		byte bw = (byte)(b & 0100);
 		byte c = 0;
 		a &= 077;
 		b &= 077;
@@ -14,7 +14,7 @@ public class I_C implements Instruction {
 		byte z = 0;
 		boolean aDone = false;
 		while (true) {
-			c = (a ^ b);
+			c = (byte)(a ^ b);
 			z |= c;	// will be 0 at end if B=A
 			if (c != 0) {
 				// The last one prevails...
@@ -29,12 +29,12 @@ public class I_C implements Instruction {
 			} else {
 				a = sys.readMem(sys.AAR);
 				sys.incrAAR(-1);
-				aw = (a & 0100);
+				aw = (byte)(a & 0100);
 				a &= 077;
 			}
 			b = sys.readMem(sys.BAR);
 			sys.incrBAR(-1);
-			bw = (b & 0100);
+			bw = (byte)(b & 0100);
 			b &= 077;
 		}
 		sys.CTL.setCompare(lt, (z == 0));

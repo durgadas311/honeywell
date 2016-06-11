@@ -1,3 +1,5 @@
+import java.math.BigDecimal;
+
 public class I_D implements Instruction {
 	// Divide (decimal)
 	public void execute(HW2000 sys) {

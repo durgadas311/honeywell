@@ -6,4 +6,6 @@ public class I_PCB implements Instruction {
 	//
 	// CE vs. C2 can be determined by bits 011000. For CE, those bits will be 01.
 	// Otherwise, it is C2.
+	public void execute(HW2000 sys) {
+	}
 }

@@ -1,10 +1,12 @@
+import java.math.BigDecimal;
+
 public class I_FMA implements Instruction {
 	// Floating-point Memory-Accumulator ops
 
 	public static double hwToNative(HW2000 sys, int ptr) {
 		long d = 0;
-		ptr -= 7;
-		for (int x = 0; x < 8; ++x) {
+		ptr -= 7; // TODO: find better way
+		for (int ix = 0; ix < 8; ++ix) {
 			d = (d << 6) | sys.readChar(ptr++);
 		}
 		byte ms = 0;
@@ -48,8 +50,8 @@ public class I_FMA implements Instruction {
 			m = -m;
 		}
 		d = (m << 12) | (x & 0xfff);
-		for (int x = 0; x < 8; ++x) {
-			byte b = (d & 077);
+		for (int ix = 0; ix < 8; ++ix) {
+			byte b = (byte)(d & 077);
 			sys.writeChar(ptr--, b);
 			d >>= 6;
 		}
@@ -59,10 +61,13 @@ public class I_FMA implements Instruction {
 		if (sys.op_xtra.length != 2) {
 			throw new RuntimeException("FMA malformed");
 		}
-		byte x = sys.op_xtra[0] & 070;
-		byte y = sys.op_xtra[0] & 007;
-		byte op = sys.op_xtra[1] & 077;
+		byte x = (byte)(sys.op_xtra[0] & 070);
+		byte y = (byte)(sys.op_xtra[0] & 007);
+		byte op = (byte)(sys.op_xtra[1] & 077);
 		boolean taken = false;
+		int ae;
+		long m;
+		BigDecimal bd;
 
 		double a;
 		switch(op) {
@@ -86,38 +91,54 @@ public class I_FMA implements Instruction {
 			sys.AC[y] = sys.AC[x] + hwToNative(sys, sys.AAR);
 			sys.AC[HW2000.LOR] = 0.0; // what is this
 			sys.incrAAR(-8);
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		case 011:	// Subtract
 			sys.AC[y] = sys.AC[x] - hwToNative(sys, sys.AAR);
 			sys.AC[HW2000.LOR] = 0.0; // what is this
 			sys.incrAAR(-8);
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		case 013:	// Multiply
 			a = hwToNative(sys, sys.AAR);
 			sys.incrAAR(-8);
 			sys.AC[y] = sys.AC[x] * a;
 			sys.AC[HW2000.LOR] = 0.0; // what is this
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		case 012:	// Divide
 			a = hwToNative(sys, sys.AAR);
 			sys.incrAAR(-8);
+			if (sys.AC[x] == 0.0) {
+				sys.CTL.setDVC(true);
+				break;
+			}
 			sys.AC[HW2000.LOR] = a % sys.AC[x]; // remainder
 			sys.AC[y] = a / sys.AC[x];
+			if (Double.isInfinite(sys.AC[y])) {
+				sys.CTL.setEXO(true);
+			}
 			break;
 		// TODO:
 		//	Binary Mantissa Shift
 		//	Others?
 
 		case 003:	// Convert Decimal to FP
-			int ae = sys.incrAdr(sys.AAR, -11);
-			BigDecimal bd = I_M.hwToNative(sys, sys.AAR, ae);
+			ae = sys.incrAdr(sys.AAR, -11);
+			bd = I_M.hwToNative(sys, sys.AAR, ae);
 			sys.AAR = ae;
-			sys.AC[y] = db.doubleValue();
+			sys.AC[y] = bd.doubleValue();
 			break;
 		case 006:	// Convert FP to Decimal
-			long m = nativeToMant(sys.AC[x]);
-			BigDecimal bd = new BigDecimal(m);
-			int ae = sys.incrAdr(sys.AAR, -11);
+			m = nativeToMant(sys.AC[x]);
+			bd = new BigDecimal(m);
+			ae = sys.incrAdr(sys.AAR, -11);
 			I_M.nativeToHw(sys, bd, sys.AAR, ae);
 			sys.AAR = ae;
 			break;

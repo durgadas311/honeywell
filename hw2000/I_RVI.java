@@ -8,27 +8,27 @@ public class I_RVI implements Instruction {
 		byte a;
 		if ((v & 001) != 0) {
 			a = sys.readMem(sys.AAR);
-			sys.IncrAAR(1);
+			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.VR, a);
 		}
 		if ((v & 002) != 0) {
 			a = sys.readMem(sys.AAR);
-			sys.IncrAAR(1);
+			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.AIR, a);
 		}
 		if ((v & 004) != 0) {
 			a = sys.readMem(sys.AAR);
-			sys.IncrAAR(1);
+			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.XIR, a);
 		}
 		if ((v & 010) != 0) {
 			a = sys.readMem(sys.AAR);
-			sys.IncrAAR(1);
+			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.IOR, a);
 		}
 		if ((v & 020) != 0) {
 			a = sys.readMem(sys.AAR);
-			sys.IncrAAR(1);
+			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.PIR, a);
 			// TODO: delay this until RNM?
 			if ((a & HW2000CCR.PIR_PROTECT) != 0) {

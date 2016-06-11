@@ -7,7 +7,7 @@ public class I_CW implements Instruction {
 		if (sys.hadA() && !sys.hadB()) {
 			return;
 		}
-		byte b = sys.readMem(sys.BAR);
+		b = sys.readMem(sys.BAR);
 		sys.writeMem(sys.BAR, (byte)(b & ~0100));
 		sys.incrBAR(-1);
 	}

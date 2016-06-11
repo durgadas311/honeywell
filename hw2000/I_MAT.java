@@ -5,7 +5,7 @@ public class I_MAT implements Instruction {
 		if (sys.op_xtra.length == 2) {
 			// TODO: how to tell between 2-char C-address and V1,V2
 			c = (((sys.op_xtra[0] & 077) << 6) | (sys.op_xtra[1] & 077)) << 6;
-			if (am_na == 4) {
+			if (sys.am_na == 4) {
 				c |= (sys.AAR & 0x40000);
 			} else {
 				c = (c & 0x7fff) | (sys.AAR & 0x78000);
@@ -26,7 +26,7 @@ public class I_MAT implements Instruction {
 			a = sys.readMem(sys.AAR);
 			sys.incrAAR(-1);
 			b = sys.readMem(c | (a & 077));
-			sys.writeMem(sys.BAR, (b & 0277) | (sys.readMem(sys.BAR) & 0100));
+			sys.writeMem(sys.BAR, (byte)((b & 0277) | (sys.readMem(sys.BAR) & 0100)));
 			sys.incrBAR(-1);
 		} while ((a & 0100) == 0 && (b & 0100) == 0);
 	}

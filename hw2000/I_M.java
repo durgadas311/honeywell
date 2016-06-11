@@ -1,3 +1,5 @@
+import java.math.BigDecimal;
+
 public class I_M implements Instruction {
 	// Multiply (decimal)
 	public static int fieldStart(HW2000 sys, int adr) {
@@ -25,7 +27,7 @@ public class I_M implements Instruction {
 		while (a > lsd) {
 			a = sys.incrAdr(a, 1);
 			b = sys.readMem(a);
-			ch[x++] = '0' + (b & 017);
+			ch[x++] = (char)('0' + (b & 017));
 		}
 		BigDecimal bd = new BigDecimal(ch);
 		return bd;
@@ -50,7 +52,7 @@ public class I_M implements Instruction {
 		while (y > x) {
 			c = (byte)(num.charAt(y) & 017);
 			z |= c;
-			sys.writeChar(a, (s | c));
+			sys.writeChar(a, (byte)(s | c));
 			a = sys.incrAdr(a, -1);
 			s = 000;
 			--y;

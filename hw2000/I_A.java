@@ -41,7 +41,7 @@ public class I_A implements Instruction {
 				cy = 0;
 			}
 			z |= c;
-			sys.writeChar(sys.BAR, s | c);
+			sys.writeChar(sys.BAR, (byte)(s | c));
 			sys.incrBAR(-1);
 			s = 0;
 			if (bw != 0) {
@@ -59,7 +59,7 @@ public class I_A implements Instruction {
 			b = sys.readMem(sys.BAR);
 			bw = (byte)(b & 0100);
 			if (sys.CTL.isS_MODE()) {
-				s = (b & 060);
+				s = (byte)(b & 060);
 			}
 			b &= 017;
 		}
@@ -84,7 +84,7 @@ public class I_A implements Instruction {
 					cy = 0;
 				}
 				z |= c;
-				sys.writeChar(bar, s | c);
+				sys.writeChar(bar, (byte)(s | c));
 				bar = sys.incrAdr(bar, -1);
 				s = 0;
 				if (bw != 0) {
@@ -92,8 +92,8 @@ public class I_A implements Instruction {
 				}
 				b = sys.readMem(bar);
 				bw = (byte)(b & 0100);
-				if (!first && sys.CTL.isS_MODE()) {
-					s = (b & 060);
+				if (sys.CTL.isS_MODE()) {
+					s = (byte)(b & 060);
 				}
 				b &= 017;
 			}

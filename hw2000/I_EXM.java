@@ -24,7 +24,7 @@ public class I_EXM implements Instruction {
 		if ((v & 060) == 0) {
 			n = 1;
 		} else {
-			k = ((v & 060) << 2);	// into punctuation position...
+			k = (byte)((v & 060) << 2);	// into punctuation position...
 		}
 		byte a;
 		byte b;
@@ -32,7 +32,7 @@ public class I_EXM implements Instruction {
 			a = sys.readMem(sys.AAR);
 			sys.incrAAR(i);
 			b = sys.readMem(sys.AAR);
-			b = (b & ~m) | (a & m);
+			b = (byte)((b & ~m) | (a & m));
 			sys.writeMem(sys.BAR, b);
 			sys.incrBAR(i);
 			--n;
