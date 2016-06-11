@@ -9,6 +9,7 @@ class CharConverter {
 	private short[] xlate_char;
 	private byte[] xlate_hw;
 	private byte[] hw2lp;
+	private byte[] ascii2hw;
 	private byte[] bb = new byte[1];
 
 	private void setup_xlate(CardPunchOptions opts) {
@@ -311,7 +312,7 @@ class CharConverter {
 
 		// These convert HW cpu codes to HW LinePrinter codes (ASCII equiv glyph)
 		hw2lp = new byte[64];
-		Arrays.fill(xlate_hw, (byte)0);
+		Arrays.fill(hw2lp, (byte)0);
 		hw2lp[000] = '0';
 		hw2lp[001] = '1';
 		hw2lp[002] = '2';
@@ -381,6 +382,79 @@ class CharConverter {
 		hw2lp[075] = '\010';	// c/r
 		hw2lp[076] = '\011';	// open lozenge
 		hw2lp[077] = '\001';	// cent
+
+		// These convert ASCII to HW cpu codes
+		ascii2hw = new byte[128];
+		Arrays.fill(ascii2hw, (byte)0100);
+		ascii2hw['0'] = 000;
+		ascii2hw['1'] = 001;
+		ascii2hw['2'] = 002;
+		ascii2hw['3'] = 003;
+		ascii2hw['4'] = 004;
+		ascii2hw['5'] = 005;
+		ascii2hw['6'] = 006;
+		ascii2hw['7'] = 007;
+		ascii2hw['8'] = 010;
+		ascii2hw['9'] = 011;
+
+		ascii2hw['A'] = 021;
+		ascii2hw['B'] = 022;
+		ascii2hw['C'] = 023;
+		ascii2hw['D'] = 024;
+		ascii2hw['E'] = 025;
+		ascii2hw['F'] = 026;
+		ascii2hw['G'] = 027;
+		ascii2hw['H'] = 030;
+		ascii2hw['I'] = 031;
+		ascii2hw['J'] = 041;
+		ascii2hw['K'] = 042;
+		ascii2hw['L'] = 043;
+		ascii2hw['M'] = 044;
+		ascii2hw['N'] = 045;
+		ascii2hw['O'] = 046;
+		ascii2hw['P'] = 047;
+		ascii2hw['Q'] = 050;
+		ascii2hw['R'] = 051;
+		ascii2hw['S'] = 062;
+		ascii2hw['T'] = 063;
+		ascii2hw['U'] = 064;
+		ascii2hw['V'] = 065;
+		ascii2hw['W'] = 066;
+		ascii2hw['X'] = 067;
+		ascii2hw['Y'] = 070;
+		ascii2hw['Z'] = 071;
+
+		ascii2hw['\''] = 012;
+		ascii2hw['='] = 013;
+		ascii2hw[':'] = 014;
+		ascii2hw[' '] = 015;
+		ascii2hw['>'] = 016;
+		ascii2hw['&'] = 017;
+		ascii2hw['+'] = 020;
+
+		ascii2hw[';'] = 032;
+		ascii2hw['.'] = 033;
+		ascii2hw[')'] = 034;
+		ascii2hw['%'] = 035;
+		ascii2hw['\006'] = 036;	// solid lozenge
+		ascii2hw['?'] = 037;
+		ascii2hw['-'] = 040;
+
+		ascii2hw['#'] = 052;
+		ascii2hw['$'] = 053;
+		ascii2hw['*'] = 054;
+		ascii2hw['"'] = 055;
+		ascii2hw['\007'] = 056;	// not-equal
+		ascii2hw['!'] = 057;	// 1/2 on older printers
+		ascii2hw['<'] = 060;
+		ascii2hw['/'] = 061;
+
+		ascii2hw['@'] = 072;
+		ascii2hw[','] = 073;
+		ascii2hw['('] = 074;
+		ascii2hw['\010'] = 075;	// c/r
+		ascii2hw['\011'] = 076;	// open lozenge
+		ascii2hw['\001'] = 077;	// cent
 	}
 
 	public CharConverter(CardPunchOptions opts) {
@@ -480,5 +554,11 @@ class CharConverter {
 			return spcl_pun[bb[0]];
 		}
 		return new String(bb);
+	}
+
+	// ASCII to HW2000 "cpu" code
+	public byte asciiToHw(byte c) {
+		byte b = ascii2hw[c];
+		return b;
 	}
 }

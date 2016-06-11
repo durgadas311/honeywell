@@ -159,6 +159,13 @@ public class HW2000
 		mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
 	}
 
+	public void setWord(int adr) {
+		if (adr < adr_min || adr >= adr_max) {
+			throw new RuntimeException("Address violation");
+		}
+		mem[adr] = (byte)((mem[adr] & 0077) | (0100));
+	}
+
 	// 
 	private int fetchAddr(int ptr, int ref) {
 		int a = 0;
