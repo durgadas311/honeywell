@@ -1,3 +1,9 @@
+// This is a combination of 026-A and 026-H characters, since there is no conflict
+// and the program will be using different ASCII codes anyway.
+
+#define IBM026A
+#define IBM026H
+
 // first byte of each char is encoding value...
 // every 8 bytes starts new char...
 unsigned char fontTable[0x1000] = {
@@ -137,8 +143,8 @@ unsigned char fontTable[0x1000] = {
 	0b11111,
 	0b10001,
 	0b10001,
-#ifdef FORTRAN
-	0x2b,	//  3,2	'+'
+#ifdef IBM026H
+	0x2b,	//  3,2	'+'	026-H
 	0b00100,
 	0b00100,
 	0b00100,
@@ -146,8 +152,9 @@ unsigned char fontTable[0x1000] = {
 	0b00100,
 	0b00100,
 	0b00100,
-#else
-	0x26,	//  3,2	'&'
+#endif
+#ifdef IBM026A
+	0x26,	//  3,2	'&'	026-A
 	0b01000,
 	0b10100,
 	0b10100,
@@ -260,8 +267,8 @@ unsigned char fontTable[0x1000] = {
 	0b01100,
 	0b00100,
 	0b01000,
-#ifdef FORTRAN
-	0x28,	//  5,4	'('
+#ifdef IBM026H
+	0x28,	//  5,4	'('	026-H
 	0b00010,
 	0b00100,
 	0b01000,
@@ -269,8 +276,9 @@ unsigned char fontTable[0x1000] = {
 	0b01000,
 	0b00100,
 	0b00010,
-#else
-	0x25,	//  5,4	'%'
+#endif
+#ifdef IBM026A
+	0x25,	//  5,4	'%'	026-A
 	0b11001,
 	0b11001,
 	0b00010,
@@ -351,8 +359,8 @@ unsigned char fontTable[0x1000] = {
 	0b00000,
 	0b01100,
 	0b01100,
-#ifdef FORTRAN
-	0x29,	//  5,6	')'
+#ifdef IBM026H
+	0x29,	//  5,6	')'	026-H
 	0b01000,
 	0b00100,
 	0b00010,
@@ -360,8 +368,9 @@ unsigned char fontTable[0x1000] = {
 	0b00010,
 	0b00100,
 	0b01000,
-#else
-	0xa7,	//  5,6	'\u00a7' - section mark, repurposed
+#endif
+#ifdef IBM026A
+	0xa7,	//  5,6	'\u00a7' - section mark, repurposed	026-A
 	0b10001,
 	0b01110,
 	0b01010,
@@ -394,8 +403,8 @@ unsigned char fontTable[0x1000] = {
 	0b10001,
 	0b10001,
 	0b01110,
-#ifdef FORTRAN
-	0x3d,	//  4,7	'='
+#ifdef IBM026H
+	0x3d,	//  4,7	'='	026-H
 	0b00000,
 	0b00000,
 	0b11111,
@@ -403,7 +412,7 @@ unsigned char fontTable[0x1000] = {
 	0b11111,
 	0b00000,
 	0b00000,
-	0x27,	//  5,7	'''
+	0x27,	//  5,7	'''	026-H
 	0b00000,
 	0b01100,
 	0b01100,
@@ -411,8 +420,9 @@ unsigned char fontTable[0x1000] = {
 	0b00000,
 	0b00000,
 	0b00000,
-#else
-	0x23,	// Char 4,7 '#'
+#endif
+#ifdef IBM026A
+	0x23,	// Char 4,7 '#'	026-A
 	0b01010,
 	0b01010,
 	0b11011,
@@ -420,7 +430,7 @@ unsigned char fontTable[0x1000] = {
 	0b11011,
 	0b01010,
 	0b01010,
-	0x40,	// Char 5,7 '@'
+	0x40,	// Char 5,7 '@'	026-A
 	0b01110,
 	0b10001,
 	0b00001,
