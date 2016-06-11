@@ -114,11 +114,7 @@ class PunchCard extends JLabel
 		String fn = "IBM029d.ttf";
 		if (opts.ibm026) {
 			ink = new Color(120,0,255,175);
-			if (opts.fortran) {
-				fn = "IBM026f.ttf";
-			} else {
-				fn = "IBM026d.ttf";
-			}
+			fn = "IBM026d.ttf";
 		} else {
 			ink = new Color(0,0,0,128);
 		}

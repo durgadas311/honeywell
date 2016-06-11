@@ -84,7 +84,6 @@ class PunchCardDeck extends PunchCard
 		_code = new byte[2*80];
 		_curr = _code;
 		_currIsProg = false;
-		_saveImage = false;
 		_endOfCard = false;
 		_prev = null;
 		_prog = new byte[2*80];
