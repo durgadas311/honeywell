@@ -41,12 +41,14 @@ public class HW2000
 	public int adr_max;	// set by changes in PROTECT, based on IBR/BRR (RVI instr)
 
 	InstrDecode idc;
+	PeriphDecode pdc;
 
 	public HW2000() {
 		CTL = new HW2000CCR();
 		AC = new double[8];
 		mem = new byte[524288]; // TODO: mmap file
 		idc = new InstrDecode();
+		pdc = new PeriphDecode();
 		CLC = new int[16];
 		SLC = new int[16];
 		adr_min = 0;
@@ -64,6 +66,14 @@ public class HW2000
 	public boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
 	public boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
 	public boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
+
+	public Peripheral getPeriph(byte op) {
+		Peripheral p = pdc.getPerph(op);
+		if (p == null) {
+			throw new RuntimeException("Invalid Peripheral");
+		}
+		return p;
+	}
 
 	private void setOp(byte op) {
 		op_exec = null;
@@ -163,7 +173,14 @@ public class HW2000
 		if (adr < adr_min || adr >= adr_max) {
 			throw new RuntimeException("Address violation");
 		}
-		mem[adr] = (byte)((mem[adr] & 0077) | (0100));
+		mem[adr] |= 0100;
+	}
+
+	public void setItem(int adr) {
+		if (adr < adr_min || adr >= adr_max) {
+			throw new RuntimeException("Address violation");
+		}
+		mem[adr] |= 0200;
 	}
 
 	// 

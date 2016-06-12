@@ -52,6 +52,7 @@ public class mcetest {
 		fmt = 64;
 		mem = 128;
 		Instruction mce = new I_MCE();
+		Instruction pdt = new I_PDT();
 
 		for (x = 0; x < args.length; x += 2) {
 			BigDecimal d1 = new BigDecimal(args[x]);
@@ -76,6 +77,17 @@ public class mcetest {
 				hw.readMem(fmt-3), hw.readMem(fmt-2),
 				hw.readMem(fmt-1), hw.readMem(fmt),
 				hwToString(hw, fmt));
+if (false) {
+			msd = I_M.fieldStart(hw, fmt);
+			hw.setWord(fmt + 1);
+			hw.setItem(fmt + 1);
+			hw.AAR = msd + 1;
+			hw.op_xtra = new byte[3];
+			hw.op_xtra[0] = (byte)011;
+			hw.op_xtra[1] = (byte)002;
+			hw.op_xtra[2] = (byte)003;
+			pdt.execute(hw);
+}
 		}
 	}
 }
