@@ -2,12 +2,12 @@ public class I_FAA implements Instruction {
 	// Floating-point Accumulator-Accumulator ops
 
 	public void execute(HW2000 sys) {
-		if (sys.op_xtra.length != 2) {
+		if (sys.numXtra() != 2) {
 			throw new RuntimeException("FAA malformed");
 		}
-		byte x = (byte)(sys.op_xtra[0] & 070);
-		byte y = (byte)(sys.op_xtra[0] & 007);
-		byte op = (byte)(sys.op_xtra[1] & 077);
+		byte x = (byte)(sys.getXtra(0) & 070);
+		byte y = (byte)(sys.getXtra(0) & 007);
+		byte op = (byte)(sys.getXtra(1) & 077);
 
 		switch(op) {
 		case 000:	// Store Acc

@@ -1,8 +1,8 @@
 public class I_TLU implements Instruction {
 	// Table Look-Up
 	public void execute(HW2000 sys) {
-		if (sys.hadB() && sys.op_xtra.length > 0) {
-			sys.CTL.setV(sys.op_xtra[0]);
+		if (sys.hadB() && sys.numXtra() > 0) {
+			sys.CTL.setV(sys.getXtra(0));
 		}
 		byte v = sys.CTL.getV();
 		v &= 007;	// ensure we don't test OVR (destructive) or ZB

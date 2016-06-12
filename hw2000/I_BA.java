@@ -1,5 +1,36 @@
 public class I_BA implements Instruction {
 	// Binary Add
+
+	// Utility - not used by machine.
+	public static void nativeToHw(HW2000 sys, Long li, int lsd, int msd) {
+		long l = li;
+		// TODO: verify space for result?
+		int a = lsd;
+		while (a >= msd) {
+			sys.writeChar(a, (byte)(l & 077));
+			a = sys.incrAdr(a, -1);
+			l >>= 6;
+		}
+	}
+
+	// Utility - not used by machine.
+	public static long hwToNative(HW2000 sys, int lsd, int msd) {
+		long l = 0;
+		int a = msd;
+		byte b = sys.readChar(a);
+		a = sys.incrAdr(a, 1);
+		if ((b & 040) != 0) { // negative
+			b |= 0300;
+		}
+		l = b;	// should sign-extend
+		while (a <= lsd) {
+			l <<= 6;
+			l |= sys.readChar(a);
+			a = sys.incrAdr(a, 1);
+		}
+		return l;
+	}
+
 	public void execute(HW2000 sys) {
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);

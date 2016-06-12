@@ -1,8 +1,8 @@
 public class I_BCC implements Instruction {
 	// Branch on Character Condition
 	public void execute(HW2000 sys) {
-		if (sys.op_xtra.length > 0) {
-			sys.CTL.setV(sys.op_xtra[0]);
+		if (sys.numXtra() > 0) {
+			sys.CTL.setV(sys.getXtra(0));
 		}
 		byte v = sys.CTL.getV();
 		byte b = sys.readMem(sys.BAR);

@@ -1,3 +1,5 @@
+import java.io.*;
+
 public class HW2000
 {
 	public static final byte M_IM = (byte)0x80;
@@ -28,7 +30,9 @@ public class HW2000
 	public int oSR;
 	int op_flags;
 	int op_xflags;
-	public byte[] op_xtra;
+	private byte[] op_xtra;
+	private int op_xtra_siz;
+	private int op_xtra_num;
 	Instruction op_exec;
 	public boolean halt;
 
@@ -55,6 +59,11 @@ public class HW2000
 		adr_max = 0x80000;
 		halt = false;
 		setAM((byte)000);
+		SR = 0;
+		AAR = 0;
+		BAR = 0;
+		op_xtra_siz = 8;
+		op_xtra = new byte[op_xtra_siz];
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
@@ -81,8 +90,9 @@ public class HW2000
 		if (inval()) {
 			throw new RuntimeException("Invalid OpCode");
 		}
-		if (priv()) { // and !proceed?
-			throw new RuntimeException("OpCode Violation");
+		if (priv() && CTL.inStdMode() && CTL.isPROTECT() &&
+				!CTL.isPROCEED()) {
+			throw new RuntimeException("OpCode Violation " + op);
 		}
 		op_exec = idc.getExec(op);
 	}
@@ -218,7 +228,7 @@ public class HW2000
 	}
 
 	public void fetchAAR(int limit) {
-		if (!hasA() || limit - SR < am_na) {
+		if (!hasA() || limit - fsr < am_na) {
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_A;
@@ -234,7 +244,7 @@ public class HW2000
 	}
 
 	public void fetchBAR(int limit) {
-		if (!hadA() || !hasB() || limit - SR < am_na) {
+		if (!hadA() || !hasB() || limit - fsr < am_na) {
 			if (dupA()) {
 				BAR = AAR;
 			}
@@ -246,13 +256,28 @@ public class HW2000
 	}
 
 	private void fetchXtra(int limit) {
-		if (limit - fsr <= 0) {
+		op_xtra_num = limit - fsr;
+		if (op_xtra_num <= 0) {
 			return;
 		}
-		op_xtra = new byte[limit - fsr];
-		for (int x = 0; x < op_xtra.length; ++x) {
+		if (op_xtra_num > op_xtra_siz) {
+			op_xtra_siz = op_xtra_num + 2;
+			op_xtra = new byte[op_xtra_siz];
+		}
+		for (int x = 0; x < op_xtra_num; ++x) {
 			op_xtra[x] = readMem(fsr + x);
 		}
+	}
+
+	public int numXtra() {
+		return op_xtra_num;
+	}
+
+	public byte getXtra(int ix) {
+		if (ix >= op_xtra_num) {
+			return 0;
+		}
+		return op_xtra[ix];
 	}
 
 	public void checkIntr() {
@@ -302,7 +327,6 @@ public class HW2000
 			isr = (isr + 1) & 0x1ffff;
 		}
 		iaar = -1;
-		op_xtra = null;
 		// Caller handles exceptions, leave SR at start of instruction
 		// (if during fetch/extract). Exceptions during execute
 		// terminate instruction and leave SR at next.
@@ -323,6 +347,27 @@ public class HW2000
 
 	public void execute() {
 		op_exec.execute(this);
+	}
+
+	private boolean _trace = false;
+
+	public void loadNGo(String pgm, byte am, int start, boolean trace) {
+		_trace = trace;
+		int n = -1;
+		try {
+			FileInputStream f = new FileInputStream(pgm);
+			n = f.read(mem);
+			f.close();
+		} catch (Exception ee) {
+			ee.printStackTrace();
+			System.exit(1);
+		}
+		if (n <= 0) {
+			return;
+		}
+		setAM(am);
+		SR = start;
+		run();
 	}
 
 	public void run() {

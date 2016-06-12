@@ -1,12 +1,12 @@
 public class I_SVI implements Instruction {
 	// Store Variant and Indicators
 	public void execute(HW2000 sys) {
-		if (sys.op_xtra.length == 0) {
+		if (sys.numXtra() == 0) {
 			throw new RuntimeException("SVI malformed");
 		}
 		// must get address of char after variant...
 		int sr = sys.oSR + 2;
-		byte v = sys.op_xtra[0];
+		byte v = sys.getXtra(0);
 		if ((v & 001) != 0) {
 			sys.writeMem(sr++, sys.CTL.getCR(HW2000CCR.VR));
 		}

@@ -2,10 +2,10 @@ public class P_LinePrinter implements Peripheral {
 
 	public void io(HW2000 sys) {
 		byte c3;
-		if ((sys.op_xtra[1] & 030) == 010) {
-			c3 = sys.op_xtra[3];
+		if ((sys.getXtra(1) & 030) == 010) {
+			c3 = sys.getXtra(3);
 		} else {
-			c3 = sys.op_xtra[2];
+			c3 = sys.getXtra(2);
 		}
 		// C3:
 		//	00nnnn: Print then advance nnnn lines.

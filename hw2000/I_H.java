@@ -4,8 +4,8 @@ public class I_H implements Instruction {
 		if (sys.hadA() && !sys.hadB()) {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
-		} else if (sys.hadB() && sys.op_xtra.length > 0) {
-			sys.CTL.setV(sys.op_xtra[0]);
+		} else if (sys.hadB() && sys.numXtra() > 0) {
+			sys.CTL.setV(sys.getXtra(0));
 		}
 		sys.halt = true;
 	}

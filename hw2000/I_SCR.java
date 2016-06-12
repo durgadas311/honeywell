@@ -1,8 +1,8 @@
 public class I_SCR implements Instruction {
 	// Store Control Register
 	public void execute(HW2000 sys) {
-		if (sys.hadA() && sys.op_xtra.length > 0) {
-			sys.CTL.setV(sys.op_xtra[0]);
+		if (sys.hadA() && sys.numXtra() > 0) {
+			sys.CTL.setV(sys.getXtra(0));
 		}
 		byte v = sys.CTL.getV();
 		int reg = 0;

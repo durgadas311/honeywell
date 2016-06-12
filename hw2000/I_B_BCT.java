@@ -32,12 +32,12 @@ public class I_B_BCT implements Instruction {
 
 	public void execute(HW2000 sys) {
 		boolean taken = true;
-		if (!sys.hadA() || sys.op_xtra.length > 0) {
+		if (!sys.hadA() || sys.numXtra() > 0) {
 			// BCT...
 			taken = false;
 			if (sys.hadA()) {
 				// must have V then...
-				sys.CTL.setV(sys.op_xtra[0]);
+				sys.CTL.setV(sys.getXtra(0));
 			}
 			byte v = sys.CTL.getV();
 			if ((v & 040) != 0) {
