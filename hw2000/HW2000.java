@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.io.*;
 
 public class HW2000
@@ -51,6 +52,7 @@ public class HW2000
 		CTL = new HW2000CCR();
 		AC = new double[8];
 		mem = new byte[524288]; // TODO: mmap file
+		Arrays.fill(mem, (byte)0);
 		idc = new InstrDecode();
 		pdc = new PeriphDecode();
 		CLC = new int[16];
@@ -67,9 +69,12 @@ public class HW2000
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
+	public boolean reqA() { return ((op_flags & InstrDecode.OP_REQ_A) != 0); }
 	public boolean hasB() { return ((op_flags & InstrDecode.OP_HAS_B) != 0); }
+	public boolean reqB() { return ((op_flags & InstrDecode.OP_REQ_B) != 0); }
 	public boolean dupA() { return ((op_flags & InstrDecode.OP_DUP_A) != 0); }
 	public boolean hasV() { return ((op_flags & InstrDecode.OP_HAS_V) != 0); }
+	public boolean reqV() { return ((op_flags & InstrDecode.OP_REQ_V) != 0); }
 	public boolean inval() { return ((op_flags & InstrDecode.OP_INVAL) != 0); }
 	public boolean priv() { return ((op_flags & InstrDecode.OP_PRIV) != 0); }
 	public boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
@@ -79,7 +84,7 @@ public class HW2000
 	public Peripheral getPeriph(byte op) {
 		Peripheral p = pdc.getPerph(op);
 		if (p == null) {
-			throw new RuntimeException("Invalid Peripheral");
+			throw new RuntimeException("Invalid Peripheral " + op);
 		}
 		return p;
 	}
@@ -229,6 +234,9 @@ public class HW2000
 
 	public void fetchAAR(int limit) {
 		if (!hasA() || limit - fsr < am_na) {
+			if (reqA()) {
+				throw new RuntimeException("Missing required A-field");
+			}
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_A;
@@ -245,6 +253,9 @@ public class HW2000
 
 	public void fetchBAR(int limit) {
 		if (!hadA() || !hasB() || limit - fsr < am_na) {
+			if (reqB()) {
+				throw new RuntimeException("Missing required B-field");
+			}
 			if (dupA()) {
 				BAR = AAR;
 			}
@@ -258,6 +269,10 @@ public class HW2000
 	private void fetchXtra(int limit) {
 		op_xtra_num = limit - fsr;
 		if (op_xtra_num <= 0) {
+			if (reqV()) {
+				// probably just let instructions do this...
+				throw new RuntimeException("Missing required variant");
+			}
 			return;
 		}
 		if (op_xtra_num > op_xtra_siz) {
@@ -380,5 +395,18 @@ public class HW2000
 				// is a pending interrupt.
 			}
 		}
+	}
+
+	public void dumpMem(String tag, int excl, int end) {
+		int start = excl;
+		System.err.format("{%s=", tag);
+		if (end - start > 8) {
+			System.err.format("...");
+			start = end - 8;
+		}
+		while (start < end) {
+			System.err.format(" %03o", mem[++start] & 0x0ff);
+		}
+		System.err.format("}");
 	}
 }

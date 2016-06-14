@@ -37,26 +37,26 @@ public class I_BCC implements Instruction {
 			// taken = taken && true;
 			break;
 		case 010:
-			taken = taken && ((b & 100) != 0);
+			taken = taken && ((b & 0100) != 0);
 			break;
 		case 020:
-			taken = taken && ((b & 200) != 0);
+			taken = taken && ((b & 0200) != 0);
 			break;
 		case 030:
-			taken = taken && ((b & 300) == 300);
+			taken = taken && ((b & 0300) == 0300);
 			break;
 		case 040:
-			taken = taken && ((b & 300) == 000);
+			taken = taken && ((b & 0300) == 0000);
 			break;
 		case 050:
-			taken = taken && ((b & 300) == 100);
+			taken = taken && ((b & 0300) == 0100);
 			break;
 		case 060:
-			taken = taken && ((b & 300) == 200);
+			taken = taken && ((b & 0300) == 0200);
 			break;
 		case 070:
 			// TODO: word WM set, or *only* WM set?
-			taken = taken || ((b & 100) != 0);
+			taken = taken || ((b & 0100) != 0);
 			break;
 		}
 		if (taken) {

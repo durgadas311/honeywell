@@ -59,7 +59,7 @@ public class InstrDecode {
 	public static final byte OP_MCE = 074;	// Move Characters and Edit
 
 	public static final byte OP_PDT = 066;	// Peripheral Data Transfer
-	public static final byte OP_PCB = 066;	// Peripheral Control and Branch
+	public static final byte OP_PCB = 064;	// Peripheral Control and Branch
 
 	public static final byte OP_IIC = 000;	// Internal Interrupt Call... TBD
 
@@ -106,21 +106,21 @@ public class InstrDecode {
 		i_flags[OP_CAM] = OP_HAS_V;
 		i_flags[OP_CSM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_EXM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
-		i_flags[OP_MAT] = OP_REQ_A | OP_REQ_B | OP_REQ_V;
-		i_flags[OP_MIT] = OP_REQ_A | OP_REQ_B | OP_REQ_V;
-		i_flags[OP_LIB] = OP_REQ_A | OP_HAS_B | OP_PRIV;
-		i_flags[OP_SIB] = OP_REQ_A | OP_HAS_B;
+		i_flags[OP_MAT] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_REQ_A | OP_REQ_B | OP_REQ_V;
+		i_flags[OP_MIT] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_REQ_A | OP_REQ_B | OP_REQ_V;
+		i_flags[OP_LIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B | OP_PRIV;
+		i_flags[OP_SIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B;
 		i_flags[OP_TLU] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 
-		i_flags[OP_SVI] = OP_REQ_V | OP_PRIV;
-		i_flags[OP_RVI] = OP_REQ_A | OP_REQ_V | OP_PRIV;
+		i_flags[OP_SVI] = OP_HAS_V | OP_REQ_V | OP_PRIV;
+		i_flags[OP_RVI] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
 		i_flags[OP_MC] = 0;
 		i_flags[OP_RNM] = OP_HAS_A | OP_HAS_B | OP_PRIV;
 
 		i_flags[OP_MCE] = OP_HAS_A | OP_HAS_B;
 
-		i_flags[OP_PDT] = OP_REQ_A | OP_REQ_V | OP_PRIV;
-		i_flags[OP_PCB] = OP_REQ_A | OP_REQ_V | OP_PRIV;
+		i_flags[OP_PDT] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
+		i_flags[OP_PCB] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
 
 		i_flags[OP_IIC] = OP_PRIV;
 		// FPU
