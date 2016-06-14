@@ -7,7 +7,7 @@ public class I_LCR implements Instruction {
 		byte v = sys.CTL.getV();
 		boolean allowed = (v == 064 || v == 067 || v == 070 || v == 077);
 		if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
-				!sys.CTL.isPROCEED()) {
+				!sys.isProceed()) {
 			if (!sys.CTL.allowLCR() || !allowed) {
 				throw new RuntimeException("LCR violation");
 			}

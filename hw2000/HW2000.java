@@ -36,6 +36,7 @@ public class HW2000
 	private int op_xtra_num;
 	Instruction op_exec;
 	public boolean halt;
+	private boolean _proceed;
 
 	private int fsr;
 	public int iaar;	// needed by branch instructions
@@ -80,6 +81,8 @@ public class HW2000
 	public boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
 	public boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
 	public boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
+
+	public boolean isProceed() { return _proceed; }
 
 	public Peripheral getPeriph(byte op) {
 		Peripheral p = pdc.getPerph(op);
@@ -324,6 +327,8 @@ public class HW2000
 	}
 
 	public void fetch() {
+		_proceed = CTL.isPROCEED();
+		CTL.clrPROCEED();
 		checkIntr(); // might get diverted here...
 
 		// It appears to be common practice to use CW/SW on instructions
@@ -356,7 +361,6 @@ public class HW2000
 		// just get all extra characters, let implementations
 		// sort it out...
 		fetchXtra(isr);
-		CTL.clrPROCEED();
 		SR = isr;
 	}
 

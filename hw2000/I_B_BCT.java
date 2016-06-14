@@ -48,7 +48,7 @@ public class I_B_BCT implements Instruction {
 			} else {
 				// SENSE - privileged
 				if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
-						!sys.CTL.isPROCEED() &&
+						!sys.isProceed() &&
 						!sys.CTL.privBCT()) {
 					throw new RuntimeException("BCT Violation");
 				}
