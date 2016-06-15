@@ -45,6 +45,8 @@ public class I_B_BCT implements Instruction {
 				if (yes) {
 					taken = true;
 				}
+			} else if ((v & 017) == 0) {
+				taken = true;
 			} else {
 				// SENSE - privileged
 				if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&

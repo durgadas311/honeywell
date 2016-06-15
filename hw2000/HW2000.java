@@ -401,9 +401,27 @@ public class HW2000
 		}
 	}
 
+	public void dumpRange(int beg, int end) {
+		int x = 0;
+		int m = beg;
+		while (m <= end) {
+			if (x == 0) {
+				System.err.format("%07o:", m);
+			}
+			System.err.format(" %03o", mem[m++] & 0x0ff);
+			if (++x >= 16) {
+				x = 0;
+				System.err.format("\n");
+			}
+		}
+		if (x != 0) {
+			System.err.format("\n");
+		}
+	}
+
 	public void dumpMem(String tag, int excl, int end) {
 		int start = excl;
-		System.err.format("{%s=", tag);
+		System.err.format("%s={", tag);
 		if (end - start > 8) {
 			System.err.format("...");
 			start = end - 8;
@@ -411,6 +429,41 @@ public class HW2000
 		while (start < end) {
 			System.err.format(" %03o", mem[++start] & 0x0ff);
 		}
-		System.err.format("}");
+		System.err.format(" }");
+	}
+
+	public void dumpBin(String tag, int var) {
+		long l = 0;
+		int b = var;
+		int x = 0;
+		while (x < 15 && b > 0 && (mem[b] & 0100) == 0) {
+			--b;
+			++x;
+		}
+		System.err.format("%s={", tag);
+		while (b <= var) {
+			System.err.format(" %03o", mem[b] & 0x0ff);
+			l = (l << 6) | (mem[b] & 077);
+			++b;
+		}
+		System.err.format("} (%d)\n", l);
+	}
+
+	public void dumpDec(String tag, int var) {
+		long l = 0;
+		int b = var;
+		int x = 0;
+		int s = mem[var] & 060;
+		while (x < 15 && b > 0 && (mem[b] & 0100) == 0) {
+			--b;
+			++x;
+		}
+		System.err.format("%s={", tag);
+		while (b <= var) {
+			System.err.format(" %03o", mem[b] & 0x0ff);
+			l = (l * 10) + (mem[b] & 017);
+			++b;
+		}
+		System.err.format("} (%s%d)\n", (s == 040 ? "-" : "+"), l);
 	}
 }
