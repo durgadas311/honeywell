@@ -54,7 +54,7 @@ public class HW2000
 		AC = new double[8];
 		mem = new byte[524288]; // TODO: mmap file
 		Arrays.fill(mem, (byte)0);
-		idc = new InstrDecode();
+		idc = new InstrDecode(false);
 		pdc = new PeriphDecode();
 		CLC = new int[16];
 		SLC = new int[16];

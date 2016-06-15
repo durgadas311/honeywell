@@ -1,6 +1,10 @@
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 public class InstrDecode {
+	public static final byte OP_ILL = 070;	// An (otherwise) illegal op-code
+
 	public static final int OP_HAS_A = 0x0001;
 	public static final int OP_HAS_B = 0x0002;
 	public static final int OP_DUP_A = 0x0004;
@@ -69,10 +73,10 @@ public class InstrDecode {
 
 	private int[] i_flags;
 	private Instruction[] i_exec;
+	private Map<String,Byte> i_asm;
 
-	public InstrDecode() {
+	public InstrDecode(boolean asm) {
 		i_flags = new int[64];
-		i_exec = new Instruction[64];
 		Arrays.fill(i_flags, OP_INVAL);
 		i_flags[OP_A] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_S] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
@@ -128,59 +132,118 @@ public class InstrDecode {
 		i_flags[OP_FAA] = OP_HAS_V;
 
 		// ---------------------------------------------------
-		i_exec[OP_A] = new I_A();
-		i_exec[OP_S] = new I_S();
-		i_exec[OP_BA] = new I_BA();
-		i_exec[OP_BS] = new I_BS();
-		i_exec[OP_ZA] = new I_ZA();
-		i_exec[OP_ZS] = new I_ZS();
-		i_exec[OP_M] = new I_M();
-		i_exec[OP_D] = new I_D();
+		if (!asm) {
+			i_exec = new Instruction[64];
+			i_exec[OP_A] = new I_A();
+			i_exec[OP_S] = new I_S();
+			i_exec[OP_BA] = new I_BA();
+			i_exec[OP_BS] = new I_BS();
+			i_exec[OP_ZA] = new I_ZA();
+			i_exec[OP_ZS] = new I_ZS();
+			i_exec[OP_M] = new I_M();
+			i_exec[OP_D] = new I_D();
 
-		i_exec[OP_EXT] = new I_EXT();
-		i_exec[OP_HA] = new I_HA();
-		i_exec[OP_SST] = new I_SST();
-		i_exec[OP_C] = new I_C();
+			i_exec[OP_EXT] = new I_EXT();
+			i_exec[OP_HA] = new I_HA();
+			i_exec[OP_SST] = new I_SST();
+			i_exec[OP_C] = new I_C();
 
-		i_exec[OP_B] = new I_B_BCT(); // B and BCT
-		i_exec[OP_BCC] = new I_BCC();
-		i_exec[OP_BCE] = new I_BCE();
-		i_exec[OP_BBE] = new I_BBE();
+			i_exec[OP_B] = new I_B_BCT(); // B and BCT
+			i_exec[OP_BCC] = new I_BCC();
+			i_exec[OP_BCE] = new I_BCE();
+			i_exec[OP_BBE] = new I_BBE();
 
-		i_exec[OP_SW] = new I_SW();
-		i_exec[OP_SI] = new I_SI();
-		i_exec[OP_CW] = new I_CW();
-		i_exec[OP_CI] = new I_CI();
-		i_exec[OP_H] = new I_H();
-		i_exec[OP_NOP] = new I_NOP();
-		i_exec[OP_MCW] = new I_MCW();
-		i_exec[OP_LCA] = new I_LCA();
-		i_exec[OP_SCR] = new I_SCR();
-		i_exec[OP_LCR] = new I_LCR();
-		i_exec[OP_CAM] = new I_CAM();
-		i_exec[OP_CSM] = new I_CSM();
-		i_exec[OP_EXM] = new I_EXM();
-		i_exec[OP_MAT] = new I_MAT();
-		i_exec[OP_MIT] = new I_MIT();
-		i_exec[OP_LIB] = new I_LIB();
-		i_exec[OP_SIB] = new I_SIB();
-		i_exec[OP_TLU] = new I_TLU();
-		i_exec[OP_MOS] = new I_MOS();
+			i_exec[OP_SW] = new I_SW();
+			i_exec[OP_SI] = new I_SI();
+			i_exec[OP_CW] = new I_CW();
+			i_exec[OP_CI] = new I_CI();
+			i_exec[OP_H] = new I_H();
+			i_exec[OP_NOP] = new I_NOP();
+			i_exec[OP_MCW] = new I_MCW();
+			i_exec[OP_LCA] = new I_LCA();
+			i_exec[OP_SCR] = new I_SCR();
+			i_exec[OP_LCR] = new I_LCR();
+			i_exec[OP_CAM] = new I_CAM();
+			i_exec[OP_CSM] = new I_CSM();
+			i_exec[OP_EXM] = new I_EXM();
+			i_exec[OP_MAT] = new I_MAT();
+			i_exec[OP_MIT] = new I_MIT();
+			i_exec[OP_LIB] = new I_LIB();
+			i_exec[OP_SIB] = new I_SIB();
+			i_exec[OP_TLU] = new I_TLU();
+			i_exec[OP_MOS] = new I_MOS();
 
-		i_exec[OP_SVI] = new I_SVI();
-		i_exec[OP_RVI] = new I_RVI();
-		i_exec[OP_MC] = new I_MC();
-		i_exec[OP_RNM] = new I_RNM();
+			i_exec[OP_SVI] = new I_SVI();
+			i_exec[OP_RVI] = new I_RVI();
+			i_exec[OP_MC] = new I_MC();
+			i_exec[OP_RNM] = new I_RNM();
 
-		i_exec[OP_MCE] = new I_MCE();
+			i_exec[OP_MCE] = new I_MCE();
 
-		i_exec[OP_PDT] = new I_PDT();
-		i_exec[OP_PCB] = new I_PCB();
+			i_exec[OP_PDT] = new I_PDT();
+			i_exec[OP_PCB] = new I_PCB();
 
-		i_exec[OP_IIC] = new I_IIC();
-		// FPU
-		i_exec[OP_FMA] = new I_FMA();
-		i_exec[OP_FAA] = new I_FAA();
+			i_exec[OP_IIC] = new I_IIC();
+			// FPU
+			i_exec[OP_FMA] = new I_FMA();
+			i_exec[OP_FAA] = new I_FAA();
+		} else {
+			i_asm = new HashMap<String,Byte>();
+			i_asm.put("A", OP_A);
+			i_asm.put("S", OP_S);
+			i_asm.put("BA", OP_BA);
+			i_asm.put("BS", OP_BS);
+			i_asm.put("ZA", OP_ZA);
+			i_asm.put("ZS", OP_ZS);
+			i_asm.put("M", OP_M);
+			i_asm.put("D", OP_D);
+
+			i_asm.put("EXT", OP_EXT);
+			i_asm.put("HA", OP_HA);
+			i_asm.put("SST", OP_SST);
+			i_asm.put("C", OP_C);
+
+			i_asm.put("B", OP_B);
+			i_asm.put("BCT", OP_B);
+			i_asm.put("BCC", OP_BCC);
+			i_asm.put("BCE", OP_BCE);
+			i_asm.put("BBE", OP_BBE);
+
+			i_asm.put("SW", OP_SW);
+			i_asm.put("SI", OP_SI);
+			i_asm.put("CW", OP_CW);
+			i_asm.put("CI", OP_CI);
+			i_asm.put("H", OP_H);
+			i_asm.put("NOP", OP_NOP);
+			i_asm.put("MCW", OP_MCW);
+			i_asm.put("LCA", OP_LCA);
+			i_asm.put("SCR", OP_SCR);
+			i_asm.put("LCR", OP_LCR);
+			i_asm.put("CAM", OP_CAM);
+			i_asm.put("CSM", OP_CSM);
+			i_asm.put("EXM", OP_EXM);
+			i_asm.put("MAT", OP_MAT);
+			i_asm.put("MIT", OP_MIT);
+			i_asm.put("LIB", OP_LIB);
+			i_asm.put("SIB", OP_SIB);
+			i_asm.put("TLU", OP_TLU);
+			i_asm.put("MOS", OP_MOS);
+
+			i_asm.put("SVI", OP_SVI);
+			i_asm.put("RVI", OP_RVI);
+			i_asm.put("MC", OP_MC);
+			i_asm.put("RNM", OP_RNM);
+
+			i_asm.put("MCE", OP_MCE);
+
+			i_asm.put("PDT", OP_PDT);
+			i_asm.put("PCB", OP_PCB);
+
+			i_asm.put("IIC", OP_IIC);
+
+			i_asm.put("FMA", OP_FMA);
+			i_asm.put("FAA", OP_FAA);
+		}
 	}
 
 	public int getFlags(byte op) {
@@ -189,5 +252,13 @@ public class InstrDecode {
 
 	public Instruction getExec(byte op) {
 		return i_exec[op & 077];
+	}
+
+	public byte getOp(String nm) {
+		Byte b = i_asm.get(nm);
+		if (b == null) {
+			return OP_ILL;
+		}
+		return b;
 	}
 }
