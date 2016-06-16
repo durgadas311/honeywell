@@ -4,6 +4,24 @@ import java.util.HashMap;
 
 public class InstrDecode {
 	public static final byte OP_ILL = 070;	// An (otherwise) illegal op-code
+	public static final byte OP_UNUSED_A = 001;
+	public static final byte OP_UNUSED_B = 002;
+	public static final byte OP_UNUSED_C = 003;
+	public static final byte OP_UNUSED_D = 004;
+	public static final byte OP_UNUSED_E = 005;
+	public static final byte OP_UNUSED_F = 011;
+	public static final byte OP_UNUSED_G = 012;
+	public static final byte OP_UNUSED_H = 047;
+	public static final byte OP_UNUSED_I = 050;
+	public static final byte OP_UNUSED_J = 051;
+	public static final byte OP_UNUSED_K = 052;
+	public static final byte OP_UNUSED_L = 053;
+	public static final byte OP_UNUSED_M = 061;
+	public static final byte OP_UNUSED_N = 063;
+	public static final byte OP_UNUSED_O = 071;	// used for Easycoder "B" vs "BCT"
+	public static final byte OP_UNUSED_P = 072;	// used for Easycoder "B" vs "BCT"
+	public static final byte OP_UNUSED_Q = 073;
+	public static final byte OP_UNUSED_R = 075;
 
 	public static final int OP_HAS_A = 0x0001;
 	public static final int OP_HAS_B = 0x0002;
@@ -13,6 +31,7 @@ public class InstrDecode {
 	public static final int OP_REQ_A = 0x0020;
 	public static final int OP_REQ_B = 0x0040;
 	public static final int OP_REQ_V = 0x0080;
+	public static final int OP_SPC = 0x2000;
 	public static final int OP_PRIV = 0x4000;
 	public static final int OP_INVAL = 0x8000;
 
@@ -31,6 +50,8 @@ public class InstrDecode {
 	public static final byte OP_C = 033;	// Compare
 
 	public static final byte OP_B = 065;	// Branch [on Condition Test]
+	public static final byte OP_B_B = OP_UNUSED_O;		// Branch (Easycoder)
+	public static final byte OP_B_BCT = OP_UNUSED_P;	// Branch on Condition Test (Easycoder)
 	public static final byte OP_BCC = 054;	// Branch on Character Condition
 	public static final byte OP_BCE = 055;	// Branch if Character Equal
 	public static final byte OP_BBE = 056;	// Branch on Bit Equal
@@ -92,7 +113,13 @@ public class InstrDecode {
 		i_flags[OP_SST] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_C] = OP_HAS_A | OP_HAS_B;
 
-		i_flags[OP_B] = OP_HAS_A | OP_HAS_V; // B, and BCT (conditionally priv)
+		if (asm) {
+			// Not true opcodes, but converted later. Need separate flags.
+			i_flags[OP_B_B] = OP_HAS_A | OP_REQ_A | OP_SPC;
+			i_flags[OP_B_BCT] = OP_HAS_A | OP_HAS_V | OP_SPC;
+		} else {
+			i_flags[OP_B] = OP_HAS_A | OP_HAS_V; // B, and BCT (conditionally priv)
+		}
 		i_flags[OP_BCC] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_BCE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_BBE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
@@ -203,8 +230,8 @@ public class InstrDecode {
 			i_asm.put("SST", OP_SST);
 			i_asm.put("C", OP_C);
 
-			i_asm.put("B", OP_B);
-			i_asm.put("BCT", OP_B);
+			i_asm.put("B", OP_B_B);
+			i_asm.put("BCT", OP_B_BCT);
 			i_asm.put("BCC", OP_BCC);
 			i_asm.put("BCE", OP_BCE);
 			i_asm.put("BBE", OP_BBE);
