@@ -20,6 +20,11 @@ public class Assembler {
 	boolean end;
 	boolean asmPass;
 	String prog;
+	int endAdr;
+	int minAdr;
+	int maxAdr;
+	byte[] image;
+	CoreMemory sys;
 
 	// TODO:
 	//	Handle ad-hoc constants.
@@ -44,6 +49,8 @@ public class Assembler {
 		cvt = new CharConverter(new CardPunchOptions());
 		out = null;
 		lst = null;
+		sys = null;
+		image = null;
 	}
 
 	public int passOne() {
@@ -52,6 +59,9 @@ public class Assembler {
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
+		endAdr = 0;
+		minAdr = 0x100000;
+		maxAdr = 0;
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		try {
@@ -60,7 +70,38 @@ public class Assembler {
 		while (errs.size() > 0) {
 			System.err.println(errs.remove(0));
 		}
-		System.err.println("END OF PASS 1");
+		//System.err.format("END OF PASS 1 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
+		if (ret >= 0) {
+			image = new byte[maxAdr - minAdr];
+		}
+		return ret;
+	}
+
+	public int getMin() { return minAdr; }
+	public int getMax() { return maxAdr; }
+	public int getStart() { return endAdr; }
+
+	public int passTwo(CoreMemory sys, File list) {
+		try {
+			in = new BufferedReader(new FileReader(inFile));
+			if (list != null) {
+				lst = new FileOutputStream(list);
+			}
+		} catch (Exception ee) {
+			// 'in' should never fail - already validated in ctor.
+			ee.printStackTrace();
+			return -1;
+		}
+		this.sys = sys;
+		asmPass = true;
+		int ret = 0;
+		currLoc = 0;
+		lineNo = 0;
+		end = false;
+		while (!end && (ret = scanOne()) >= 0) {
+		}
+		try { in.close(); } catch (Exception ee) {}
+		try { if (lst != null) lst.close(); } catch (Exception ee) {}
 		return ret;
 	}
 
@@ -85,10 +126,28 @@ public class Assembler {
 		end = false;
 		while (!end && (ret = scanOne()) >= 0) {
 		}
-		try {
-			in.close();
-		} catch (Exception ee) {}
-		System.err.println("END OF PASS 2");
+		System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
+		if (ret >= 0 && out != null) {
+			objOut(image);
+		}
+		if (lst != null) {
+			int x = 0;
+			for (Map.Entry<String, Integer> entry : symTab.entrySet()) {
+				String l = String.format("  %6s %07o", entry.getKey(), entry.getValue());
+				++x;
+				if (x >= 7) {
+					x = 0;
+					l += '\n';
+				}
+				listOut(l);
+			}
+			if (x > 0) {
+				listOut("\n");
+			}
+		}
+		try { in.close(); } catch (Exception ee) {}
+		try { if (lst != null) lst.close(); } catch (Exception ee) {}
+		try { if (out != null) out.close(); } catch (Exception ee) {}
 		return ret;
 	}
 
@@ -110,6 +169,9 @@ public class Assembler {
 		String line = "";
 		code = null;
 		int orgLoc = currLoc;
+		if (!asmPass && currLoc < minAdr) {
+			minAdr = currLoc;
+		}
 		try {
 			line = in.readLine();
 			if (line == null) {
@@ -120,37 +182,29 @@ public class Assembler {
 			return -1;
 		}
 		++lineNo;
-		int ll = line.length();
-		if (ll < 6) {
-			// TODO: pass line through to listing...
-			return 0;
-		}
+		String card = String.format("%-80s", line);
 		// TODO: handle D data cards... C/L continuation and macro...
-		String typ = line.substring(5, 6);
-		if (typ.equals("*") || typ.equals("T")) {
+		char typ = card.charAt(5);
+		if (typ == '*' || typ == 'T') {
 			if (lst != null) {
 				String l = "                                 " + line + "\n";
 				listOut(l);
 			}
 			return 0;
 		}
-		String mrk = line.substring(6, 7);
+		char mrk = card.charAt(6);
 		String loc;
 		String opc;
 		String opd;
+		// TODO: extended symbol length
 		if (true) {
-			loc = line.substring(7, 14);
-			if (ll < 20) {
-				opc = line.substring(14).trim();
-				opd = "";
-			} else {
-				opc = line.substring(14, 20).trim();
-				opd = line.substring(20);
-			}
+			loc = card.substring(7, 14);
+			opc = card.substring(14, 20).trim();
+			opd = card.substring(20);
 		} else {
-			loc = line.substring(7, 18);
-			opc = line.substring(18, 24).trim();
-			opd = line.substring(24);
+			loc = card.substring(7, 18);
+			opc = card.substring(18, 24).trim();
+			opd = card.substring(24);
 		}
 		boolean rev = false;
 		if (loc.startsWith(" ")) {
@@ -159,7 +213,15 @@ public class Assembler {
 		} else {
 			loc = loc.trim();
 		}
-		int e = opd.indexOf(' ');
+		int e = 0;
+		// first, preserve "quotes"...
+		if (opd.length() > 0 && opd.charAt(0) == '@') {
+			e = opd.indexOf('@', 1);
+			if (e < 0) {
+				e = 0;
+			}
+		}
+		e = opd.indexOf(' ', e);
 		if (e >= 0) {
 			opd = opd.substring(0, e).trim();
 		}
@@ -170,21 +232,45 @@ public class Assembler {
 			e = processAsmDir(opc, mrk, loc, rev, opd);
 		}
 		if (!asmPass) {
+			if (currLoc > maxAdr) {
+				maxAdr = currLoc;
+			}
 			return e;
 		}
-		if (out != null && code != null) {
-			objOut(code);
+		if (code != null) {
+			if (image != null) {
+				for (int y = 0; y < code.length; ++y) {
+					image[orgLoc - minAdr + y] = code[y];
+				}
+			}
+			if (sys != null) {
+				for (int y = 0; y < code.length; ++y) {
+					sys.writeMem(orgLoc + y, code[y]);
+				}
+			}
 		}
 		if (lst != null) {
 			String l = "";
 			if (code != null) {
+				char mk = ' ';
+				switch(code[0] & 0300) {
+				case 0100:
+					mk = 'W';
+					break;
+				case 0200:
+					mk = 'I';
+					break;
+				case 0300:
+					mk = 'R';
+					break;
+				}
 				for (int y = 0; y < code.length; ++y) {
 					l += String.format("%02o", code[y] & 077);
 				}
 				if (l.length() > 16) {
 					l = l.substring(0, 16) + "+";
 				}
-				l = String.format("     %07o %c  %-17s", orgLoc, 'W', l);
+				l = String.format("     %07o %c  %-17s", orgLoc, mk, l);
 			} else if (e >= 0x100000) { // special case for some ASM directives
 				l = String.format("     %07o                     ",
 					(e & 0x0fffff));
@@ -258,8 +344,9 @@ public class Assembler {
 		if (c == '@') {
 			int e = opd.indexOf('@', 1);
 			if (e < 0) {
+				e = opd.length();
 			}
-			byte[] bb = new byte[e];
+			byte[] bb = new byte[e - 1];
 			for (int y = 1; y < e; ++y) {
 				bb[y - 1] = cvt.asciiToHw((byte)(opd.charAt(y) & 0x7f));
 			}
@@ -384,26 +471,25 @@ public class Assembler {
 				return -1;
 			}
 		}
-		if ((flags & InstrDecode.OP_HAS_V) != 0) {
-			if (ox < opds.length) {
-				int n = opds.length - ox;
-				// TODO: req'd number of variants?
-				v = new byte[n];
-				for (int y = 0; y < n; ++y) {
-					v[y] = parseVar(opds[ox + y]);
-				}
-				il += n;
-				xflags |= InstrDecode.OP_HAS_V;
-				ox = opds.length;
-			} else if ((flags & InstrDecode.OP_REQ_V) != 0) {
-				errs.add("Reqd variants missing at line " + lineNo);
-				return -1;
+		// If programmer added variants, assemble them regardless...
+		if (ox < opds.length && opds[ox].length() > 0) {
+			int n = opds.length - ox;
+			// TODO: req'd number of variants?
+			v = new byte[n];
+			for (int y = 0; y < n; ++y) {
+				v[y] = parseVar(opds[ox + y]);
 			}
+			il += n;
+			xflags |= InstrDecode.OP_HAS_V;
+			ox = opds.length;
+		} else if ((flags & InstrDecode.OP_REQ_V) != 0) {
+			errs.add("Reqd variants missing at line " + lineNo);
+			return -1;
 		}
 		if (!asmPass) {
-			setLabel(loc, rev, 0);
+			setLabel(loc, !rev, 0);
 			currLoc += il;
-			setLabel(loc, !rev, il);
+			setLabel(loc, rev, il);
 			return il;
 		}
 		code = new byte[il];
@@ -423,13 +509,13 @@ public class Assembler {
 				code[x++] = (byte)(v[y] & 077);
 			}
 		}
-		setLabel(loc, rev, 0);	// set labels again?
+		setLabel(loc, !rev, 0);	// set labels again?
 		currLoc += il;
-		setLabel(loc, !rev, il);	// set labels again?
+		setLabel(loc, rev, il);	// set labels again?
 		return il;
 	}
 
-	private int processAsmDir(String opc, String mrk, String loc, boolean rev,
+	private int processAsmDir(String opc, char mrk, String loc, boolean rev,
 						String opd) {
 		if (opc.equals("DCW")) {
 			return processDefCon(mrk, loc, rev, opd, true);
@@ -485,15 +571,19 @@ public class Assembler {
 		} else if (opc.equals("CLEAR")) {
 			return noImpl(opc);
 		} else if (opc.equals("END")) {
-			// TODO: pull start address...
+			int ret = 0;
+			if (opd.length() > 0) {
+				endAdr = parseAdr(opd);
+				ret = endAdr | 0x100000;
+			}
 			end = true;
-			return 0;
+			return ret;
 		}
 		return noImpl(opc);
 	}
 
-	private int processDefCon(String mrk, String loc, boolean rev, String opd, boolean mark) {
-		setLabel(loc, !rev, 0);
+	private int processDefCon(char mrk, String loc, boolean rev, String opd, boolean mark) {
+		setLabel(loc, rev, 0);
 		code = parseCon(opd);
 		if (code == null) {
 			return -1;
@@ -502,18 +592,23 @@ public class Assembler {
 		if (mark) {
 			code[0] |= 0100;
 		}
-		// TODO: special marks by 'mrk'
+		if (mrk == 'L') {
+			code[0] |= 0200;
+		}
+		if (mrk == 'R') {
+			code[len - 1] |= 0200;
+		}
 		currLoc += len;
-		setLabel(loc, rev, len);
+		setLabel(loc, !rev, len);
 		return len;
 	}
 
-	private int processResv(String mrk, String loc, boolean rev, String opd) {
-		setLabel(loc, !rev, 0);
+	private int processResv(char mrk, String loc, boolean rev, String opd) {
+		setLabel(loc, rev, 0);
 		int len = Integer.valueOf(opd);
 		int ret = currLoc | 0x100000;
 		currLoc += len;
-		setLabel(loc, rev, len);
+		setLabel(loc, !rev, len);
 		return ret;
 	}
 
@@ -540,18 +635,27 @@ public class Assembler {
 		return ret;
 	}
 
-	private int processDefSym(String mrk, String loc, boolean rev, String opd) {
-		setLabel(loc, !rev, 0);
+	private int processDefSym(char mrk, String loc, boolean rev, String opd) {
+		setLabel(loc, rev, 0);
 		int adr = parseAdr(opd);
+		// TODO: support adr[,adr[,var]]
+		int len = adrMode;
 		code = new byte[adrMode];
 		putAdr(code, 0, adr);
-		currLoc += adrMode;
-		setLabel(loc, rev, adrMode);
+		code[0] |= 0100;
+		if (mrk == 'L') {
+			code[0] |= 0200;
+		}
+		if (mrk == 'R') {
+			code[len - 1] |= 0200;
+		}
+		currLoc += len;
+		setLabel(loc, !rev, len);
 		return adrMode;
 	}
 
 	private int noImpl(String op) {
-		errs.add(op + " not supported");
+		errs.add(op + " not supported at line " + lineNo);
 		return -1;
 	}
 }

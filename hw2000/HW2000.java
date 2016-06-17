@@ -1,7 +1,7 @@
 import java.util.Arrays;
 import java.io.*;
 
-public class HW2000
+public class HW2000 implements CoreMemory
 {
 	public static final byte M_IM = (byte)0x80;
 	public static final byte M_WM = 0x40;
@@ -370,6 +370,30 @@ public class HW2000
 
 	private boolean _trace = false;
 
+	public void asmNGo(String pgm, String lst, boolean trace) {
+		File list = null;
+		if (lst != null) {
+			list = new File(lst);
+		}
+		_trace = trace;
+		Assembler asm = new Assembler(new File(pgm));
+		int e = asm.passOne();
+		if (e < 0) {
+			return;
+		}
+		int low = asm.getMin();
+		int hi = asm.getMax();
+		int start = asm.getStart();
+		e = asm.passTwo(this, list);
+		if (e < 0) {
+			return;
+		}
+		System.err.format("Running %07o %07o %07o\n", low, hi, start);
+		setAM(HW2000CCR.AIR_AM_2C);	// TODO: fix this
+		SR = start;
+		run();
+	}
+
 	public void loadNGo(String pgm, byte am, int start, boolean trace) {
 		_trace = trace;
 		int n = -1;
@@ -393,6 +417,11 @@ public class HW2000
 		while (!halt) {
 			try {
 				fetch();
+if (_trace) {
+	String op = op_exec.getClass().getName();
+	System.err.format("%07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
+	System.err.flush();
+}
 				execute();
 			} catch (Exception ee) {
 				// Loop around, either we're halted or there

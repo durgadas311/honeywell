@@ -67,7 +67,7 @@ public class I_M implements Instruction {
 	public void execute(HW2000 sys) {
 		int a = I_M.fieldStart(sys, sys.AAR);
 		// TODO: worry about wrap-around?
-		int na = (a - sys.AAR);
+		int na = (sys.AAR - a);
 		BigDecimal bda = I_M.hwToNative(sys, sys.AAR, a);
 		sys.AAR = a;
 
