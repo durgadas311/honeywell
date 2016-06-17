@@ -7,6 +7,8 @@ import java.util.HashMap;
 public class Assembler {
 	File inFile;
 	BufferedReader in;
+	InstrDecode idc;
+	CharConverter cvt;
 	FileOutputStream out;
 	FileOutputStream lst;
 	int currLoc;
@@ -16,6 +18,7 @@ public class Assembler {
 	private Map<String,Integer> symTab;
 	byte[] code;
 	boolean end;
+	boolean asmPass;
 	String prog;
 
 	// TODO:
@@ -37,13 +40,15 @@ public class Assembler {
 			ee.printStackTrace();
 			System.exit(1);
 		}
+		idc = new InstrDecode(true);
+		cvt = new CharConverter(new CardPunchOptions());
 		out = null;
 		lst = null;
 	}
 
 	public int passOne() {
 		asmPass = false;
-		int ret;
+		int ret = 0;
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
@@ -52,6 +57,10 @@ public class Assembler {
 		try {
 			in.close();
 		} catch (Exception ee) {}
+		while (errs.size() > 0) {
+			System.err.println(errs.remove(0));
+		}
+		System.err.println("END OF PASS 1");
 		return ret;
 	}
 
@@ -70,7 +79,7 @@ public class Assembler {
 			return -1;
 		}
 		asmPass = true;
-		int ret;
+		int ret = 0;
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
@@ -79,6 +88,7 @@ public class Assembler {
 		try {
 			in.close();
 		} catch (Exception ee) {}
+		System.err.println("END OF PASS 2");
 		return ret;
 	}
 
@@ -91,7 +101,7 @@ public class Assembler {
 
 	private void listOut(String str) {
 		try {
-			lst.write(str.byteArray());
+			lst.write(str.getBytes());
 		} catch (Exception ee) {
 		}
 	}
@@ -99,6 +109,7 @@ public class Assembler {
 	private int scanOne() {
 		String line = "";
 		code = null;
+		int orgLoc = currLoc;
 		try {
 			line = in.readLine();
 			if (line == null) {
@@ -109,6 +120,11 @@ public class Assembler {
 			return -1;
 		}
 		++lineNo;
+		int ll = line.length();
+		if (ll < 6) {
+			// TODO: pass line through to listing...
+			return 0;
+		}
 		// TODO: handle D data cards... C/L continuation and macro...
 		String typ = line.substring(5, 6);
 		if (typ.equals("*") || typ.equals("T")) {
@@ -124,8 +140,13 @@ public class Assembler {
 		String opd;
 		if (true) {
 			loc = line.substring(7, 14);
-			opc = line.substring(14, 20).trim();
-			opd = line.substring(20);
+			if (ll < 20) {
+				opc = line.substring(14).trim();
+				opd = "";
+			} else {
+				opc = line.substring(14, 20).trim();
+				opd = line.substring(20);
+			}
 		} else {
 			loc = line.substring(7, 18);
 			opc = line.substring(18, 24).trim();
@@ -193,21 +214,21 @@ public class Assembler {
 		}
 		// TODO: handle possible 3rd arg - index ref.
 		String sym = opd.substring(0, ix);
-		if (Character.isDigit(sym.charAt(0)) {
+		if (Character.isDigit(sym.charAt(0))) {
 			adr = Integer.valueOf(sym);
 		} else if (sym.equals("*")) {
 			adr = currLoc;
 		} else {
-			if (symTab.contains(sym)) {
+			if (symTab.containsKey(sym)) {
 				adr = symTab.get(sym);
 			} else if (asmPass) {
-				errs.add("Undefined symbol " + sym);
+				errs.add("Undefined symbol " + sym + " at line " + lineNo);
 				return -1;
 			}
 		}
 		if (ix < opd.length()) {
 			int a = Integer.valueOf(opd.substring(ix + 1));
-			if (opd.charAt(ix).equals('-')) {
+			if (opd.charAt(ix) == '-') {
 				adr -= a;
 			} else {
 				adr += a;
@@ -224,7 +245,7 @@ public class Assembler {
 	}
 
 	private byte parseVar(String opd) {
-		byte v;
+		byte v = 0;
 		try {
 			v = Byte.valueOf(opd, 8);
 		} catch (Exception ee) {
@@ -269,7 +290,7 @@ public class Assembler {
 			if (base == 0) {
 				int f = opd.length() - e;
 				for (int y = 0; y < n; ++y) {
-					if (y + e < f) {
+					if (y < f) {
 						bb[y] = cvt.asciiToHw((byte)
 							(opd.charAt(y + e) & 0x7f));
 					} else {
@@ -290,7 +311,7 @@ public class Assembler {
 			byte[] bb = new byte[e];
 			for (int y = 0; y < e; ++y) {
 				// assume all are decimal digits...
-				bb[y] = (byte)(opd.charAt(y + 1) & 017)
+				bb[y] = (byte)(opd.charAt(y + 1) & 017);
 			}
 			bb[e - 1] |= (byte)(c == '-' ? 040 : 020);
 			return bb;
@@ -329,10 +350,10 @@ public class Assembler {
 		String[] opds = opd.split(",");
 		int ox = 0;
 
-		if ((flags & OP_INVAL) != 0) { // not possible?
+		if ((flags & InstrDecode.OP_INVAL) != 0) { // not possible?
 			return -1;
 		}
-		if ((flags & OP_SPC) != 0) {
+		if ((flags & InstrDecode.OP_SPC) != 0) {
 			op = 065;
 		}
 		int il = 1; // always has an opcode
@@ -341,29 +362,29 @@ public class Assembler {
 		// But this is based on "HAS" flags - an instruction may not
 		// have A or B but may have V. But, if it has A and A was
 		// not provided then it cannot have B or V.
-		if ((flags & OP_HAS_A) != 0) {
-			if (ox < opds.length) {
+		if ((flags & InstrDecode.OP_HAS_A) != 0) {
+			if (ox < opds.length && opds[ox].length() > 0) {
 				a = parseAdr(opds[ox]);
 				il += adrMode;
-				xflags |= OP_HAS_A;
+				xflags |= InstrDecode.OP_HAS_A;
 				++ox;
-			} elseif ((flags & OP_REQ_A) != 0) {
+			} else if ((flags & InstrDecode.OP_REQ_A) != 0) {
 				errs.add("Reqd A field missing at line " + lineNo);
 				return -1;
 			}
 		}
-		if ((flags & OP_HAS_B) != 0) {
-			if (ox < opds.length) {
+		if ((flags & InstrDecode.OP_HAS_B) != 0) {
+			if (ox < opds.length && opds[ox].length() > 0) {
 				b = parseAdr(opds[ox]);
 				il += adrMode;
-				xflags |= OP_HAS_B;
+				xflags |= InstrDecode.OP_HAS_B;
 				++ox;
-			} else if ((flags & OP_REQ_B) != 0) {
+			} else if ((flags & InstrDecode.OP_REQ_B) != 0) {
 				errs.add("Reqd B field missing at line " + lineNo);
 				return -1;
 			}
 		}
-		if ((flags & OP_HAS_V) != 0) {
+		if ((flags & InstrDecode.OP_HAS_V) != 0) {
 			if (ox < opds.length) {
 				int n = opds.length - ox;
 				// TODO: req'd number of variants?
@@ -372,36 +393,40 @@ public class Assembler {
 					v[y] = parseVar(opds[ox + y]);
 				}
 				il += n;
-				xflags |= OP_HAS_V;
+				xflags |= InstrDecode.OP_HAS_V;
 				ox = opds.length;
-			} else if ((flags & OP_REQ_V) != 0) {
+			} else if ((flags & InstrDecode.OP_REQ_V) != 0) {
 				errs.add("Reqd variants missing at line " + lineNo);
 				return -1;
 			}
 		}
 		if (!asmPass) {
+			setLabel(loc, rev, 0);
 			currLoc += il;
+			setLabel(loc, !rev, il);
 			return il;
 		}
 		code = new byte[il];
 		int x = 0;
 		// TODO: punctuation is a variable...
-		code[x++] = op | 0100;
-		if ((xflags & OP_HAS_A) != 0) {
+		code[x++] = (byte)(op | 0100);
+		if ((xflags & InstrDecode.OP_HAS_A) != 0) {
 			putAdr(code, x, a);
 			x += adrMode;
 		}
-		if ((xflags & OP_HAS_B) != 0) {
+		if ((xflags & InstrDecode.OP_HAS_B) != 0) {
 			putAdr(code, x, b);
 			x += adrMode;
 		}
-		if ((xflags & OP_HAS_V) != 0) {
+		if ((xflags & InstrDecode.OP_HAS_V) != 0) {
 			for (int y = 0; y < v.length; ++y) {
 				code[x++] = (byte)(v[y] & 077);
 			}
 		}
-		currLoc += code.length;
-		return code.length;
+		setLabel(loc, rev, 0);	// set labels again?
+		currLoc += il;
+		setLabel(loc, !rev, il);	// set labels again?
+		return il;
 	}
 
 	private int processAsmDir(String opc, String mrk, String loc, boolean rev,
@@ -438,6 +463,7 @@ public class Assembler {
 				return -1;
 			}
 			adrMode = m;
+			return 0;
 		} else if (opc.equals("EQU")) {
 			return processEqu(loc, opd);
 		} else if (opc.equals("CEQU")) {
@@ -463,15 +489,16 @@ public class Assembler {
 			end = true;
 			return 0;
 		}
+		return noImpl(opc);
 	}
 
-	private int processDefCon(String mrk, String loc, String rev, String opd, boolean mark) {
+	private int processDefCon(String mrk, String loc, boolean rev, String opd, boolean mark) {
 		setLabel(loc, !rev, 0);
 		code = parseCon(opd);
 		if (code == null) {
 			return -1;
 		}
-		int len code.length;
+		int len = code.length;
 		if (mark) {
 			code[0] |= 0100;
 		}
@@ -481,7 +508,7 @@ public class Assembler {
 		return len;
 	}
 
-	private int processResv(String mrk, String loc, String rev, String opd) {
+	private int processResv(String mrk, String loc, boolean rev, String opd) {
 		setLabel(loc, !rev, 0);
 		int len = Integer.valueOf(opd);
 		int ret = currLoc | 0x100000;
@@ -492,10 +519,10 @@ public class Assembler {
 
 	private int processOrg(String loc, String opd, boolean rev) {
 		int adr;
-		if (Character.isDigit(opd.charAt(0)) {
+		if (Character.isDigit(opd.charAt(0))) {
 			adr = Integer.valueOf(opd);
-		} else if (symTab.contains(opd)) {
-			adr = symTab.get(sym);
+		} else if (symTab.containsKey(opd)) {
+			adr = symTab.get(opd);
 		} else {
 			errs.add("Undefined symbol " + opd);
 			return -1;
@@ -513,7 +540,7 @@ public class Assembler {
 		return ret;
 	}
 
-	private int processDefSym(String mrk, String loc, String rev, String opd) {
+	private int processDefSym(String mrk, String loc, boolean rev, String opd) {
 		setLabel(loc, !rev, 0);
 		int adr = parseAdr(opd);
 		code = new byte[adrMode];
