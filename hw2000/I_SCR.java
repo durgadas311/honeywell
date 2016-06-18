@@ -8,6 +8,10 @@ public class I_SCR implements Instruction {
 		int reg = 0;
 		if (v < 040) {
 			// CLC or SLC
+			if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
+					!sys.isProceed()) {
+				throw new IIException("SCR violation", HW2000CCR.IIR_OPVIO);
+			}
 		} else switch(v) {
 			// TODO: check privilege...
 			case 054:

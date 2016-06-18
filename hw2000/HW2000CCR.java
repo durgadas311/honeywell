@@ -59,10 +59,10 @@ public class HW2000CCR {
 	public static final byte EIR_II = (byte)0001;
 	private static final byte EIR_CLEAR = (byte)0270;
 
-	private static final byte IIR_FPE = (byte)0200;
-	private static final byte IIR_ADRVIO = (byte)0040;
-	private static final byte IIR_OPVIO = (byte)0020;
-	private static final byte IIR_TIMOUT = (byte)0010;
+	public static final byte IIR_FPE = (byte)0200;
+	public static final byte IIR_ADRVIO = (byte)0040;
+	public static final byte IIR_OPVIO = (byte)0020;
+	public static final byte IIR_TIMOUT = (byte)0010;
 	private static final byte IIR_CLEAR = (byte)0270;
 
 	private byte[] ccr;

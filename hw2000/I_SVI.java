@@ -2,7 +2,7 @@ public class I_SVI implements Instruction {
 	// Store Variant and Indicators
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() == 0) {
-			throw new RuntimeException("SVI malformed");
+			throw new FaultException("SVI malformed");
 		}
 		// must get address of char after variant...
 		int sr = sys.oSR + 2;

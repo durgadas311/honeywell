@@ -9,7 +9,7 @@ public class I_PDT implements Instruction {
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() < 2 ||
 				((sys.getXtra(1) & 030) == 010 && sys.numXtra() < 3)) {
-			throw new RuntimeException("PDT malformed");
+			throw new FaultException("PDT malformed");
 		}
 		byte c2;
 		if ((sys.getXtra(1) & 030) == 010) {

@@ -59,7 +59,7 @@ public class I_FMA implements Instruction {
 
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() != 2) {
-			throw new RuntimeException("FMA malformed");
+			throw new FaultException("FMA malformed");
 		}
 		byte x = (byte)(sys.getXtra(0) & 070);
 		byte y = (byte)(sys.getXtra(0) & 007);

@@ -96,11 +96,11 @@ public class HW2000 implements CoreMemory
 		op_exec = null;
 		op_flags = idc.getFlags(op);
 		if (inval()) {
-			throw new RuntimeException("Invalid OpCode");
+			throw new FaultException("Invalid OpCode");
 		}
 		if (priv() && CTL.inStdMode() && CTL.isPROTECT() &&
 				!CTL.isPROCEED()) {
-			throw new RuntimeException("OpCode Violation " + op);
+			throw new IIException("OpCode Violation " + op, HW2000CCR.IIR_OPVIO);
 		}
 		op_exec = idc.getExec(op);
 	}
@@ -162,11 +162,22 @@ public class HW2000 implements CoreMemory
 		BAR = incrAdr(BAR, inc);
 	}
 
-	public byte readMem(int adr) {
-		if (adr < adr_min || adr >= adr_max) {
-			throw new RuntimeException("Address violation");
+	private int validAdr(int adr) {
+		int a = adr;
+		if (CTL.isRELOC()) {
+			a += adr_min; // or BRR << 12 ?
 		}
-		return mem[adr];
+		if (CTL.inStdMode() && CTL.isPROTECT() &&
+				adr < adr_min || adr >= adr_max) {
+			throw new IIException("Address violation " + adr,
+					HW2000CCR.IIR_ADRVIO);
+		}
+		return a;
+	}
+
+	public byte readMem(int adr) {
+		int a = validAdr(adr);
+		return mem[a];
 	}
 
 	public byte readChar(int adr) {
@@ -174,31 +185,33 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void writeMem(int adr, byte val) {
-		if (adr < adr_min || adr >= adr_max) {
-			throw new RuntimeException("Address violation");
-		}
-		mem[adr] = val;
+		int a = validAdr(adr);
+		mem[a] = val;
 	}
 
 	public void writeChar(int adr, byte val) {
-		if (adr < adr_min || adr >= adr_max) {
-			throw new RuntimeException("Address violation");
-		}
-		mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
+		int a = validAdr(adr);
+		mem[a] = (byte)((mem[a] & 0300) | (val & 077));
 	}
 
 	public void setWord(int adr) {
-		if (adr < adr_min || adr >= adr_max) {
-			throw new RuntimeException("Address violation");
-		}
-		mem[adr] |= 0100;
+		int a = validAdr(adr);
+		mem[a] |= 0100;
 	}
 
 	public void setItem(int adr) {
-		if (adr < adr_min || adr >= adr_max) {
-			throw new RuntimeException("Address violation");
-		}
-		mem[adr] |= 0200;
+		int a = validAdr(adr);
+		mem[a] |= 0200;
+	}
+
+	public void clrWord(int adr) {
+		int a = validAdr(adr);
+		mem[a] &= ~0100;
+	}
+
+	public void clrItem(int adr) {
+		int a = validAdr(adr);
+		mem[a] &= ~0200;
 	}
 
 	// 
@@ -238,7 +251,7 @@ public class HW2000 implements CoreMemory
 	public void fetchAAR(int limit) {
 		if (!hasA() || limit - fsr < am_na) {
 			if (reqA()) {
-				throw new RuntimeException("Missing required A-field");
+				throw new FaultException("Missing required A-field");
 			}
 			return;
 		}
@@ -257,7 +270,7 @@ public class HW2000 implements CoreMemory
 	public void fetchBAR(int limit) {
 		if (!hadA() || !hasB() || limit - fsr < am_na) {
 			if (reqB()) {
-				throw new RuntimeException("Missing required B-field");
+				throw new FaultException("Missing required B-field");
 			}
 			if (dupA()) {
 				BAR = AAR;
@@ -274,7 +287,7 @@ public class HW2000 implements CoreMemory
 		if (op_xtra_num <= 0) {
 			if (reqV()) {
 				// probably just let instructions do this...
-				throw new RuntimeException("Missing required variant");
+				throw new FaultException("Missing required variant");
 			}
 			return;
 		}
@@ -354,7 +367,7 @@ public class HW2000 implements CoreMemory
 		if (isr == 0) {
 			// ran off end of memory... need to halt...
 			halt = true;
-			throw new RuntimeException("ran off end of memory");
+			throw new FaultException("ran off end of memory");
 		}
 		setOp(readMem(fsr++));	// might throw illegal op-code
 		fetchAAR(isr);	// might throw exceptions
@@ -425,9 +438,25 @@ if (_trace) {
 	System.err.flush();
 }
 				execute();
-			} catch (Exception ee) {
-				// Loop around, either we're halted or there
-				// is a pending interrupt.
+			} catch (IIException ie) {
+				if (IIR != 0) {
+					SR = oSR;
+					CTL.setII(ie.type);
+				} else {
+					ie.printStackTrace();
+					halt = true;
+				}
+			} catch (EIException ee) {
+				if (EIR != 0) {
+					SR = oSR;
+					CTL.setEI(ee.type);
+				} else {
+					ee.printStackTrace();
+					halt = true;
+				}
+			} catch (Exception fe) {
+				fe.printStackTrace();
+				halt = true;
 			}
 		}
 	}

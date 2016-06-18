@@ -52,7 +52,7 @@ public class I_B_BCT implements Instruction {
 				if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
 						!sys.isProceed() &&
 						!sys.CTL.privBCT()) {
-					throw new RuntimeException("BCT Violation");
+					throw new IIException("BCT Violation", HW2000CCR.IIR_OPVIO);
 				}
 				// for now, sensors are never active...
 			}

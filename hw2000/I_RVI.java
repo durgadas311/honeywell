@@ -2,7 +2,7 @@ public class I_RVI implements Instruction {
 	// Restore Variant and Indicators
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() == 0) {
-			throw new RuntimeException("SVI malformed");
+			throw new FaultException("SVI malformed");
 		}
 		byte v = sys.getXtra(0);
 		byte a;

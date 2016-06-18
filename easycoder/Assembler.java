@@ -182,6 +182,10 @@ public class Assembler {
 			return -1;
 		}
 		++lineNo;
+		if (line.length() == 0) {
+			// TODO: pass-thru to listing?
+			return 0;
+		}
 		String card = String.format("%-80s", line);
 		// TODO: handle D data cards... C/L continuation and macro...
 		char typ = card.charAt(5);

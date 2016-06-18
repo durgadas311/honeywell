@@ -18,7 +18,7 @@ public class I_MAT implements Instruction {
 			c = (sys.AAR & ~sys.am_mask) | (c & sys.am_mask);
 			c &= ~077; // needed?
 		} else {
-			throw new RuntimeException("MAT malformed");
+			throw new FaultException("MAT malformed");
 		}
 		byte a;
 		byte b;

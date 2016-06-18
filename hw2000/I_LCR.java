@@ -9,14 +9,13 @@ public class I_LCR implements Instruction {
 		if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
 				!sys.isProceed()) {
 			if (!sys.CTL.allowLCR() || !allowed) {
-				throw new RuntimeException("LCR violation");
+				throw new IIException("LCR violation", HW2000CCR.IIR_OPVIO);
 			}
 		}
 		int reg = sys.loadFromAAR();
 		if (v < 040) {
 			// CLC or SLC
 		} else switch(v) {
-			// TODO: check privilege...
 			case 054:
 				sys.ATR = reg;
 				break;
