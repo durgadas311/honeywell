@@ -316,6 +316,7 @@ public class HW2000 implements CoreMemory
 		byte i = CTL.clearIntr();
 		int t;
 		if (i == HW2000CCR.EIR_EI) {
+			setAM(CTL.getAM());
 			t = SR;
 			SR = EIR;
 			EIR = t;
@@ -392,6 +393,7 @@ public class HW2000 implements CoreMemory
 		setAM(HW2000CCR.AIR_AM_2C);	// TODO: fix this
 		SR = start;
 		run();
+		dumpRange(low, hi);
 	}
 
 	public void loadNGo(String pgm, byte am, int start, boolean trace) {
@@ -430,6 +432,7 @@ if (_trace) {
 		}
 	}
 
+	// Range is inclusive, both ends
 	public void dumpRange(int beg, int end) {
 		int x = 0;
 		int m = beg;

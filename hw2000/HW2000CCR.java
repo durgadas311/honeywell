@@ -129,6 +129,9 @@ public class HW2000CCR {
 	public void setAM(byte am) {
 		ccr[AIR] = (byte)((ccr[AIR] & ~AIR_AM) | (am & AIR_AM));
 	}
+	public byte getAM() {
+		return (byte)(ccr[AIR] & AIR_AM);
+	}
 
 	public void setLIB(byte var) { varLIB = var; }
 
