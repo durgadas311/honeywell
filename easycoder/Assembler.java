@@ -294,8 +294,24 @@ public class Assembler {
 	}
 
 	private int parseAdr(String opd) {
-		int ix = opd.indexOf('-');
+		int ix;
 		int adr = 0;
+		boolean ind = false;
+		if (opd.charAt(0) == '(') {
+			if (adrMode < 3) {
+				errs.add("Indirect address in 2-char mode at line " + lineNo);
+				return -1;
+			}
+			ix = opd.indexOf(')');
+			if (ix < 0) {
+				errs.add("Invalid indirect address " + opd + " at line " + lineNo);
+				return -1;
+			}
+			// TODO: can there be residual after ')' ?
+			ind = true;
+			opd = opd.substring(1, ix);
+		}
+		ix = opd.indexOf('-');
 		if (ix < 0) {
 			ix = opd.indexOf('+');
 			if (ix < 0) {
@@ -322,6 +338,13 @@ public class Assembler {
 				adr -= a;
 			} else {
 				adr += a;
+			}
+		}
+		if (ind) {
+			if (adrMode == 3) {
+				adr |= 0700000;
+			} else { // must be 4
+				adr |= 040000000;
 			}
 		}
 		return adr;
