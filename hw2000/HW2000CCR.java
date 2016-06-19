@@ -208,6 +208,14 @@ public class HW2000CCR {
 		return ((ccr[EIR] & (EIR_EI | EIR_II)) == 0);
 	}
 
+	public boolean inEI() {
+		return ((ccr[EIR] & EIR_EI) != 0);
+	}
+
+	public boolean inII() {
+		return ((ccr[EIR] & (EIR_EI | EIR_II)) == EIR_II);
+	}
+
 	public void setEI(byte typ) {
 		eIntr = true;
 		ccr[EIR] |= typ;
@@ -246,7 +254,7 @@ public class HW2000CCR {
 	}
 
 	public boolean isII() {
-		if (iIntr && (ccr[EIR] & (EIR_EI | EIR_II)) == 0) {
+		if (iIntr && inStdMode()) {
 			iIntr = false;
 			ccr[EIR] |= EIR_II;
 			return true;

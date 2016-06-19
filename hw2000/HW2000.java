@@ -430,6 +430,23 @@ public class HW2000 implements CoreMemory
 		run();
 	}
 
+	private boolean setIntr(byte mod, byte typ) {
+		if (CTL.inStdMode()) {
+			SR = oSR;
+			if (mod == HW2000CCR.EIR_EI) {
+				CTL.setEI(typ);
+			} else {
+				CTL.setII(typ);
+			}
+			return true;
+		} else if (CTL.inEI() && mod == HW2000CCR.EIR_II) {
+			CTL.setII(typ);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	public void run() {
 		while (!halt) {
 			try {
@@ -441,17 +458,14 @@ if (_trace) {
 }
 				execute();
 			} catch (IIException ie) {
-				if (IIR != 0) {
-					SR = oSR;
-					CTL.setII(ie.type);
+				// TODO: need to handle II within II...
+				if (IIR != 0 && setIntr(HW2000CCR.EIR_II, ie.type)) {
 				} else {
 					ie.printStackTrace();
 					halt = true;
 				}
 			} catch (EIException ee) {
-				if (EIR != 0) {
-					SR = oSR;
-					CTL.setEI(ee.type);
+				if (EIR != 0 && setIntr(HW2000CCR.EIR_EI, ee.type)) {
 				} else {
 					ee.printStackTrace();
 					halt = true;
