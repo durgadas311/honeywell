@@ -142,6 +142,7 @@ public class InstrDecode {
 		i_flags[OP_LIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B | OP_PRIV;
 		i_flags[OP_SIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B;
 		i_flags[OP_TLU] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
+		i_flags[OP_MOS] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 
 		i_flags[OP_SVI] = OP_HAS_V | OP_REQ_V | OP_PRIV;
 		i_flags[OP_RVI] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;

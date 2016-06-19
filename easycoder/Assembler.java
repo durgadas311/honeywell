@@ -70,7 +70,7 @@ public class Assembler {
 		while (errs.size() > 0) {
 			System.err.println(errs.remove(0));
 		}
-		//System.err.format("END OF PASS 1 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
+		//System.err.format("END OF PASS 1 - %d %07o %07o %07o\n", ret, minAdr, maxAdr, endAdr);
 		if (ret >= 0) {
 			image = new byte[maxAdr - minAdr];
 		}
@@ -465,6 +465,7 @@ public class Assembler {
 		int ox = 0;
 
 		if ((flags & InstrDecode.OP_INVAL) != 0) { // not possible?
+			errs.add(String.format("Invalid op code %02o at line %d", op, lineNo));
 			return -1;
 		}
 		if ((flags & InstrDecode.OP_SPC) != 0) {
@@ -613,6 +614,7 @@ public class Assembler {
 		setLabel(loc, rev, 0);
 		code = parseCon(opd);
 		if (code == null) {
+			errs.add("Could not parse constant " + opd);
 			return -1;
 		}
 		int len = code.length;

@@ -12,6 +12,7 @@ public class I_LCR implements Instruction {
 				throw new IIException("LCR violation", HW2000CCR.IIR_OPVIO);
 			}
 		}
+		boolean restore = true;
 		int reg = sys.loadFromAAR();
 		if (v < 040) {
 			// CLC or SLC
@@ -26,6 +27,7 @@ public class I_LCR implements Instruction {
 				sys.EIR = reg;
 				break;
 			case 067:
+				restore = false;
 				sys.AAR = reg;
 				break;
 			case 070:
@@ -40,6 +42,9 @@ public class I_LCR implements Instruction {
 			default:
 				// throw?
 				break;
+		}
+		if (restore) {
+			sys.restoreAAR();
 		}
 	}
 }

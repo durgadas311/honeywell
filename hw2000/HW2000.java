@@ -99,7 +99,7 @@ public class HW2000 implements CoreMemory
 			throw new FaultException("Invalid OpCode");
 		}
 		if (priv() && CTL.inStdMode() && CTL.isPROTECT() &&
-				!CTL.isPROCEED()) {
+				!isProceed()) {
 			throw new IIException("OpCode Violation " + op, HW2000CCR.IIR_OPVIO);
 		}
 		op_exec = idc.getExec(op);
@@ -341,8 +341,10 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void fetch() {
-		_proceed = CTL.isPROCEED();
-		CTL.clrPROCEED();
+		if (CTL.inStdMode()) {
+			_proceed = CTL.isPROCEED();
+			CTL.clrPROCEED();
+		}
 		checkIntr(); // might get diverted here...
 
 		// It appears to be common practice to use CW/SW on instructions

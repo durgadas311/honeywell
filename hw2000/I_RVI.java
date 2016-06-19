@@ -15,6 +15,7 @@ public class I_RVI implements Instruction {
 			a = sys.readMem(sys.AAR);
 			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.AIR, a);
+			sys.setAM(sys.CTL.getAM());
 		}
 		if ((v & 004) != 0) {
 			a = sys.readMem(sys.AAR);
@@ -39,5 +40,6 @@ public class I_RVI implements Instruction {
 				sys.adr_max = 0x80000;
 			}
 		}
+		sys.restoreAAR();
 	}
 }

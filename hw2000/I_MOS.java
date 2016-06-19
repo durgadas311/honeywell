@@ -72,7 +72,6 @@ public class I_MOS implements Instruction {
 			k2 = (byte)0132;
 			break;
 		}
-
 		byte a;
 		byte b;
 		do {
