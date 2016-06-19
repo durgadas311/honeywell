@@ -310,4 +310,9 @@ public class HW2000CCR {
 	public byte getV() {
 		return (byte)(ccr[VR] & 0077);
 	}
+
+	public void dump() {
+		System.err.format("CR: %03o %03o %03o %03o %03o %03o/%03o\n",
+				ccr[VR], ccr[AIR], ccr[XIR], ccr[IOR], ccr[PIR], ccr[EIR], ccr[IIR]);
+	}
 }

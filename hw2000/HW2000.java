@@ -98,11 +98,11 @@ public class HW2000 implements CoreMemory
 		if (inval()) {
 			throw new FaultException("Invalid OpCode");
 		}
+		op_exec = idc.getExec(op);
 		if (priv() && CTL.inStdMode() && CTL.isPROTECT() &&
 				!isProceed()) {
 			throw new IIException("OpCode Violation " + op, HW2000CCR.IIR_OPVIO);
 		}
-		op_exec = idc.getExec(op);
 	}
 
 	// 'am' contains adr mode bits, in final position.
@@ -164,13 +164,16 @@ public class HW2000 implements CoreMemory
 
 	private int validAdr(int adr) {
 		int a = adr;
-		if (CTL.isRELOC()) {
-			a += adr_min; // or BRR << 12 ?
-		}
-		if (CTL.inStdMode() && CTL.isPROTECT() &&
-				adr < adr_min || adr >= adr_max) {
-			throw new IIException("Address violation " + adr,
+		if (CTL.inStdMode()) {
+			if (CTL.isRELOC()) {
+				a += adr_min;
+			}
+			if (CTL.isPROTECT() &&
+					a < adr_min || a >= adr_max) {
+				throw new IIException(
+					String.format("Address violation %07o", a),
 					HW2000CCR.IIR_ADRVIO);
+			}
 		}
 		return a;
 	}
@@ -182,6 +185,10 @@ public class HW2000 implements CoreMemory
 
 	public byte readChar(int adr) {
 		return (byte)(readMem(adr) & 077);
+	}
+
+	public void rawWriteMem(int adr, byte val) {
+		mem[adr] = val;
 	}
 
 	public void writeMem(int adr, byte val) {
@@ -257,7 +264,7 @@ public class HW2000 implements CoreMemory
 		}
 		op_xflags |= InstrDecode.OP_HAS_A;
 		iaar = AAR;
-		AAR = fetchAddr(fsr, AAR);
+		AAR = fetchAddr(fsr, 0);
 		fsr += am_na;
 	}
 
@@ -278,7 +285,7 @@ public class HW2000 implements CoreMemory
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_B;
-		BAR = fetchAddr(fsr, BAR);
+		BAR = fetchAddr(fsr, 0);
 		fsr += am_na;
 	}
 
@@ -287,7 +294,8 @@ public class HW2000 implements CoreMemory
 		if (op_xtra_num <= 0) {
 			if (reqV()) {
 				// probably just let instructions do this...
-				throw new FaultException("Missing required variant");
+				throw new FaultException(
+					String.format("Missing required variant %07o", oSR));
 			}
 			return;
 		}
@@ -359,7 +367,7 @@ public class HW2000 implements CoreMemory
 		fsr = SR;
 		// TODO: how to avoid including garbage in variant array.
 		int isr = (fsr + 1) & 0x1ffff;
-		while (isr != 0 && (mem[isr] & M_WM) == 0) {
+		while (isr != 0 && (readMem(isr) & M_WM) == 0) {
 			isr = (isr + 1) & 0x1ffff;
 		}
 		iaar = -1;
@@ -386,6 +394,49 @@ public class HW2000 implements CoreMemory
 
 	private boolean _trace = false;
 
+	// Set a value into a word-marked field
+	private void setField(int adr, int val) {
+		int w;
+		do {
+			w = mem[adr] & 0100;
+			mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
+			val >>= 6;
+			--adr;
+		} while (w == 0);
+	}
+
+	public void monGo(String pgm, String lst, boolean trace) {
+		File list = null;
+		if (lst != null) {
+			list = new File(lst);
+		}
+		_trace = trace;
+		Assembler asm = new Assembler(new File(pgm));
+		int e = asm.passOne();
+		if (e < 0) {
+			return;
+		}
+		int low = asm.getMin();
+		int hi = asm.getMax();
+		int start = asm.getStart();
+		int brr = 2;
+		int ibr = 2; // give only 4K for now...
+		int reloc = (brr << 12);
+		e = asm.passTwo(this, reloc, list);
+		if (e < 0) {
+			return;
+		}
+		System.err.format("Running via monitor %07o %07o %07o\n", low, hi, start);
+		setField(0007, ibr);
+		setField(0005, brr);
+		setField(0003, start);
+		SR = CSR;
+		run();
+		if (_trace) {
+			dumpRange(reloc + low, reloc + hi);
+		}
+	}
+
 	public void asmNGo(String pgm, String lst, boolean trace) {
 		File list = null;
 		if (lst != null) {
@@ -400,7 +451,7 @@ public class HW2000 implements CoreMemory
 		int low = asm.getMin();
 		int hi = asm.getMax();
 		int start = asm.getStart();
-		e = asm.passTwo(this, list);
+		e = asm.passTwo(this, 0, list);
 		if (e < 0) {
 			return;
 		}
@@ -408,7 +459,9 @@ public class HW2000 implements CoreMemory
 		setAM(HW2000CCR.AIR_AM_2C);	// TODO: fix this
 		SR = start;
 		run();
-		dumpRange(low, hi);
+		if (_trace) {
+			dumpRange(low, hi);
+		}
 	}
 
 	public void loadNGo(String pgm, byte am, int start, boolean trace) {
@@ -460,12 +513,22 @@ if (_trace) {
 			} catch (IIException ie) {
 				// TODO: need to handle II within II...
 				if (IIR != 0 && setIntr(HW2000CCR.EIR_II, ie.type)) {
+if (_trace) {
+	String op = op_exec.getClass().getName();
+	System.err.format("II %07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
+	System.err.flush();
+}
 				} else {
 					ie.printStackTrace();
 					halt = true;
 				}
 			} catch (EIException ee) {
 				if (EIR != 0 && setIntr(HW2000CCR.EIR_EI, ee.type)) {
+if (_trace) {
+	String op = op_exec.getClass().getName();
+	System.err.format("EI %07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
+	System.err.flush();
+}
 				} else {
 					ee.printStackTrace();
 					halt = true;
@@ -475,6 +538,7 @@ if (_trace) {
 				halt = true;
 			}
 		}
+		halt = false;
 	}
 
 	// Range is inclusive, both ends

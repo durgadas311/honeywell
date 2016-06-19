@@ -25,6 +25,7 @@ public class Assembler {
 	int maxAdr;
 	byte[] image;
 	CoreMemory sys;
+	int reloc;
 
 	// TODO:
 	//	Handle ad-hoc constants.
@@ -51,6 +52,7 @@ public class Assembler {
 		lst = null;
 		sys = null;
 		image = null;
+		reloc = 0;
 	}
 
 	public int passOne() {
@@ -81,7 +83,8 @@ public class Assembler {
 	public int getMax() { return maxAdr; }
 	public int getStart() { return endAdr; }
 
-	public int passTwo(CoreMemory sys, File list) {
+	public int passTwo(CoreMemory sys, int reloc, File list) {
+		this.reloc = reloc;
 		try {
 			in = new BufferedReader(new FileReader(inFile));
 			if (list != null) {
@@ -249,7 +252,7 @@ public class Assembler {
 			}
 			if (sys != null) {
 				for (int y = 0; y < code.length; ++y) {
-					sys.writeMem(orgLoc + y, code[y]);
+					sys.rawWriteMem(reloc + orgLoc + y, code[y]);
 				}
 			}
 		}

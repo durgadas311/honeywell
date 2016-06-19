@@ -34,7 +34,7 @@ public class I_RVI implements Instruction {
 			// TODO: delay this until RNM?
 			if ((a & HW2000CCR.PIR_PROTECT) != 0) {
 				sys.adr_min = sys.BRR << 12;
-				sys.adr_max = sys.IBR << 12;
+				sys.adr_max = sys.adr_min + (sys.IBR << 12);
 			} else {
 				sys.adr_min = 0;
 				sys.adr_max = 0x80000;
