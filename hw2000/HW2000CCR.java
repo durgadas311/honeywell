@@ -17,7 +17,8 @@ public class HW2000CCR {
 	public static final byte AIR_TRAP = (byte)0200;
 	public static final byte AIR_AM = (byte)0060;
 	public static final byte AIR_AM_2C = (byte)0020;
-	public static final byte AIR_AM_3C = (byte)0000; // also default (0040)
+	public static final byte AIR_AM_3C = (byte)0000; // also default
+	public static final byte AIR_AM_3CX = (byte)0040; // converted to AIR_AM_3C
 	public static final byte AIR_AM_4C = (byte)0060;
 	public static final byte AIR_OVR = (byte)0010;
 	public static final byte AIR_ZB = (byte)0004;
@@ -127,6 +128,9 @@ public class HW2000CCR {
 	// 'am' contains adr mode bits, in final position.
 	// Typically called with values AIR_AM_2C, AIR_AM_3C, or AIR_AM_4C
 	public void setAM(byte am) {
+		if ((am & AIR_AM) == AIR_AM_3CX) {
+			am = AIR_AM_3C;
+		}
 		ccr[AIR] = (byte)((ccr[AIR] & ~AIR_AM) | (am & AIR_AM));
 	}
 	public byte getAM() {

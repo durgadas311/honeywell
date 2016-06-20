@@ -189,7 +189,7 @@ public class Assembler {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
-		String card = String.format("%-80s", line);
+		String card = String.format("%-80s", line.toUpperCase());
 		// TODO: handle D data cards... C/L continuation and macro...
 		char typ = card.charAt(5);
 		if (typ == '*' || typ == 'T') {

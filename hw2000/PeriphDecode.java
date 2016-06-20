@@ -17,6 +17,7 @@ public class PeriphDecode {
 		p_odevs = new Peripheral[8];
 		p_idevs = new Peripheral[8];
 		p_odevs[P_LP] = new P_LinePrinter();
+		p_odevs[P_CO] = new P_ConsolePrinter();
 	}
 
 	public Peripheral getPerph(byte pa) {
