@@ -460,4 +460,6 @@
 04600         B     STARTA,00,00       GO TO PRINT LOOP A
 04610         MCW   SCRSET,SCRGET+4    RESTART THE SCRIPT
 04620* ------------------------------
+04630         ORG   TOP
+04630         RESV  1                  LET SYSTEM KNOW HOW MUCH MEMORY
 04630         END   START
