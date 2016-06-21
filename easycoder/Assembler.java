@@ -296,11 +296,16 @@ public class Assembler {
 		return e;
 	}
 
-	private int parseAdr(String opd) {
+	private int parseAdr(String opd, boolean simple) {
 		int ix;
 		int adr = 0;
 		boolean ind = false;
+		int idx = 0;	// 0: not a valid index register - no indexing
 		if (opd.charAt(0) == '(') {
+			if (simple) {
+				errs.add("Indirect address not allowed at line " + lineNo);
+				return -1;
+			}
 			if (adrMode < 3) {
 				errs.add("Indirect address in 2-char mode at line " + lineNo);
 				return -1;
@@ -313,6 +318,30 @@ public class Assembler {
 			// TODO: can there be residual after ')' ?
 			ind = true;
 			opd = opd.substring(1, ix);
+		}
+		ix = opd.lastIndexOf('+');
+		if (ix >= 0 && opd.substring(ix).matches("\\+[XY][0-9]+")) {
+			if (ind) {
+				errs.add("Indexed address with indirect at line " + lineNo);
+				return -1;
+			}
+			if (simple) {
+				errs.add("Indexed address not allowed at line " + lineNo);
+				return -1;
+			}
+			if (adrMode < 3) {
+				errs.add("Indexed address in 2-char mode at line " + lineNo);
+				return -1;
+			}
+			idx = Integer.valueOf(opd.substring(ix + 2));
+			if (idx < 1 || (adrMode == 3 && (opd.charAt(ix + 1) == 'Y' || idx > 6)) || (adrMode > 3 && idx > 15)) {
+				errs.add("Invalid indexed address " + opd + " at line " + lineNo);
+				return -1;
+			}
+			if (opd.charAt(ix + 1) == 'Y') {
+				idx += 16;
+			}
+			opd = opd.substring(0, ix);
 		}
 		ix = opd.indexOf('-');
 		if (ix < 0) {
@@ -348,6 +377,12 @@ public class Assembler {
 				adr |= 0700000;
 			} else { // must be 4
 				adr |= 040000000;
+			}
+		} else if (idx > 0) {
+			if (adrMode == 3) {
+				adr |= (idx << 15);
+			} else { // must be 4
+				adr |= (idx << 19);
 			}
 		}
 		return adr;
@@ -482,7 +517,7 @@ public class Assembler {
 		// not provided then it cannot have B or V.
 		if ((flags & InstrDecode.OP_HAS_A) != 0) {
 			if (ox < opds.length && opds[ox].length() > 0) {
-				a = parseAdr(opds[ox]);
+				a = parseAdr(opds[ox], false);
 				il += adrMode;
 				xflags |= InstrDecode.OP_HAS_A;
 				++ox;
@@ -493,7 +528,7 @@ public class Assembler {
 		}
 		if ((flags & InstrDecode.OP_HAS_B) != 0) {
 			if (ox < opds.length && opds[ox].length() > 0) {
-				b = parseAdr(opds[ox]);
+				b = parseAdr(opds[ox], false);
 				il += adrMode;
 				xflags |= InstrDecode.OP_HAS_B;
 				++ox;
@@ -604,7 +639,7 @@ public class Assembler {
 		} else if (opc.equals("END")) {
 			int ret = 0;
 			if (opd.length() > 0) {
-				endAdr = parseAdr(opd);
+				endAdr = parseAdr(opd, true);
 				ret = endAdr | 0x100000;
 			}
 			end = true;
@@ -661,7 +696,7 @@ public class Assembler {
 	}
 
 	private int processEqu(String loc, String opd) {
-		int adr = parseAdr(opd);
+		int adr = parseAdr(opd, true);
 		symTab.put(loc, adr);
 		int ret = adr | 0x100000;
 		return ret;
@@ -669,8 +704,8 @@ public class Assembler {
 
 	private int processDefSym(char mrk, String loc, boolean rev, String opd) {
 		setLabel(loc, rev, 0);
-		int adr = parseAdr(opd);
-		// TODO: support adr[,adr[,var]]
+		int adr = parseAdr(opd, false);
+		// TODO: support adr[,adr[,var]] - and how to use that...
 		int len = adrMode;
 		code = new byte[adrMode];
 		putAdr(code, 0, adr);
