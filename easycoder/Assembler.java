@@ -79,17 +79,32 @@ public class Assembler {
 		return ret;
 	}
 
+	private void listSymTab() {
+		int x = 0;
+		listOut("Symbol Table:\n");
+		for (Map.Entry<String, Integer> entry : symTab.entrySet()) {
+			String l = String.format("  %6s %07o", entry.getKey(), entry.getValue());
+			++x;
+			if (x >= 7) {
+				x = 0;
+				l += '\n';
+			}
+			listOut(l);
+		}
+		if (x > 0) {
+			listOut("\n");
+		}
+	}
+
 	public int getMin() { return minAdr; }
 	public int getMax() { return maxAdr; }
 	public int getStart() { return endAdr; }
 
-	public int passTwo(CoreMemory sys, int reloc, File list) {
+	public int passTwo(CoreMemory sys, int reloc, FileOutputStream list) {
 		this.reloc = reloc;
+		lst = list;
 		try {
 			in = new BufferedReader(new FileReader(inFile));
-			if (list != null) {
-				lst = new FileOutputStream(list);
-			}
 		} catch (Exception ee) {
 			// 'in' should never fail - already validated in ctor.
 			ee.printStackTrace();
@@ -103,8 +118,10 @@ public class Assembler {
 		end = false;
 		while (!end && (ret = scanOne()) >= 0) {
 		}
+		if (lst != null) {
+			listSymTab();
+		}
 		try { in.close(); } catch (Exception ee) {}
-		try { if (lst != null) lst.close(); } catch (Exception ee) {}
 		return ret;
 	}
 
@@ -134,19 +151,7 @@ public class Assembler {
 			objOut(image);
 		}
 		if (lst != null) {
-			int x = 0;
-			for (Map.Entry<String, Integer> entry : symTab.entrySet()) {
-				String l = String.format("  %6s %07o", entry.getKey(), entry.getValue());
-				++x;
-				if (x >= 7) {
-					x = 0;
-					l += '\n';
-				}
-				listOut(l);
-			}
-			if (x > 0) {
-				listOut("\n");
-			}
+			listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
 		try { if (lst != null) lst.close(); } catch (Exception ee) {}
@@ -166,6 +171,22 @@ public class Assembler {
 			lst.write(str.getBytes());
 		} catch (Exception ee) {
 		}
+	}
+
+	private char charMark(byte b) {
+		char mk = ' ';
+		switch(b & 0300) {
+		case 0100:
+			mk = 'W';
+			break;
+		case 0200:
+			mk = 'I';
+			break;
+		case 0300:
+			mk = 'R';
+			break;
+		}
+		return mk;
 	}
 
 	private int scanOne() {
@@ -234,7 +255,7 @@ public class Assembler {
 		}
 		byte op = idc.getOp(opc);
 		if (op != InstrDecode.OP_ILL) {
-			e = processMachCode(op, loc, rev, opd);
+			e = processMachCode(op, mrk, loc, rev, opd);
 		} else {
 			e = processAsmDir(opc, mrk, loc, rev, opd);
 		}
@@ -259,17 +280,10 @@ public class Assembler {
 		if (lst != null) {
 			String l = "";
 			if (code != null) {
-				char mk = ' ';
-				switch(code[0] & 0300) {
-				case 0100:
-					mk = 'W';
-					break;
-				case 0200:
-					mk = 'I';
-					break;
-				case 0300:
-					mk = 'R';
-					break;
+				char mk = charMark(code[0]);
+				char mk2 = ' ';
+				if (code.length > 1) {
+					mk2 = charMark(code[code.length - 1]);
 				}
 				for (int y = 0; y < code.length; ++y) {
 					l += String.format("%02o", code[y] & 077);
@@ -277,7 +291,7 @@ public class Assembler {
 				if (l.length() > 16) {
 					l = l.substring(0, 16) + "+";
 				}
-				l = String.format("     %07o %c  %-17s", orgLoc, mk, l);
+				l = String.format("     %07o %c%c %-17s", orgLoc, mk, mk2, l);
 			} else if (e >= 0x100000) { // special case for some ASM directives
 				l = String.format("     %07o                     ",
 					(e & 0x0fffff));
@@ -493,7 +507,7 @@ public class Assembler {
 		return n;
 	}
 
-	private int processMachCode(byte op, String loc, boolean rev, String opd) {
+	private int processMachCode(byte op, char mrk, String loc, boolean rev, String opd) {
 		int flags = idc.getFlags(op);
 		int xflags = 0;
 		int a = 0;
@@ -561,7 +575,7 @@ public class Assembler {
 		code = new byte[il];
 		int x = 0;
 		// TODO: punctuation is a variable...
-		code[x++] = (byte)(op | 0100);
+		code[x++] = op;
 		if ((xflags & InstrDecode.OP_HAS_A) != 0) {
 			putAdr(code, x, a);
 			x += adrMode;
@@ -575,6 +589,7 @@ public class Assembler {
 				code[x++] = (byte)(v[y] & 077);
 			}
 		}
+		setMarks(code, mrk, true);
 		setLabel(loc, !rev, 0);	// set labels again?
 		currLoc += il;
 		setLabel(loc, rev, il);	// set labels again?
@@ -648,6 +663,98 @@ public class Assembler {
 		return noImpl(opc);
 	}
 
+	private void setMarks(byte[] bb, char mk, boolean defWM) {
+		if (bb.length < 1) {
+			return;
+		}
+		int last = bb.length - 1;
+		switch(mk) {
+		case ' ':
+			break;
+		case 'L':
+			code[0] |= 0200;
+			break;
+		case 'R':
+			code[last] |= 0200;
+			break;
+		case 'A':
+			code[0] |= 0100;
+			defWM = false;
+			break;
+		case 'B':
+			code[0] |= 0200;
+			defWM = false;
+			break;
+		case 'C':
+			code[0] |= 0300;
+			defWM = false;
+			break;
+		case 'D':
+			code[last] |= 0100;
+			defWM = false;
+			break;
+		case 'E':
+			code[last] |= 0200;
+			defWM = false;
+			break;
+		case 'F':
+			code[last] |= 0300;
+			defWM = false;
+			break;
+		case 'G':
+			code[0] |= 0200;
+			code[last] |= 0100;
+			defWM = false;
+			break;
+		case 'H':
+			code[0] |= 0200;
+			code[last] |= 0200;
+			defWM = false;
+			break;
+		case 'I':
+			code[0] |= 0200;
+			code[last] |= 0300;
+			defWM = false;
+			break;
+		case 'J':
+			code[0] |= 0100;
+			code[last] |= 0100;
+			defWM = false;
+			break;
+		case 'K':
+			code[0] |= 0100;
+			code[last] |= 0200;
+			defWM = false;
+			break;
+		case 'M':
+			code[0] |= 0100;
+			code[last] |= 0300;
+			defWM = false;
+			break;
+		case 'N':
+			defWM = false;
+			break;
+		case 'P':
+			code[0] |= 0300;
+			code[last] |= 0100;
+			defWM = false;
+			break;
+		case 'S':
+			code[0] |= 0300;
+			code[last] |= 0200;
+			defWM = false;
+			break;
+		case 'T':
+			code[0] |= 0300;
+			code[last] |= 0300;
+			defWM = false;
+			break;
+		}
+		if (defWM) {
+			code[0] |= 0100;
+		}
+	}
+
 	private int processDefCon(char mrk, String loc, boolean rev, String opd, boolean mark) {
 		setLabel(loc, rev, 0);
 		code = parseCon(opd);
@@ -656,15 +763,7 @@ public class Assembler {
 			return -1;
 		}
 		int len = code.length;
-		if (mark) {
-			code[0] |= 0100;
-		}
-		if (mrk == 'L') {
-			code[0] |= 0200;
-		}
-		if (mrk == 'R') {
-			code[len - 1] |= 0200;
-		}
+		setMarks(code, mrk, mark);
 		currLoc += len;
 		setLabel(loc, !rev, len);
 		return len;

@@ -178,6 +178,14 @@ public class HW2000 implements CoreMemory
 		return a;
 	}
 
+	public byte rawReadMem(int adr) {
+		return mem[adr];
+	}
+
+	public void rawWriteMem(int adr, byte val) {
+		mem[adr] = val;
+	}
+
 	public byte readMem(int adr) {
 		int a = validAdr(adr);
 		return mem[a];
@@ -185,10 +193,6 @@ public class HW2000 implements CoreMemory
 
 	public byte readChar(int adr) {
 		return (byte)(readMem(adr) & 077);
-	}
-
-	public void rawWriteMem(int adr, byte val) {
-		mem[adr] = val;
 	}
 
 	public void writeMem(int adr, byte val) {
@@ -237,20 +241,32 @@ public class HW2000 implements CoreMemory
 			return fetchAddr(a, a);
 		}
 		// Indexed... determine which index register
-		int ix = (((am & 0x0f) - 1) * 4);
+		// 'am' is 1-6 (3 char adr) or 1-15,17-31
+		// 'ix' must be a *physical* address after all this...
+		int ix = ((am & 0x0f) * 4) - am_na + 1;
+		// this is really confusing... not sure at all...
 		if (am > 0x10) {
-			// must be 4-char addr mode
-			ix += (IBR << 12);	// Y1-Y15
+			// must be 4-char addr mode.
+			if (!CTL.isRELOC()) {
+				ix += (IBR << 12);	// Y1-Y15
+			}
 		} else if (am_na == 4) {
-			// no further adjustment for X1-X15
+			// no further adjustment for X1-X15?
 		} else {
 			// must be 3-char addr mode
-			ix += (SR & ~0x07fff);	// X1-X6
+			if (!CTL.isRELOC()) {
+				ix += (oSR & ~0x07fff);	// X1-X6
+			}
 		}
+		if (CTL.isRELOC()) {
+			ix += (BRR << 12);	// Y1-Y15
+		}
+		// 'ix' is physical address. This also avoids protection, which is implied in docs
 		int ax = 0;
-		for (int n = 4; n > 0; --n) {
-			ax = (ax << 6) | readChar(ix++);
+		for (int n = am_na; n > 0; --n) {
+			ax = (ax << 6) | (rawReadMem(ix++) & 077);
 		}
+		ax &= am_mask;
 		a = (a + ax) & 0x7ffff;
 		return a;
 	}
@@ -406,9 +422,14 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void monGo(String pgm, String lst, boolean trace) {
-		File list = null;
+		FileOutputStream list = null;
 		if (lst != null) {
-			list = new File(lst);
+			try {
+				list = new FileOutputStream(new File(lst));
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				list = null;
+			}
 		}
 		_trace = trace;
 		Assembler asm = new Assembler(new File(pgm));
@@ -432,15 +453,26 @@ public class HW2000 implements CoreMemory
 		setField(0003, start);
 		SR = CSR;
 		run();
+		if (list != null) {
+			dumpHW(list, reloc + low, reloc + hi - 1);
+			try {
+				list.close();
+			} catch (Exception ee) {}
+		}
 		if (_trace) {
 			dumpRange(reloc + low, reloc + hi);
 		}
 	}
 
 	public void asmNGo(String pgm, String lst, boolean trace) {
-		File list = null;
+		FileOutputStream list = null;
 		if (lst != null) {
-			list = new File(lst);
+			try {
+				list = new FileOutputStream(new File(lst));
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				list = null;
+			}
 		}
 		_trace = trace;
 		Assembler asm = new Assembler(new File(pgm));
@@ -459,6 +491,12 @@ public class HW2000 implements CoreMemory
 		setAM(HW2000CCR.AIR_AM_2C);	// TODO: fix this
 		SR = start;
 		run();
+		if (list != null) {
+			dumpHW(list, low, hi - 1);
+			try {
+				list.close();
+			} catch (Exception ee) {}
+		}
 		if (_trace) {
 			dumpRange(low, hi);
 		}
@@ -539,6 +577,95 @@ if (_trace) {
 			}
 		}
 		halt = false;
+	}
+
+	private void listOut(FileOutputStream lst, String str) {
+		try {
+			lst.write(str.getBytes());
+		} catch (Exception ee) {
+		}
+	}
+
+	// Honeywell-style memory dump.
+	// Range is inclusive, both ends
+	public void dumpHW(FileOutputStream list, int beg, int end) {
+		String marks = " WIR";
+		int m = beg & ~0177;	// 128 locations per row...
+		listOut(list, "Memory Dump:\n");
+		while (m <= end) {
+			String l = String.format("%07o 1       2       3       4       5       6       7"
+				+ "       0       1       2       3       4       5       6       7\n", m);
+			listOut(list, l);
+			l = "";
+			int a = m;
+			int e = m + 128;
+			while (a < e && a <= end) {
+				if (a < beg) {
+					l += ' ';
+				} else {
+					l += pdc.cvt.hwToLP((byte)(mem[a] & 077));
+				}
+				++a;
+			}
+			listOut(list, l + "\n");
+			l = "";
+			a = m;
+			e = m + 128;
+			while (a < e && a <= end) {
+				if (a < beg) {
+					l += ' ';
+				} else {
+					l += (char)(((mem[a] >> 3) & 07) + '0');
+				}
+				++a;
+			}
+			listOut(list, l + "\n");
+			l = "";
+			a = m;
+			e = m + 128;
+			while (a < e && a <= end) {
+				if (a < beg) {
+					l += ' ';
+				} else {
+					l += (char)((mem[a] & 07) + '0');
+				}
+				++a;
+			}
+			listOut(list, l + "\n");
+			l = "";
+			a = m;
+			e = m + 128;
+			while (a < e && a <= end) {
+				if (a < beg) {
+					l += ' ';
+				} else {
+					l += marks.charAt((mem[a] >> 6) & 03);
+				}
+				++a;
+			}
+			listOut(list, l + "\n");
+			m += 128;
+		}
+	}
+
+	// Range is inclusive, both ends
+	public void dumpRangeFile(FileOutputStream list, int beg, int end) {
+		int x = 0;
+		int m = beg;
+		listOut(list, "Memory Dump:\n");
+		while (m <= end) {
+			if (x == 0) {
+				listOut(list, String.format("%07o:", m));
+			}
+			listOut(list, String.format(" %03o", mem[m++] & 0x0ff));
+			if (++x >= 16) {
+				x = 0;
+				listOut(list, "\n");
+			}
+		}
+		if (x != 0) {
+			listOut(list, "\n");
+		}
 	}
 
 	// Range is inclusive, both ends
