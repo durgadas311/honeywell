@@ -166,7 +166,22 @@ public class Assembler {
 		}
 	}
 
+	private String replaceChars(String in, String srch, String repl) {
+		char[] inc = in.toCharArray();
+		char[] out = new char[inc.length];
+		for (int x = 0; x < inc.length; ++x) {
+			int i = srch.indexOf(inc[x]);
+			if (i >= 0) {
+				out[x] = repl.charAt(i);
+			} else {
+				out[x] = inc[x];
+			}
+		}
+		return new String(out);
+	}
+
 	private void listOut(String str) {
+		str = replaceChars(str, "\001\011\006\010\007", "\u00a2\u25a1\u25a0\u00a9\u2260");
 		try {
 			lst.write(str.getBytes());
 		} catch (Exception ee) {
@@ -210,6 +225,8 @@ public class Assembler {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
+		// first do convenience translations of special chars
+		line = replaceChars(line.toUpperCase(), "^[]~\\", "\001\011\006\010\007");
 		String card = String.format("%-80s", line.toUpperCase());
 		// TODO: handle D data cards... C/L continuation and macro...
 		char typ = card.charAt(5);

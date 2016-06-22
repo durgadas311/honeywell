@@ -409,6 +409,8 @@ public class HW2000 implements CoreMemory
 	}
 
 	private boolean _trace = false;
+	private int _trace_low = 0;
+	private int _trace_hi = 02000000;
 
 	// Set a value into a word-marked field
 	private void setField(int adr, int val) {
@@ -452,6 +454,10 @@ public class HW2000 implements CoreMemory
 		setField(0005, brr);
 		setField(0003, start);
 		SR = CSR;
+		if (_trace) {
+			_trace_low = reloc + low;
+			_trace_hi = reloc + hi;
+		}
 		run();
 		if (list != null) {
 			dumpHW(list, reloc + low, reloc + hi - 1);
@@ -540,9 +546,16 @@ public class HW2000 implements CoreMemory
 
 	public void run() {
 		while (!halt) {
+try {
+if (System.in.available() > 0) {
+	break;
+}
+} catch (Exception ee) {}
 			try {
 				fetch();
-if (_trace) {
+// should already be proven to be a good address...
+int rSR = validAdr(oSR);
+if (_trace && rSR >= _trace_low && rSR < _trace_hi) {
 	String op = op_exec.getClass().getName();
 	System.err.format("%07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
 	System.err.flush();
