@@ -1,4 +1,23 @@
+import java.io.*;
+
 public class P_LinePrinter implements Peripheral {
+
+	private OutputStream dev;
+
+	public P_LinePrinter() {
+		this.dev = System.out;
+	}
+
+	public void setOutput(OutputStream dev) {
+		if (dev == null) {
+			this.dev = System.out;
+		} else {
+			this.dev = dev;
+		}
+	}
+
+	public void setInput(InputStream dev) {
+	}
 
 	public void io(HW2000 sys) {
 		byte c3;
@@ -33,7 +52,11 @@ public class P_LinePrinter implements Peripheral {
 				--c3;
 			}
 		}
-		System.out.format("%s", s);
+		try {
+			dev.write(s.getBytes());
+		} catch (Exception ee) {
+			// TODO: handle exceptions?
+		}
 	}
 
 	public void ctl(HW2000 sys) {

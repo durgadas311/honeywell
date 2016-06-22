@@ -1,4 +1,23 @@
+import java.io.*;
+
 public class P_ConsolePrinter implements Peripheral {
+
+	OutputStream dev;
+
+	public P_ConsolePrinter() {
+		this.dev = System.err;
+	}
+
+	public void setOutput(OutputStream dev) {
+		if (dev == null) {
+			this.dev = System.err;
+		} else {
+			this.dev = dev;
+		}
+	}
+
+	public void setInput(InputStream dev) {
+	}
 
 	public void io(HW2000 sys) {
 		byte c3;

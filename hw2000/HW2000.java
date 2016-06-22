@@ -458,8 +458,14 @@ public class HW2000 implements CoreMemory
 			_trace_low = reloc + low;
 			_trace_hi = reloc + hi;
 		}
+		if (list != null) {
+			listOut(list, "Line Printer:\n");
+			pdc.setOutput(PeriphDecode.P_LP, list);
+		}
 		run();
 		if (list != null) {
+			listOut(list, "\n");
+			pdc.setOutput(PeriphDecode.P_LP, null);
 			dumpHW(list, reloc + low, reloc + hi - 1);
 			try {
 				list.close();
