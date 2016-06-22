@@ -63,7 +63,7 @@ public class I_MCE implements Instruction {
 					sys.incrAAR(-1);
 					aw = (byte)(a & 0100);
 				} else {
-					a = 0;
+					a = 015;
 				}
 			}
 			sys.incrBAR(-1);
@@ -79,13 +79,8 @@ public class I_MCE implements Instruction {
 		while (sys.BAR <= zar) {
 			b =  sys.readMem(sys.BAR);
 			b &= 077;
-			if (b >= 001 && b <= 011) {
-				if (fill == 053) {
-					sys.incrBAR(-1);
-					sys.writeChar(sys.BAR, fill);
-				}
-				//sys.setWord(sys.BAR);
-				return;
+			if ((b >= 001 && b <= 011) || b == 033) {
+				break;
 			}
 			if (fill == 054) {
 				sys.writeChar(sys.BAR, fill);
@@ -94,5 +89,11 @@ public class I_MCE implements Instruction {
 			}
 			sys.incrBAR(1);
 		}
+		// If we get here, must back up one and do $
+		if (fill == 053) {
+			sys.incrBAR(-1);
+			sys.writeChar(sys.BAR, fill);
+		}
+		//sys.setWord(sys.BAR);
 	}
 }
