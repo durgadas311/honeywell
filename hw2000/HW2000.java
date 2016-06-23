@@ -345,21 +345,33 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void checkIntr() {
+		boolean intr = false;
 		if (CTL.isEI()) {
 			// AIR already saved...
 			setAM(HW2000CCR.AIR_AM_3C);
 			int t = EIR;
 			EIR = SR;
 			SR = t;
+			intr = true;
 		} else if (CTL.isII()) {
 			int t = IIR;
 			IIR = SR;
 			SR = t;
+			intr = true;
+		}
+		if (intr && fp != null) {
+			fp.setInterrupt(true);
 		}
 	}
 
 	public void clearIntr() {
 		byte i = CTL.clearIntr();
+		if (i == 0) {
+			return;
+		}
+		if (fp != null) {
+			fp.setInterrupt(false);
+		}
 		int t;
 		if (i == HW2000CCR.EIR_EI) {
 			setAM(CTL.getAM());

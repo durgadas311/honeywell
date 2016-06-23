@@ -2,7 +2,7 @@ import java.io.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-public class monrun implements ActionListener {
+public class monrun implements ActionListener, Runnable {
 
 	public static void main(String[] args) {
 		monrun x = new monrun(args);
@@ -15,6 +15,9 @@ public class monrun implements ActionListener {
 	boolean trace = false;
 	boolean lists = false;
 	boolean started = false;
+	boolean suspend = false;
+	boolean more = true;
+	Thread thrd = null;
 
 	public monrun(String[] argv) {
 		args = argv;
@@ -36,12 +39,19 @@ public class monrun implements ActionListener {
 			hw.setFrontPanel(fp);
 			fp.setPanelListener(this);
 		} else {
-			while (go());
+			while (more) {
+				run();
+			}
 		}
 	}
 
 	// return 'false' if no more to do..
-	private boolean go() {
+	public void run() {
+		if (suspend) {
+			suspend = false;
+			hw.run();
+			return;
+		}
 		String lst = null;
 		while (argx < args.length && args[argx].startsWith("-")) {
 			if (args[argx].equals("-t")) {
@@ -52,7 +62,8 @@ public class monrun implements ActionListener {
 			++argx;
 		}
 		if (argx >= args.length) {
-			return false;
+			more = false;
+			return;
 		}
 
 		if (lists) {
@@ -67,7 +78,7 @@ public class monrun implements ActionListener {
 			hw.monGo(args[argx], lst, trace);
 		}
 		++argx;
-		return (argx < args.length);
+		more = (argx < args.length);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -77,8 +88,10 @@ public class monrun implements ActionListener {
 		JButton btn = (JButton)e.getSource();
 		String act = btn.getActionCommand();
 		if (act.equals("run") && hw.halt) {
-			go();
+			thrd = new Thread(this);
+			thrd.start();
 		} else if (act.equals("stop")) {
+			suspend = true;
 			hw.halt = true;
 		}
 	}

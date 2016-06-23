@@ -15,6 +15,8 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	static final Color btnRedOn = new Color(255, 0, 0);
 	static final Color btnGreenOff = new Color(0, 100, 0);
 	static final Color btnGreenOn = new Color(0, 255, 0);
+	static final Color indDark = new Color(50, 50, 50);
+	static final Color indLit = new Color(180, 180, 80);
 
 	static final int btnContents = 0x1000;
 	static final int btnAddress = 0x2000;
@@ -31,6 +33,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	LightedButton am2;
 	LightedButton am3;
 	LightedButton am4;
+	JLabel intr;
 
 	int contentsReg;
 	int addressReg;
@@ -206,7 +209,14 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		am4.setOn(v == 4);
 		repaint();
 	}
-	public void setInterrupt(boolean intr) {}	// Indicator only
+	public void setInterrupt(boolean intr) {	// Indicator only
+		if (intr) {
+			this.intr.setForeground(indLit);
+		} else {
+			this.intr.setForeground(indDark);
+		}
+		repaint();
+	}
 
 	// Actions are:
 	//	VK_R	Run
@@ -240,7 +250,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 
 	private void addControls(int row, GridBagLayout gb, GridBagConstraints gc) {
 		gc.gridy = row;
-		gc.gridwidth = 18;
+		gc.gridwidth = 30;
 		JPanel pn;
 		JPanel npn;
 
@@ -391,6 +401,53 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gb.setConstraints(btn, gc);
 		npn.add(btn);
 		am4 = btn;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(40, 40));
+		pn.setOpaque(false);
+		gc.gridx = 22;
+		gb.setConstraints(pn, gc);
+		npn.add(pn);
+		intr = new JLabel("INTERRUPT");
+		intr.setFont(smallFont);
+		intr.setForeground(indDark);
+		intr.setOpaque(false);
+		intr.setPreferredSize(new Dimension(80, 20));
+		gc.gridx = 23;
+		gb.setConstraints(intr, gc);
+		npn.add(intr);
+		JLabel lb = new JLabel("PARITY");
+		lb.setFont(smallFont);
+		lb.setForeground(indDark);
+		lb.setOpaque(false);
+		lb.setPreferredSize(new Dimension(50, 20));
+		gc.gridx = 24;
+		gb.setConstraints(lb, gc);
+		npn.add(lb);
+		lb = new JLabel("VOLTAGE");
+		lb.setFont(smallFont);
+		lb.setForeground(indDark);
+		lb.setOpaque(false);
+		lb.setPreferredSize(new Dimension(60, 20));
+		gc.gridx = 25;
+		gb.setConstraints(lb, gc);
+		npn.add(lb);
+		lb = new JLabel("FAN");
+		lb.setFont(smallFont);
+		lb.setForeground(indDark);
+		lb.setOpaque(false);
+		lb.setPreferredSize(new Dimension(30, 20));
+		gc.gridx = 26;
+		gb.setConstraints(lb, gc);
+		npn.add(lb);
+		lb = new JLabel("CB");
+		lb.setFont(smallFont);
+		lb.setForeground(indDark);
+		lb.setOpaque(false);
+		lb.setPreferredSize(new Dimension(20, 20));
+		gc.gridx = 27;
+		gb.setConstraints(lb, gc);
+		npn.add(lb);
 
 		run.setActionCommand("run");
 		stop.setActionCommand("stop");
