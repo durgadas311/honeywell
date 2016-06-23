@@ -99,6 +99,7 @@ public class Assembler {
 	public int getMin() { return minAdr; }
 	public int getMax() { return maxAdr; }
 	public int getStart() { return endAdr; }
+	public String getName() { return prog; }
 
 	public int passTwo(CoreMemory sys, int reloc, FileOutputStream list) {
 		this.reloc = reloc;

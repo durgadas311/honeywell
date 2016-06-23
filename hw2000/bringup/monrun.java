@@ -1,34 +1,85 @@
 import java.io.*;
+import java.awt.event.*;
+import javax.swing.*;
 
-public class monrun {
+public class monrun implements ActionListener {
+
 	public static void main(String[] args) {
-		int x = 0;
-		boolean trace = false;
-		String mon = "monitor.ezc";
-		String lst = null;
-		if (args.length > 0) {
-			x = 0;
-			if (args[x].equals("-t")) {
-				trace = true;
-				++x;
-			}
-			if (x < args.length) {
-				mon = args[x];
-				++x;
-			}
-		}
-		HW2000 hw = new HW2000();
+		monrun x = new monrun(args);
+	}
 
-		// TODO: remove ".ezc"
-		lst = mon + ".lst";
-		hw.asmNGo(mon, lst, trace);
-		for (; x < args.length; ++x) {
-			if (args[x].equals("-t")) {
+	String[] args;
+	int argx;
+	HW2000 hw;
+	HW2000FrontPanel fp;
+	boolean trace = false;
+	boolean lists = false;
+	boolean started = false;
+
+	public monrun(String[] argv) {
+		args = argv;
+		argx = 0;
+		String mon = "monitor.ezc";
+		fp = null;
+		while (argx < args.length && args[argx].startsWith("-")) {
+			if (args[argx].equals("-t")) {
 				trace = true;
-				continue;
+			} else if (args[argx].equals("-f")) {
+				fp = new HW2000FrontPanel(hw);
+			} else if (args[argx].equals("-L")) {
+				lists = true;
 			}
-			lst = args[x] + ".lst";
-			hw.monGo(args[x], lst, trace);
+			++argx;
+		}
+		hw = new HW2000();
+		if (fp != null) {
+			hw.setFrontPanel(fp);
+			fp.setPanelListener(this);
+		} else {
+			while (go());
+		}
+	}
+
+	// return 'false' if no more to do..
+	private boolean go() {
+		String lst = null;
+		while (argx < args.length && args[argx].startsWith("-")) {
+			if (args[argx].equals("-t")) {
+				trace = true;
+			} else if (args[argx].equals("-L")) {
+				lists = true;
+			}
+			++argx;
+		}
+		if (argx >= args.length) {
+			return false;
+		}
+
+		if (lists) {
+			// TODO: remove ".ezc"
+			lst = args[argx] + ".lst";
+		}
+		if (!started) {
+			// first program must be monitor...
+			started = true;
+			hw.asmNGo(args[argx], lst, trace);
+		} else {
+			hw.monGo(args[argx], lst, trace);
+		}
+		++argx;
+		return (argx < args.length);
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		if (!(e.getSource() instanceof JButton)) {
+			return;
+		}
+		JButton btn = (JButton)e.getSource();
+		String act = btn.getActionCommand();
+		if (act.equals("run") && hw.halt) {
+			go();
+		} else if (act.equals("stop")) {
+			hw.halt = true;
 		}
 	}
 }

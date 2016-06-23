@@ -48,8 +48,10 @@ public class HW2000 implements CoreMemory
 
 	InstrDecode idc;
 	PeriphDecode pdc;
+	FrontPanel fp;
 
 	public HW2000() {
+		fp = null;
 		CTL = new HW2000CCR();
 		AC = new double[8];
 		mem = new byte[524288]; // TODO: mmap file
@@ -60,13 +62,17 @@ public class HW2000 implements CoreMemory
 		SLC = new int[16];
 		adr_min = 0;
 		adr_max = 0x80000;
-		halt = false;
+		halt = true;
 		setAM((byte)000);
 		SR = 0;
 		AAR = 0;
 		BAR = 0;
 		op_xtra_siz = 8;
 		op_xtra = new byte[op_xtra_siz];
+	}
+
+	public void setFrontPanel(FrontPanel fp) {
+		this.fp = fp;
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
@@ -125,6 +131,9 @@ public class HW2000 implements CoreMemory
 			am_shift = 15;
 			am_na = 3;
 			break;
+		}
+		if (fp != null) {
+			fp.setAdrMode(am_na);
 		}
 	}
 
@@ -405,6 +414,10 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void execute() {
+		if (fp != null) {
+			fp.setAddress(oSR);
+			fp.setContents(mem[oSR]);
+		}
 		op_exec.execute(this);
 	}
 
@@ -449,7 +462,7 @@ public class HW2000 implements CoreMemory
 		if (e < 0) {
 			return;
 		}
-		System.err.format("Running via monitor %07o %07o %07o\n", low, hi, start);
+		System.err.format("Running %s via monitor %07o %07o %07o\n", asm.getName(), low, hi, start);
 		setField(0007, ibr);
 		setField(0005, brr);
 		setField(0003, start);
@@ -499,7 +512,7 @@ public class HW2000 implements CoreMemory
 		if (e < 0) {
 			return;
 		}
-		System.err.format("Running %07o %07o %07o\n", low, hi, start);
+		System.err.format("Running %s %07o %07o %07o\n", asm.getName(), low, hi, start);
 		setAM(HW2000CCR.AIR_AM_2C);	// TODO: fix this
 		SR = start;
 		run();
@@ -551,6 +564,10 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void run() {
+		if (fp != null) {
+			fp.setRunStop(true);
+		}
+		halt = false;
 		while (!halt) {
 try {
 if (System.in.available() > 0) {
@@ -595,7 +612,9 @@ if (_trace) {
 				halt = true;
 			}
 		}
-		halt = false;
+		if (fp != null) {
+			fp.setRunStop(false);
+		}
 	}
 
 	private void listOut(FileOutputStream lst, String str) {
