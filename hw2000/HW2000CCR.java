@@ -89,6 +89,13 @@ public class HW2000CCR {
 		iIntr = false;
 	}
 
+	public void reset() {
+		Arrays.fill(ccr, (byte)0);
+		varLIB = 0;
+		eIntr = false;
+		iIntr = false;
+	}
+
 	public boolean isEQ() { return ((ccr[AIR] & AIR_EQ) != 0); }
 	public boolean isLE() { return ((ccr[AIR] & AIR_LE) != 0); }
 	public boolean isZB() { return ((ccr[AIR] & AIR_ZB) != 0); }

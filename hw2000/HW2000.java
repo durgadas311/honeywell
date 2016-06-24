@@ -36,6 +36,7 @@ public class HW2000 implements CoreMemory
 	private int op_xtra_num;
 	Instruction op_exec;
 	public boolean halt;
+	public boolean singleStep;
 	private boolean _proceed;
 
 	private int fsr;
@@ -63,6 +64,7 @@ public class HW2000 implements CoreMemory
 		adr_min = 0;
 		adr_max = 0x80000;
 		halt = true;
+		singleStep = false;
 		setAM((byte)000);
 		SR = 0;
 		AAR = 0;
@@ -73,6 +75,28 @@ public class HW2000 implements CoreMemory
 
 	public void setFrontPanel(FrontPanel fp) {
 		this.fp = fp;
+	}
+
+	public void setTrace(int low, int hi) {
+		_trace_low = low;
+		_trace_hi = hi;
+		_trace = (low < hi);
+	}
+
+	public void reset() {
+		_trace = false;
+		SR = 0;
+		setAM(HW2000CCR.AIR_AM_3C);
+		Arrays.fill(mem, (byte)0); // This is a cheat, but needed for now
+		CTL.reset();
+	}
+
+	public byte getSENSE() {
+		if (fp != null) {
+			return (byte)fp.getSense();
+		} else {
+			return 0;
+		}
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
@@ -102,7 +126,7 @@ public class HW2000 implements CoreMemory
 		op_exec = null;
 		op_flags = idc.getFlags(op);
 		if (inval()) {
-			throw new FaultException("Invalid OpCode");
+			throw new FaultException(String.format("Invalid OpCode %03o at %07o", op, oSR));
 		}
 		op_exec = idc.getExec(op);
 		if (priv() && CTL.inStdMode() && CTL.isPROTECT() &&
@@ -425,10 +449,17 @@ public class HW2000 implements CoreMemory
 		SR = isr;
 	}
 
+	int count = 0;
+
 	public void execute() {
-		if (fp != null) {
-			fp.setAddress(oSR);
-			fp.setContents(mem[oSR]);
+		if (fp != null && !singleStep) {
+			if (count == 0) {
+				fp.setAddress(oSR);
+				fp.setContents(mem[oSR]);
+			}
+			if (++count > 20) {
+				count = 0;
+			}
 		}
 		op_exec.execute(this);
 	}
@@ -438,7 +469,7 @@ public class HW2000 implements CoreMemory
 	private int _trace_hi = 02000000;
 
 	// Set a value into a word-marked field
-	private void setField(int adr, int val) {
+	public void setField(int adr, int val) {
 		int w;
 		do {
 			w = mem[adr] & 0100;
@@ -446,116 +477,6 @@ public class HW2000 implements CoreMemory
 			val >>= 6;
 			--adr;
 		} while (w == 0);
-	}
-
-	public void monGo(String pgm, String lst, boolean trace) {
-		FileOutputStream list = null;
-		if (lst != null) {
-			try {
-				list = new FileOutputStream(new File(lst));
-			} catch (Exception ee) {
-				ee.printStackTrace();
-				list = null;
-			}
-		}
-		_trace = trace;
-		Assembler asm = new Assembler(new File(pgm));
-		int e = asm.passOne();
-		if (e < 0) {
-			return;
-		}
-		int low = asm.getMin();
-		int hi = asm.getMax();
-		int start = asm.getStart();
-		int brr = 2;
-		int ibr = 2; // give only 4K for now...
-		int reloc = (brr << 12);
-		e = asm.passTwo(this, reloc, list);
-		if (e < 0) {
-			return;
-		}
-		System.err.format("Running %s via monitor %07o %07o %07o\n", asm.getName(), low, hi, start);
-		setField(0007, ibr);
-		setField(0005, brr);
-		setField(0003, start);
-		SR = CSR;
-		if (_trace) {
-			_trace_low = reloc + low;
-			_trace_hi = reloc + hi;
-		}
-		if (list != null) {
-			listOut(list, "Line Printer:\n");
-			pdc.setOutput(PeriphDecode.P_LP, list);
-		}
-		run();
-		if (list != null) {
-			listOut(list, "\n");
-			pdc.setOutput(PeriphDecode.P_LP, null);
-			dumpHW(list, reloc + low, reloc + hi - 1);
-			try {
-				list.close();
-			} catch (Exception ee) {}
-		}
-		if (_trace) {
-			dumpRange(reloc + low, reloc + hi);
-		}
-	}
-
-	public void asmNGo(String pgm, String lst, boolean trace) {
-		FileOutputStream list = null;
-		if (lst != null) {
-			try {
-				list = new FileOutputStream(new File(lst));
-			} catch (Exception ee) {
-				ee.printStackTrace();
-				list = null;
-			}
-		}
-		_trace = trace;
-		Assembler asm = new Assembler(new File(pgm));
-		int e = asm.passOne();
-		if (e < 0) {
-			return;
-		}
-		int low = asm.getMin();
-		int hi = asm.getMax();
-		int start = asm.getStart();
-		e = asm.passTwo(this, 0, list);
-		if (e < 0) {
-			return;
-		}
-		System.err.format("Running %s %07o %07o %07o\n", asm.getName(), low, hi, start);
-		setAM(HW2000CCR.AIR_AM_2C);	// TODO: fix this
-		SR = start;
-		run();
-		if (list != null) {
-			dumpHW(list, low, hi - 1);
-			try {
-				list.close();
-			} catch (Exception ee) {}
-		}
-		if (_trace) {
-			dumpRange(low, hi);
-		}
-	}
-
-	public void loadNGo(String pgm, byte am, int start, boolean trace) {
-		_trace = trace;
-		int n = -1;
-		try {
-			FileInputStream f = new FileInputStream(pgm);
-			n = f.read(mem);
-			f.close();
-		} catch (Exception ee) {
-			ee.printStackTrace();
-			System.exit(1);
-		}
-		if (n <= 0) {
-			return;
-		}
-		setAM(am);
-		SR = start;
-		run();
 	}
 
 	private boolean setIntr(byte mod, byte typ) {
@@ -623,13 +544,19 @@ if (_trace) {
 				fe.printStackTrace();
 				halt = true;
 			}
+			if (singleStep) {
+				singleStep = false;
+				halt = true;
+			}
 		}
 		if (fp != null) {
 			fp.setRunStop(false);
+			fp.setAddress(oSR);
+			fp.setContents(mem[oSR]);
 		}
 	}
 
-	private void listOut(FileOutputStream lst, String str) {
+	public void listOut(FileOutputStream lst, String str) {
 		try {
 			lst.write(str.getBytes());
 		} catch (Exception ee) {

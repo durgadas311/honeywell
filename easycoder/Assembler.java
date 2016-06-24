@@ -55,6 +55,17 @@ public class Assembler {
 		reloc = 0;
 	}
 
+	public String getErrors() {
+		String s = "";
+		while (errs.size() > 0) {
+			if (s.length() > 0) {
+				s += '\n';
+			}
+			s += errs.remove(0);
+		}
+		return s;
+	}
+
 	public int passOne() {
 		asmPass = false;
 		int ret = 0;
@@ -66,20 +77,12 @@ public class Assembler {
 		maxAdr = 0;
 		while (!end && (ret = scanOne()) >= 0) {
 		}
-		try {
-			in.close();
-		} catch (Exception ee) {}
-		while (errs.size() > 0) {
-			System.err.println(errs.remove(0));
-		}
+		try { in.close(); } catch (Exception ee) {}
 		//System.err.format("END OF PASS 1 - %d %07o %07o %07o\n", ret, minAdr, maxAdr, endAdr);
-		if (ret >= 0) {
-			image = new byte[maxAdr - minAdr];
-		}
 		return ret;
 	}
 
-	private void listSymTab() {
+	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");
 		for (Map.Entry<String, Integer> entry : symTab.entrySet()) {
@@ -118,9 +121,6 @@ public class Assembler {
 		lineNo = 0;
 		end = false;
 		while (!end && (ret = scanOne()) >= 0) {
-		}
-		if (lst != null) {
-			listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
 		return ret;

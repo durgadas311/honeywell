@@ -7,15 +7,15 @@ public interface FrontPanel {
 	public void setRunStop(boolean run);
 	public void setAdrMode(int v);
 	public void setInterrupt(boolean intr);	// Indicator only
+	public int getSense();
 
-	// Actions are:
-	//	VK_R	Run
-	//	VK_S	Stop
-	//	VK_I	Initialize
-	//	VK_B	Bootstrap
-	//	VK_C	Central Clear
-	//	VK_N	Instruct
-	//	VK_2,VK_3,VK_4	Address Mode
+	// ActionCommands are:
+	//	"run"	Run
+	//	"stop"	Stop
+	//	"init"	Initialize
+	//	"boot"	Bootstrap
+	//	"clear"	Central Clear
+	//	"instr"	Instruct
 	// TODO: how many of these are directly sent to core system?
 	// (vs. being directly performed on core system object)
 	//

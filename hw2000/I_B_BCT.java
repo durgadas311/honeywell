@@ -54,7 +54,12 @@ public class I_B_BCT implements Instruction {
 						!sys.CTL.privBCT()) {
 					throw new IIException("BCT Violation", HW2000CCR.IIR_OPVIO);
 				}
-				// for now, sensors are never active...
+				byte ss = sys.getSENSE();
+				if (v > 020) {
+					ss >>= 4;
+				}
+				v &= 017;
+				taken = ((ss & v) == v);
 			}
 		}
 		if (taken) {

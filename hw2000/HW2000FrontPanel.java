@@ -1,9 +1,11 @@
 import java.awt.*;
+import java.io.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
-public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListener {
+public class HW2000FrontPanel extends JFrame
+		implements FrontPanel, ActionListener, Runnable {
 	HW2000 sys;
 
 	Font bigFont;
@@ -31,6 +33,10 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 
 	LightedButton run;
 	LightedButton stop;
+	LightedButton instr;
+	LightedButton central;
+	LightedButton init;
+	LightedButton boot;
 	LightedButton am2;
 	LightedButton am3;
 	LightedButton am4;
@@ -47,10 +53,15 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	LightedButton[] sense;
 
 	int gbx;
+	File _last = null;
+	boolean listing = false;
+	boolean monitor = false;
 
 	public HW2000FrontPanel(HW2000 sys) {
 		super("Honeywell Series 2000");
 		this.sys = sys; // may be null
+		_last = new File(System.getProperty("user.dir"));
+
 		getContentPane().setBackground(Color.black);
 		bigFont = new Font("Sans-Serif", Font.PLAIN, 40);
 		smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
@@ -103,6 +114,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		ImageIcon icn = new ImageIcon(getClass().getResource("icons/fp_clear.png"));
 		LightedButton btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnClear);
 		btn.addActionListener(this);
+		btn.setToolTipText("Clear");
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -129,6 +141,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		// CLEAR button...
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnClear);
 		btn.addActionListener(this);
+		btn.setToolTipText("Clear");
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -361,6 +374,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		rpn.add(pn);
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 3);
 		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 4");
 		gc.gridx = 1;
 		gc.gridy = 11;
 		gc.gridwidth = 1;
@@ -370,6 +384,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		sense[3] = btn;
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 2);
 		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 3");
 		gc.gridx = 2;
 		gc.gridy = 11;
 		gc.gridwidth = 1;
@@ -379,6 +394,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		sense[2] = btn;
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 1);
 		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 2");
 		gc.gridx = 3;
 		gc.gridy = 11;
 		gc.gridwidth = 1;
@@ -388,6 +404,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		sense[1] = btn;
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 0);
 		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 1");
 		gc.gridx = 4;
 		gc.gridy = 11;
 		gc.gridwidth = 1;
@@ -415,6 +432,39 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 
 		add(rpn);
 
+		//---------------------------------------------------------
+		JMenuBar mb = new JMenuBar();
+		JMenu mu = new JMenu("File");
+		JMenuItem mi = new JMenuItem("Assemble", KeyEvent.VK_A);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Monitor", KeyEvent.VK_M);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		setJMenuBar(mb);
+
+		run.setToolTipText("Run");
+		stop.setToolTipText("Stop");
+		instr.setToolTipText("Instruct");
+		central.setToolTipText("Central Clear");
+		init.setToolTipText("Initialize");
+		boot.setToolTipText("Bootstrap");
+
+		// Until someone else asks for it...
+		run.addActionListener(this);
+		stop.addActionListener(this);
+		instr.addActionListener(this);
+		central.addActionListener(this);
+		init.addActionListener(this);
+		boot.addActionListener(this);
+		am2.addActionListener(this);
+		am3.addActionListener(this);
+		am4.addActionListener(this);
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
 		setVisible(true);
@@ -435,10 +485,13 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		setBits(control, v);
 		repaint();
 	}
-	public void setSense(int v) {
+	private void setSense(int v) {
 		senseReg = v & 077;
 		setBits(sense, v);
 		repaint();
+	}
+	public int getSense() {
+		return senseReg;
 	}
 	public void setRunStop(boolean run) {
 		this.run.setOn(run);
@@ -472,8 +525,20 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	// (vs. being directly performed on core system object)
 	//
 	public void setPanelListener(ActionListener lstr) {
+		run.removeActionListener(this);
+		stop.removeActionListener(this);
+		instr.removeActionListener(this);
+		central.removeActionListener(this);
+		init.removeActionListener(this);
+		boot.removeActionListener(this);
+
+		// TODO: some of these should always remain ours...
 		run.addActionListener(lstr);
 		stop.addActionListener(lstr);
+		instr.addActionListener(lstr);
+		central.addActionListener(lstr);
+		init.addActionListener(lstr);
+		boot.addActionListener(lstr);
 	}
 
 	// Are these ever queried?
@@ -567,6 +632,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridx = 9;
 		gb.setConstraints(btn, gc);
 		npn.add(btn);
+		init = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
@@ -579,6 +645,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridx = 11;
 		gb.setConstraints(btn, gc);
 		npn.add(btn);
+		boot = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
@@ -591,6 +658,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridx = 13;
 		gb.setConstraints(btn, gc);
 		npn.add(btn);
+		central = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
@@ -603,6 +671,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridx = 15;
 		gb.setConstraints(btn, gc);
 		npn.add(btn);
+		instr = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
@@ -693,6 +762,13 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 
 		run.setActionCommand("run");
 		stop.setActionCommand("stop");
+		instr.setActionCommand("instr");
+		central.setActionCommand("clear");
+		init.setActionCommand("init");
+		boot.setActionCommand("boot");
+		am2.setActionCommand("am2");
+		am3.setActionCommand("am3");
+		am4.setActionCommand("am4");
 	}
 
 	private void addButtons(LightedButton[] btns, Container top, int row, int id, GridBagLayout gb, GridBagConstraints gc) {
@@ -735,6 +811,10 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof JMenuItem) {
+			performMenu((JMenuItem)e.getSource());
+			return;
+		}
 		if (!(e.getSource() instanceof LightedButton)) {
 			return;
 		}
@@ -778,6 +858,45 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 			} else if (cls == btnSense) {
 				setSense(senseReg ^ (1 << idx));
 			}
+		} else {
+			String a = lb.getActionCommand();
+			if (a == null) {
+				return;
+			}
+			if (a.equals("stop")) {
+				sys.halt = true;
+			} else if (sys.halt) {
+				if (a.equals("run")) {
+					Thread thrd = new Thread(this);
+					thrd.start();
+				} else if (a.equals("instr")) {
+					sys.singleStep = true;
+					Thread thrd = new Thread(this);
+					thrd.start();
+				} else if (a.equals("clear")) {
+					// nothing of interest to do?
+				} else if (a.equals("init")) {
+					// TODO: simulate "lamp test" function?
+					monitor = false;
+					sys.reset();
+					setAddress(sys.SR);
+					setContents(sys.rawReadMem(addressReg));
+					setInterrupt(false);
+				} else if (a.equals("boot")) {
+					sys.SR = addressReg;
+					sys.AAR = addressReg;
+					sys.BAR = addressReg;
+					sys.CTL.setV((byte)contentsReg);
+					// TODO: run PDT...
+				} else if (a.equals("am2")) {
+					sys.setAM(HW2000CCR.AIR_AM_2C);
+				} else if (a.equals("am3")) {
+					sys.setAM(HW2000CCR.AIR_AM_3C);
+				} else if (a.equals("am4")) {
+					sys.setAM(HW2000CCR.AIR_AM_4C);
+				}
+			}
+
 		}
 	}
 
@@ -842,4 +961,105 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		}
 	}
 
+	private File pickFile(String purpose, String sfx, String typ, File prev) {
+		File file = null;
+		listing = false;
+		SuffFileChooser ch = new SuffFileChooser(purpose, sfx, typ, prev);
+		int rv = ch.showDialog(this);
+		if (rv == JFileChooser.APPROVE_OPTION) {
+			file = ch.getSelectedFile();
+			listing = ch.wantListing();
+		}
+		return file;
+	}
+
+	private void asmFile(String op) {
+		FileOutputStream lst = null;
+		File src = pickFile(op + " Program",
+				"ezc", "EasyCoder", _last);
+		if (src == null) {
+			return;
+		}
+		_last = src;
+		Assembler asm = new Assembler(src);
+		int e = asm.passOne();
+		if (e < 0) {
+			warning(op, asm.getErrors());
+			return;
+		}
+		if (listing) {
+			String l = src.getAbsolutePath();
+			if (l.endsWith(".ezc")) {
+				l = l.substring(0, l.length() - 4);
+			}
+			l += ".lst";
+			try {
+				lst = new FileOutputStream(new File(l));
+			} catch (Exception ee) {
+				warning(op, ee.getMessage());
+				return;
+			}
+		}
+		int low = asm.getMin();
+		int hi = asm.getMax();
+		int start = asm.getStart();
+		int reloc = 0;
+		int brr = 0;
+		int ibr = 0;
+		if (monitor) {
+			brr = 2; // TODO: manage memory and allocate space
+			ibr = ((hi + 07777) >> 12);
+			reloc = (brr << 12);
+		}
+		e = asm.passTwo(sys, reloc, lst);
+		if (e < 0) {
+			warning(op, asm.getErrors());
+			return;
+		}
+		if (lst != null) {
+			asm.listSymTab();
+		}
+		if (monitor) {
+			sys.setField(0007, ibr);
+			sys.setField(0005, brr);
+			sys.setField(0003, start);
+			// TODO: add program name to monitor data
+			sys.SR = sys.CSR;
+		} else {
+			sys.SR = start;
+		}
+		setAddress(sys.SR);
+		setContents(sys.rawReadMem(addressReg));
+		inform(op, String.format("Assembly complete. %07o %07o %07o",
+			reloc + low, reloc + hi, reloc + start));
+	}
+
+	private void performMenu(JMenuItem mi) {
+		if (mi.getMnemonic() == KeyEvent.VK_A) {
+			asmFile("Assemble");
+		} else if (mi.getMnemonic() == KeyEvent.VK_M) {
+			asmFile("Monitor");
+			// run automatically?
+			monitor = true; // only after running?
+		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
+			System.exit(0);
+		}
+
+	}
+
+	static public void warning(String op, String err) {
+		JOptionPane.showMessageDialog(null,
+			new JLabel(err),
+			op + " Warning", JOptionPane.WARNING_MESSAGE);
+	}
+
+	static public void inform(String op, String err) {
+		JOptionPane.showMessageDialog(null,
+			new JLabel(err),
+			op + " Information", JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	public void run() {
+		sys.run();
+	}
 }
