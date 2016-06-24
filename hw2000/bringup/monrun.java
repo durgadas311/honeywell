@@ -24,6 +24,7 @@ public class monrun implements ActionListener, Runnable {
 		argx = 0;
 		String mon = "monitor.ezc";
 		fp = null;
+		hw = new HW2000();
 		while (argx < args.length && args[argx].startsWith("-")) {
 			if (args[argx].equals("-t")) {
 				trace = true;
@@ -34,7 +35,6 @@ public class monrun implements ActionListener, Runnable {
 			}
 			++argx;
 		}
-		hw = new HW2000();
 		if (fp != null) {
 			hw.setFrontPanel(fp);
 			fp.setPanelListener(this);

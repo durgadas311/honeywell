@@ -21,6 +21,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	static final int btnContents = 0x1000;
 	static final int btnAddress = 0x2000;
 	static final int btnControl = 0x3000;
+	static final int btnSense = 0x4000;
 
 	static final int btnClear = 0x0fff;
 	static final int btnEnter = 0x0ff0;
@@ -38,10 +39,12 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	int contentsReg;
 	int addressReg;
 	int controlReg;
+	int senseReg;
 
 	LightedButton[] contents;
 	LightedButton[] address;
 	LightedButton[] control;
+	LightedButton[] sense;
 
 	int gbx;
 
@@ -52,8 +55,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		bigFont = new Font("Sans-Serif", Font.PLAIN, 40);
 		smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 
-		GridBagLayout gb = new GridBagLayout();
-		setLayout(gb);
+		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.fill = GridBagConstraints.NONE;
 		gc.gridx = 0;
@@ -68,11 +70,16 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.insets.right = 0;
 		gc.anchor = GridBagConstraints.NORTH;
 
-		gbx = 29; // full-width of frame, in GridBag cells/units
+		gbx = 29; // full-width of left panel, in GridBag cells/units
+		JPanel lpn = new JPanel();
+		lpn.setOpaque(false);
+		GridBagLayout gb = new GridBagLayout();
+		lpn.setLayout(gb);
 
 		contents = new LightedButton[8];
 		address = new LightedButton[19];
 		control = new LightedButton[6];
+		sense = new LightedButton[4];
 
 		JPanel pn = new JPanel();
 		pn.setPreferredSize(new Dimension(40,20));
@@ -81,7 +88,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 0;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
-		add(pn);
+		lpn.add(pn);
 
 		JLabel lb = new JLabel("CONTENTS");
 		lb.setFont(bigFont);
@@ -91,15 +98,15 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 1;
 		gc.gridwidth = 1;
 		gb.setConstraints(lb, gc);
-		add(lb);
+		lpn.add(lb);
 		// CLEAR button...
 		ImageIcon icn = new ImageIcon(getClass().getResource("icons/fp_clear.png"));
 		LightedButton btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnClear);
 		btn.addActionListener(this);
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
-		add(btn);
-		addButtons(contents, 1, btnContents, gb, gc);
+		lpn.add(btn);
+		addButtons(contents, lpn, 1, btnContents, gb, gc);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(40,10));
@@ -108,7 +115,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 2;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
-		add(pn);
+		lpn.add(pn);
 
 		lb = new JLabel("ADDRESS");
 		lb.setFont(bigFont);
@@ -118,14 +125,14 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 3;
 		gc.gridwidth = 1;
 		gb.setConstraints(lb, gc);
-		add(lb);
+		lpn.add(lb);
 		// CLEAR button...
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnClear);
 		btn.addActionListener(this);
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
-		add(btn);
-		addButtons(address, 3, btnAddress, gb, gc);
+		lpn.add(btn);
+		addButtons(address, lpn, 3, btnAddress, gb, gc);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(40,10));
@@ -134,7 +141,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 4;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
-		add(pn);
+		lpn.add(pn);
 
 		lb = new JLabel("CONTROL");
 		lb.setFont(bigFont);
@@ -144,14 +151,14 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 5;
 		gc.gridwidth = 1;
 		gb.setConstraints(lb, gc);
-		add(lb);
+		lpn.add(lb);
 		// No CLEAR button...
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(30,40));
 		gc.gridx = 1;
 		gb.setConstraints(pn, gc);
-		add(pn);
-		addButtons(control, 5, btnControl, gb, gc);
+		lpn.add(pn);
+		addButtons(control, lpn, 5, btnControl, gb, gc);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(40,20));
@@ -160,9 +167,9 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 6;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
-		add(pn);
+		lpn.add(pn);
 
-		addControls(7, gb, gc);
+		addControls(lpn, 7, gb, gc);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(40,20));
@@ -171,12 +178,242 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		gc.gridy = 8;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
-		add(pn);
+		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_word.png"));
 		contents[6].setIcon(icn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_item.png"));
 		contents[7].setIcon(icn);
+
+		add(lpn);
+
+		//---------------------------------------------------------------
+
+		JPanel rpn = new JPanel();
+		rpn.setOpaque(false);
+		gb = new GridBagLayout();
+		rpn.setLayout(gb);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(160,20));
+		pn.setOpaque(true);
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.gridwidth = 6;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(140,25));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 1;
+		gc.gridwidth = 5;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,140));
+		pn.setOpaque(true);
+		gc.gridx = 5;
+		gc.gridy = 1;
+		gc.gridwidth = 1;
+		gc.gridheight = 9;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,15));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 2;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,10));
+		pn.setOpaque(true);
+		gc.gridx = 0;
+		gc.gridy = 3;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		icn = new ImageIcon(getClass().getResource("icons/fp_disp.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnDisplay);
+		btn.addActionListener(this);
+		gc.gridx = 1;
+		gc.gridy = 2;
+		gc.gridwidth = 1;
+		gc.gridheight = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(60,10));
+		pn.setOpaque(true);
+		gc.gridx = 2;
+		gc.gridy = 3;
+		gc.gridwidth = 2;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		icn = new ImageIcon(getClass().getResource("icons/fp_enter.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnEnter);
+		btn.addActionListener(this);
+		gc.gridx = 4;
+		gc.gridy = 2;
+		gc.gridwidth = 1;
+		gc.gridheight = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(140,10));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 5;
+		gc.gridwidth = 5;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,15));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 6;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,10));
+		pn.setOpaque(true);
+		gc.gridx = 0;
+		gc.gridy = 7;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		icn = new ImageIcon(getClass().getResource("icons/fp_disp.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDisplay);
+		btn.addActionListener(this);
+		gc.gridx = 1;
+		gc.gridy = 6;
+		gc.gridwidth = 1;
+		gc.gridheight = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		icn = new ImageIcon(getClass().getResource("icons/fp_plus1.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDispP1);
+		btn.addActionListener(this);
+		gc.gridx = 2;
+		gc.gridy = 6;
+		gc.gridwidth = 1;
+		gc.gridheight = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		icn = new ImageIcon(getClass().getResource("icons/fp_minus1.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDispM1);
+		btn.addActionListener(this);
+		gc.gridx = 3;
+		gc.gridy = 6;
+		gc.gridwidth = 1;
+		gc.gridheight = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		icn = new ImageIcon(getClass().getResource("icons/fp_enter.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnEnter);
+		btn.addActionListener(this);
+		gc.gridx = 4;
+		gc.gridy = 6;
+		gc.gridwidth = 1;
+		gc.gridheight = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(140,25));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 9;
+		gc.gridwidth = 5;
+		gc.gridheight = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(160,20));
+		pn.setOpaque(true);
+		gc.gridx = 0;
+		gc.gridy = 10;
+		gc.gridwidth = 6;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(true);
+		gc.gridx = 0;
+		gc.gridy = 11;
+		gc.gridwidth = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 3);
+		btn.addActionListener(this);
+		gc.gridx = 1;
+		gc.gridy = 11;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[3] = btn;
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 2);
+		btn.addActionListener(this);
+		gc.gridx = 2;
+		gc.gridy = 11;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[2] = btn;
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 1);
+		btn.addActionListener(this);
+		gc.gridx = 3;
+		gc.gridy = 11;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[1] = btn;
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 0);
+		btn.addActionListener(this);
+		gc.gridx = 4;
+		gc.gridy = 11;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[0] = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(true);
+		gc.gridx = 5;
+		gc.gridy = 11;
+		gc.gridwidth = 1;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(160,20));
+		pn.setOpaque(true);
+		gc.gridx = 0;
+		gc.gridy = 12;
+		gc.gridwidth = 6;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		add(rpn);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
@@ -196,6 +433,11 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 	public void setControl(int v) {
 		controlReg = v & 077;
 		setBits(control, v);
+		repaint();
+	}
+	public void setSense(int v) {
+		senseReg = v & 077;
+		setBits(sense, v);
 		repaint();
 	}
 	public void setRunStop(boolean run) {
@@ -248,7 +490,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		}
 	}
 
-	private void addControls(int row, GridBagLayout gb, GridBagConstraints gc) {
+	private void addControls(Container top, int row, GridBagLayout gb, GridBagConstraints gc) {
 		gc.gridy = row;
 		gc.gridwidth = 30;
 		JPanel pn;
@@ -259,7 +501,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		npn.setLayout(gbl);
 		npn.setOpaque(false);
 		gb.setConstraints(npn, gc);
-		add(npn);
+		top.add(npn);
 
 		gc.gridy = 0;
 		gc.gridwidth = gbx;
@@ -453,7 +695,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		stop.setActionCommand("stop");
 	}
 
-	private void addButtons(LightedButton[] btns, int row, int id, GridBagLayout gb, GridBagConstraints gc) {
+	private void addButtons(LightedButton[] btns, Container top, int row, int id, GridBagLayout gb, GridBagConstraints gc) {
 		gc.gridy = row;
 		gc.gridwidth = 1;
 		int goff = 0;
@@ -463,7 +705,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		pn.setPreferredSize(new Dimension(20, 40));
 		gc.gridx = gbx - goff;
 		gb.setConstraints(pn, gc);
-		add(pn);
+		top.add(pn);
 		++goff;
 		int m = 0;
 		for (int x = 0; x < btns.length; ++x) {
@@ -471,7 +713,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 			btns[x].addActionListener(this);
 			gc.gridx = gbx - x - goff;
 			gb.setConstraints(btns[x], gc);
-			add(btns[x]);
+			top.add(btns[x]);
 			if (++m == 3) {
 				m = 0;
 				++goff;
@@ -479,7 +721,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 				pn.setPreferredSize(new Dimension(10, 40));
 				gc.gridx = gbx - x - goff;
 				gb.setConstraints(pn, gc);
-				add(pn);
+				top.add(pn);
 			}
 		}
 		int d = 19 - btns.length;
@@ -489,7 +731,7 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 		pn.setOpaque(true);
 		pn.setPreferredSize(new Dimension((d * 30) + ((d + 1) / 3 * 10) + 20, 40)); // will just any width work?
 		gb.setConstraints(pn, gc);
-		add(pn);
+		top.add(pn);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -508,7 +750,9 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 				if (idx == btnClear) {
 					setContents(0);
 				} else if (idx == btnDisplay) {
+					setContents(sys.rawReadMem(addressReg));
 				} else if (idx == btnEnter) {
+					sys.rawWriteMem(addressReg, (byte)contentsReg);
 				} else {
 					setContents(contentsReg | (1 << idx));
 				}
@@ -516,15 +760,85 @@ public class HW2000FrontPanel extends JFrame implements FrontPanel, ActionListen
 				if (idx == btnClear) {
 					setAddress(0);
 				} else if (idx == btnDisplay) {
+					setAddress(getCtrlReg((byte)controlReg, 0));
+					setContents(sys.rawReadMem(addressReg));
 				} else if (idx == btnDispP1) {
+					setAddress(getCtrlReg((byte)controlReg, 1));
+					setContents(sys.rawReadMem(addressReg));
 				} else if (idx == btnDispM1) {
+					setAddress(getCtrlReg((byte)controlReg, -1));
+					setContents(sys.rawReadMem(addressReg));
 				} else if (idx == btnEnter) {
+					setCtrlReg((byte)controlReg, addressReg);
 				} else {
 					setAddress(addressReg | (1 << idx));
 				}
 			} else if (cls == btnControl) {
 				setControl(controlReg ^ (1 << idx));
+			} else if (cls == btnSense) {
+				setSense(senseReg ^ (1 << idx));
 			}
+		}
+	}
+
+	private int getCtrlReg(byte reg, int incr) {
+		int val = 0;
+		switch(reg & 077) {
+		case 054:
+			val = sys.ATR;
+			if (incr != 0) { sys.ATR += incr; }
+			break;
+		case 064:
+			val = sys.CSR;
+			if (incr != 0) { sys.CSR += incr; }
+			break;
+		case 066:
+			val = sys.EIR;
+			if (incr != 0) { sys.EIR += incr; }
+			break;
+		case 067:
+			val = sys.AAR;
+			if (incr != 0) { sys.AAR += incr; }
+			break;
+		case 070:
+			val = sys.BAR;
+			if (incr != 0) { sys.BAR += incr; }
+			break;
+		case 076:
+			val = sys.IIR;
+			if (incr != 0) { sys.IIR += incr; }
+			break;
+		case 077:
+			val = sys.SR;
+			if (incr != 0) { sys.SR += incr; }
+			break;
+		}
+		return val;
+	}
+
+	private void setCtrlReg(byte reg, int val) {
+		switch(reg & 077) {
+		case 054:
+			sys.ATR = val;
+			break;
+		case 064:
+			sys.CSR = val;
+			break;
+		case 066:
+			sys.EIR = val;
+			break;
+		case 067:
+			sys.AAR = val;
+			break;
+		case 070:
+			sys.BAR = val;
+			break;
+		case 076:
+			sys.IIR = val;
+			break;
+		case 077:
+			sys.SR = val;
+			break;
 		}
 	}
 
