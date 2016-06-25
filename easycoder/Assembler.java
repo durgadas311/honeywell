@@ -9,8 +9,8 @@ public class Assembler {
 	BufferedReader in;
 	InstrDecode idc;
 	CharConverter cvt;
-	FileOutputStream out;
-	FileOutputStream lst;
+	OutputStream out;
+	OutputStream lst;
 	int currLoc;
 	int lineNo;
 	int adrMode;
@@ -104,7 +104,7 @@ public class Assembler {
 	public int getStart() { return endAdr; }
 	public String getName() { return prog; }
 
-	public int passTwo(CoreMemory sys, int reloc, FileOutputStream list) {
+	public int passTwo(CoreMemory sys, int reloc, OutputStream list) {
 		this.reloc = reloc;
 		lst = list;
 		try {

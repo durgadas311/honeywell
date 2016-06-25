@@ -121,6 +121,14 @@ public class HW2000 implements CoreMemory
 		return p;
 	}
 
+	public RWChannel getChannel(byte op) {
+		RWChannel p = pdc.getChannel(op);
+		if (p == null) {
+			throw new RuntimeException("Invalid Channel " + op);
+		}
+		return p;
+	}
+
 	private void setOp(byte op) {
 		op_exec = null;
 		op_flags = idc.getFlags(op);
@@ -624,45 +632,6 @@ if (_trace) {
 			}
 			listOut(list, l + "\n");
 			m += 128;
-		}
-	}
-
-	// Range is inclusive, both ends
-	public void dumpRangeFile(FileOutputStream list, int beg, int end) {
-		int x = 0;
-		int m = beg;
-		listOut(list, "Memory Dump:\n");
-		while (m <= end) {
-			if (x == 0) {
-				listOut(list, String.format("%07o:", m));
-			}
-			listOut(list, String.format(" %03o", mem[m++] & 0x0ff));
-			if (++x >= 16) {
-				x = 0;
-				listOut(list, "\n");
-			}
-		}
-		if (x != 0) {
-			listOut(list, "\n");
-		}
-	}
-
-	// Range is inclusive, both ends
-	public void dumpRange(int beg, int end) {
-		int x = 0;
-		int m = beg;
-		while (m <= end) {
-			if (x == 0) {
-				System.err.format("%07o:", m);
-			}
-			System.err.format(" %03o", mem[m++] & 0x0ff);
-			if (++x >= 16) {
-				x = 0;
-				System.err.format("\n");
-			}
-		}
-		if (x != 0) {
-			System.err.format("\n");
 		}
 	}
 

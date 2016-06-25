@@ -52,7 +52,7 @@ public class monrun implements ActionListener, Runnable {
 			hw.run();
 			return;
 		}
-		FileOutputStream lst = null;
+		OutputStream lst = null;
 		while (argx < args.length && args[argx].startsWith("-")) {
 			if (args[argx].equals("-t")) {
 				trace = true;

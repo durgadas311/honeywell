@@ -11,14 +11,21 @@ public class PeriphDecode {
 	public static final byte P_IN = 040;	// Input modifier
 	public static final byte P_OUT = 000;	// Output modifier
 
+	public static final byte RWC_1 = 0;
+	public static final byte RWC_1p = 1;
+	public static final byte RWC_2 = 2;
+	public static final byte RWC_3 = 3;
+
 	private Peripheral[] p_odevs;
 	private Peripheral[] p_idevs;
 	public CharConverter cvt;
+	private RWChannel[] p_chans;
 
 	public PeriphDecode() {
 		cvt = new CharConverter(new CardPunchOptions());
 		p_odevs = new Peripheral[8];
 		p_idevs = new Peripheral[8];
+		p_chans = new RWChannel[8];
 		p_odevs[P_LP] = new P_LinePrinter();
 		p_odevs[P_CO] = new P_ConsolePrinter();
 	}
@@ -29,6 +36,17 @@ public class PeriphDecode {
 		} else {
 			return p_odevs[pa & 007];
 		}
+	}
+
+	public RWChannel getChannel(byte ca) {
+		// fudge, rather than use a complex translation
+		ca &= 007;
+		RWChannel c;
+		// Only create channels as needed
+		if ((c = p_chans[ca]) == null) {
+			c = p_chans[ca] = new RWChannel();
+		}
+		return c;
 	}
 
 	public void setOutput(byte pa, OutputStream dev) {

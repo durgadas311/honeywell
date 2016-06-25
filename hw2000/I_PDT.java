@@ -11,6 +11,7 @@ public class I_PDT implements Instruction {
 				((sys.getXtra(1) & 030) == 010 && sys.numXtra() < 3)) {
 			throw new FaultException("PDT malformed");
 		}
+		byte c1 = sys.getXtra(0);
 		byte c2;
 		if ((sys.getXtra(1) & 030) == 010) {
 			c2 = sys.getXtra(2);
@@ -18,6 +19,11 @@ public class I_PDT implements Instruction {
 			c2 = sys.getXtra(1);
 		}
 		Peripheral p = sys.getPeriph(c2);
-		p.io(sys);
+		RWChannel c = sys.getChannel(c1);
+		if (c.busy() || p.busy()) {
+			sys.SR = sys.oSR;
+			return;
+		}
+		c.io(sys, p);
 	}
 }

@@ -1001,7 +1001,7 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void asmFile(String op) {
-		FileOutputStream lst = null;
+		OutputStream lst = null;
 		File src = pickFile(op + " Program",
 				"ezc", "EasyCoder", _last);
 		if (src == null) {

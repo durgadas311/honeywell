@@ -7,4 +7,6 @@ public interface Peripheral {
 	public InputStream getInput();
 	public void io(HW2000 sys);
 	public void ctl(HW2000 sys);
+	public void run(HW2000 sys);
+	public boolean busy();
 }

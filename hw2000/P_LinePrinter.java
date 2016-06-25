@@ -2,10 +2,14 @@ import java.io.*;
 
 public class P_LinePrinter implements Peripheral {
 
-	private OutputStream dev;
+	OutputStream dev;
+	byte c3;
+	int clc, slc;
+	boolean busy;
 
 	public P_LinePrinter() {
 		this.dev = System.out;
+		busy = false;
 	}
 
 	public void setOutput(OutputStream dev) {
@@ -28,7 +32,8 @@ public class P_LinePrinter implements Peripheral {
 	}
 
 	public void io(HW2000 sys) {
-		byte c3;
+		clc = (byte)(sys.getXtra(0) & 007);
+		slc = clc + 8;
 		if ((sys.getXtra(1) & 030) == 010) {
 			c3 = sys.getXtra(3);
 		} else {
@@ -40,18 +45,26 @@ public class P_LinePrinter implements Peripheral {
 		//	11nnnn: Do not print, advance nnnn lines.
 		//	100xxx: Print, advance to channel xxx.
 		//	101xxx: Do not print, advance to channel xxx.
+		sys.cr[slc] = sys.AAR;
+		sys.cr[clc] = sys.AAR;
+		busy = true;
+	}
 
+	public void run(HW2000 sys) {
+		if (!busy) {
+			return;
+		}
 		String s = "";
 		boolean print = ((c3 & 040) == 0 || (c3 & 030) == 0);
 		// Printing stops *before* char with record mark...
 		while (print) {
-			byte a = sys.readMem(sys.AAR);
+			byte a = sys.readMem(sys.cr[clc]);
 			if ((a & 0300)  == 0300) {
 				break;
 			}
 			a &= 077;
 			s += sys.pdc.cvt.hwToLP(a);
-			sys.incrAAR(1);
+			sys.cr[clc] = sys.incrAdr(sys.cr[clc], 1);
 		}
 		if ((c3 & 060) != 040) {
 			c3 &= 017;
@@ -65,8 +78,19 @@ public class P_LinePrinter implements Peripheral {
 		} catch (Exception ee) {
 			// TODO: handle exceptions?
 		}
+		busy = false;
+	}
+
+	public boolean busy() {
+		return busy;
 	}
 
 	public void ctl(HW2000 sys) {
+		if (busy) {
+			sys.BAR = sys.SR;
+			sys.SR = sys.AAR;
+			return;
+		}
+		// TODO: apply control chars
 	}
 }
