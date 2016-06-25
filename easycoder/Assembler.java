@@ -103,6 +103,13 @@ public class Assembler {
 	public int getMax() { return maxAdr; }
 	public int getStart() { return endAdr; }
 	public String getName() { return prog; }
+	public byte[] getHWName() {
+		byte[] bb = new byte[prog.length()];
+		for (int x = 0; x < bb.length; ++x) {
+			bb[x] = cvt.asciiToHw((byte)(prog.charAt(x) & 0x7f));
+		}
+		return bb;
+	}
 
 	public int passTwo(CoreMemory sys, int reloc, OutputStream list) {
 		this.reloc = reloc;

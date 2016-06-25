@@ -510,11 +510,6 @@ public class HW2000 implements CoreMemory
 		}
 		halt = false;
 		while (!halt) {
-try {
-if (System.in.available() > 0) {
-	break;
-}
-} catch (Exception ee) {}
 			try {
 				fetch();
 // should already be proven to be a good address...

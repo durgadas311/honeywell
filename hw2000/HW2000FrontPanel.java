@@ -1059,6 +1059,13 @@ public class HW2000FrontPanel extends JFrame
 			sys.setField(0007, ibr);
 			sys.setField(0005, brr);
 			sys.setField(0003, start);
+			byte[] nm = asm.getHWName();
+			int x;
+			for (x = 0; x < nm.length; ++x) {
+				sys.rawWriteMem(0010 + x, nm[x]);
+			}
+			sys.rawWriteMem(0010 + x, (byte)((sys.rawReadMem(0010 + x) & 077) | 0300));
+
 			// TODO: add program name to monitor data
 			//sys.SR = sys.CSR; // with interactive monitor, do not force SR
 		} else {
