@@ -556,7 +556,7 @@ if (_trace) {
 		}
 	}
 
-	public void listOut(FileOutputStream lst, String str) {
+	public void listOut(OutputStream lst, String str) {
 		try {
 			lst.write(str.getBytes());
 		} catch (Exception ee) {
@@ -565,7 +565,7 @@ if (_trace) {
 
 	// Honeywell-style memory dump.
 	// Range is inclusive, both ends
-	public void dumpHW(FileOutputStream list, int beg, int end) {
+	public void dumpHW(OutputStream list, int beg, int end) {
 		String marks = " WIR";
 		int m = beg & ~0177;	// 128 locations per row...
 		listOut(list, "Memory Dump:\n");

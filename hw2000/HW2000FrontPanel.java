@@ -56,6 +56,8 @@ public class HW2000FrontPanel extends JFrame
 	File _last = null;
 	boolean listing = false;
 	boolean monitor = false;
+	int currLow = 0;
+	int currHi = 0;
 
 	public HW2000FrontPanel(HW2000 sys) {
 		super("Honeywell Series 2000");
@@ -442,6 +444,22 @@ public class HW2000FrontPanel extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		mu = new JMenu("I/O");
+		mi = new JMenuItem("Console", KeyEvent.VK_C);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("LinePrinter", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		mu = new JMenu("Debug");
+		mi = new JMenuItem("Trace", KeyEvent.VK_T);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Dump", KeyEvent.VK_D);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -882,6 +900,8 @@ public class HW2000FrontPanel extends JFrame
 					setAddress(sys.SR);
 					setContents(sys.rawReadMem(addressReg));
 					setInterrupt(false);
+					currLow = 0;
+					currHi = 0;
 				} else if (a.equals("boot")) {
 					sys.SR = addressReg;
 					sys.AAR = addressReg;
@@ -1011,6 +1031,9 @@ public class HW2000FrontPanel extends JFrame
 			ibr = ((hi + 07777) >> 12);
 			reloc = (brr << 12);
 		}
+		currLow = 0;
+		currHi = 0;
+		sys.setTrace(currLow, currHi); // trace off
 		e = asm.passTwo(sys, reloc, lst);
 		if (e < 0) {
 			warning(op, asm.getErrors());
@@ -1030,6 +1053,8 @@ public class HW2000FrontPanel extends JFrame
 		}
 		setAddress(sys.SR);
 		setContents(sys.rawReadMem(addressReg));
+		currLow = reloc + low;
+		currHi = reloc + hi;
 		inform(op, String.format("Assembly complete. %07o %07o %07o",
 			reloc + low, reloc + hi, reloc + start));
 	}
@@ -1043,6 +1068,14 @@ public class HW2000FrontPanel extends JFrame
 			monitor = true; // only after running?
 		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
+		} else if (mi.getMnemonic() == KeyEvent.VK_C) {
+		} else if (mi.getMnemonic() == KeyEvent.VK_P) {
+		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
+			sys.setTrace(currLow, currHi);
+		} else if (mi.getMnemonic() == KeyEvent.VK_D) {
+			if (currLow < currHi) {
+				sys.dumpHW(System.err, currLow, currHi - 1);
+			}
 		}
 
 	}
