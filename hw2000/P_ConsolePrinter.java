@@ -16,7 +16,15 @@ public class P_ConsolePrinter implements Peripheral {
 		}
 	}
 
+	public OutputStream getOutput() {
+		return this.dev;
+	}
+
 	public void setInput(InputStream dev) {
+	}
+
+	public InputStream getInput() {
+		return null;
 	}
 
 	public void io(HW2000 sys) {

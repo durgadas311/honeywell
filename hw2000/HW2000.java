@@ -566,6 +566,9 @@ if (_trace) {
 	// Honeywell-style memory dump.
 	// Range is inclusive, both ends
 	public void dumpHW(OutputStream list, int beg, int end) {
+		if (list == null) {
+			list = pdc.getOutput(PeriphDecode.P_LP);
+		}
 		String marks = " WIR";
 		int m = beg & ~0177;	// 128 locations per row...
 		listOut(list, "Memory Dump:\n");

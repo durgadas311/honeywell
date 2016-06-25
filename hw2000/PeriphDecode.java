@@ -33,23 +33,33 @@ public class PeriphDecode {
 
 	public void setOutput(byte pa, OutputStream dev) {
 		Peripheral p = null;
-		// TODO: set both or just p_odevs?
-		if ((p = p_idevs[pa & 007]) != null) {
-			p.setOutput(dev);
-		}
 		if ((p = p_odevs[pa & 007]) != null) {
 			p.setOutput(dev);
 		}
 	}
 
+	public OutputStream getOutput(byte pa) {
+		OutputStream o = null;
+		Peripheral p = null;
+		if ((p = p_odevs[pa & 007]) != null) {
+			o = p.getOutput();
+		}
+		return o;
+	}
+
 	public void setInput(byte pa, InputStream dev) {
 		Peripheral p = null;
-		// TODO: set both or just p_idevs?
 		if ((p = p_idevs[pa & 007]) != null) {
 			p.setInput(dev);
 		}
-		if ((p = p_odevs[pa & 007]) != null) {
-			p.setInput(dev);
+	}
+
+	public InputStream getInput(byte pa) {
+		InputStream i = null;
+		Peripheral p = null;
+		if ((p = p_idevs[pa & 007]) != null) {
+			i = p.getInput();
 		}
+		return i;
 	}
 }

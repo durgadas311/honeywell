@@ -1074,7 +1074,7 @@ public class HW2000FrontPanel extends JFrame
 			sys.setTrace(currLow, currHi);
 		} else if (mi.getMnemonic() == KeyEvent.VK_D) {
 			if (currLow < currHi) {
-				sys.dumpHW(System.err, currLow, currHi - 1);
+				sys.dumpHW(null, currLow, currHi - 1);
 			}
 		}
 
