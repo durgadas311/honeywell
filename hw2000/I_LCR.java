@@ -14,34 +14,32 @@ public class I_LCR implements Instruction {
 		}
 		boolean restore = true;
 		int reg = sys.loadFromAAR();
-		if (v < 040) {
-			// CLC or SLC
-		} else switch(v) {
-			case 054:
-				sys.ATR = reg;
-				break;
-			case 064:
-				sys.CSR = reg;
-				break;
-			case 066:
-				sys.EIR = reg;
-				break;
-			case 067:
-				restore = false;
-				sys.AAR = reg;
-				break;
-			case 070:
-				sys.BAR = reg;
-				break;
-			case 076:
-				sys.IIR = reg;
-				break;
-			case 077:
-				sys.SR = reg;
-				break;
-			default:
-				// throw?
-				break;
+		switch(v) {
+		case 054:
+			sys.ATR = reg;
+			break;
+		case 064:
+			sys.CSR = reg;
+			break;
+		case 066:
+			sys.EIR = reg;
+			break;
+		case 067:
+			restore = false;
+			sys.AAR = reg;
+			break;
+		case 070:
+			sys.BAR = reg;
+			break;
+		case 076:
+			sys.IIR = reg;
+			break;
+		case 077:
+			sys.SR = reg;
+			break;
+		default:
+			sys.cr[v] = reg;
+			break;
 		}
 		if (restore) {
 			sys.restoreAAR();

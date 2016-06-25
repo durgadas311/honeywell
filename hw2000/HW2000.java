@@ -12,9 +12,8 @@ public class HW2000 implements CoreMemory
 	public static final byte LOR = 007;
 
 	byte[] mem;
+	public int[] cr;
 
-	int[] CLC;
-	int[] SLC;
 	int ATR;
 	public int CSR;
 	public int EIR;
@@ -57,10 +56,10 @@ public class HW2000 implements CoreMemory
 		AC = new double[8];
 		mem = new byte[524288]; // TODO: mmap file
 		Arrays.fill(mem, (byte)0);
+		cr = new int[64];
+		Arrays.fill(cr, 0);
 		idc = new InstrDecode(false);
 		pdc = new PeriphDecode();
-		CLC = new int[16];
-		SLC = new int[16];
 		adr_min = 0;
 		adr_max = 0x80000;
 		halt = true;

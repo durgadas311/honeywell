@@ -951,6 +951,10 @@ public class HW2000FrontPanel extends JFrame
 			val = sys.SR;
 			if (incr != 0) { sys.SR += incr; }
 			break;
+		default:
+			val = sys.cr[reg & 077];
+			if (incr != 0) { sys.cr[reg & 077] += incr; }
+			break;
 		}
 		return val;
 	}
@@ -977,6 +981,9 @@ public class HW2000FrontPanel extends JFrame
 			break;
 		case 077:
 			sys.SR = val;
+			break;
+		default:
+			sys.cr[reg & 077] = val;
 			break;
 		}
 	}
