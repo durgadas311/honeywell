@@ -459,7 +459,13 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("TraceAll", KeyEvent.VK_L);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Dump", KeyEvent.VK_D);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("DumpMon", KeyEvent.VK_N);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -1054,7 +1060,7 @@ public class HW2000FrontPanel extends JFrame
 			sys.setField(0005, brr);
 			sys.setField(0003, start);
 			// TODO: add program name to monitor data
-			sys.SR = sys.CSR;
+			//sys.SR = sys.CSR; // with interactive monitor, do not force SR
 		} else {
 			sys.SR = start;
 		}
@@ -1079,22 +1085,26 @@ public class HW2000FrontPanel extends JFrame
 		} else if (mi.getMnemonic() == KeyEvent.VK_P) {
 		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
 			sys.setTrace(currLow, currHi);
+		} else if (mi.getMnemonic() == KeyEvent.VK_L) {
+			sys.setTrace(0, 02000000);
 		} else if (mi.getMnemonic() == KeyEvent.VK_D) {
 			if (currLow < currHi) {
 				sys.dumpHW(null, currLow, currHi - 1);
 			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_N) {
+			sys.dumpHW(null, 0, 03777);
 		}
 
 	}
 
-	static public void warning(String op, String err) {
-		JOptionPane.showMessageDialog(null,
+	public void warning(String op, String err) {
+		JOptionPane.showMessageDialog(this,
 			new JLabel(err),
 			op + " Warning", JOptionPane.WARNING_MESSAGE);
 	}
 
-	static public void inform(String op, String err) {
-		JOptionPane.showMessageDialog(null,
+	public void inform(String op, String err) {
+		JOptionPane.showMessageDialog(this,
 			new JLabel(err),
 			op + " Information", JOptionPane.INFORMATION_MESSAGE);
 	}

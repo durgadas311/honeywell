@@ -202,8 +202,9 @@ public class HW2000 implements CoreMemory
 		BAR = incrAdr(BAR, inc);
 	}
 
-	private int validAdr(int adr) {
+	public int validAdr(int adr) {
 		int a = adr;
+		// TODO: if PROCEED is set on PDT, also check violations
 		if (CTL.inStdMode()) {
 			if (CTL.isRELOC()) {
 				a += adr_min;

@@ -227,7 +227,7 @@ public class Assembler {
 			return 0;
 		}
 		// first do convenience translations of special chars
-		line = replaceChars(line.toUpperCase(), "^[]~\\", "\001\011\006\010\007");
+		line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
 		String card = String.format("%-80s", line.toUpperCase());
 		// TODO: handle D data cards... C/L continuation and macro...
 		char typ = card.charAt(5);

@@ -28,6 +28,7 @@ public class PeriphDecode {
 		p_chans = new RWChannel[8];
 		p_odevs[P_LP] = new P_LinePrinter();
 		p_odevs[P_CO] = new P_ConsolePrinter();
+		p_idevs[P_CO] = new P_ConsoleKeyboard();
 	}
 
 	public Peripheral getPerph(byte pa) {

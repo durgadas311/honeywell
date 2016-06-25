@@ -457,6 +457,9 @@ class CharConverter {
 		ascii2hw['\001'] = 077;	// cent
 	}
 
+	public static final String hwAsciiSup = "^[]~\\";
+	public static final String hwAsciiRep = "\001\011\006\010\007";
+
 	public CharConverter(CardPunchOptions opts) {
 		setup_xlate(opts);
 	}

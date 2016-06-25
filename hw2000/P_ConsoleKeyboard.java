@@ -1,34 +1,34 @@
 import java.io.*;
 
-public class P_ConsolePrinter implements Peripheral {
+public class P_ConsoleKeyboard implements Peripheral {
 
-	OutputStream dev;
+	InputStream dev;
 	byte c3;
 	int clc, slc;
 	boolean busy;
 
-	public P_ConsolePrinter() {
-		this.dev = System.err;
+	public P_ConsoleKeyboard() {
+		this.dev = System.in;
 		busy = false;
 	}
 
 	public void setOutput(OutputStream dev) {
+	}
+
+	public OutputStream getOutput() {
+		return null;
+	}
+
+	public void setInput(InputStream dev) {
 		if (dev == null) {
-			this.dev = System.err;
+			this.dev = System.in;
 		} else {
 			this.dev = dev;
 		}
 	}
 
-	public OutputStream getOutput() {
-		return this.dev;
-	}
-
-	public void setInput(InputStream dev) {
-	}
-
 	public InputStream getInput() {
-		return null;
+		return this.dev;
 	}
 
 	public void io(HW2000 sys) {
@@ -40,10 +40,8 @@ public class P_ConsolePrinter implements Peripheral {
 			c3 = sys.getXtra(2);
 		}
 		// C3:
-		//	000000: Print, no CR/LF
-		//	000001: Print, then issue CR (LF?)
-		// NOTE: AAR was checked for protection violation in I_PDT.
-		// No further checks will be made.
+		//	000000: no CR/LF
+		//	000001: CR (LF?)
 		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
 		sys.cr[clc] = sys.cr[slc];
 		busy = true;
@@ -53,28 +51,36 @@ public class P_ConsolePrinter implements Peripheral {
 		if (!busy) {
 			return;
 		}
-		String s = "";
-		boolean print = true;
-		// Printing stops *before* char with record mark...
+		int a = -1;
+		byte b;
 		try {
-			while (print) {
-				byte a = sys.rawReadMem(sys.cr[clc]);
-				if ((a & 0300)  == 0300) {
+			b = (byte)(sys.rawReadMem(sys.cr[clc]) & 0300);
+			do {
+				a = dev.read();
+				if (a < 0) {
 					break;
 				}
-				a &= 077;
-				s += sys.pdc.cvt.hwToLP(a);
+				a = Character.toUpperCase((char)a);
+				// TODO: what effect does c3 have?
+				if (a == '\n') {
+					break;
+				}
+				int ix = CharConverter.hwAsciiSup.indexOf((char)a);
+				if (ix >= 0) {
+					a = CharConverter.hwAsciiRep.charAt(ix);
+				}
+				byte c = sys.pdc.cvt.asciiToHw((byte)a);
+				// Must not disturb punctuation
+				c |= b;
+				sys.rawWriteMem(sys.cr[clc], c);
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 					break;
 				}
-			}
-			if (c3 != 0) {
-				s += "\n";
-			}
-			dev.write(s.getBytes());
+				b = (byte)(sys.rawReadMem(sys.cr[clc]) & 0300);
+			} while (b != 0300); // always end at record mark, right?
 		} catch (Exception ee) {
-			// TODO: handle exceptions? pass along?
+			// TODO: pass along EI/II exceptions
 		}
 		busy = false;
 	}

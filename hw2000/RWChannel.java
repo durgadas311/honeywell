@@ -11,12 +11,14 @@ public class RWChannel implements Runnable {
 	}
 
 	public void io(HW2000 hw, Peripheral p) {
-		if (periph != null) {
-			// should never happen - already checked.
-			return; // throw something?
+		synchronized (this) {
+			if (periph != null) {
+				// should never happen - already checked.
+				return; // throw something?
+			}
+			sys = hw;
+			periph = p;
 		}
-		sys = hw;
-		periph = p;
 		p.io(sys);
 		Thread t = new Thread(this);
 		t.start();
