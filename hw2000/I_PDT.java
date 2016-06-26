@@ -11,6 +11,7 @@ public class I_PDT implements Instruction {
 				((sys.getXtra(1) & 030) == 010 && sys.numXtra() < 3)) {
 			throw new FaultException("PDT malformed");
 		}
+		sys.validAdr(sys.AAR);
 		byte c1 = sys.getXtra(0);
 		byte c2;
 		if ((sys.getXtra(1) & 030) == 010) {
@@ -22,6 +23,10 @@ public class I_PDT implements Instruction {
 		RWChannel c = sys.getChannel(c1);
 		if (c.busy() || p.busy()) {
 			sys.SR = sys.oSR;
+			// TODO: go to sleep if waiting too long?
+			// If this channel was being used elsewhere for input,
+			// esp. console input, it would be wrong to issue
+			// another PDT on it.
 			return;
 		}
 		c.io(sys, p);

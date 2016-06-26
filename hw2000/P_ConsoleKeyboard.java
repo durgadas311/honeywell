@@ -32,8 +32,8 @@ public class P_ConsoleKeyboard implements Peripheral {
 	}
 
 	public void io(HW2000 sys) {
-		clc = (byte)(sys.getXtra(0) & 007);
-		slc = clc + 8;
+		clc = (byte)(sys.getXtra(0) & 027);
+		slc = clc + 010;
 		if ((sys.getXtra(1) & 030) == 010) {
 			c3 = sys.getXtra(3);
 		} else {
@@ -43,7 +43,6 @@ public class P_ConsoleKeyboard implements Peripheral {
 		//	000000: no CR/LF
 		//	000001: CR (LF?)
 		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
-		sys.cr[clc] = sys.cr[slc];
 		busy = true;
 	}
 
@@ -51,6 +50,7 @@ public class P_ConsoleKeyboard implements Peripheral {
 		if (!busy) {
 			return;
 		}
+		sys.cr[clc] = sys.cr[slc];
 		int a = -1;
 		byte b;
 		try {

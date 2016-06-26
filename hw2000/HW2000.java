@@ -27,6 +27,7 @@ public class HW2000 implements CoreMemory
 	public byte BRR;
 	public HW2000CCR CTL;
 	public double[] AC;
+	public boolean[] denorm;
 
 	public int oSR;
 	int op_flags;
@@ -56,6 +57,8 @@ public class HW2000 implements CoreMemory
 		fp = null;
 		CTL = new HW2000CCR();
 		AC = new double[8];
+		denorm = new boolean[8];
+		Arrays.fill(denorm, false);
 		mem = new byte[524288]; // TODO: mmap file
 		Arrays.fill(mem, (byte)0);
 		cr = new int[64];

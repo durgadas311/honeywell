@@ -15,6 +15,10 @@ public class I_FMA implements Instruction {
 			ms = 1;
 			m = (1 << 36) - m;
 		}
+		if ((m & 0x07ffffffffL) == 0) {
+			// mant zero, nothing else matters
+			return 0.0;
+		}
 		m &= 0x03ffffffffL;	// strip implied "1"... (verify?)
 		int x = (int)(d & 0xfff); // TODO: proper strip...
 		if ((x & 0x800) != 0) {
@@ -26,26 +30,50 @@ public class I_FMA implements Instruction {
 		return Double.longBitsToDouble(d);
 	}
 
-	public static long nativeToMant(double dd) {
+	public static long nativeToMant(double dd, boolean denorm) {
 		long d = Double.doubleToLongBits(dd);
 		byte ms = (byte)((d >> 63) & 1);
 		long m = (d >> 18) & 0x03ffffffffL;
-		// implied "1"...
-		m |= 0x0400000000L;
+		if (!denorm) {
+			// implied "1"...
+			m |= 0x0400000000L;
+		}
 		if (ms != 0) {
 			m = -m;
 		}
 		return m;
 	}
 
-	public static void nativeToHw(HW2000 sys, double dd, int ptr) {
+	public static double mergeMant(double dd, long m) {
+		long d = Double.doubleToLongBits(dd);
+		if ((m & 0x07ffffffffL) == 0) {
+			// maybe should just return 0.0,
+			// but not supposed to disturb exponent.
+			// unsure what sort of FP number exists
+			// after this, though.
+			d &= 0x7ff0000000000000L;
+			return Double.longBitsToDouble(d);
+		}
+		byte ms = (byte)(m < 0 ? 1 : 0);
+		if (ms != 0) {
+			m = -m;
+		}
+		m &= 0x03ffffffffL;
+		d = (d & 0x7ff0000000000000L) |
+			(ms << 63) | (m << 18);
+		return Double.longBitsToDouble(d);
+	}
+
+	public static void nativeToHw(HW2000 sys, double dd, boolean denorm, int ptr) {
 		long d = Double.doubleToLongBits(dd);
 		byte ms = (byte)((d >> 63) & 1);
 		int x = (int)((d >> 52) & 0x7ff);
 		x -= 1023;
 		long m = (d >> 18) & 0x03ffffffffL;
-		// implied "1"...
-		m |= 0x0400000000L;
+		if (!denorm) {
+			// implied "1"...
+			m |= 0x0400000000L;
+		}
 		if (ms != 0) {
 			m = -m;
 		}
@@ -72,7 +100,7 @@ public class I_FMA implements Instruction {
 		double a;
 		switch(op) {
 		case 000:	// Store Acc
-			nativeToHw(sys, sys.AC[x], sys.AAR);
+			nativeToHw(sys, sys.AC[x], sys.denorm[x], sys.AAR);
 			sys.incrAAR(-8);
 			break;
 		case 002:	// Load Acc
@@ -84,7 +112,7 @@ public class I_FMA implements Instruction {
 			sys.incrAAR(-8);
 			break;
 		case 007:	// Store Low-Order Result
-			nativeToHw(sys, sys.AC[HW2000.LOR], sys.AAR);
+			nativeToHw(sys, sys.AC[HW2000.LOR], sys.denorm[HW2000.LOR], sys.AAR);
 			sys.incrAAR(-8);
 			break;
 		case 010:	// Add
@@ -136,7 +164,7 @@ public class I_FMA implements Instruction {
 			sys.AC[y] = bd.doubleValue();
 			break;
 		case 006:	// Convert FP to Decimal
-			m = nativeToMant(sys.AC[x]);
+			m = nativeToMant(sys.AC[x], sys.denorm[x]);
 			bd = new BigDecimal(m);
 			ae = sys.incrAdr(sys.AAR, -11);
 			I_M.nativeToHw(sys, bd, sys.AAR, ae);

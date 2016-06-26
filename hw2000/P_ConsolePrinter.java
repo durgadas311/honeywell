@@ -32,8 +32,8 @@ public class P_ConsolePrinter implements Peripheral {
 	}
 
 	public void io(HW2000 sys) {
-		clc = (byte)(sys.getXtra(0) & 007);
-		slc = clc + 8;
+		clc = (byte)(sys.getXtra(0) & 027);
+		slc = clc + 010;
 		if ((sys.getXtra(1) & 030) == 010) {
 			c3 = sys.getXtra(3);
 		} else {
@@ -45,7 +45,6 @@ public class P_ConsolePrinter implements Peripheral {
 		// NOTE: AAR was checked for protection violation in I_PDT.
 		// No further checks will be made.
 		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
-		sys.cr[clc] = sys.cr[slc];
 		busy = true;
 	}
 
@@ -53,6 +52,7 @@ public class P_ConsolePrinter implements Peripheral {
 		if (!busy) {
 			return;
 		}
+		sys.cr[clc] = sys.cr[slc];
 		String s = "";
 		boolean print = true;
 		// Printing stops *before* char with record mark...
