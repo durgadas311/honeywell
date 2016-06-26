@@ -889,6 +889,7 @@ public class HW2000FrontPanel extends JFrame
 			}
 			if (a.equals("stop")) {
 				sys.halt = true;
+				sys.endWait();
 			} else if (sys.halt) {
 				if (a.equals("run")) {
 					Thread thrd = new Thread(this);
@@ -922,7 +923,6 @@ public class HW2000FrontPanel extends JFrame
 					sys.setAM(HW2000CCR.AIR_AM_4C);
 				}
 			}
-
 		}
 	}
 

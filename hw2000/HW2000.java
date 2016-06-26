@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.io.*;
+import java.util.concurrent.Semaphore;
 
 public class HW2000 implements CoreMemory
 {
@@ -51,6 +52,7 @@ public class HW2000 implements CoreMemory
 	FrontPanel fp;
 
 	public HW2000() {
+		waitLock = new Semaphore(1);
 		fp = null;
 		CTL = new HW2000CCR();
 		AC = new double[8];
@@ -96,6 +98,21 @@ public class HW2000 implements CoreMemory
 		} else {
 			return 0;
 		}
+	}
+
+	// A wait/wake mechanism to use for I/O to avoid spinning
+	private Semaphore waitLock;
+	public void waitIO() {
+		try {
+			waitLock.acquire();
+		} catch (Exception ee) {}
+	}
+	public void endWait() {
+		waitLock.release();
+	}
+	public void setupWait() {
+		// This is used to ensure waiter will sleep next time...
+		waitLock.drainPermits();
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
