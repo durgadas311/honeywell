@@ -1,10 +1,8 @@
 public class I_BA implements Instruction {
 	// Binary Add
 
-	// Utility - not used by machine.
 	public static void nativeToHw(HW2000 sys, Long li, int lsd, int msd) {
 		long l = li;
-		// TODO: verify space for result?
 		int a = lsd;
 		while (a >= msd) {
 			sys.writeChar(a, (byte)(l & 077));
@@ -13,7 +11,6 @@ public class I_BA implements Instruction {
 		}
 	}
 
-	// Utility - not used by machine.
 	public static long hwToNative(HW2000 sys, int lsd, int msd) {
 		long l = 0;
 		int a = msd;

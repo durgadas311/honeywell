@@ -44,22 +44,20 @@ public class I_FMA implements Instruction {
 		return m;
 	}
 
+	// "zeroes" the exponent.
+	// caller is reponsible for handling "denormalized" flags.
 	public static double mergeMant(double dd, long m) {
-		long d = Double.doubleToLongBits(dd);
+		long d; // don't care about previoud value (dd)
 		if ((m & 0x07ffffffffL) == 0) {
-			// maybe should just return 0.0,
-			// but not supposed to disturb exponent.
-			// unsure what sort of FP number exists
-			// after this, though.
-			d &= 0x7ff0000000000000L;
-			return Double.longBitsToDouble(d);
+			// TODO: preserve sign?
+			return 0.0;
 		}
 		byte ms = (byte)(m < 0 ? 1 : 0);
 		if (ms != 0) {
 			m = -m;
 		}
 		m &= 0x03ffffffffL;
-		d = (d & 0x7ff0000000000000L) |
+		d = 0x3ff0000000000000L |	// 1023 (3ff) == "0" exponent
 			(ms << 63) | (m << 18);
 		return Double.longBitsToDouble(d);
 	}

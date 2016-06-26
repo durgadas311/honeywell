@@ -92,6 +92,7 @@ public class InstrDecode {
 	public static final byte OP_FMA = 007;	// FP Memory Acc
 	public static final byte OP_FAA = 006;	// FP Acc Acc
 	public static final byte OP_BMS = OP_UNUSED_D;	// Bin Mant Shift - UNOFFICIAL!
+	public static final byte OP_BIM = OP_UNUSED_C;	// Bin Int Mult - UNOFFICIAL!
 
 	private int[] i_flags;
 	private Instruction[] i_exec;
@@ -160,6 +161,7 @@ public class InstrDecode {
 		i_flags[OP_FMA] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V;
 		i_flags[OP_FAA] = OP_HAS_V | OP_REQ_V;
 		i_flags[OP_BMS] = OP_HAS_V | OP_REQ_V; // UNOFFICIAL!
+		i_flags[OP_BIM] = OP_HAS_A | OP_HAS_B | OP_REQ_A | OP_REQ_B; // UNOFFICIAL!
 
 		// ---------------------------------------------------
 		if (!asm) {
@@ -218,6 +220,7 @@ public class InstrDecode {
 			i_exec[OP_FMA] = new I_FMA();
 			i_exec[OP_FAA] = new I_FAA();
 			i_exec[OP_BMS] = new I_BMS(); // UNOFFICIAL!
+			i_exec[OP_BIM] = new I_BIM(); // UNOFFICIAL!
 		} else {
 			i_asm = new HashMap<String,Byte>();
 			i_asm.put("A", OP_A);
@@ -275,6 +278,7 @@ public class InstrDecode {
 			i_asm.put("FMA", OP_FMA);
 			i_asm.put("FAA", OP_FAA);
 			i_asm.put("BMS", OP_BMS); // UNOFFICIAL!
+			i_asm.put("BIM", OP_BIM); // UNOFFICIAL!
 		}
 	}
 
