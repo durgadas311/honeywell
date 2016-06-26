@@ -57,6 +57,6 @@ public class I_BMS implements Instruction {
 			mant >>= 28;
 		}
 		sys.AC[x] = I_FMA.mergeMant(sys.AC[x], mant);
-		sys.denorm[x] = true;
+		sys.denorm[x] = ((mant & 0x400000000L) == 0);
 	}
 }

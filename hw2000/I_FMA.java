@@ -105,10 +105,12 @@ public class I_FMA implements Instruction {
 			break;
 		case 002:	// Load Acc
 			sys.AC[y] = hwToNative(sys, sys.AAR);
+			sys.denorm[y] = false; // right?
 			sys.incrAAR(-8);
 			break;
 		case 001:	// Load Low-Order Result
 			sys.AC[HW2000.LOR] = hwToNative(sys, sys.AAR);
+			sys.denorm[HW2000.LOR] = false; // right?
 			sys.incrAAR(-8);
 			break;
 		case 007:	// Store Low-Order Result
@@ -117,6 +119,7 @@ public class I_FMA implements Instruction {
 			break;
 		case 010:	// Add
 			sys.AC[y] = sys.AC[x] + hwToNative(sys, sys.AAR);
+			sys.denorm[y] = false;
 			sys.AC[HW2000.LOR] = 0.0; // what is this
 			sys.incrAAR(-8);
 			if (Double.isInfinite(sys.AC[y])) {
@@ -125,6 +128,7 @@ public class I_FMA implements Instruction {
 			break;
 		case 011:	// Subtract
 			sys.AC[y] = sys.AC[x] - hwToNative(sys, sys.AAR);
+			sys.denorm[y] = false;
 			sys.AC[HW2000.LOR] = 0.0; // what is this
 			sys.incrAAR(-8);
 			if (Double.isInfinite(sys.AC[y])) {
@@ -135,7 +139,9 @@ public class I_FMA implements Instruction {
 			a = hwToNative(sys, sys.AAR);
 			sys.incrAAR(-8);
 			sys.AC[y] = sys.AC[x] * a;
+			sys.denorm[y] = false;
 			sys.AC[HW2000.LOR] = 0.0; // what is this
+			sys.denorm[HW2000.LOR] = false;
 			if (Double.isInfinite(sys.AC[y])) {
 				sys.CTL.setEXO(true);
 			}
@@ -149,6 +155,8 @@ public class I_FMA implements Instruction {
 			}
 			sys.AC[HW2000.LOR] = a % sys.AC[x]; // remainder
 			sys.AC[y] = a / sys.AC[x];
+			sys.denorm[y] = false;
+			sys.denorm[HW2000.LOR] = false;
 			if (Double.isInfinite(sys.AC[y])) {
 				sys.CTL.setEXO(true);
 			}
