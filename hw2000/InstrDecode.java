@@ -7,8 +7,6 @@ public class InstrDecode {
 	public static final byte OP_UNUSED_A = 001;
 	public static final byte OP_UNUSED_B = 002;
 	public static final byte OP_UNUSED_C = 003;
-	public static final byte OP_UNUSED_D = 004;
-	public static final byte OP_UNUSED_E = 005;
 	public static final byte OP_UNUSED_F = 011;
 	public static final byte OP_UNUSED_G = 012;
 	public static final byte OP_UNUSED_H = 047;
@@ -91,8 +89,8 @@ public class InstrDecode {
 	// For FP instructions, variant specifies operation.
 	public static final byte OP_FMA = 007;	// FP Memory Acc
 	public static final byte OP_FAA = 006;	// FP Acc Acc
-	public static final byte OP_BMS = OP_UNUSED_D;	// Bin Mant Shift - UNOFFICIAL!
-	public static final byte OP_BIM = OP_UNUSED_C;	// Bin Int Mult - UNOFFICIAL!
+	public static final byte OP_BMS = 004;	// Bin Mant Shift
+	public static final byte OP_BIM = 005;	// Bin Int Mult
 
 	private int[] i_flags;
 	private Instruction[] i_exec;
@@ -160,8 +158,8 @@ public class InstrDecode {
 		// FPU
 		i_flags[OP_FMA] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V;
 		i_flags[OP_FAA] = OP_HAS_V | OP_REQ_V;
-		i_flags[OP_BMS] = OP_HAS_V | OP_REQ_V; // UNOFFICIAL!
-		i_flags[OP_BIM] = OP_HAS_A | OP_HAS_B | OP_REQ_A | OP_REQ_B; // UNOFFICIAL!
+		i_flags[OP_BMS] = OP_HAS_V | OP_REQ_V;
+		i_flags[OP_BIM] = OP_HAS_A | OP_HAS_B | OP_REQ_A | OP_REQ_B;
 
 		// ---------------------------------------------------
 		if (!asm) {
@@ -219,8 +217,8 @@ public class InstrDecode {
 			// FPU
 			i_exec[OP_FMA] = new I_FMA();
 			i_exec[OP_FAA] = new I_FAA();
-			i_exec[OP_BMS] = new I_BMS(); // UNOFFICIAL!
-			i_exec[OP_BIM] = new I_BIM(); // UNOFFICIAL!
+			i_exec[OP_BMS] = new I_BMS();
+			i_exec[OP_BIM] = new I_BIM();
 		} else {
 			i_asm = new HashMap<String,Byte>();
 			i_asm.put("A", OP_A);
@@ -277,8 +275,8 @@ public class InstrDecode {
 
 			i_asm.put("FMA", OP_FMA);
 			i_asm.put("FAA", OP_FAA);
-			i_asm.put("BMS", OP_BMS); // UNOFFICIAL!
-			i_asm.put("BIM", OP_BIM); // UNOFFICIAL!
+			i_asm.put("BMS", OP_BMS);
+			i_asm.put("BIM", OP_BIM);
 		}
 	}
 
