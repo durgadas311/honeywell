@@ -25,13 +25,19 @@ public class I_D implements Instruction {
 		BigDecimal bdb = I_M.hwToNative(sys, br, be);
 		int nb = (br - be);
 
-		BigDecimal[] bdr = bdb.divideAndRemainder(bda);
-		// determine locations of results...
-		int bq = sys.incrAdr(sys.BAR, -(na - nb + 2));
-		int bt = sys.incrAdr(sys.BAR, -(na + 1));
-		boolean zb = I_M.nativeToHw(sys, bdr[0], bq, bt);
-		I_M.nativeToHw(sys, bdr[1], br, bq);
-		sys.CTL.setZB(zb);
-		sys.BAR = sys.incrAdr(bq, -1);
+		BigDecimal[] bdr;
+		try {
+			bdr = bdb.divideAndRemainder(bda);
+			// determine locations of results...
+			int bq = sys.incrAdr(sys.BAR, -(na - nb + 2));
+			int bt = sys.incrAdr(sys.BAR, -(na + 1));
+			boolean zb = I_M.nativeToHw(sys, bdr[0], bq, bt);
+			I_M.nativeToHw(sys, bdr[1], br, bq);
+			sys.CTL.setZB(zb);
+			sys.BAR = sys.incrAdr(bq, -1);
+		} catch (Exception ee) {
+			// assume divide-by-zero
+			sys.CTL.setOVR(true);
+		}
 	}
 }
