@@ -928,7 +928,49 @@ public class HW2000FrontPanel extends JFrame
 
 	private int getCtrlReg(byte reg, int incr) {
 		int val = 0;
+		int r;
+		long d;
 		switch(reg & 077) {
+		case 041:
+		case 045:
+		case 051:
+		case 055: // exponent of FP ACC
+		case 042:
+		case 046:
+		case 052:
+		case 056: // low mantissa of FP ACC
+		case 043:
+		case 047:
+		case 053:
+		case 057: // high mantissa of FP ACC
+			r = (reg & 014) >> 2;
+			d  = Double.doubleToLongBits(sys.AC[r]);
+			switch(reg & 003) {
+			case 001: // exponent
+				val = (int)((d >> 52) & 0x7ff);
+				val -= 1023;
+				if ((val & 0x400) != 0) {
+					val |= 0x800;
+				}
+				val &= 0xfff;
+				break;
+			case 002: // low mantissa
+				val = (int)((d >> 18) & 0x3ffff);
+				if (((d >> 63) & 1) != 0) {
+					val = (-val & 0x3ffff);
+				}
+				val &= 0x3ffff;
+				break;
+			case 003: // high mantissa
+				val = (int)((d >> 36) & 0x0ffff);
+				val |= 0x10000; // implied "1"
+				if (((d >> 63) & 1) != 0) {
+					val = -val;
+				}
+				val &= 0x3ffff;
+				break;
+			}
+			break;
 		case 054:
 			val = sys.ATR;
 			if (incr != 0) { sys.ATR += incr; }
@@ -966,7 +1008,48 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void setCtrlReg(byte reg, int val) {
+		int r;
+		long d;
+		byte s;
 		switch(reg & 077) {
+		case 041:
+		case 045:
+		case 051:
+		case 055: // exponent of FP ACC
+		case 042:
+		case 046:
+		case 052:
+		case 056: // low mantissa of FP ACC
+		case 043:
+		case 047:
+		case 053:
+		case 057: // high mantissa of FP ACC
+			r = (reg & 014) >> 2;
+			d  = Double.doubleToLongBits(sys.AC[r]);
+			switch(reg & 003) {
+			case 001: // exponent
+				val &= 0x7ff;
+				val += 1023;
+				d = (d & ~0x7ff000000003ffffL) | (val << 52);
+				break;
+			case 002: // low mantissa
+				// must know sign to handle properly...
+				val &= 0x3ffff;
+				d = (d & ~0x0000000fffffffffL) | (val << 18);
+				break;
+			case 003: // high mantissa
+				s = (byte)((val >> 17) & 1);
+				val &= 0x1ffff;
+				if (s != 0) {
+					val = -val;
+				}
+				sys.denorm[r] = ((val & 0x10000) == 0);
+				val &= 0x0ffff;
+				d = (d & ~0x800ffff00003ffffL) | (val << 36) | (s << 63);
+				break;
+			}
+			sys.AC[r] = Double.longBitsToDouble(d);
+			break;
 		case 054:
 			sys.ATR = val;
 			break;
