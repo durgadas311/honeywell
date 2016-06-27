@@ -930,6 +930,7 @@ public class HW2000FrontPanel extends JFrame
 		int val = 0;
 		int r;
 		long d;
+		byte s;
 		switch(reg & 077) {
 		case 041:
 		case 045:
@@ -945,6 +946,10 @@ public class HW2000FrontPanel extends JFrame
 		case 057: // high mantissa of FP ACC
 			r = (reg & 014) >> 2;
 			d  = Double.doubleToLongBits(sys.AC[r]);
+			s = (byte)((d >> 63) & 1);
+			if ((d & 0x7fffffffffffffffL) == 0) {
+				break;
+			}
 			switch(reg & 003) {
 			case 001: // exponent
 				val = (int)((d >> 52) & 0x7ff);
@@ -956,15 +961,17 @@ public class HW2000FrontPanel extends JFrame
 				break;
 			case 002: // low mantissa
 				val = (int)((d >> 18) & 0x3ffff);
-				if (((d >> 63) & 1) != 0) {
+				if (s != 0) {
 					val = (-val & 0x3ffff);
 				}
 				val &= 0x3ffff;
 				break;
 			case 003: // high mantissa
 				val = (int)((d >> 36) & 0x0ffff);
-				val |= 0x10000; // implied "1"
-				if (((d >> 63) & 1) != 0) {
+				if (!sys.denorm[r]) {
+					val |= 0x10000; // implied "1"
+				}
+				if (s != 0) {
 					val = -val;
 				}
 				val &= 0x3ffff;
@@ -1026,6 +1033,8 @@ public class HW2000FrontPanel extends JFrame
 		case 057: // high mantissa of FP ACC
 			r = (reg & 014) >> 2;
 			d  = Double.doubleToLongBits(sys.AC[r]);
+			// Can't really detect zero here, need all parts.
+			// Same with sign. Setting FP regs is not advised.
 			switch(reg & 003) {
 			case 001: // exponent
 				val &= 0x7ff;

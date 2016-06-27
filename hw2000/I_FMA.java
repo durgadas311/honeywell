@@ -32,6 +32,9 @@ public class I_FMA implements Instruction {
 
 	public static long nativeToMant(double dd, boolean denorm) {
 		long d = Double.doubleToLongBits(dd);
+		if ((d & 0x7fffffffffffffffL) == 0) {
+			return 0;
+		}
 		byte ms = (byte)((d >> 63) & 1);
 		long m = (d >> 18) & 0x03ffffffffL;
 		if (!denorm) {
@@ -64,18 +67,22 @@ public class I_FMA implements Instruction {
 
 	public static void nativeToHw(HW2000 sys, double dd, boolean denorm, int ptr) {
 		long d = Double.doubleToLongBits(dd);
-		byte ms = (byte)((d >> 63) & 1);
-		int x = (int)((d >> 52) & 0x7ff);
-		x -= 1023;
-		long m = (d >> 18) & 0x03ffffffffL;
-		if (!denorm) {
-			// implied "1"...
-			m |= 0x0400000000L;
+		if ((d & 0x7fffffffffffffffL) == 0) {
+			d = 0; // TODO: does HW allow -0 ?
+		} else {
+			byte ms = (byte)((d >> 63) & 1);
+			int x = (int)((d >> 52) & 0x7ff);
+			x -= 1023;
+			long m = (d >> 18) & 0x03ffffffffL;
+			if (!denorm) {
+				// implied "1"...
+				m |= 0x0400000000L;
+			}
+			if (ms != 0) {
+				m = -m;
+			}
+			d = (m << 12) | (x & 0xfff);
 		}
-		if (ms != 0) {
-			m = -m;
-		}
-		d = (m << 12) | (x & 0xfff);
 		for (int ix = 0; ix < 8; ++ix) {
 			byte b = (byte)(d & 077);
 			sys.writeChar(ptr--, b);
