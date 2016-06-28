@@ -129,6 +129,7 @@ public class HW2000CCR {
 	public boolean isS_MODE() { return ((ccr[PIR] & PIR_S_MODE) != 0); }
 	public boolean privBCT() { return ((ccr[VR] & VR_BCT) != 0); }
 	public boolean allowLCR() { return ((varLIB & 004) != 0); }
+	public boolean allowCLK() { return ((varLIB & 002) != 0); }
 
 	public void clrPROCEED() { ccr[PIR] &= ~PIR_PROCEED; }
 

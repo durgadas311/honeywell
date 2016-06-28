@@ -44,5 +44,6 @@ public class I_LCR implements Instruction {
 		if (restore) {
 			sys.restoreAAR();
 		}
+		sys.addTics(4 - sys.am_na);
 	}
 }

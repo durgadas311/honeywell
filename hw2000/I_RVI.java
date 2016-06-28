@@ -41,5 +41,6 @@ public class I_RVI implements Instruction {
 			}
 		}
 		sys.restoreAAR();
+		sys.addTics(1);
 	}
 }

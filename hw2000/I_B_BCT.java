@@ -66,5 +66,6 @@ public class I_B_BCT implements Instruction {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
 		}
+		sys.addTics(1);
 	}
 }

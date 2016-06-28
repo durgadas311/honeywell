@@ -107,20 +107,24 @@ public class I_FMA implements Instruction {
 		case 000:	// Store Acc
 			nativeToHw(sys, sys.AC[x], sys.denorm[x], sys.AAR);
 			sys.incrAAR(-8);
+			sys.addTics(2);
 			break;
 		case 002:	// Load Acc
 			sys.AC[y] = hwToNative(sys, sys.AAR);
 			sys.denorm[y] = false; // right?
 			sys.incrAAR(-8);
+			sys.addTics(2);
 			break;
 		case 001:	// Load Low-Order Result
 			sys.AC[HW2000.LOR] = hwToNative(sys, sys.AAR);
 			sys.denorm[HW2000.LOR] = false; // right?
 			sys.incrAAR(-8);
+			sys.addTics(1);
 			break;
 		case 007:	// Store Low-Order Result
 			nativeToHw(sys, sys.AC[HW2000.LOR], sys.denorm[HW2000.LOR], sys.AAR);
 			sys.incrAAR(-8);
+			sys.addTics(1);
 			break;
 		case 010:	// Add
 			sys.AC[y] = sys.AC[x] + hwToNative(sys, sys.AAR);
@@ -130,6 +134,7 @@ public class I_FMA implements Instruction {
 			if (Double.isInfinite(sys.AC[y])) {
 				sys.CTL.setEXO(true);
 			}
+			sys.addTics(12); // + Nn/6
 			break;
 		case 011:	// Subtract
 			sys.AC[y] = sys.AC[x] - hwToNative(sys, sys.AAR);
@@ -139,6 +144,7 @@ public class I_FMA implements Instruction {
 			if (Double.isInfinite(sys.AC[y])) {
 				sys.CTL.setEXO(true);
 			}
+			sys.addTics(12); // + Nn/6
 			break;
 		case 013:	// Multiply
 			a = hwToNative(sys, sys.AAR);
@@ -150,6 +156,7 @@ public class I_FMA implements Instruction {
 			if (Double.isInfinite(sys.AC[y])) {
 				sys.CTL.setEXO(true);
 			}
+			sys.addTics(9); // + N1/6 + Nn/6
 			break;
 		case 012:	// Divide
 			a = hwToNative(sys, sys.AAR);
@@ -165,16 +172,15 @@ public class I_FMA implements Instruction {
 			if (Double.isInfinite(sys.AC[y])) {
 				sys.CTL.setEXO(true);
 			}
+			sys.addTics(16); // + Nn/6
 			break;
-		// TODO:
-		//	Binary Mantissa Shift
-		//	Others?
-
 		case 003:	// Convert Decimal to FP
 			ae = sys.incrAdr(sys.AAR, -11);
 			bd = I_M.hwToNative(sys, sys.AAR, ae);
 			sys.AAR = ae;
 			sys.AC[y] = bd.doubleValue();
+			// TODO: overflow in LOR...
+			sys.addTics(9);
 			break;
 		case 006:	// Convert FP to Decimal
 			m = nativeToMant(sys.AC[x], sys.denorm[x]);
@@ -182,6 +188,7 @@ public class I_FMA implements Instruction {
 			ae = sys.incrAdr(sys.AAR, -11);
 			I_M.nativeToHw(sys, bd, sys.AAR, ae);
 			sys.AAR = ae;
+			sys.addTics(10);
 			break;
 		case 004:	// FP Test and Branch
 			switch(y) {
@@ -209,6 +216,7 @@ public class I_FMA implements Instruction {
 				taken = true;
 				break;
 			}
+			sys.addTics(1);
 			break;
 		case 005:	// FP Test and Branch on Indicator
 			switch(y) {
@@ -236,11 +244,13 @@ public class I_FMA implements Instruction {
 				taken = sys.CTL.isDVC() && sys.CTL.isEXO() && sys.CTL.isMPO();
 				break;
 			}
+			sys.addTics(1);
 			break;
 		}
 		if (taken) {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
+			sys.addTics(2);
 		}
 	}
 }

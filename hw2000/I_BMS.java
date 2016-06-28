@@ -12,6 +12,7 @@ public class I_BMS implements Instruction {
 		if (sh == 0) {
 			return;
 		}
+		sys.addTics(sh / 4); // some approximation
 
 		boolean rot = ((m & 04) == 0);
 		boolean left = ((m & 01) == 0);

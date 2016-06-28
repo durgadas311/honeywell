@@ -1,9 +1,16 @@
 public class RWChannel implements Runnable {
 	Peripheral periph;
 	HW2000 sys;
+	Thread thr;
 
 	public RWChannel() {
 		periph = null;
+	}
+
+	public void reset() {
+		if (thr != null && thr.isAlive()) {
+			thr.interrupt();
+		}
 	}
 
 	public boolean busy() {
@@ -20,8 +27,8 @@ public class RWChannel implements Runnable {
 		lastSR = -1;
 		sys.setupWait();
 		p.io(sys);
-		Thread t = new Thread(this);
-		t.start();
+		thr = new Thread(this);
+		thr.start();
 	}
 
 	int lastSR;

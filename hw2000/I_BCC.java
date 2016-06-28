@@ -63,5 +63,6 @@ public class I_BCC implements Instruction {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
 		}
+		sys.addTics(2);
 	}
 }

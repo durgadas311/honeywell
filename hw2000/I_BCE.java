@@ -15,5 +15,6 @@ public class I_BCE implements Instruction {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
 		}
+		sys.addTics(2);
 	}
 }

@@ -15,5 +15,6 @@ public class I_BIM implements Instruction {
 			b |= (s >> 40) & ~0x07fffff;
 		}
 		I_BA.nativeToHw(sys, b, sys.BAR + 4, sys.BAR + 1);
+		sys.addTics(16); // some approximation
 	}
 }

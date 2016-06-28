@@ -8,5 +8,6 @@ public class I_H implements Instruction {
 			sys.CTL.setV(sys.getXtra(0));
 		}
 		sys.halt = true;
+		sys.addTics(1);
 	}
 }

@@ -39,6 +39,7 @@ public class HW2000 implements CoreMemory
 	public boolean halt;
 	public boolean singleStep;
 	private boolean _proceed;
+	private int tics;
 
 	private int fsr;
 	public int iaar;	// needed by branch instructions
@@ -65,16 +66,14 @@ public class HW2000 implements CoreMemory
 		Arrays.fill(cr, 0);
 		idc = new InstrDecode(false);
 		pdc = new PeriphDecode();
-		adr_min = 0;
-		adr_max = 0x80000;
-		halt = true;
-		singleStep = false;
-		setAM((byte)000);
-		SR = 0;
-		AAR = 0;
-		BAR = 0;
 		op_xtra_siz = 8;
 		op_xtra = new byte[op_xtra_siz];
+
+		adr_min = 0;
+		adr_max = 0x80000;
+		AAR = 0;
+		BAR = 0;
+		reset();
 	}
 
 	public void setFrontPanel(FrontPanel fp) {
@@ -88,11 +87,15 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void reset() {
+		halt = true;
+		singleStep = false;
 		_trace = false;
+		tics = 0;
+		ATR = 0;
 		SR = 0;
 		setAM(HW2000CCR.AIR_AM_3C);
-		Arrays.fill(mem, (byte)0); // This is a cheat, but needed for now
 		CTL.reset();
+		Arrays.fill(mem, (byte)0); // This is a cheat, but needed for now
 	}
 
 	public byte getSENSE() {
@@ -116,6 +119,27 @@ public class HW2000 implements CoreMemory
 	public void setupWait() {
 		// This is used to ensure waiter will sleep next time...
 		waitLock.drainPermits();
+	}
+
+	// 'tics' could also be used as instruction timeout counter,
+	// but would need to check during memory access, too.
+	public void addTics(int tics) {
+		this.tics += tics;
+	}
+
+	private void updClock() {
+		// TODO: don't even advance clock unless enabled?
+		if (CTL.isPROTECT() && CTL.allowCLK()) {
+			ATR += tics;
+			int cy = ATR & ~077777777;
+			ATR &= 077777777;
+			if (cy != 0) { //should only ever be "1(xxx)"
+				// TODO: trigger interrupt as appropriate
+				setIntr(HW2000CCR.EIR_EI, HW2000CCR.EIR_CLOCK);
+			}
+		}
+		// In all cases, reset tics
+		tics = 0;
 	}
 
 	public boolean hasA() { return ((op_flags & InstrDecode.OP_HAS_A) != 0); }
@@ -153,7 +177,7 @@ public class HW2000 implements CoreMemory
 		op_exec = null;
 		op_flags = idc.getFlags(op);
 		if (inval()) {
-			throw new FaultException(String.format("Invalid OpCode %03o at %07o", op, oSR));
+			throw new IIException("OpCode Violation " + op, HW2000CCR.IIR_OPVIO);
 		}
 		op_exec = idc.getExec(op);
 		if (priv() && CTL.inStdMode() && CTL.isPROTECT() &&
@@ -249,6 +273,7 @@ public class HW2000 implements CoreMemory
 
 	public byte readMem(int adr) {
 		int a = validAdr(adr);
+		++tics;
 		return mem[a];
 	}
 
@@ -258,14 +283,23 @@ public class HW2000 implements CoreMemory
 
 	public void writeMem(int adr, byte val) {
 		int a = validAdr(adr);
+		++tics;
 		mem[a] = val;
 	}
 
-	public void writeChar(int adr, byte val) {
+	// 'mask' is bits to preserve from current mem value
+	public byte writeMemMask(int adr, byte val, byte mask) {
 		int a = validAdr(adr);
-		mem[a] = (byte)((mem[a] & 0300) | (val & 077));
+		++tics;
+		mem[a] = (byte)((mem[a] & mask) | (val & ~mask));
+		return mem[a];
 	}
 
+	public void writeChar(int adr, byte val) {
+		writeMemMask(adr, val, (byte)0300);
+	}
+
+	// These do not suffer accounting timer tics?
 	public void setWord(int adr) {
 		int a = validAdr(adr);
 		mem[a] |= 0100;
@@ -381,7 +415,7 @@ public class HW2000 implements CoreMemory
 			op_xtra = new byte[op_xtra_siz];
 		}
 		for (int x = 0; x < op_xtra_num; ++x) {
-			op_xtra[x] = readMem(fsr + x);
+			op_xtra[x] = readChar(fsr + x);
 		}
 	}
 
@@ -490,6 +524,7 @@ public class HW2000 implements CoreMemory
 			}
 		}
 		op_exec.execute(this);
+		updClock();
 	}
 
 	private boolean _trace = false;

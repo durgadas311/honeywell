@@ -30,5 +30,7 @@ public class I_PDT implements Instruction {
 			return;
 		}
 		c.io(sys, p);
+		sys.addTics(3);
+		// TODO: compute transfer time...
 	}
 }

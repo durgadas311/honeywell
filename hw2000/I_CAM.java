@@ -18,5 +18,6 @@ public class I_CAM implements Instruction {
 			sys.setAM(HW2000CCR.AIR_AM_3C);
 			break;
 		}
+		sys.addTics(1);
 	}
 }

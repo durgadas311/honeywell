@@ -7,5 +7,6 @@ public class I_CSM implements Instruction {
 		int t = sys.SR;
 		sys.SR = sys.CSR;
 		sys.CSR = t;
+		sys.addTics(2);
 	}
 }

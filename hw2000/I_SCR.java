@@ -41,5 +41,6 @@ public class I_SCR implements Instruction {
 		}
 		sys.storeToAAR(reg);
 		sys.restoreAAR();
+		sys.addTics(4 - sys.am_na);
 	}
 }

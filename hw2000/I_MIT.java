@@ -51,11 +51,9 @@ public class I_MIT implements Instruction {
 					sys.CSR = ca;
 					break;
 				}
-				b = (byte)((b & 077) | (sys.readMem(sys.BAR) & 0300));
-				sys.writeMem(sys.BAR, b);
+				sys.writeMemMask(sys.BAR, b, (byte)0300);
 				sys.incrBAR(1);
-				b2 = (byte)((b2 & 077) | (sys.readMem(sys.BAR) & 0300));
-				sys.writeMem(sys.BAR, b2);
+				sys.writeMemMask(sys.BAR, b2, (byte)0300);
 				sys.incrBAR(1);
 			} else {
 				ca = c | a;
@@ -67,8 +65,7 @@ public class I_MIT implements Instruction {
 					sys.CSR = ca;
 					break;
 				}
-				b = (byte)((b & 077) | (sys.readMem(sys.BAR) & 0300));
-				sys.writeMem(sys.BAR, b);
+				sys.writeMemMask(sys.BAR, b, (byte)0300);
 				sys.incrBAR(1);
 			}
 		} while (ai == 0);

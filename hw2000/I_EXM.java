@@ -27,13 +27,10 @@ public class I_EXM implements Instruction {
 			k = (byte)((v & 060) << 2);	// into punctuation position...
 		}
 		byte a;
-		byte b;
 		do {
 			a = sys.readMem(sys.AAR);
 			sys.incrAAR(i);
-			b = sys.readMem(sys.AAR);
-			b = (byte)((b & ~m) | (a & m));
-			sys.writeMem(sys.BAR, b);
+			sys.writeMemMask(sys.BAR, a, (byte)~m);
 			sys.incrBAR(i);
 			--n;
 		} while (n != 0 && (a & k) != k);

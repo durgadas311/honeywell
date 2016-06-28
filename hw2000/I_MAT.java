@@ -26,7 +26,7 @@ public class I_MAT implements Instruction {
 			a = sys.readMem(sys.AAR);
 			sys.incrAAR(-1);
 			b = sys.readMem(c | (a & 077));
-			sys.writeMem(sys.BAR, (byte)((b & 0277) | (sys.readMem(sys.BAR) & 0100)));
+			sys.writeMemMask(sys.BAR, b, (byte)0100);
 			sys.incrBAR(-1);
 		} while ((a & 0100) == 0 && (b & 0100) == 0);
 	}

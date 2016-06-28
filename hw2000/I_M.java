@@ -15,6 +15,10 @@ public class I_M implements Instruction {
 	public static BigDecimal hwToNative(HW2000 sys, int lsd, int msd) {
 		char[] ch;
 		// TODO: worry about wrap-around?
+		if (lsd <= msd) {
+			// TODO: should handle this better
+			return new BigDecimal("0");
+		}
 		ch = new char[lsd - msd + 1];
 		int x = 0;
 		byte b = sys.readMem(lsd);
