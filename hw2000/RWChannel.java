@@ -9,7 +9,8 @@ public class RWChannel implements Runnable {
 
 	public void reset() {
 		if (thr != null && thr.isAlive()) {
-			thr.interrupt();
+			// This doesn't really help anything
+			//thr.interrupt();
 		}
 	}
 

@@ -51,6 +51,7 @@ public class HW2000FrontPanel extends JFrame
 	LightedButton[] address;
 	LightedButton[] control;
 	LightedButton[] sense;
+	JMenuItem mi_mon;
 
 	int gbx;
 	File _last = null;
@@ -443,6 +444,7 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Monitor", KeyEvent.VK_M);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi_mon = mi;
 		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -903,6 +905,7 @@ public class HW2000FrontPanel extends JFrame
 				} else if (a.equals("init")) {
 					// TODO: simulate "lamp test" function?
 					monitor = false;
+					mi_mon.setEnabled(true);
 					sys.reset();
 					setAddress(sys.SR);
 					setContents(sys.rawReadMem(addressReg));
@@ -1178,6 +1181,7 @@ public class HW2000FrontPanel extends JFrame
 			asmFile("Monitor");
 			// run automatically?
 			monitor = true; // only after running?
+			mi_mon.setEnabled(false);
 		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (mi.getMnemonic() == KeyEvent.VK_C) {

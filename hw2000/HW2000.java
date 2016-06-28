@@ -96,6 +96,7 @@ public class HW2000 implements CoreMemory
 		setAM(HW2000CCR.AIR_AM_3C);
 		CTL.reset();
 		Arrays.fill(mem, (byte)0); // This is a cheat, but needed for now
+		pdc.reset();
 	}
 
 	public byte getSENSE() {
@@ -135,7 +136,7 @@ public class HW2000 implements CoreMemory
 			ATR &= 077777777;
 			if (cy != 0) { //should only ever be "1(xxx)"
 				// TODO: trigger interrupt as appropriate
-				setIntr(HW2000CCR.EIR_EI, HW2000CCR.EIR_CLOCK);
+				CTL.setEI(HW2000CCR.EIR_CLOCK);
 			}
 		}
 		// In all cases, reset tics
@@ -300,6 +301,16 @@ public class HW2000 implements CoreMemory
 	}
 
 	// These do not suffer accounting timer tics?
+	public boolean chkWord(int adr) {
+		int a = validAdr(adr);
+		return (mem[a] & 0100) != 0;
+	}
+
+	public boolean chkItem(int adr) {
+		int a = validAdr(adr);
+		return (mem[a] & 0200) != 0;
+	}
+
 	public void setWord(int adr) {
 		int a = validAdr(adr);
 		mem[a] |= 0100;
@@ -460,6 +471,7 @@ public class HW2000 implements CoreMemory
 		}
 		int t;
 		if (i == HW2000CCR.EIR_EI) {
+			// TODO: handle pending II?
 			setAM(CTL.getAM());
 			t = SR;
 			SR = EIR;
@@ -489,9 +501,9 @@ public class HW2000 implements CoreMemory
 		oSR = SR;
 		fsr = SR;
 		// TODO: how to avoid including garbage in variant array.
-		int isr = (fsr + 1) & 0x1ffff;
-		while (isr != 0 && (readMem(isr) & M_WM) == 0) {
-			isr = (isr + 1) & 0x1ffff;
+		int isr = (fsr + 1) & 0x7ffff;
+		while (isr != 0 && !chkWord(isr)) {
+			isr = (isr + 1) & 0x7ffff;
 		}
 		iaar = -1;
 		// Caller handles exceptions, leave SR at start of instruction
@@ -544,7 +556,7 @@ public class HW2000 implements CoreMemory
 
 	private boolean setIntr(byte mod, byte typ) {
 		if (CTL.inStdMode()) {
-			SR = oSR;
+			SR = oSR; // this is problematic...
 			if (mod == HW2000CCR.EIR_EI) {
 				CTL.setEI(typ);
 			} else {
@@ -686,8 +698,9 @@ if (_trace) {
 		}
 	}
 
-	public void dumpMem(String tag, int excl, int end) {
-		int start = excl;
+	public void dumpMem(String tag, int excl, int incl) {
+		int start = validAdr(excl);
+		int end = validAdr(incl);
 		System.err.format("%s={", tag);
 		if (end - start > 8) {
 			System.err.format("...");

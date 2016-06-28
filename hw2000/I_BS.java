@@ -10,7 +10,6 @@ public class I_BS implements Instruction {
 		a &= 077;
 		b &= 077;
 		byte cy = 1;
-		boolean aDone = false;
 		byte z = 0;
 		while (true) {
 			c = (byte)((a ^ 077) + b + cy);
@@ -22,8 +21,7 @@ public class I_BS implements Instruction {
 			if (bw != 0) {
 				break;
 			}
-			aDone = (aDone || aw != 0);
-			if (aDone) {
+			if (aw != 0) {
 				a = 0;
 			} else {
 				a = sys.readMem(sys.AAR);

@@ -237,6 +237,7 @@ public class HW2000CCR {
 	public byte clearIntr() {
 		byte r = 0;
 		if ((ccr[EIR] & EIR_EI) != 0) {
+			// TODO: handle pending II?
 			ccr[EIR] &= ~EIR_EI;
 			ccr[AIR] = ccr[XIR];
 			r = EIR_EI;

@@ -31,6 +31,9 @@ public class P_LinePrinter implements Peripheral {
 		return null;
 	}
 
+	public void reset() {
+	}
+
 	public void io(HW2000 sys) {
 		clc = (byte)(sys.getXtra(0) & 027);
 		slc = clc + 010;

@@ -27,8 +27,22 @@ public class PeriphDecode {
 		p_idevs = new Peripheral[8];
 		p_chans = new RWChannel[8];
 		p_odevs[P_LP] = new P_LinePrinter();
-		p_odevs[P_CO] = new P_ConsolePrinter();
-		p_idevs[P_CO] = new P_ConsoleKeyboard();
+		p_odevs[P_CO] = new P_Console();
+		p_idevs[P_CO] = p_odevs[P_CO];
+	}
+
+	public void reset() {
+		for (int x = 0; x < p_idevs.length; ++x) {
+			if (p_idevs[x] != null) {
+				p_idevs[x].reset();
+			}
+		}
+		for (int x = 0; x < p_chans.length; ++x) {
+			if (p_chans[x] != null) {
+				p_chans[x].reset();
+				p_chans[x] = null;
+			}
+		}
 	}
 
 	public Peripheral getPerph(byte pa) {
