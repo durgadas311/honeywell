@@ -380,7 +380,7 @@ public class HW2000 implements CoreMemory
 	public void fetchAAR(int limit) {
 		if (!hasA() || limit - fsr < am_na) {
 			if (reqA()) {
-				throw new FaultException("Missing required A-field");
+				throw new FaultException(String.format("Missing required A-field %07o", oSR));
 			}
 			return;
 		}
@@ -399,7 +399,7 @@ public class HW2000 implements CoreMemory
 	public void fetchBAR(int limit) {
 		if (!hadA() || !hasB() || limit - fsr < am_na) {
 			if (reqB()) {
-				throw new FaultException("Missing required B-field");
+				throw new FaultException(String.format("Missing required B-field %07o", oSR));
 			}
 			if (dupA()) {
 				BAR = AAR;

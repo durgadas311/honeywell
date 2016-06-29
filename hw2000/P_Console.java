@@ -4,7 +4,8 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
-public class P_Console extends JFrame implements Peripheral, KeyListener {
+public class P_Console extends JFrame
+		implements Peripheral, KeyListener, ActionListener, WindowListener {
 
 	InputStream idev;
 	OutputStream odev;
@@ -14,12 +15,12 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 	boolean busy;
 	JTextArea text;
 	JScrollPane scroll;
-	java.util.concurrent.LinkedBlockingDeque<Character> kq;
+	java.util.concurrent.LinkedBlockingDeque<Integer> kq;
 	int carr;
 
 	public P_Console() {
-		super("H222 Console");
-		kq = new java.util.concurrent.LinkedBlockingDeque<Character>();
+		super("H220 Console");
+		kq = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 		odev = null;
 		idev = null;
 		busy = false;
@@ -32,9 +33,24 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		add(scroll);
+
+		JMenuBar mb = new JMenuBar();
+		JMenu mu = new JMenu("Paper");
+		JMenuItem mi = new JMenuItem("Save", KeyEvent.VK_S);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Tear Off", KeyEvent.VK_T);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Log File", KeyEvent.VK_F);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		setJMenuBar(mb);
+
+		addWindowListener(this);
 		text.addKeyListener(this);
 		pack();
-		setVisible(true);
 		tearOff();
 	}
 
@@ -60,6 +76,9 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 	}
 
 	public void reset() {
+		if (busy && (c2 & 040) != 0) {
+			kq.add(-1);
+		}
 	}
 
 	public void io(HW2000 sys) {
@@ -109,9 +128,10 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 				a = Character.toUpperCase((char)a);
 				// TODO: what effect does c3 have?
 				if (a == '\n') {
-					// TODO: mark end of line? for now, caller
-					// must pre-condition buffer.
+					// TODO: mark end of line? caller must cleanup...
 					text.insert("\n", carr++);
+					text.setCaretPosition(carr);
+					sys.rawWriteMem(sys.cr[clc], (byte)0300);
 					break;
 				}
 				int ix = CharConverter.hwAsciiSup.indexOf((char)a);
@@ -120,6 +140,7 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 				}
 				byte c = sys.pdc.cvt.asciiToHw((byte)a);
 				text.insert(sys.pdc.cvt.hwToLP(c), carr++);
+				text.setCaretPosition(carr);
 				// Must not disturb punctuation?
 				sys.rawWriteMem(sys.cr[clc], c);
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
@@ -160,6 +181,8 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 			}
 			text.insert(s, carr);
 			carr += s.length();
+			text.setCaretPosition(carr);
+			setVisible(true);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
@@ -181,8 +204,36 @@ public class P_Console extends JFrame implements Peripheral, KeyListener {
 
 	public void keyTyped(KeyEvent e) {
 		char c = e.getKeyChar();
-		kq.add(c);
+		kq.add((int)c);
 	}
 	public void keyPressed(KeyEvent e) {}
 	public void keyReleased(KeyEvent e) { }
+
+	public void actionPerformed(ActionEvent e) {
+		if (!(e.getSource() instanceof JMenuItem)) {
+			return;
+		}
+		JMenuItem m = (JMenuItem)e.getSource();
+		if (m.getMnemonic() == KeyEvent.VK_S) {
+			return;
+		}
+		if (m.getMnemonic() == KeyEvent.VK_T) {
+			tearOff();
+			setVisible(true);
+			return;
+		}
+		if (m.getMnemonic() == KeyEvent.VK_F) {
+			return;
+		}
+	}
+
+	public void windowActivated(WindowEvent e) { }
+	public void windowClosed(WindowEvent e) { }
+	public void windowIconified(WindowEvent e) { }
+	public void windowOpened(WindowEvent e) { }
+	public void windowDeiconified(WindowEvent e) { }
+	public void windowDeactivated(WindowEvent e) { }
+	public void windowClosing(WindowEvent e) {
+		setVisible(false);
+	}
 }
