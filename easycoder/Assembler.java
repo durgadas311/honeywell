@@ -26,6 +26,7 @@ public class Assembler {
 	byte[] image;
 	CoreMemory sys;
 	int reloc;
+	boolean listing;
 
 	// TODO:
 	//	Handle ad-hoc constants.
@@ -47,12 +48,13 @@ public class Assembler {
 			System.exit(1);
 		}
 		idc = new InstrDecode(true);
-		cvt = new CharConverter(new CardPunchOptions());
+		cvt = new CharConverter();
 		out = null;
 		lst = null;
 		sys = null;
 		image = null;
 		reloc = 0;
+		listing = false;
 	}
 
 	public String getErrors() {
@@ -111,9 +113,8 @@ public class Assembler {
 		return bb;
 	}
 
-	public int passTwo(CoreMemory sys, int reloc, OutputStream list) {
+	public int passTwo(CoreMemory sys, int reloc, boolean list) {
 		this.reloc = reloc;
-		lst = list;
 		try {
 			in = new BufferedReader(new FileReader(inFile));
 		} catch (Exception ee) {
@@ -122,6 +123,7 @@ public class Assembler {
 			return -1;
 		}
 		this.sys = sys;
+		listing = list;
 		asmPass = true;
 		int ret = 0;
 		currLoc = 0;
@@ -141,6 +143,7 @@ public class Assembler {
 			}
 			if (list != null) {
 				lst = new FileOutputStream(list);
+				listing = true;
 			}
 		} catch (Exception ee) {
 			// 'in' should never fail - already validated in ctor.
@@ -158,7 +161,7 @@ public class Assembler {
 		if (ret >= 0 && out != null) {
 			objOut(image);
 		}
-		if (lst != null) {
+		if (listing) {
 			listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
@@ -190,9 +193,13 @@ public class Assembler {
 
 	private void listOut(String str) {
 		str = replaceChars(str, "\001\011\006\010\007", "\u00a2\u25a1\u25a0\u00a9\u2260");
-		try {
-			lst.write(str.getBytes());
-		} catch (Exception ee) {
+		if (lst != null) {
+			try {
+				lst.write(str.getBytes());
+			} catch (Exception ee) {
+			}
+		} else if (sys != null) {
+			sys.listOut(str);
 		}
 	}
 
@@ -239,7 +246,7 @@ public class Assembler {
 		// TODO: handle D data cards... C/L continuation and macro...
 		char typ = card.charAt(5);
 		if (typ == '*' || typ == 'T') {
-			if (lst != null) {
+			if (listing) {
 				String l = "                                 " + line + "\n";
 				listOut(l);
 			}
@@ -302,7 +309,7 @@ public class Assembler {
 				}
 			}
 		}
-		if (lst != null) {
+		if (listing) {
 			String l = "";
 			if (code != null) {
 				char mk = charMark(code[0]);
@@ -327,7 +334,7 @@ public class Assembler {
 		}
 		while (errs.size() > 0) {
 			String l = errs.remove(0);
-			if (lst != null) {
+			if (listing) {
 				listOut("*** " + l + "\n");
 			}
 			System.err.println(l);

@@ -1,4 +1,4 @@
-all: h19_fe.class h89_fe.class
+all: jar
 
 D630_CLASSES =	\
 		CardPunchOptions.class \

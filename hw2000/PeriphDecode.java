@@ -22,7 +22,7 @@ public class PeriphDecode {
 	private RWChannel[] p_chans;
 
 	public PeriphDecode() {
-		cvt = new CharConverter(new CardPunchOptions());
+		cvt = new CharConverter();
 		p_odevs = new Peripheral[8];
 		p_idevs = new Peripheral[8];
 		p_chans = new RWChannel[8];
@@ -45,7 +45,7 @@ public class PeriphDecode {
 		}
 	}
 
-	public Peripheral getPerph(byte pa) {
+	public Peripheral getPeriph(byte pa) {
 		if ((pa & 040) != 0) { // input
 			return p_idevs[pa & 007];
 		} else {

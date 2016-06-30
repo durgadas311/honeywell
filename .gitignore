@@ -1,3 +1,6 @@
 *.class
 *.lst
 .*.swp
+junk*
+*.out
+*.diff

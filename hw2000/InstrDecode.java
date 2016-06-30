@@ -29,6 +29,7 @@ public class InstrDecode {
 	public static final int OP_REQ_A = 0x0020;
 	public static final int OP_REQ_B = 0x0040;
 	public static final int OP_REQ_V = 0x0080;
+	public static final int OP_NO_WM = 0x0100;
 	public static final int OP_SPC = 0x2000;
 	public static final int OP_PRIV = 0x4000;
 	public static final int OP_INVAL = 0x8000;
@@ -124,8 +125,8 @@ public class InstrDecode {
 		i_flags[OP_BCE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_BBE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 
-		i_flags[OP_SW] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
-		i_flags[OP_SI] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
+		i_flags[OP_SW] = OP_HAS_A | OP_HAS_B | OP_DUP_A | OP_NO_WM;
+		i_flags[OP_SI] = OP_HAS_A | OP_HAS_B | OP_DUP_A | OP_NO_WM;
 		i_flags[OP_CW] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_CI] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_H] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_PRIV;

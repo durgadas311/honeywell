@@ -89,7 +89,7 @@ class CharConverter {
 		xlate_pun[0x1d] = '_';
 		xlate_pun[0x1e] = '>';
 		xlate_pun[0x1f] = '?';
-		if (opts.ibm026) {
+		if (opts != null && opts.ibm026) {
 			xlate_pun[0x4a] = 0;
 			xlate_pun[0x4c] = '\004'; // op-loz
 			xlate_pun[0x4d] = 0;
@@ -202,7 +202,7 @@ class CharConverter {
 		xlate_char['_'] = (short)0x212;
 		xlate_char['>'] = (short)0x20a;
 		xlate_char['?'] = (short)0x206;
-		if (opts.ibm026) {
+		if (opts != null && opts.ibm026) {
 			xlate_char['<'] = (short)0x1000;
 			xlate_char['\001'] = (short)0x1000;
 			xlate_char['|'] = (short)0x1000;
@@ -459,6 +459,10 @@ class CharConverter {
 
 	public static final String hwAsciiSup = "^[]~\\";
 	public static final String hwAsciiRep = "\001\011\006\010\007";
+
+	public CharConverter() {
+		setup_xlate(null);
+	}
 
 	public CharConverter(CardPunchOptions opts) {
 		setup_xlate(opts);

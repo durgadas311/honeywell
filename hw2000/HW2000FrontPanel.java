@@ -1115,6 +1115,7 @@ public class HW2000FrontPanel extends JFrame
 			warning(this, op, asm.getErrors());
 			return false;
 		}
+		Peripheral p = null;
 		if (listing) {
 			String l = src.getAbsolutePath();
 			if (l.endsWith(".ezc")) {
@@ -1126,6 +1127,10 @@ public class HW2000FrontPanel extends JFrame
 			} catch (Exception ee) {
 				warning(this, op, ee.getMessage());
 				return false;
+			}
+			p = sys.pdc.getPeriph(PeriphDecode.P_LP);
+			if (p != null) {
+				p.setOutput(lst);
 			}
 		}
 		int low = asm.getMin();
@@ -1142,12 +1147,12 @@ public class HW2000FrontPanel extends JFrame
 		currLow = 0;
 		currHi = 0;
 		sys.setTrace(currLow, currHi); // trace off
-		e = asm.passTwo(sys, reloc, lst);
+		e = asm.passTwo(sys, reloc, listing);
 		if (e < 0) {
 			warning(this, op, asm.getErrors());
 			return false;
 		}
-		if (lst != null) {
+		if (listing) {
 			asm.listSymTab();
 		}
 		if (monitor) {
@@ -1170,6 +1175,12 @@ public class HW2000FrontPanel extends JFrame
 		setContents(sys.rawReadMem(addressReg));
 		currLow = reloc + low;
 		currHi = reloc + hi;
+		if (p != null) {
+			p.setOutput(null);
+		}
+		if (lst != null) {
+			try { lst.close(); } catch (Exception ee) {}
+		}
 		inform(this, op, String.format("Assembly complete. %07o %07o %07o",
 			reloc + low, reloc + hi, reloc + start));
 		return true;
@@ -1186,12 +1197,12 @@ public class HW2000FrontPanel extends JFrame
 		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (mi.getMnemonic() == KeyEvent.VK_C) {
-			Peripheral p = sys.pdc.getPerph(PeriphDecode.P_CO);
+			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_CO);
 			if (p != null) {
 				p.visible(true);
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_P) {
-			Peripheral p = sys.pdc.getPerph(PeriphDecode.P_LP);
+			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_LP);
 			if (p != null) {
 				p.visible(true);
 			}
@@ -1201,10 +1212,10 @@ public class HW2000FrontPanel extends JFrame
 			sys.setTrace(0, 02000000);
 		} else if (mi.getMnemonic() == KeyEvent.VK_D) {
 			if (currLow < currHi) {
-				sys.dumpHW(null, currLow, currHi - 1);
+				sys.dumpHW(currLow, currHi - 1);
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_N) {
-			sys.dumpHW(null, 0, 03777);
+			sys.dumpHW(0, 03777);
 		}
 
 	}

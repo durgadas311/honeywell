@@ -103,6 +103,7 @@ public class P_LinePrinter extends JFrame
 
 	public void setOutput(OutputStream dev) {
 		// TODO: handle output redirection
+		this.dev = dev;
 	}
 
 	public OutputStream getOutput() {
@@ -222,6 +223,18 @@ public class P_LinePrinter extends JFrame
 			// TODO: handle exceptions? How to pass along EI/II exceptions to CPU?
 		}
 		busy = false;
+	}
+
+	public void output(String s) {
+		if (dev != null) {
+			try {
+				dev.write(s.getBytes());
+			} catch (Exception ee) {}
+		}
+		text.append(s);
+		carr += s.length();
+		text.setCaretPosition(carr);
+		visible(true);
 	}
 
 	public boolean busy() {

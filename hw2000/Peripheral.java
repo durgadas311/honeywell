@@ -9,6 +9,7 @@ public interface Peripheral {
 	public void ctl(HW2000 sys);
 	public void run(HW2000 sys);
 	public boolean busy();
+	public void output(String s);
 	public void reset();
 	public void visible(boolean on);
 }

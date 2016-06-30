@@ -223,6 +223,18 @@ public class P_Console extends JFrame
 		busy = false;
 	}
 
+	public void output(String s) {
+		if (odev != null) {
+			try {
+				odev.write(s.getBytes());
+			} catch (Exception ee) {}
+		}
+		text.insert(s, carr);
+		carr += s.length();
+		text.setCaretPosition(carr);
+		visible(true);
+	}
+
 	public boolean busy() {
 		return busy;
 	}

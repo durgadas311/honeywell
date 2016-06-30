@@ -155,11 +155,12 @@ public class HW2000 implements CoreMemory
 	public boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
 	public boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
 	public boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
+	public boolean noWM() { return ((op_xflags & InstrDecode.OP_NO_WM) != 0); }
 
 	public boolean isProceed() { return _proceed; }
 
 	public Peripheral getPeriph(byte op) {
-		Peripheral p = pdc.getPerph(op);
+		Peripheral p = pdc.getPeriph(op);
 		if (p == null) {
 			throw new RuntimeException("Invalid Peripheral " + op);
 		}
@@ -500,12 +501,21 @@ public class HW2000 implements CoreMemory
 
 		oSR = SR;
 		fsr = SR;
-		// TODO: how to avoid including garbage in variant array.
-		int isr = (fsr + 1) & 0x7ffff;
-		while (isr != 0 && !chkWord(isr)) {
-			isr = (isr + 1) & 0x7ffff;
-		}
 		iaar = -1;
+		setOp(readMem(fsr++));	// might throw illegal op-code
+		// TODO: how to avoid including garbage in variant array.
+		int isr = fsr & 0x7ffff;
+		if (noWM()) {
+			int max = (hasA() ? am_na : 0);
+			max += (hasB() ? am_na : 0);
+			while (isr != 0 && isr - fsr < max && !chkWord(isr)) {
+				isr = (isr + 1) & 0x7ffff;
+			}
+		} else {
+			while (isr != 0 && !chkWord(isr)) {
+				isr = (isr + 1) & 0x7ffff;
+			}
+		}
 		// Caller handles exceptions, leave SR at start of instruction
 		// (if during fetch/extract). Exceptions during execute
 		// terminate instruction and leave SR at next.
@@ -514,7 +524,6 @@ public class HW2000 implements CoreMemory
 			halt = true;
 			throw new FaultException("ran off end of memory");
 		}
-		setOp(readMem(fsr++));	// might throw illegal op-code
 		fetchAAR(isr);	// might throw exceptions
 		fetchBAR(isr);	// might throw exceptions
 		// just get all extra characters, let implementations
@@ -626,26 +635,24 @@ if (_trace) {
 		}
 	}
 
-	public void listOut(OutputStream lst, String str) {
-		try {
-			lst.write(str.getBytes());
-		} catch (Exception ee) {
+	public void listOut(String str) {
+		Peripheral p = pdc.getPeriph(PeriphDecode.P_LP);
+		if (p == null) {
+			return;
 		}
+		p.output(str);
 	}
 
 	// Honeywell-style memory dump.
 	// Range is inclusive, both ends
-	public void dumpHW(OutputStream list, int beg, int end) {
-		if (list == null) {
-			list = pdc.getOutput(PeriphDecode.P_LP);
-		}
+	public void dumpHW(int beg, int end) {
 		String marks = " WIR";
 		int m = beg & ~0177;	// 128 locations per row...
-		listOut(list, "Memory Dump:\n");
+		listOut("Memory Dump:\n");
 		while (m <= end) {
 			String l = String.format("%07o 1       2       3       4       5       6       7"
 				+ "       0       1       2       3       4       5       6       7\n", m);
-			listOut(list, l);
+			listOut(l);
 			l = "";
 			int a = m;
 			int e = m + 128;
@@ -657,7 +664,7 @@ if (_trace) {
 				}
 				++a;
 			}
-			listOut(list, l + "\n");
+			listOut(l + "\n");
 			l = "";
 			a = m;
 			e = m + 128;
@@ -669,7 +676,7 @@ if (_trace) {
 				}
 				++a;
 			}
-			listOut(list, l + "\n");
+			listOut(l + "\n");
 			l = "";
 			a = m;
 			e = m + 128;
@@ -681,7 +688,7 @@ if (_trace) {
 				}
 				++a;
 			}
-			listOut(list, l + "\n");
+			listOut(l + "\n");
 			l = "";
 			a = m;
 			e = m + 128;
@@ -693,7 +700,7 @@ if (_trace) {
 				}
 				++a;
 			}
-			listOut(list, l + "\n");
+			listOut(l + "\n");
 			m += 128;
 		}
 	}
