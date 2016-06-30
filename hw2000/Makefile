@@ -77,7 +77,7 @@ FONTS = $(wildcard fonts/*.ttf)
 
 ICONS = $(wildcard icons/*.png)
 
-PROGS = machin.ezc mcetests.ezc monitor.ezc
+PROGS = machin.ezc mcetests.ezc monitor.ezc swtest.ezc
 
 ship: jar tgz
 

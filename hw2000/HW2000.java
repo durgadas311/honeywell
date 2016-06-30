@@ -152,10 +152,10 @@ public class HW2000 implements CoreMemory
 	public boolean reqV() { return ((op_flags & InstrDecode.OP_REQ_V) != 0); }
 	public boolean inval() { return ((op_flags & InstrDecode.OP_INVAL) != 0); }
 	public boolean priv() { return ((op_flags & InstrDecode.OP_PRIV) != 0); }
+	public boolean noWM() { return ((op_flags & InstrDecode.OP_NO_WM) != 0); }
 	public boolean hadA() { return ((op_xflags & InstrDecode.OP_HAS_A) != 0); }
 	public boolean hadB() { return ((op_xflags & InstrDecode.OP_HAS_B) != 0); }
 	public boolean hadV() { return ((op_xflags & InstrDecode.OP_HAS_V) != 0); }
-	public boolean noWM() { return ((op_xflags & InstrDecode.OP_NO_WM) != 0); }
 
 	public boolean isProceed() { return _proceed; }
 
@@ -522,7 +522,7 @@ public class HW2000 implements CoreMemory
 		if (isr == 0) {
 			// ran off end of memory... need to halt...
 			halt = true;
-			throw new FaultException("ran off end of memory");
+			throw new FaultException(String.format("ran off end of memory %07o", oSR));
 		}
 		fetchAAR(isr);	// might throw exceptions
 		fetchBAR(isr);	// might throw exceptions
