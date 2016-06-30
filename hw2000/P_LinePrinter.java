@@ -46,7 +46,7 @@ public class P_LinePrinter extends JFrame
 		if (ttf != null) {
 			try {
 				Font f = Font.createFont(Font.TRUETYPE_FONT, ttf);
-				font = f.deriveFont(12f);
+				font = f.deriveFont(10f);
 			} catch (Exception ee) {}
 		}
 		if (font == null) {
