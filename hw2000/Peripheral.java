@@ -10,4 +10,5 @@ public interface Peripheral {
 	public void run(HW2000 sys);
 	public boolean busy();
 	public void reset();
+	public void visible(boolean on);
 }

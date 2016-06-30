@@ -17,10 +17,14 @@ public class P_Console extends JFrame
 	JScrollPane scroll;
 	java.util.concurrent.LinkedBlockingDeque<Integer> kq;
 	int carr;
+	int col;
+	File _last = null;
+	boolean isOn = false;
 
 	public P_Console() {
 		super("H220 Console");
 		kq = new java.util.concurrent.LinkedBlockingDeque<Integer>();
+		_last = new File(System.getProperty("user.dir"));
 		odev = null;
 		idev = null;
 		busy = false;
@@ -28,7 +32,19 @@ public class P_Console extends JFrame
 		text = new JTextArea(24, 80);
 		text.setEditable(false); // this prevents caret... grrr.
 		text.setBackground(Color.white);
-		text.setFont(new Font("Monospaced", Font.PLAIN, 10));
+		Font font = null;
+		String fn = "fonts/HW222.ttf";
+		java.io.InputStream ttf = this.getClass().getResourceAsStream(fn);
+		if (ttf != null) {
+			try {
+				Font f = Font.createFont(Font.TRUETYPE_FONT, ttf);
+				font = f.deriveFont(16f);
+			} catch (Exception ee) {}
+		}
+		if (font == null) {
+			font = new Font("Monospaced", Font.PLAIN, 12);
+		}
+		text.setFont(font);
 		scroll = new JScrollPane(text);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -57,6 +73,7 @@ public class P_Console extends JFrame
 	private void tearOff() {
 		text.setText("\u2588");
 		carr = 0;
+		col = 0;
 	}
 
 	public void setOutput(OutputStream dev) {
@@ -78,6 +95,13 @@ public class P_Console extends JFrame
 	public void reset() {
 		if (busy && (c2 & 040) != 0) {
 			kq.add(-1);
+		}
+	}
+
+	public void visible(boolean on) {
+		if (on != isOn) {
+			isOn = on;
+			setVisible(on);
 		}
 	}
 
@@ -139,6 +163,10 @@ public class P_Console extends JFrame
 					a = CharConverter.hwAsciiRep.charAt(ix);
 				}
 				byte c = sys.pdc.cvt.asciiToHw((byte)a);
+				if (col >= 80) {
+					text.insert("\n", carr++);
+					col = 0;
+				}
 				text.insert(sys.pdc.cvt.hwToLP(c), carr++);
 				text.setCaretPosition(carr);
 				// Must not disturb punctuation?
@@ -167,7 +195,12 @@ public class P_Console extends JFrame
 					break;
 				}
 				a &= 077;
+				if (col >= 80) {
+					s += "\n";
+					col = 0;
+				}
 				s += sys.pdc.cvt.hwToLP(a);
+				++col;
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 					break;
@@ -175,6 +208,7 @@ public class P_Console extends JFrame
 			}
 			if (c3 != 0) {
 				s += "\n";
+				col = 0;
 			}
 			if (odev != null) {
 				odev.write(s.getBytes());
@@ -182,7 +216,7 @@ public class P_Console extends JFrame
 			text.insert(s, carr);
 			carr += s.length();
 			text.setCaretPosition(carr);
-			setVisible(true);
+			visible(true);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
@@ -202,6 +236,16 @@ public class P_Console extends JFrame
 		// TODO: apply control chars
 	}
 
+	private File pickFile(String purpose) {
+		File file = null;
+		SuffFileChooser ch = new SuffFileChooser(purpose, _last, 0);
+		int rv = ch.showDialog(this);
+		if (rv == JFileChooser.APPROVE_OPTION) {
+			file = ch.getSelectedFile();
+		}
+		return file;
+	}
+
 	public void keyTyped(KeyEvent e) {
 		char c = e.getKeyChar();
 		kq.add((int)c);
@@ -215,14 +259,26 @@ public class P_Console extends JFrame
 		}
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_S) {
+			File sav = pickFile("Save");
+			if (sav != null) {
+				try {
+					FileOutputStream fo = new FileOutputStream(sav);
+					fo.write(text.getText(0, carr).getBytes());
+					fo.close();
+					_last = sav;
+					// TODO: tear off?
+				} catch (Exception ee) {
+					HW2000FrontPanel.warning(this, "Save", ee.getMessage());
+				}
+			}
 			return;
 		}
 		if (m.getMnemonic() == KeyEvent.VK_T) {
 			tearOff();
-			setVisible(true);
 			return;
 		}
 		if (m.getMnemonic() == KeyEvent.VK_F) {
+			// TODO: implement this?
 			return;
 		}
 	}
@@ -234,6 +290,7 @@ public class P_Console extends JFrame
 	public void windowDeiconified(WindowEvent e) { }
 	public void windowDeactivated(WindowEvent e) { }
 	public void windowClosing(WindowEvent e) {
+		isOn = false;
 		setVisible(false);
 	}
 }

@@ -1092,7 +1092,7 @@ public class HW2000FrontPanel extends JFrame
 	private File pickFile(String purpose, String sfx, String typ, File prev) {
 		File file = null;
 		listing = false;
-		SuffFileChooser ch = new SuffFileChooser(purpose, sfx, typ, prev);
+		SuffFileChooser ch = new SuffFileChooser(purpose, sfx, typ, prev, 1);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -1101,19 +1101,19 @@ public class HW2000FrontPanel extends JFrame
 		return file;
 	}
 
-	private void asmFile(String op) {
+	private boolean asmFile(String op) {
 		OutputStream lst = null;
 		File src = pickFile(op + " Program",
 				"ezc", "EasyCoder", _last);
 		if (src == null) {
-			return;
+			return false;
 		}
 		_last = src;
 		Assembler asm = new Assembler(src);
 		int e = asm.passOne();
 		if (e < 0) {
-			warning(op, asm.getErrors());
-			return;
+			warning(this, op, asm.getErrors());
+			return false;
 		}
 		if (listing) {
 			String l = src.getAbsolutePath();
@@ -1124,8 +1124,8 @@ public class HW2000FrontPanel extends JFrame
 			try {
 				lst = new FileOutputStream(new File(l));
 			} catch (Exception ee) {
-				warning(op, ee.getMessage());
-				return;
+				warning(this, op, ee.getMessage());
+				return false;
 			}
 		}
 		int low = asm.getMin();
@@ -1144,8 +1144,8 @@ public class HW2000FrontPanel extends JFrame
 		sys.setTrace(currLow, currHi); // trace off
 		e = asm.passTwo(sys, reloc, lst);
 		if (e < 0) {
-			warning(op, asm.getErrors());
-			return;
+			warning(this, op, asm.getErrors());
+			return false;
 		}
 		if (lst != null) {
 			asm.listSymTab();
@@ -1170,22 +1170,31 @@ public class HW2000FrontPanel extends JFrame
 		setContents(sys.rawReadMem(addressReg));
 		currLow = reloc + low;
 		currHi = reloc + hi;
-		inform(op, String.format("Assembly complete. %07o %07o %07o",
+		inform(this, op, String.format("Assembly complete. %07o %07o %07o",
 			reloc + low, reloc + hi, reloc + start));
+		return true;
 	}
 
 	private void performMenu(JMenuItem mi) {
 		if (mi.getMnemonic() == KeyEvent.VK_A) {
 			asmFile("Assemble");
 		} else if (mi.getMnemonic() == KeyEvent.VK_M) {
-			asmFile("Monitor");
 			// run automatically?
-			monitor = true; // only after running?
-			mi_mon.setEnabled(false);
+			// set 'true' only after running?
+			monitor = asmFile("Monitor");
+			mi_mon.setEnabled(!monitor);
 		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (mi.getMnemonic() == KeyEvent.VK_C) {
+			Peripheral p = sys.pdc.getPerph(PeriphDecode.P_CO);
+			if (p != null) {
+				p.visible(true);
+			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_P) {
+			Peripheral p = sys.pdc.getPerph(PeriphDecode.P_LP);
+			if (p != null) {
+				p.visible(true);
+			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
 			sys.setTrace(currLow, currHi);
 		} else if (mi.getMnemonic() == KeyEvent.VK_L) {
@@ -1200,16 +1209,23 @@ public class HW2000FrontPanel extends JFrame
 
 	}
 
-	public void warning(String op, String err) {
-		JOptionPane.showMessageDialog(this,
+	public static void warning(Component top, String op, String err) {
+		JOptionPane.showMessageDialog(top,
 			new JLabel(err),
 			op + " Warning", JOptionPane.WARNING_MESSAGE);
 	}
 
-	public void inform(String op, String err) {
-		JOptionPane.showMessageDialog(this,
+	public static void inform(Component top, String op, String err) {
+		JOptionPane.showMessageDialog(top,
 			new JLabel(err),
 			op + " Information", JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	public static int confirm(String op, String err) {
+		int res = JOptionPane.showConfirmDialog(null,
+			new JLabel(err),
+			op + " Confirmation", JOptionPane.YES_NO_OPTION);
+		return res;
 	}
 
 	public void run() {

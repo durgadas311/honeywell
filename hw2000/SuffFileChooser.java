@@ -8,27 +8,29 @@ import javax.swing.*;
 class SuffFileChooser extends JFileChooser {
 	static final long serialVersionUID = 311457692041L;
 	private String _btn;
-	private class Listing extends JComponent {
+	private class ChkBox extends JComponent {
 		static final long serialVersionUID = 31170769203L;
 		public Checkbox btn;
-		public Listing(String b) {
+		public ChkBox(String b) {
 			btn = new Checkbox(b);
 			setLayout(new FlowLayout());
 			add(btn);
 		}
 	}
-	private Listing _listing;
-	public SuffFileChooser(String btn, File dir) {
+	private ChkBox _listing = null;
+	public SuffFileChooser(String btn, File dir, int opts) {
 		super(dir);
 		_btn = btn;
 		setApproveButtonText(btn);
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		_listing = new Listing("Listing");
-		setAccessory(_listing);
+		if ((opts & 1) != 0) {
+			_listing = new ChkBox("Listing");
+			setAccessory(_listing);
+		}
 	}
-	public SuffFileChooser(String btn, String sfx, String dsc, File dir) {
+	public SuffFileChooser(String btn, String sfx, String dsc, File dir, int opts) {
 		super(dir);
 		SuffFileFilter f = new SuffFileFilter(sfx, dsc);
 		setFileFilter(f);
@@ -37,10 +39,12 @@ class SuffFileChooser extends JFileChooser {
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		_listing = new Listing("Listing");
-		setAccessory(_listing);
+		if ((opts & 1) != 0) {
+			_listing = new ChkBox("Listing");
+			setAccessory(_listing);
+		}
 	}
-	public SuffFileChooser(String btn, String[] sfx, String[] dsc, File dir) {
+	public SuffFileChooser(String btn, String[] sfx, String[] dsc, File dir, int opts) {
 		super(dir);
 		SuffFileFilter f = new SuffFileFilter(sfx[0], dsc[0]);
 		setFileFilter(f);
@@ -53,8 +57,10 @@ class SuffFileChooser extends JFileChooser {
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		_listing = new Listing("Listing");
-		setAccessory(_listing);
+		if ((opts & 1) != 0) {
+			_listing = new ChkBox("Listing");
+			setAccessory(_listing);
+		}
 	}
 	public int showDialog(Component frame) {
 		int rv = super.showDialog(frame, _btn);
@@ -73,6 +79,6 @@ class SuffFileChooser extends JFileChooser {
 		return rv;
 	}
 	public boolean wantListing() {
-		return _listing.btn.getState();
+		return _listing != null && _listing.btn.getState();
 	}
 }
