@@ -60,13 +60,19 @@ public class P_LinePrinter extends JFrame
 
 		JMenuBar mb = new JMenuBar();
 		JMenu mu = new JMenu("Paper");
-		JMenuItem mi = new JMenuItem("Save", KeyEvent.VK_S);
+		JMenuItem mi = new JMenuItem("Line Feed", KeyEvent.VK_N);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Form Feed", KeyEvent.VK_F);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Save", KeyEvent.VK_S);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Tear Off", KeyEvent.VK_T);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Log File", KeyEvent.VK_F);
+		mi = new JMenuItem("Log File", KeyEvent.VK_G);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -270,7 +276,25 @@ public class P_LinePrinter extends JFrame
 			tearOff();
 			return;
 		}
+		if (m.getMnemonic() == KeyEvent.VK_N) {
+			if (++ln >= ftape.length) ln = 0;
+			text.append("\n");
+			carr += 1;
+			text.setCaretPosition(carr);
+			return;
+		}
 		if (m.getMnemonic() == KeyEvent.VK_F) {
+			String s = "";
+			while ((ftape[ln] & 1) == 0) {
+				s += "\n";
+				if (++ln >= ftape.length) ln = 0;
+			}
+			text.append(s);
+			carr += s.length();
+			text.setCaretPosition(carr);
+			return;
+		}
+		if (m.getMnemonic() == KeyEvent.VK_G) {
 			// TODO: implement this?
 			return;
 		}
