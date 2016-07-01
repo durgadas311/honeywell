@@ -223,9 +223,6 @@ public class Assembler {
 		String line = "";
 		code = null;
 		int orgLoc = currLoc;
-		if (!asmPass && currLoc < minAdr) {
-			minAdr = currLoc;
-		}
 		try {
 			line = in.readLine();
 			if (line == null) {
@@ -292,6 +289,9 @@ public class Assembler {
 			e = processAsmDir(opc, mrk, loc, rev, opd);
 		}
 		if (!asmPass) {
+			if (e > 0 && e < 0x100000 && orgLoc < minAdr) {
+				minAdr = orgLoc;
+			}
 			if (currLoc > maxAdr) {
 				maxAdr = currLoc;
 			}

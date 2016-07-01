@@ -22,6 +22,7 @@ public class I_PDT implements Instruction {
 		Peripheral p = sys.getPeriph(c2);
 		RWChannel c = sys.getChannel(c1);
 		if (c.busy() || p.busy()) {
+System.err.println("PDT while busy");
 			sys.SR = sys.oSR;
 			// TODO: go to sleep if waiting too long?
 			// If this channel was being used elsewhere for input,

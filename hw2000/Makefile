@@ -77,7 +77,9 @@ FONTS = $(wildcard fonts/*.ttf)
 
 ICONS = $(wildcard icons/*.png)
 
-PROGS = machin.ezc mcetests.ezc monitor.ezc swtest.ezc
+JARES = bringup/bootmt.mti
+
+PROGS = machin.ezc mcetests.ezc monitor.ezc bootstrap.ezc
 
 ship: jar tgz
 
@@ -85,9 +87,10 @@ jar: H2000.jar
 
 tgz: hwprogs.tgz
 
-H2000.jar: $(CLASSES) $(FONTS) $(ICONS) $(EXTCLASSES)
+H2000.jar: $(CLASSES) $(FONTS) $(ICONS) $(EXTCLASSES) $(JARES)
 	echo "Main-Class: System2000" >Manifest.txt
-	jar cfm $@ Manifest.txt *.class icons/*.png fonts/*.ttf
+	jar cfm $@ Manifest.txt *.class icons/*.png fonts/*.ttf \
+		$(JARES)
 
 hwprogs.tgz: $(addprefix bringup/,$(PROGS))
 	tar -czf $@ -C bringup $(PROGS)

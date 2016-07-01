@@ -10,7 +10,7 @@ public class P_MagneticTape extends JFrame
 	byte c4;
 	byte c3;
 	byte c2;
-	byte term;
+	int term;
 	int unit;
 	int count;
 	int clc, slc;
@@ -98,8 +98,15 @@ public class P_MagneticTape extends JFrame
 			++x;
 		}
 		c2 = sys.getXtra(x++);
-		c3 = sys.getXtra(x++);
-		c4 = sys.getXtra(x++);
+		in = ((c2 & 040) == 040);
+		if (x < sys.numXtra()) {
+			c3 = sys.getXtra(x++);
+			c4 = sys.getXtra(x++);
+		} else {
+			// Special case defaults, for BOOTSTRAP
+			c3 = (byte)060;	// Read forward
+			c4 = (byte)000;	// Stop at Rec Mark, Std FMT
+		}
 		// C3:
 		//	xxxDDD = Tape Drive/Unit DDD
 		// (in) 110xxx = Read Forward
@@ -153,10 +160,10 @@ public class P_MagneticTape extends JFrame
 		switch(c4 & 070) {
 		case 000:
 		default:
-			term = (byte)0301; // record mark
+			term = 0301; // record mark
 			break;
 		case 010:
-			term = (byte)0303; // file mark
+			term = 0303; // file mark
 			break;
 		case 020:
 			int c5 = sys.getXtra(x++);
@@ -183,6 +190,10 @@ public class P_MagneticTape extends JFrame
 		} else {
 			doIn(sys);
 		}
+		try {
+			stat_pn[unit].setText(
+				String.format("%d", dev[unit].getFilePointer()));
+		} catch (Exception ee) {}
 	}
 
 	private void doIn(HW2000 sys) {
@@ -310,6 +321,7 @@ public class P_MagneticTape extends JFrame
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
 			prot = ch.wantWrProt();
+			_last = file; // or use dev[unit]?
 		}
 		return file;
 	}
@@ -339,7 +351,7 @@ public class P_MagneticTape extends JFrame
 			dev[c] = new RandomAccessFile(f, prot ? "r" : "rw");
 			end = false;
 			beg = true;
-			stat_pn[c].setText("Ready");
+			stat_pn[c].setText("0");
 			mnt_pn[c].setText(f.getName());
 			return;
 		} catch (Exception ee) {

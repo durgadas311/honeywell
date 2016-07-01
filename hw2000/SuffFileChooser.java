@@ -19,6 +19,24 @@ class SuffFileChooser extends JFileChooser {
 	}
 	private ChkBox _listing = null;
 	private ChkBox _prot = null;
+	private ChkBox _tape = null;
+	private void addAccessories(int opts) {
+		JPanel pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.Y_AXIS));
+		if ((opts & 1) != 0) {
+			_listing = new ChkBox("Listing");
+			pn.add(_listing);
+		}
+		if ((opts & 2) != 0) {
+			_prot = new ChkBox("Write Prot");
+			pn.add(_prot);
+		}
+		if ((opts & 4) != 0) {
+			_tape = new ChkBox("Tape Image");
+			pn.add(_tape);
+		}
+		setAccessory(pn);
+	}
 	public SuffFileChooser(String btn, File dir, int opts) {
 		super(dir);
 		_btn = btn;
@@ -26,14 +44,7 @@ class SuffFileChooser extends JFileChooser {
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		if ((opts & 1) != 0) {
-			_listing = new ChkBox("Listing");
-			setAccessory(_listing);
-		}
-		if ((opts & 2) != 0) {
-			_prot = new ChkBox("Write Prot");
-			setAccessory(_prot);
-		}
+		addAccessories(opts);
 	}
 	public SuffFileChooser(String btn, String sfx, String dsc, File dir, int opts) {
 		super(dir);
@@ -44,14 +55,7 @@ class SuffFileChooser extends JFileChooser {
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		if ((opts & 1) != 0) {
-			_listing = new ChkBox("Listing");
-			setAccessory(_listing);
-		}
-		if ((opts & 2) != 0) {
-			_prot = new ChkBox("Write Prot");
-			setAccessory(_prot);
-		}
+		addAccessories(opts);
 	}
 	public SuffFileChooser(String btn, String[] sfx, String[] dsc, File dir, int opts) {
 		super(dir);
@@ -66,14 +70,7 @@ class SuffFileChooser extends JFileChooser {
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		if ((opts & 1) != 0) {
-			_listing = new ChkBox("Listing");
-			setAccessory(_listing);
-		}
-		if ((opts & 2) != 0) {
-			_prot = new ChkBox("Write Prot");
-			setAccessory(_prot);
-		}
+		addAccessories(opts);
 	}
 	public int showDialog(Component frame) {
 		int rv = super.showDialog(frame, _btn);
@@ -96,5 +93,8 @@ class SuffFileChooser extends JFileChooser {
 	}
 	public boolean wantWrProt() {
 		return _prot != null && _prot.btn.getState();
+	}
+	public boolean wantTapeImg() {
+		return _tape != null && _tape.btn.getState();
 	}
 }
