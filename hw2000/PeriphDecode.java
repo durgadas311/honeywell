@@ -31,6 +31,8 @@ public class PeriphDecode {
 		p_odevs[P_LP] = new P_LinePrinter();
 		p_odevs[P_CO] = new P_Console();
 		p_idevs[P_CO] = p_odevs[P_CO];
+		p_odevs[P_MT] = new P_MagneticTape();
+		p_idevs[P_MT] = p_odevs[P_MT];
 	}
 
 	public void reset() {

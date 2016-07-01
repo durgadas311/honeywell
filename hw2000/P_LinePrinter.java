@@ -159,11 +159,8 @@ public class P_LinePrinter extends JFrame
 		boolean print = ((c3 & 040) == 0 || (c3 & 030) == 0);
 		// Printing stops *before* char with record mark...
 		try {
+			byte a = sys.rawReadMem(sys.cr[clc]);
 			while (print) {
-				byte a = sys.rawReadMem(sys.cr[clc]);
-				if ((a & 0300)  == 0300) {
-					break;
-				}
 				a &= 077;
 				if (col >= 132) {
 					s += "\n";
@@ -174,6 +171,10 @@ public class P_LinePrinter extends JFrame
 				++col;
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+					break;
+				}
+				a = sys.rawReadMem(sys.cr[clc]);
+				if ((a & 0300)  == 0300) {
 					break;
 				}
 			}

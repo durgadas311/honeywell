@@ -140,6 +140,8 @@ public class P_Console extends JFrame
 		int a = -1;
 		byte b;
 		try {
+			// TODO: what effect does c3 have? Print CR/LF before input?
+			// Or... use CR as termination of input?
 			b = (byte)(sys.rawReadMem(sys.cr[clc]) & 0300); // ignored for termination
 			do {
 				if (idev != null) {
@@ -151,7 +153,6 @@ public class P_Console extends JFrame
 					break;
 				}
 				a = Character.toUpperCase((char)a);
-				// TODO: what effect does c3 have?
 				if (a == '\n') {
 					// TODO: mark end of line? caller must cleanup...
 					text.insert("\n", carr++);
@@ -190,11 +191,8 @@ public class P_Console extends JFrame
 		boolean print = true;
 		// Printing stops *before* char with record mark...
 		try {
+			byte a = sys.rawReadMem(sys.cr[clc]);
 			while (print) {
-				byte a = sys.rawReadMem(sys.cr[clc]);
-				if ((a & 0300)  == 0300) {
-					break;
-				}
 				a &= 077;
 				if (col >= 80) {
 					s += "\n";
@@ -204,6 +202,10 @@ public class P_Console extends JFrame
 				++col;
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+					break;
+				}
+				a = sys.rawReadMem(sys.cr[clc]);
+				if ((a & 0300)  == 0300) {
 					break;
 				}
 			}

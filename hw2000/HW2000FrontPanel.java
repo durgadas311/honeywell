@@ -457,6 +457,9 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("LinePrinter", KeyEvent.VK_P);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("MagTape", KeyEvent.VK_G);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mb.add(mu);
 		mu = new JMenu("Debug");
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
@@ -1225,6 +1228,11 @@ public class HW2000FrontPanel extends JFrame
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_P) {
 			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_LP);
+			if (p != null) {
+				p.visible(true);
+			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_G) {
+			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_MT);
 			if (p != null) {
 				p.visible(true);
 			}

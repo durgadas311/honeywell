@@ -18,6 +18,7 @@ class SuffFileChooser extends JFileChooser {
 		}
 	}
 	private ChkBox _listing = null;
+	private ChkBox _prot = null;
 	public SuffFileChooser(String btn, File dir, int opts) {
 		super(dir);
 		_btn = btn;
@@ -28,6 +29,10 @@ class SuffFileChooser extends JFileChooser {
 		if ((opts & 1) != 0) {
 			_listing = new ChkBox("Listing");
 			setAccessory(_listing);
+		}
+		if ((opts & 2) != 0) {
+			_prot = new ChkBox("Write Prot");
+			setAccessory(_prot);
 		}
 	}
 	public SuffFileChooser(String btn, String sfx, String dsc, File dir, int opts) {
@@ -42,6 +47,10 @@ class SuffFileChooser extends JFileChooser {
 		if ((opts & 1) != 0) {
 			_listing = new ChkBox("Listing");
 			setAccessory(_listing);
+		}
+		if ((opts & 2) != 0) {
+			_prot = new ChkBox("Write Prot");
+			setAccessory(_prot);
 		}
 	}
 	public SuffFileChooser(String btn, String[] sfx, String[] dsc, File dir, int opts) {
@@ -60,6 +69,10 @@ class SuffFileChooser extends JFileChooser {
 		if ((opts & 1) != 0) {
 			_listing = new ChkBox("Listing");
 			setAccessory(_listing);
+		}
+		if ((opts & 2) != 0) {
+			_prot = new ChkBox("Write Prot");
+			setAccessory(_prot);
 		}
 	}
 	public int showDialog(Component frame) {
@@ -80,5 +93,8 @@ class SuffFileChooser extends JFileChooser {
 	}
 	public boolean wantListing() {
 		return _listing != null && _listing.btn.getState();
+	}
+	public boolean wantWrProt() {
+		return _prot != null && _prot.btn.getState();
 	}
 }
