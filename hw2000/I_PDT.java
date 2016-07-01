@@ -7,14 +7,14 @@ public class I_PDT implements Instruction {
 	// CE vs. C2 can be determined by bits 011000. For CE, those bits will be 01.
 	// Otherwise, it is C2.
 	public void execute(HW2000 sys) {
-		if (sys.numXtra() < 2 ||
-				((sys.getXtra(1) & 030) == 010 && sys.numXtra() < 3)) {
+		boolean ce = PeriphDecode.isEsc(sys.getXtra(1));
+		if (sys.numXtra() < 2 || (ce && sys.numXtra() < 3)) {
 			throw new FaultException("PDT malformed");
 		}
 		sys.validAdr(sys.AAR);
 		byte c1 = sys.getXtra(0);
 		byte c2;
-		if ((sys.getXtra(1) & 030) == 010) {
+		if (ce) {
 			c2 = sys.getXtra(2);
 		} else {
 			c2 = sys.getXtra(1);

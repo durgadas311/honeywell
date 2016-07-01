@@ -130,7 +130,7 @@ public class P_LinePrinter extends JFrame
 	public void io(HW2000 sys) {
 		clc = (byte)(sys.getXtra(0) & 027);
 		slc = clc + 010;
-		if ((sys.getXtra(1) & 030) == 010) {
+		if (PeriphDecode.isEsc(sys.getXtra(1))) {
 			c3 = sys.getXtra(3);
 		} else {
 			c3 = sys.getXtra(2);

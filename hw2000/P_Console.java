@@ -108,7 +108,7 @@ public class P_Console extends JFrame
 	public void io(HW2000 sys) {
 		clc = (byte)(sys.getXtra(0) & 027);
 		slc = clc + 010;
-		if ((sys.getXtra(1) & 030) == 010) {
+		if (PeriphDecode.isEsc(sys.getXtra(1))) {
 			c2 = sys.getXtra(2);
 			c3 = sys.getXtra(3);
 		} else {
@@ -118,6 +118,7 @@ public class P_Console extends JFrame
 		// C3:
 		//	000000: no CR/LF
 		//	000001: CR (LF?)
+		// TODO: does c3 output CR/LF on input?
 		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
 		busy = true;
 		// TODO: allow simultaneous input/output?

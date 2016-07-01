@@ -8,11 +8,12 @@ public class I_PCB implements Instruction {
 	// Otherwise, it is C2.
 	public void execute(HW2000 sys) {
 		byte c1 = sys.getXtra(0);
+		boolean ce = PeriphDecode.isEsc(sys.getXtra(1));
 		RWChannel c = sys.getChannel(c1);
 		Peripheral p = null;
-		byte c2;
 		if (sys.numXtra() > 1) {
-			if ((sys.getXtra(1) & 030) == 010) {
+			byte c2;
+			if (ce) {
 				c2 = sys.getXtra(2);
 			} else {
 				c2 = sys.getXtra(1);

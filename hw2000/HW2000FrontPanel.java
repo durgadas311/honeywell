@@ -841,7 +841,7 @@ public class HW2000FrontPanel extends JFrame
 		setRunStop(true);
 		bootstrap = true;
 		byte c1 = (byte)011;
-		byte c2 = (byte)contentsReg;
+		byte c2 = (byte)(contentsReg | PeriphDecode.P_IN);
 		sys.SR = addressReg;
 		sys.AAR = addressReg;
 		sys.BAR = addressReg;
