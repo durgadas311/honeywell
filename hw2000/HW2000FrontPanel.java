@@ -57,6 +57,7 @@ public class HW2000FrontPanel extends JFrame
 	File _last = null;
 	boolean listing = false;
 	boolean monitor = false;
+	boolean bootstrap = false;
 	int currLow = 0;
 	int currHi = 0;
 
@@ -836,6 +837,30 @@ public class HW2000FrontPanel extends JFrame
 		top.add(pn);
 	}
 
+	private void doBootStrap() {
+		setRunStop(true);
+		bootstrap = true;
+		byte c1 = (byte)011;
+		byte c2 = (byte)contentsReg;
+		sys.SR = addressReg;
+		sys.AAR = addressReg;
+		sys.BAR = addressReg;
+		setCtrlReg(c1, addressReg);
+		sys.CTL.setV(c1);
+		sys.setXtra(new byte[]{c1, c2});
+		Instruction op_exec = sys.idc.getExec(InstrDecode.OP_PDT);
+		try {
+			op_exec.execute(sys);
+		} catch (Exception ee) {
+			setRunStop(false);
+			bootstrap = false;
+			warning(this, "Bootstrap", ee.getMessage());
+			return;
+		}
+		Thread thrd = new Thread(this);
+		thrd.start();
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			performMenu((JMenuItem)e.getSource());
@@ -890,6 +915,7 @@ public class HW2000FrontPanel extends JFrame
 				return;
 			}
 			if (a.equals("stop")) {
+				bootstrap = false;
 				sys.halt = true;
 				sys.endWait();
 			} else if (sys.halt) {
@@ -913,11 +939,7 @@ public class HW2000FrontPanel extends JFrame
 					currLow = 0;
 					currHi = 0;
 				} else if (a.equals("boot")) {
-					sys.SR = addressReg;
-					sys.AAR = addressReg;
-					sys.BAR = addressReg;
-					sys.CTL.setV((byte)contentsReg);
-					// TODO: run PDT...
+					doBootStrap();
 				} else if (a.equals("am2")) {
 					sys.setAM(HW2000CCR.AIR_AM_2C);
 				} else if (a.equals("am3")) {
@@ -1240,6 +1262,11 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	public void run() {
-		sys.run();
+		if (bootstrap) {
+			sys.waitIO();
+			setRunStop(false);
+		} else {
+			sys.run();
+		}
 	}
 }

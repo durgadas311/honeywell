@@ -435,6 +435,17 @@ public class HW2000 implements CoreMemory
 		return op_xtra_num;
 	}
 
+	public void setXtra(byte[] xt) {
+		op_xtra_num = xt.length;
+		if (op_xtra_num > op_xtra_siz) {
+			op_xtra_siz = op_xtra_num + 2;
+			op_xtra = new byte[op_xtra_siz];
+		}
+		for (int x = 0; x < op_xtra_num; ++x) {
+			op_xtra[x] = xt[x];
+		}
+	}
+
 	public byte getXtra(int ix) {
 		if (ix >= op_xtra_num) {
 			return 0;
