@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.event.*;
 
 public interface FrontPanel {
@@ -27,4 +28,7 @@ public interface FrontPanel {
 	public int getControl();
 	public boolean getRunStop();
 	public int getAdrMode();
+
+	// From JFrame
+	public Container getContentPane();
 }

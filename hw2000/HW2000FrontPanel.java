@@ -62,6 +62,17 @@ public class HW2000FrontPanel extends JFrame
 	int currLow = 0;
 	int currHi = 0;
 
+	static final int OPTION_CANCEL = 0;
+	static final int OPTION_YES = 1;
+	private Object[] dump_btns;
+	private JTextArea dump_lo;
+	private JTextArea dump_hi;
+	private JPanel dump_lo_pn;
+	private JPanel dump_hi_pn;
+	private JPanel dump_pn;
+	int dumpLow;
+	int dumpHi;
+
 	public HW2000FrontPanel(HW2000 sys) {
 		super("Honeywell Series 2000");
 		this.sys = sys; // may be null
@@ -466,13 +477,16 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("TraceAll", KeyEvent.VK_L);
+		mi = new JMenuItem("Trace Full", KeyEvent.VK_L);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Trace Off", KeyEvent.VK_O);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Dump", KeyEvent.VK_D);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("DumpMon", KeyEvent.VK_N);
+		mi = new JMenuItem("Dump Full", KeyEvent.VK_N);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -495,6 +509,26 @@ public class HW2000FrontPanel extends JFrame
 		am2.addActionListener(this);
 		am3.addActionListener(this);
 		am4.addActionListener(this);
+
+		// Dialog for Dump Full / Trace Full
+		// for some reason, TAB doesn't traverse fields, even if setFocusTraversalKeysEnabled
+		dump_pn = new JPanel();
+		dump_pn.setLayout(new BoxLayout(dump_pn, BoxLayout.Y_AXIS));
+		dump_btns = new Object[2];
+		dump_btns[OPTION_YES] = "Dump";
+		dump_btns[OPTION_CANCEL] = "Cancel";
+		dump_lo = new JTextArea();
+		dump_lo.setPreferredSize(new Dimension(200, 20));
+		dump_lo_pn = new JPanel();
+		dump_lo_pn.add(new JLabel("Low Adr:"));
+		dump_lo_pn.add(dump_lo);
+		dump_hi = new JTextArea();
+		dump_hi.setPreferredSize(new Dimension(200, 20));
+		dump_hi_pn = new JPanel();
+		dump_hi_pn.add(new JLabel("High Adr:"));
+		dump_hi_pn.add(dump_hi);
+		dump_pn.add(dump_lo_pn);
+		dump_pn.add(dump_hi_pn);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
@@ -545,13 +579,13 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	// Actions are:
-	//	VK_R	Run
-	//	VK_S	Stop
-	//	VK_I	Initialize
-	//	VK_B	Bootstrap
-	//	VK_C	Central Clear
-	//	VK_N	Instruct
-	//	VK_2,VK_3,VK_4	Address Mode
+	//	"run"	Run
+	//	"stop"	Stop
+	//	"init"	Initialize
+	//	"boot"	Bootstrap
+	//	"clear"	Central Clear
+	//	"instr"	Instruct
+	//	"am2","am3","am4"	Address mode
 	// TODO: how many of these are directly sent to core system?
 	// (vs. being directly performed on core system object)
 	//
@@ -1289,6 +1323,35 @@ public class HW2000FrontPanel extends JFrame
 		return true;
 	}
 
+	private int dumpDialog(String name) {
+		JOptionPane dump_dia;
+		dump_dia = new JOptionPane(dump_pn, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION, null, dump_btns);
+		dump_lo.setText(Integer.toString(currLow));
+		dump_hi.setText(Integer.toString(currHi));
+		Dialog dlg = dump_dia.createDialog(this, name);
+		dlg.setVisible(true);
+		Object res = dump_dia.getValue();
+		if (dump_btns[OPTION_CANCEL].equals(res)) return 0;
+		if (dump_btns[OPTION_YES].equals(res)) {
+			try {
+				if (dump_lo.getText().length() > 0) {
+					dumpLow = Integer.valueOf(dump_lo.getText());
+				} else {
+					dumpLow = currLow;
+				}
+				if (dump_hi.getText().length() > 0) {
+					dumpHi = Integer.valueOf(dump_hi.getText());
+				} else {
+					dumpHi = currHi;
+				}
+			} catch (Exception ee) {
+				return 0;
+			}
+			return 1;
+		}
+		return 0;
+	}
+
 	private void performMenu(JMenuItem mi) {
 		if (mi.getMnemonic() == KeyEvent.VK_A) {
 			asmFile("Assemble");
@@ -1317,13 +1380,21 @@ public class HW2000FrontPanel extends JFrame
 		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
 			sys.setTrace(currLow, currHi);
 		} else if (mi.getMnemonic() == KeyEvent.VK_L) {
-			sys.setTrace(0, 02000000);
+			dump_btns[OPTION_YES] = "Trace On";
+			if (dumpDialog("Trace Parameters") > 0) {
+				sys.setTrace(dumpLow, dumpHi);
+			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_O) {
+			sys.setTrace(0, 0);
 		} else if (mi.getMnemonic() == KeyEvent.VK_D) {
 			if (currLow < currHi) {
 				sys.dumpHW(currLow, currHi - 1);
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_N) {
-			sys.dumpHW(0, 03777);
+			dump_btns[OPTION_YES] = "Dump";
+			if (dumpDialog("Dump Parameters") > 0) {
+				sys.dumpHW(dumpLow, dumpHi);
+			}
 		}
 
 	}

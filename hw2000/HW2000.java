@@ -541,6 +541,20 @@ public class HW2000 implements CoreMemory
 		// sort it out...
 		fetchXtra(isr);
 		SR = isr;
+		// NOTE: this does not cover that case of exceptions above
+		if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
+			traceInstr();
+		}
+	}
+
+	private void traceInstr() {
+		String op = op_exec.getClass().getName();
+		String s = String.format("%07o: %s [%07o %07o] ", oSR, op, AAR, BAR);
+		for (int x =  0; x < op_xtra_num; ++x) {
+			s += String.format(" %02o", op_xtra[x]);
+		}
+		s += "\n";
+		listOut(s);
 	}
 
 	int count = 0;
@@ -599,39 +613,51 @@ public class HW2000 implements CoreMemory
 		while (!halt) {
 			try {
 				fetch();
-// should already be proven to be a good address...
-int rSR = validAdr(oSR);
-if (_trace && rSR >= _trace_low && rSR < _trace_hi) {
-	String op = op_exec.getClass().getName();
-	System.err.format("%07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
-	System.err.flush();
-}
 				execute();
 			} catch (IIException ie) {
 				// TODO: need to handle II within II...
+				if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
+					traceInstr();
+				}
 				if (IIR != 0 && setIntr(HW2000CCR.EIR_II, ie.type)) {
-if (_trace) {
-	String op = op_exec.getClass().getName();
-	System.err.format("II %07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
-	System.err.flush();
-}
+					// nothing else
 				} else {
-					ie.printStackTrace();
+					if (fp != null) {
+						HW2000FrontPanel.warning(fp.getContentPane(), "Run",
+							String.format("%07o: %s",
+								oSR,
+								ie.getMessage()));
+					} else {
+						ie.printStackTrace();
+					}
 					halt = true;
 				}
 			} catch (EIException ee) {
+				if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
+					traceInstr();
+				}
 				if (EIR != 0 && setIntr(HW2000CCR.EIR_EI, ee.type)) {
-if (_trace) {
-	String op = op_exec.getClass().getName();
-	System.err.format("EI %07o: %s [%07o %07o] (%d)\n", oSR, op, AAR, BAR, op_xtra_num);
-	System.err.flush();
-}
+					// nothing else
 				} else {
-					ee.printStackTrace();
+					if (fp != null) {
+						HW2000FrontPanel.warning(fp.getContentPane(), "Run",
+							String.format("%07o: %s",
+								oSR,
+								ee.getMessage()));
+					} else {
+						ee.printStackTrace();
+					}
 					halt = true;
 				}
 			} catch (Exception fe) {
-				fe.printStackTrace();
+				if (fp != null) {
+					HW2000FrontPanel.warning(fp.getContentPane(), "Run",
+						String.format("%07o: %s",
+								oSR,
+								fe.getMessage()));
+				} else {
+					fe.printStackTrace();
+				}
 				halt = true;
 			}
 			if (singleStep) {
@@ -659,10 +685,10 @@ if (_trace) {
 	public void dumpHW(int beg, int end) {
 		String marks = " WIR";
 		int m = beg & ~0177;	// 128 locations per row...
-		listOut("Memory Dump:\n");
+		listOut(String.format("Memory Dump: %07o - %07o\n", beg, end));
 		while (m <= end) {
 			String l = String.format("%07o 1       2       3       4       5       6       7"
-				+ "       0       1       2       3       4       5       6       7\n", m);
+				+ "       %07o 1       2       3       4       5       6       7\n", m, m + 64);
 			listOut(l);
 			l = "";
 			int a = m;
