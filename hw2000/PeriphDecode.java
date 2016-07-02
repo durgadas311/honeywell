@@ -5,6 +5,7 @@ public class PeriphDecode {
 
 	public static final byte P_MT = 000;	// Mag Tape
 	public static final byte P_PP = 001;	// Punch-card/Paper-tape
+	public static final byte P_PP2 = 003;	// Second Punch-card/Paper-tape
 	public static final byte P_LP = 002;	// Line Printer
 	public static final byte P_DK = 004;	// DisK
 	public static final byte P_CO = 007;	// COnsole
@@ -33,6 +34,8 @@ public class PeriphDecode {
 		p_idevs[P_CO] = p_odevs[P_CO];
 		p_odevs[P_MT] = new P_MagneticTape();
 		p_idevs[P_MT] = p_odevs[P_MT];
+		p_odevs[P_PP] = new P_CardReaderPunch();
+		p_idevs[P_PP] = p_odevs[P_PP];
 	}
 
 	public void reset() {

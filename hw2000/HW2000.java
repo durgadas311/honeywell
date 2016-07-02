@@ -273,6 +273,10 @@ public class HW2000 implements CoreMemory
 		mem[adr] = val;
 	}
 
+	public void rawWriteChar(int adr, byte val) {
+		mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
+	}
+
 	public byte readMem(int adr) {
 		int a = validAdr(adr);
 		++tics;

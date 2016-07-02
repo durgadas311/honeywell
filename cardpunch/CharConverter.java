@@ -532,6 +532,22 @@ class CharConverter {
 		return p;
 	}
 
+	// punch code from HW2000 "cpu code"
+	public int hwToPun(byte c, boolean alt) {
+		byte b = hw2lp[c & 077];
+		if (b == 0) {
+			return -1;
+		}
+		if (b == ' ') {
+			return 0;
+		}
+		int p = xlate_char[b];
+		if (p == 0x1000) {
+			return -1;
+		}
+		return p;
+	}
+
 	// HW2000 "cpu code" from punch code
 	public int punToHW(int pun, boolean alt) {
 		byte b = punToCode(pun);
@@ -553,7 +569,7 @@ class CharConverter {
 
 	// HW2000 "cpu" code to LinePrinter glyph
 	public String hwToLP(byte c) {
-		bb[0] = hw2lp[c];
+		bb[0] = hw2lp[c & 077];
 		if (bb[0] == 0) {
 			return null;
 		}

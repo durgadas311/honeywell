@@ -66,6 +66,7 @@ CLASSES =	CoreMemory.class \
 		Peripheral.class \
 		P_LinePrinter.class \
 		P_MagneticTape.class \
+		P_CardReaderPunch.class \
 		RWChannel.class \
 		SuffFileChooser.class \
 		SuffFileFilter.class \
