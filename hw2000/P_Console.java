@@ -98,11 +98,15 @@ public class P_Console extends JFrame
 		}
 	}
 
-	public void visible(boolean on) {
+	private void autoVisible(boolean on) {
 		if (on != isOn) {
 			isOn = on;
 			setVisible(on);
 		}
+	}
+
+	public void visible(boolean on) {
+		autoVisible(on);
 		if (on) {
 			toFront();
 		}
@@ -222,7 +226,7 @@ public class P_Console extends JFrame
 			text.insert(s, carr);
 			carr += s.length();
 			text.setCaretPosition(carr);
-			visible(true);
+			autoVisible(true);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
@@ -238,7 +242,7 @@ public class P_Console extends JFrame
 		text.insert(s, carr);
 		carr += s.length();
 		text.setCaretPosition(carr);
-		visible(true);
+		autoVisible(true);
 	}
 
 	public boolean busy() {

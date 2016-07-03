@@ -120,11 +120,15 @@ public class P_LinePrinter extends JFrame
 	public void reset() {
 	}
 
-	public void visible(boolean on) {
+	private void autoVisible(boolean on) {
 		if (on != isOn) {
 			isOn = on;
 			setVisible(on);
 		}
+	}
+
+	public void visible(boolean on) {
+		autoVisible(on);
 		if (on) {
 			toFront();
 		}
@@ -222,7 +226,7 @@ public class P_LinePrinter extends JFrame
 			text.append(s);
 			carr += s.length();
 			text.setCaretPosition(carr);
-			visible(true);
+			autoVisible(true);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? How to pass along EI/II exceptions to CPU?
 		}
@@ -238,7 +242,7 @@ public class P_LinePrinter extends JFrame
 		text.append(s);
 		carr += s.length();
 		text.setCaretPosition(carr);
-		visible(true);
+		autoVisible(true);
 	}
 
 	public boolean busy() {

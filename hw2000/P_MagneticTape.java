@@ -80,11 +80,15 @@ public class P_MagneticTape extends JFrame
 	public void reset() {
 	}
 
-	public void visible(boolean on) {
+	private void autoVisible(boolean on) {
 		if (on != isOn) {
 			isOn = on;
 			setVisible(on);
 		}
+	}
+
+	public void visible(boolean on) {
+		autoVisible(on);
 		if (on) {
 			toFront();
 		}
