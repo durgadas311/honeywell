@@ -33,10 +33,7 @@ public class P_MagneticTape extends JFrame
 		dev = new RandomAccessFile[8];
 		busy = false;
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		Font font = null;
-		if (font == null) {
-			font = new Font("Monospaced", Font.PLAIN, 12);
-		}
+		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
 		stat_pn = new JLabel[8];
 		mnt_pn = new JLabel[8];

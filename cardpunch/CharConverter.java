@@ -237,6 +237,7 @@ class CharConverter {
 		// This defines how (condensed) punch codes convert to HW cpu codes.
 		xlate_hw = new byte[128];
 		Arrays.fill(xlate_hw, (byte)0200);
+		xlate_hw[0x00] = (byte)015;
 		xlate_hw[0x10] = (byte)000;
 		xlate_hw[0x01] = (byte)001;
 		xlate_hw[0x02] = (byte)002;

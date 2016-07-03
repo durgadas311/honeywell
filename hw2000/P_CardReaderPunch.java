@@ -43,10 +43,7 @@ public class P_CardReaderPunch extends JFrame
 		cardsIn = 0;
 		cardsOut = 0;
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		Font font = null;
-		if (font == null) {
-			font = new Font("Monospaced", Font.PLAIN, 12);
-		}
+		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
 		JPanel pn = new JPanel();
 		pn.setLayout(new FlowLayout());
@@ -67,6 +64,8 @@ public class P_CardReaderPunch extends JFrame
 		pn.add(in_deck_pn);
 		add(pn);
 		// TODO: support non-BLANK cards in punch?
+		pn = new JPanel();
+		pn.setLayout(new FlowLayout());
 		bt = new JButton("Punch Hopper");
 		bt.setActionCommand("punch");
 		bt.addActionListener(this);
