@@ -370,11 +370,11 @@ public class P_CardReaderPunch extends JFrame
 			}
 		} else {
 			s = "Punch Hopper";
-			if (idev != null) {
+			if (odev != null) {
 				try {
-					idev.close();
+					odev.close();
 				} catch (Exception ee) {}
-				idev = null;
+				odev = null;
 				out_deck_pn.setText("Discard");
 				cardsOut = 0;
 				out_count_pn.setText(String.format("%d", cardsOut));
@@ -401,6 +401,7 @@ public class P_CardReaderPunch extends JFrame
 				return;
 			}
 			out_deck_pn.setText(f.getName());
+			out_count_pn.setText("0");
 		}
 	}
 
