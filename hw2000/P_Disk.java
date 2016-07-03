@@ -41,7 +41,7 @@ public class P_Disk extends JFrame
 	// 200 cyls (0000-0312 or 203?)
 	// 4602 char/trk
 	public P_Disk() {
-		super("H273 Disk Devices");
+		super("H274 Disk Devices");
 		_last = new File(System.getProperty("user.dir"));
 		dev = new RandomAccessFile[8];
 		busy = false;

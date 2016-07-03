@@ -7,7 +7,7 @@ public interface FrontPanel {
 	public void setControl(int v);
 	public void setRunStop(boolean run);
 	public void setAdrMode(int v);
-	public void setInterrupt(boolean intr);	// Indicator only
+	public void setInterrupt(int type);	// Indicator only
 	public int getSense();
 
 	// ActionCommands are:

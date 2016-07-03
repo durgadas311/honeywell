@@ -37,10 +37,14 @@ public class HW2000FrontPanel extends JFrame
 	LightedButton central;
 	LightedButton init;
 	LightedButton boot;
+	LightedButton inter;
 	LightedButton am2;
 	LightedButton am3;
 	LightedButton am4;
-	JLabel intr;
+	JLabel eintr;
+	JLabel iintr;
+	JLabel pgm;
+	JLabel prot;
 
 	int contentsReg;
 	int addressReg;
@@ -501,6 +505,7 @@ public class HW2000FrontPanel extends JFrame
 		central.setToolTipText("Central Clear");
 		init.setToolTipText("Initialize");
 		boot.setToolTipText("Bootstrap");
+		inter.setToolTipText("Interrupt");
 
 		// Until someone else asks for it...
 		run.addActionListener(this);
@@ -577,12 +582,9 @@ public class HW2000FrontPanel extends JFrame
 		am4.setOn(v == 4);
 		repaint();
 	}
-	public void setInterrupt(boolean intr) {	// Indicator only
-		if (intr) {
-			this.intr.setForeground(indLit);
-		} else {
-			this.intr.setForeground(indDark);
-		}
+	public void setInterrupt(int type) {	// Indicator only
+		eintr.setForeground(type == HW2000CCR.EIR_EI ? indLit : indDark);
+		iintr.setForeground(type == HW2000CCR.EIR_II ? indLit : indDark);
 		repaint();
 	}
 
@@ -638,64 +640,67 @@ public class HW2000FrontPanel extends JFrame
 		GridBagLayout gbl = new GridBagLayout();
 		npn.setLayout(gbl);
 		npn.setOpaque(false);
+		gc.gridwidth = gbx;
+		gc.gridheight = 1;
 		gb.setConstraints(npn, gc);
 		top.add(npn);
 
 		gc.gridy = 0;
-		gc.gridwidth = gbx;
+		gc.gridwidth = 1;
+		gc.gridheight = 2;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
 		gc.gridx = 0;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		// TODO: some of these need to be managed...
 		LightedButton btn = new LightedButton(btnGreenOn, btnGreenOff, null, 0);
 		btn.setOn(true);
 		gc.gridx = 1;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		btn = new LightedButton(btnRedOn, btnRedOff, null, 0);
 		gc.gridx = 2;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
 		gc.gridx = 3;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		btn = new LightedButton(btnGreenOn, btnGreenOff, null, 0);
 		btn.setOn(true);
 		gc.gridx = 4;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, 0);
 		gc.gridx = 5;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(40, 40));
 		pn.setOpaque(false);
 		gc.gridx = 6;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		btn = new LightedButton(btnRedOn, btnRedOff, null, 0);
 		btn.setOn(true);
 		gc.gridx = 7;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		stop = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setPreferredSize(new Dimension(10, 40));
 		pn.setOpaque(false);
 		gc.gridx = 8;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		ImageIcon icn;
@@ -703,134 +708,189 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_init.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
 		gc.gridx = 9;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		init = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setPreferredSize(new Dimension(10, 40));
 		pn.setOpaque(false);
 		gc.gridx = 10;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_boot.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
 		gc.gridx = 11;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		boot = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setPreferredSize(new Dimension(10, 40));
 		pn.setOpaque(false);
 		gc.gridx = 12;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_central.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
 		gc.gridx = 13;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		central = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setPreferredSize(new Dimension(10, 40));
 		pn.setOpaque(false);
 		gc.gridx = 14;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_instr.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
 		gc.gridx = 15;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		instr = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setPreferredSize(new Dimension(10, 40));
 		pn.setOpaque(false);
 		gc.gridx = 16;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_run.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
 		gc.gridx = 17;
-		gb.setConstraints(btn, gc);
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		run = btn;
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(40, 40));
+		pn.setPreferredSize(new Dimension(30, 40));
 		pn.setOpaque(false);
 		gc.gridx = 18;
-		gb.setConstraints(pn, gc);
+		gbl.setConstraints(pn, gc);
+		npn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_inter.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 19;
+		gbl.setConstraints(btn, gc);
+		npn.add(btn);
+		inter = btn;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 20;
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am2.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
-		gc.gridx = 19;
-		gb.setConstraints(btn, gc);
+		gc.gridx = 21;
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		am2 = btn;
 		icn = new ImageIcon(getClass().getResource("icons/fp_am3.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
 		btn.setOn(true);
-		gc.gridx = 20;
-		gb.setConstraints(btn, gc);
+		gc.gridx = 22;
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		am3 = btn;
 		icn = new ImageIcon(getClass().getResource("icons/fp_am4.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
-		gc.gridx = 21;
-		gb.setConstraints(btn, gc);
+		gc.gridx = 23;
+		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		am4 = btn;
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(40, 40));
+		pn.setPreferredSize(new Dimension(100, 40));
 		pn.setOpaque(false);
-		gc.gridx = 22;
-		gb.setConstraints(pn, gc);
+		gc.gridx = 24;
+		gbl.setConstraints(pn, gc);
 		npn.add(pn);
-		intr = new JLabel("INTERRUPT");
-		intr.setFont(smallFont);
-		intr.setForeground(indDark);
-		intr.setOpaque(false);
-		intr.setPreferredSize(new Dimension(80, 20));
-		gc.gridx = 23;
-		gb.setConstraints(intr, gc);
-		npn.add(intr);
+
+		gc.gridheight = 1;
+		eintr = new JLabel("EXTERNAL");
+		eintr.setFont(smallFont);
+		eintr.setForeground(indDark);
+		eintr.setOpaque(false);
+		eintr.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 0;
+		gc.gridx = 25;
+		gc.anchor = GridBagConstraints.NORTH;
+		gbl.setConstraints(eintr, gc);
+		npn.add(eintr);
+		iintr = new JLabel("INTERNAL");
+		iintr.setFont(smallFont);
+		iintr.setForeground(indDark);
+		iintr.setOpaque(false);
+		iintr.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 1;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gbl.setConstraints(iintr, gc);
+		npn.add(iintr);
+
+		pgm = new JLabel("PROGRAM");
+		pgm.setFont(smallFont);
+		pgm.setForeground(indDark);
+		pgm.setOpaque(false);
+		pgm.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 0;
+		gc.gridx = 26;
+		gc.anchor = GridBagConstraints.NORTH;
+		gbl.setConstraints(pgm, gc);
+		npn.add(pgm);
+		prot = new JLabel("PROTECT");
+		prot.setFont(smallFont);
+		prot.setForeground(indDark);
+		prot.setOpaque(false);
+		prot.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 1;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gbl.setConstraints(prot, gc);
+		npn.add(prot);
+
 		JLabel lb = new JLabel("PARITY");
 		lb.setFont(smallFont);
 		lb.setForeground(indDark);
 		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(50, 20));
-		gc.gridx = 24;
-		gb.setConstraints(lb, gc);
+		lb.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 0;
+		gc.gridx = 27;
+		gc.anchor = GridBagConstraints.NORTH;
+		gbl.setConstraints(lb, gc);
 		npn.add(lb);
 		lb = new JLabel("VOLTAGE");
 		lb.setFont(smallFont);
 		lb.setForeground(indDark);
 		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(60, 20));
-		gc.gridx = 25;
-		gb.setConstraints(lb, gc);
+		lb.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 1;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gbl.setConstraints(lb, gc);
 		npn.add(lb);
+
 		lb = new JLabel("FAN");
 		lb.setFont(smallFont);
 		lb.setForeground(indDark);
 		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(30, 20));
-		gc.gridx = 26;
-		gb.setConstraints(lb, gc);
+		lb.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 0;
+		gc.gridx = 28;
+		gc.anchor = GridBagConstraints.NORTH;
+		gbl.setConstraints(lb, gc);
 		npn.add(lb);
 		lb = new JLabel("CB");
 		lb.setFont(smallFont);
 		lb.setForeground(indDark);
 		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(20, 20));
-		gc.gridx = 27;
-		gb.setConstraints(lb, gc);
+		lb.setPreferredSize(new Dimension(50, 15));
+		gc.gridy = 1;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gbl.setConstraints(lb, gc);
 		npn.add(lb);
 
 		run.setActionCommand("run");
@@ -981,7 +1041,7 @@ public class HW2000FrontPanel extends JFrame
 					sys.reset();
 					setAddress(sys.SR);
 					setContents(sys.rawReadMem(addressReg));
-					setInterrupt(false);
+					setInterrupt(0);
 					currLow = 0;
 					currHi = 0;
 				} else if (a.equals("boot")) {
