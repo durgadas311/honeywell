@@ -2,8 +2,8 @@ public class I_MAT implements Instruction {
 	// Move characters to word mark And Translate
 	public void execute(HW2000 sys) {
 		int c = 0;
-		if (sys.numXtra() == 2) {
-			// TODO: how to tell between 2-char C-address and V1,V2
+		// TODO: how to tell between 2-char C-address and V1,V2
+		if (sys.numXtra() == 2 && (sys.getXtra(1) & 077) != 0) {
 			c = (((sys.getXtra(0) & 077) << 6) | (sys.getXtra(1) & 077)) << 6;
 			if (sys.am_na == 4) {
 				c |= (sys.AAR & 0x40000);

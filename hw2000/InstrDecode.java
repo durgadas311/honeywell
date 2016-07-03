@@ -25,11 +25,12 @@ public class InstrDecode {
 	public static final int OP_HAS_B = 0x0002;
 	public static final int OP_DUP_A = 0x0004;
 	public static final int OP_HAS_V = 0x0008;
-	public static final int OP_HAS_C = 0x0010; // any number of extra operands
+	public static final int OP_HAS_C = 0x0010;	// mainly for Assembler
 	public static final int OP_REQ_A = 0x0020;
 	public static final int OP_REQ_B = 0x0040;
 	public static final int OP_REQ_V = 0x0080;
-	public static final int OP_NO_WM = 0x0100;
+	public static final int OP_REQ_C = 0x0100;	// mainly for Assembler
+	public static final int OP_NO_WM = 0x1000;
 	public static final int OP_SPC = 0x2000;
 	public static final int OP_PRIV = 0x4000;
 	public static final int OP_INVAL = 0x8000;
@@ -138,7 +139,7 @@ public class InstrDecode {
 		i_flags[OP_CAM] = OP_HAS_V;
 		i_flags[OP_CSM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_EXM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
-		i_flags[OP_MAT] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_REQ_A | OP_REQ_B | OP_REQ_V;
+		i_flags[OP_MAT] = OP_HAS_A | OP_HAS_B | OP_HAS_C | OP_REQ_A | OP_REQ_B | OP_REQ_C;
 		i_flags[OP_MIT] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_REQ_A | OP_REQ_B | OP_REQ_V;
 		i_flags[OP_LIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B | OP_PRIV;
 		i_flags[OP_SIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B;

@@ -545,7 +545,7 @@ public class HW2000 implements CoreMemory
 		// sort it out...
 		fetchXtra(isr);
 		SR = isr;
-		// NOTE: this does not cover that case of exceptions above
+		// NOTE: this does not cover the case of exceptions above
 		if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
 			traceInstr();
 		}

@@ -81,6 +81,9 @@ public class Assembler {
 		}
 		try { in.close(); } catch (Exception ee) {}
 		//System.err.format("END OF PASS 1 - %d %07o %07o %07o\n", ret, minAdr, maxAdr, endAdr);
+		if (errs.size() > 0) {
+			ret = -1;
+		}
 		return ret;
 	}
 
@@ -132,6 +135,9 @@ public class Assembler {
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		try { in.close(); } catch (Exception ee) {}
+		if (errs.size() > 0) {
+			ret = -1;
+		}
 		return ret;
 	}
 
@@ -158,6 +164,9 @@ public class Assembler {
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
+		if (errs.size() > 0) {
+			ret = -1;
+		}
 		if (ret >= 0 && out != null) {
 			objOut(image);
 		}
@@ -220,6 +229,7 @@ public class Assembler {
 	}
 
 	private int scanOne() {
+		// TODO: tolerate "illegal" TAB characters
 		String line = "";
 		code = null;
 		int orgLoc = currLoc;
@@ -280,7 +290,9 @@ public class Assembler {
 		}
 		e = opd.indexOf(' ', e);
 		if (e >= 0) {
-			opd = opd.substring(0, e).trim();
+			//opd = opd.substring(0, e).trim();
+			// CAUTION: trim() removes more than blanks!
+			opd = opd.substring(0, e);
 		}
 		byte op = idc.getOp(opc);
 		if (op != InstrDecode.OP_ILL) {
@@ -486,9 +498,9 @@ public class Assembler {
 			}
 			++e;
 			if (base == 0) {
-				int f = opd.length() - e;
+				int f = opd.length();
 				for (int y = 0; y < n; ++y) {
-					if (y < f) {
+					if (y + e < f) {
 						bb[y] = cvt.asciiToHw((byte)
 							(opd.charAt(y + e) & 0x7f));
 					} else {
@@ -525,6 +537,10 @@ public class Assembler {
 			if (len > 0) {
 				--v;
 			}
+			if (symTab.containsKey(loc) && symTab.get(loc) != v) {
+				errs.add("Redefined symbol " + loc + " at line " + lineNo);
+				return;
+			}
 			symTab.put(loc, v);
 		}
 	}
@@ -544,6 +560,7 @@ public class Assembler {
 		int xflags = 0;
 		int a = 0;
 		int b = 0;
+		int c = 0;
 		byte[] v = null;
 		String[] opds = opd.split(",");
 		int ox = 0;
@@ -583,8 +600,19 @@ public class Assembler {
 				return -1;
 			}
 		}
-		// If programmer added variants, assemble them regardless...
-		if (ox < opds.length && opds[ox].length() > 0) {
+		if ((flags & InstrDecode.OP_HAS_C) != 0 &&
+				ox + 1 == opds.length) {
+			if (ox < opds.length && opds[ox].length() > 0) {
+				c = parseAdr(opds[ox], false);
+				il += adrMode;
+				xflags |= InstrDecode.OP_HAS_C;
+				++ox;
+			} else if ((flags & InstrDecode.OP_REQ_C) != 0) {
+				errs.add("Reqd C field missing at line " + lineNo);
+				return -1;
+			}
+		} else if (ox < opds.length && opds[ox].length() > 0) {
+			// If programmer added variants, assemble them regardless...
 			int n = opds.length - ox;
 			// TODO: req'd number of variants?
 			v = new byte[n];
@@ -614,6 +642,10 @@ public class Assembler {
 		}
 		if ((xflags & InstrDecode.OP_HAS_B) != 0) {
 			putAdr(code, x, b);
+			x += adrMode;
+		}
+		if ((xflags & InstrDecode.OP_HAS_C) != 0) {
+			putAdr(code, x, c);
 			x += adrMode;
 		}
 		if ((xflags & InstrDecode.OP_HAS_V) != 0) {
@@ -652,7 +684,7 @@ public class Assembler {
 		} else if (opc.equals("ORG")) {
 			return processOrg(loc, opd, rev);
 		} else if (opc.equals("MORG")) {
-			return noImpl(opc);
+			return processMorg(loc, opd, rev);
 		} else if (opc.equals("LITORG")) {
 			return noImpl(opc);
 		} else if (opc.equals("ADMODE")) {
@@ -817,13 +849,27 @@ public class Assembler {
 		} else if (symTab.containsKey(opd)) {
 			adr = symTab.get(opd);
 		} else {
-			errs.add("Undefined symbol " + opd);
+			errs.add("Undefined symbol " + opd + " at line " + lineNo);
 			return -1;
 		}
 		setLabel(loc, rev, 0);
 		currLoc = adr;
 		setLabel(loc, !rev, 0);
 		return 0x100000 | adr;
+	}
+
+	private int processMorg(String loc, String opd, boolean rev) {
+		int adr;
+		adr = Integer.valueOf(opd);
+		if (((adr - 1) & adr) != 0) {
+			errs.add("MORG not power-of-two at line " + lineNo);
+			return -1;
+		}
+		--adr;
+		setLabel(loc, rev, 0);
+		currLoc = (currLoc + adr) & ~adr;
+		setLabel(loc, !rev, 0);
+		return 0x100000 | currLoc;
 	}
 
 	private int processEqu(String loc, String opd) {

@@ -103,6 +103,9 @@ public class P_Console extends JFrame
 			isOn = on;
 			setVisible(on);
 		}
+		if (on) {
+			toFront();
+		}
 	}
 
 	public void io(HW2000 sys) {

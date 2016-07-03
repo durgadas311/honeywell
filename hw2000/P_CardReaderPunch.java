@@ -48,6 +48,7 @@ public class P_CardReaderPunch extends JFrame
 		JPanel pn = new JPanel();
 		pn.setLayout(new FlowLayout());
 		JButton bt = new JButton("Read Hopper");
+		bt.setPreferredSize(new Dimension(150, 20));
 		bt.setActionCommand("reader");
 		bt.addActionListener(this);
 		in_count_pn = new JLabel();
@@ -67,6 +68,7 @@ public class P_CardReaderPunch extends JFrame
 		pn = new JPanel();
 		pn.setLayout(new FlowLayout());
 		bt = new JButton("Punch Hopper");
+		bt.setPreferredSize(new Dimension(150, 20));
 		bt.setActionCommand("punch");
 		bt.addActionListener(this);
 		out_count_pn = new JLabel();
@@ -108,6 +110,9 @@ public class P_CardReaderPunch extends JFrame
 		if (on != isOn) {
 			isOn = on;
 			setVisible(on);
+		}
+		if (on) {
+			toFront();
 		}
 	}
 
@@ -159,7 +164,9 @@ public class P_CardReaderPunch extends JFrame
 		}
 		if (a < 0) {
 			// what status to set?
+			in_count_pn.setText(String.format("%d END", cardsIn));
 			error = true;
+			busy = false;
 			return;
 		}
 		++cardsIn;
@@ -213,6 +220,7 @@ public class P_CardReaderPunch extends JFrame
 			}
 		}
 		if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+			busy = false;
 			return;
 		}
 		if (odev != null) {
@@ -270,12 +278,16 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			case 041:
 				// never errors?
-				break;
-			case 042:
-				// TODO: what constitues illegal punch?
 				if (error) {
 					branch = true;
 					error = false;
+				}
+				break;
+			case 042:
+				// TODO: what constitues illegal punch?
+				if (illegal) {
+					branch = true;
+					illegal = false;
 				}
 				break;
 			case 027:
@@ -350,6 +362,7 @@ public class P_CardReaderPunch extends JFrame
 				idev = null;
 				in_deck_pn.setText("Empty");
 				cardsIn = 0;
+				in_count_pn.setText("");
 			}
 		} else {
 			s = "Punch Hopper";
@@ -360,6 +373,7 @@ public class P_CardReaderPunch extends JFrame
 				idev = null;
 				out_deck_pn.setText("Discard");
 				cardsOut = 0;
+				out_count_pn.setText(String.format("%d", cardsOut));
 			}
 		}
 		File f = pickFile(s);
@@ -374,6 +388,7 @@ public class P_CardReaderPunch extends JFrame
 				return;
 			}
 			in_deck_pn.setText(f.getName());
+			in_count_pn.setText("0");
 		} else {
 			try {
 				odev = new FileOutputStream(f);

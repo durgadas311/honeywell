@@ -533,6 +533,11 @@ public class HW2000FrontPanel extends JFrame
 		dump_pn.add(dump_lo_pn);
 		dump_pn.add(dump_hi_pn);
 
+		setContents(0);
+		setAddress(0);
+		setControl(0);
+		setSense(0);
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
 		setVisible(true);
