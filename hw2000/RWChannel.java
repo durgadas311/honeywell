@@ -38,6 +38,8 @@ public class RWChannel implements Runnable {
 	public void ctl(HW2000 hw, Peripheral p) {
 		int sr = sys.SR;
 		if (periph != null) {
+			// is this too draconian?
+			// does only peripheral busy matter?
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
 		} else if (p != null) {
