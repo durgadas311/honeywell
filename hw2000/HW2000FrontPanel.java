@@ -766,7 +766,7 @@ public class HW2000FrontPanel extends JFrame
 		run = btn;
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(30, 40));
+		pn.setPreferredSize(new Dimension(40, 40));
 		pn.setOpaque(false);
 		gc.gridx = 18;
 		gbl.setConstraints(pn, gc);
@@ -780,7 +780,7 @@ public class HW2000FrontPanel extends JFrame
 		inter = btn;
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setPreferredSize(new Dimension(20, 40));
 		pn.setOpaque(false);
 		gc.gridx = 20;
 		gbl.setConstraints(pn, gc);
@@ -807,7 +807,7 @@ public class HW2000FrontPanel extends JFrame
 		am4 = btn;
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(100, 40));
+		pn.setPreferredSize(new Dimension(80, 40));
 		pn.setOpaque(false);
 		gc.gridx = 24;
 		gbl.setConstraints(pn, gc);
