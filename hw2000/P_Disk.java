@@ -4,8 +4,53 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
+// Semantics For I/O:
+//
+// 1) One of:
+//	PCB   *,11,44,3x           SELECT DRIVE x AND RESTORE CYL 0
+//	PCB   *,11,04,2x,00,cc,cc  SELECT DRIVE x AND SEEK CYL cccc
+//	PCB   *,11,04,0x,00        SELECT DRIVE x
+//
+// Optionally:
+//	PDT   DATA,11,04,04        LOAD ADR REG (REQUIRES PCB?)
+//
+// 2) Then one or more of:
+//	PDT   DATA,11,x4,00        READ/WRITE INITIAL *
+//	PDT   DATA,11,x4,01        READ/WRITE *
+//	PDT   DATA,11,x4,02        SEARCH AND READ/WRITE *
+//	PDT   DATA,11,x4,03        SEARCH AND READ/WRITE NEXT *
+//    Each followed by PCB? Or at least preceded by PCB
+//
+// * OR bits to C3:
+//	10    Verify
+//      20    Extended (8-bit?)
+//
+// Assumptions/Guesses:
+//
+// READ INITIAL: read first record after index mark, load ADR REG with address(?)
+// WRITE INITIAL: write first record after index mark, format using ADR REG.
+// READ: read record at current head position, load ADR REG with address(?)
+// WRITE: write record at current head position, format using ADR REG.
+// SEARCH AND READ: scan headers until ADR REG matches, read data
+// SEARCH AND WRITE: scan headers until ADR REG matches, write data
+// SEARCH AND READ NEXT: incr REC, scan headers until ADR REG matches, read data
+// SEARCH AND WRITE NEXT: incr REC, scan headers until ADR REG matches, write data
+//
+// Do NEXT ops automatically follow TLRs? Do SEARCH ops follow TLRs?
+//
+// How do flags and length get specified for formatting?
+//
+// Record Header Chars: FCCTTRRLL
+//	F	flags: [TLR][DEF][B][A][DX]0
+//	CC	cylinder (0-202) // a la ADR REG
+//	TT	track (0-19)     //
+//	RR	record (0-4095)  //
+//	LL	length (0-4095)
+//
 public class P_Disk extends JFrame
 		implements Peripheral, ActionListener, WindowListener {
+	static final byte AM = (byte)0304;
+	static final byte DM = (byte)0305;
 
 	// These are all stored by io() and used during run()...
 	byte c2;
@@ -14,6 +59,7 @@ public class P_Disk extends JFrame
 	int clc, slc;
 	boolean busy;
 	boolean in;
+
 	File _last = null;
 	boolean isOn = false;
 	RandomAccessFile[] dev;
@@ -134,15 +180,81 @@ public class P_Disk extends JFrame
 		curr_len = 0;
 	}
 
+	private int getHeader(int p) {
+		curr_flg = track[p++];
+		curr_cyl = (track[p++] & 077) << 6;
+		curr_cyl |= (track[p++] & 077);
+		curr_trk = (track[p++] & 077) << 6;
+		curr_trk |= (track[p++] & 077);
+		curr_rec = (track[p++] & 077) << 6;
+		curr_rec |= (track[p++] & 077);
+		curr_len = (track[p++] & 077) << 6;
+		curr_len |= (track[p++] & 077);
+		return p;
+	}
+
+	private boolean searchRecord() {
+		int p = curr_pos;
+		do {
+			while (track[p] != AM) {
+				if (++p >= track.length) {
+					p = 0;
+				}
+				if (p == curr_pos) {
+					return false;
+				}
+			}
+			// now pointing at first header char
+			// we relay on format being sane...
+			// just in case curr_pos was bogus and inside a record.
+			boolean before = (p < curr_pos);
+			p = getHeader(p);
+			// p should now point to DM
+			if (track[p] != DM) {
+				return false;
+			}
+			if (curr_cyl == adr_cyl && curr_trk == adr_trk && curr_rec == adr_rec) {
+				curr_pos = p; // points at DM
+				return true;
+			}
+			p += curr_len;
+			if (before && p > curr_pos) {
+				// could try to correct curr_pos...
+				return false;
+			}
+			if (p >= track.length) { // not likely
+				p = 0;
+			}
+		} while (p != curr_pos);
+		return false;
+	}
+
+	private boolean searchData() {
+		int p = curr_pos;
+		while (track[p] != DM) {
+			if (track[p] == AM) {
+				p = getHeader(p);
+			}
+			if (++p >= track.length) {
+				p = 0;
+			}
+			if (p == curr_pos) {
+				return false;
+			}
+		}
+		curr_pos = p + 1; // now pointing at first data char
+		return true;
+	}
+
+	// At the very least, this puts curr_pos at the first data char.
 	private boolean findRecord() {
-		boolean extended = ((c3 & 020) == 020);
-		boolean verify = ((c3 & 010) == 010);
 		if (!cacheTrack(cyl[unit], adr_trk)) {
 			return false;
 		}
 		// TODO: check TLR and skip to new track
 		switch(c3 & 007) {
 		case 000: // Initial
+			curr_pos = 0;
 			break;
 		case 001: // (Standard)
 			break;
@@ -159,6 +271,36 @@ public class P_Disk extends JFrame
 			return false;
 		}
 		return true;
+	}
+
+	private void doAdrReg() {
+		if (in) {
+			sys.rawWriteChar(sys.cr[clc], (byte)(adr_cyl >> 6));
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			sys.rawWriteChar(sys.cr[clc], (byte)(adr_cyl));
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			sys.rawWriteChar(sys.cr[clc], (byte)(adr_trk >> 6));
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			sys.rawWriteChar(sys.cr[clc], (byte)(adr_trk));
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			sys.rawWriteChar(sys.cr[clc], (byte)(adr_rec >> 6));
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			sys.rawWriteChar(sys.cr[clc], (byte)(adr_rec));
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+		} else {
+			adr_cyl = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			adr_cyl |= (sys.rawReadMem(sys.cr[clc]) & 077);
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			adr_trk = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			adr_trk |= (sys.rawReadMem(sys.cr[clc]) & 077);
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			adr_rec = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			adr_rec |= (sys.rawReadMem(sys.cr[clc]) & 077);
+			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+		}
 	}
 
 	public void io(HW2000 sys) {
@@ -208,6 +350,8 @@ public class P_Disk extends JFrame
 	}
 
 	private void doIn(HW2000 sys) {
+		boolean extended = ((c3 & 020) == 020);
+		boolean verify = ((c3 & 010) == 010);
 		sys.cr[clc] = sys.cr[slc];
 		if (!findRecord()) {
 			error = true;
@@ -232,6 +376,8 @@ public class P_Disk extends JFrame
 	}
 
 	public void doOut(HW2000 sys) {
+		boolean extended = ((c3 & 020) == 020);
+		boolean verify = ((c3 & 010) == 010);
 		sys.cr[clc] = sys.cr[slc];
 		try {
 			while (true) {
