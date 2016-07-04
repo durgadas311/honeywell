@@ -229,8 +229,10 @@ public class HW2000CCR {
 	}
 
 	public void setEI(byte typ) {
-		eIntr = true;
-		ccr[EIR] |= typ;
+		synchronized (this) {
+			eIntr = true;
+			ccr[EIR] |= typ;
+		}
 	}
 
 	// Returns EIR_EI, EIR_II, or 0
@@ -249,8 +251,10 @@ public class HW2000CCR {
 	}
 
 	public void setII(byte typ) {
-		iIntr = true;
-		ccr[IIR] |= typ;
+		synchronized (this) {
+			iIntr = true;
+			ccr[IIR] |= typ;
+		}
 	}
 
 	public boolean isEI() {

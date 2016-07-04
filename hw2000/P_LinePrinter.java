@@ -120,6 +120,9 @@ public class P_LinePrinter extends JFrame
 	public void reset() {
 	}
 
+	public void setInterrupt(HW2000 sys) {
+	}
+
 	private void autoVisible(boolean on) {
 		if (on != isOn) {
 			isOn = on;
@@ -245,7 +248,7 @@ public class P_LinePrinter extends JFrame
 		autoVisible(true);
 	}
 
-	public boolean busy() {
+	public boolean busy(byte c2) {
 		return busy;
 	}
 

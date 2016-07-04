@@ -514,6 +514,7 @@ public class HW2000FrontPanel extends JFrame
 		central.addActionListener(this);
 		init.addActionListener(this);
 		boot.addActionListener(this);
+		inter.addActionListener(this);
 		am2.addActionListener(this);
 		am3.addActionListener(this);
 		am4.addActionListener(this);
@@ -899,6 +900,7 @@ public class HW2000FrontPanel extends JFrame
 		central.setActionCommand("clear");
 		init.setActionCommand("init");
 		boot.setActionCommand("boot");
+		inter.setActionCommand("inter");
 		am2.setActionCommand("am2");
 		am3.setActionCommand("am3");
 		am4.setActionCommand("am4");
@@ -1024,6 +1026,13 @@ public class HW2000FrontPanel extends JFrame
 				bootstrap = false;
 				sys.halt = true;
 				sys.endWait();
+			} else if (a.equals("inter")) {
+				Peripheral p = null;
+				p = sys.pdc.getPeriph(PeriphDecode.P_CO);
+				if (p != null) {
+					p.setInterrupt(sys);
+					sys.endWait();
+				}
 			} else if (sys.halt) {
 				if (a.equals("run")) {
 					Thread thrd = new Thread(this);

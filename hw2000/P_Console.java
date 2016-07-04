@@ -6,13 +6,19 @@ import javax.swing.text.*;
 
 public class P_Console extends JFrame
 		implements Peripheral, KeyListener, ActionListener, WindowListener {
+	private class ConsoleStatus {
+		byte c3;
+		byte c2;
+		int clc, slc;
+		boolean busy;
+		public ConsoleStatus() {
+			busy = false;
+		}
+	}
 
 	InputStream idev;
 	OutputStream odev;
-	byte c3;
-	byte c2;
-	int clc, slc;
-	boolean busy;
+	ConsoleStatus[] sts;
 	JTextArea text;
 	JScrollPane scroll;
 	java.util.concurrent.LinkedBlockingDeque<Integer> kq;
@@ -20,6 +26,9 @@ public class P_Console extends JFrame
 	int col;
 	File _last = null;
 	boolean isOn = false;
+	boolean interrupt = false;
+	boolean dataTerm = false;
+	int io; // only valid between io() and run()
 
 	public P_Console() {
 		super("H220 Console");
@@ -27,7 +36,9 @@ public class P_Console extends JFrame
 		_last = new File(System.getProperty("user.dir"));
 		odev = null;
 		idev = null;
-		busy = false;
+		sts = new ConsoleStatus[2];
+		sts[0] = new ConsoleStatus();
+		sts[1] = new ConsoleStatus();
 		setLayout(new FlowLayout());
 		text = new JTextArea(24, 80);
 		text.setEditable(false); // this prevents caret... grrr.
@@ -93,9 +104,16 @@ public class P_Console extends JFrame
 	}
 
 	public void reset() {
-		if (busy && (c2 & 040) != 0) {
+		if (sts[1].busy) {
 			kq.add(-1);
 		}
+	}
+
+	// I.e. Front Panel switch
+	public void setInterrupt(HW2000 sys) {
+		// This is only a one-shot interrupt condition?
+		// interrupt = true;
+		sys.CTL.setEI(HW2000CCR.EIR_CONS);
 	}
 
 	private void autoVisible(boolean on) {
@@ -113,29 +131,29 @@ public class P_Console extends JFrame
 	}
 
 	public void io(HW2000 sys) {
-		clc = (byte)(sys.getXtra(0) & 027);
-		slc = clc + 010;
+		int x = 1;
 		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			c2 = sys.getXtra(2);
-			c3 = sys.getXtra(3);
-		} else {
-			c2 = sys.getXtra(1);
-			c3 = sys.getXtra(2);
+			++x;
 		}
+		byte c2 = sys.getXtra(x++);
+		io = ((c2 & 040) >> 5);
+		sts[io].c2 = c2;
+		sts[io].c3 = sys.getXtra(x);
+		sts[io].clc = (byte)(sys.getXtra(0) & 027);
+		sts[io].slc = sts[io].clc + 010;
 		// C3:
 		//	000000: no CR/LF
 		//	000001: CR (LF?)
 		// TODO: does c3 output CR/LF on input?
-		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
-		busy = true;
-		// TODO: allow simultaneous input/output?
+		sys.cr[sts[io].slc] = sys.validAdr(sys.AAR);	// translate to physical address
+		sts[io].busy = true;
 	}
 
 	public void run(HW2000 sys) {
-		if (!busy) {
+		if (!sts[io].busy) {
 			return;
 		}
-		if ((c2 & 040) == 0) {
+		if (io == 0) {
 			doOut(sys);
 		} else {
 			doIn(sys);
@@ -143,7 +161,8 @@ public class P_Console extends JFrame
 	}
 
 	private void doIn(HW2000 sys) {
-		sys.cr[clc] = sys.cr[slc];
+		int clc = sts[1].clc;
+		sys.cr[clc] = sys.cr[sts[1].slc];
 		int a = -1;
 		byte b;
 		try {
@@ -179,7 +198,7 @@ public class P_Console extends JFrame
 				text.insert(sys.pdc.cvt.hwToLP(c), carr++);
 				text.setCaretPosition(carr);
 				// Must not disturb punctuation?
-				sys.rawWriteMem(sys.cr[clc], c);
+				sys.rawWriteMem(sys.cr[sts[1].clc], c);
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 					break;
@@ -189,11 +208,12 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
-		busy = false;
+		sts[1].busy = false;
 	}
 
 	public void doOut(HW2000 sys) {
-		sys.cr[clc] = sys.cr[slc];
+		int clc = sts[0].clc;
+		sys.cr[clc] = sys.cr[sts[0].slc];
 		String s = "";
 		boolean print = true;
 		// Printing stops *before* char with record mark...
@@ -216,7 +236,7 @@ public class P_Console extends JFrame
 					break;
 				}
 			}
-			if (c3 != 0) {
+			if (sts[0].c3 != 0) {
 				s += "\n";
 				col = 0;
 			}
@@ -230,7 +250,7 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
-		busy = false;
+		sts[0].busy = false;
 	}
 
 	public void output(String s) {
@@ -245,17 +265,59 @@ public class P_Console extends JFrame
 		autoVisible(true);
 	}
 
-	public boolean busy() {
-		return busy;
+	public boolean busy(byte c2) {
+		if ((c2 & 040) == PeriphDecode.P_IN) {
+			return sts[1].busy;
+		} else {
+			return sts[0].busy;
+		}
 	}
 
 	public void ctl(HW2000 sys) {
-		if (busy) {
+		boolean branch = false;
+		int x = 1;
+		if (PeriphDecode.isEsc(sys.getXtra(1))) {
+			++x;
+		}
+		int io = ((sys.getXtra(x++) & 040) >> 5);
+		for (;x < sys.numXtra(); ++x) {
+			byte cx = sys.getXtra(1);
+			if (cx == 010) {
+				if (sts[io].busy) {
+					branch = true;
+				}
+			} else if ((cx & 070) == 070) {
+				switch(cx & 007) {
+				case 000:
+					// allow OFF
+					break;
+				case 001:
+					// allow ON
+					break;
+				case 004:
+					dataTerm = false;
+					break;
+				case 005:
+					if (dataTerm) {
+						branch = true;
+					}
+					break;
+				case 006:
+					interrupt = false;
+					break;
+				case 007:
+					if (interrupt) {
+						branch = true;
+					}
+					break;
+				}
+			}
+		}
+		if (branch) {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
 			return;
 		}
-		// TODO: apply control chars
 	}
 
 	private File pickFile(String purpose) {

@@ -28,7 +28,7 @@ public class PeriphDecode {
 		cvt = new CharConverter();
 		p_odevs = new Peripheral[8];
 		p_idevs = new Peripheral[8];
-		p_chans = new RWChannel[8];
+		p_chans = new RWChannel[16];
 		p_odevs[P_LP] = new P_LinePrinter();
 		p_odevs[P_CO] = new P_Console();
 		p_idevs[P_CO] = p_odevs[P_CO];
@@ -62,7 +62,8 @@ public class PeriphDecode {
 
 	public RWChannel getChannel(byte ca) {
 		// fudge, rather than use a complex translation
-		ca &= 007;
+		ca &= 027;
+		ca = (byte)((ca + (ca & 007)) >> 1);
 		RWChannel c;
 		// Only create channels as needed
 		if ((c = p_chans[ca]) == null) {
