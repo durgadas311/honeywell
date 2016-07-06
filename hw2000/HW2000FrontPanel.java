@@ -209,7 +209,7 @@ public class HW2000FrontPanel extends JFrame
 		lb.setFont(bigFont);
 		lb.setOpaque(false);
 		lb.setForeground(Color.white);
-		lb.setPreferredSize(new Dimension(560,40));
+		lb.setPreferredSize(new Dimension(560,50));
 		gc.gridx = 0;
 		gc.gridy = 8;
 		gc.gridwidth = gbx;
@@ -445,7 +445,7 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(160,40));
+		pn.setPreferredSize(new Dimension(160,50));
 		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridy = 12;
