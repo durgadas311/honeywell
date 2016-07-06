@@ -1,0 +1,101 @@
+Formatting:
+
+	There is no way to specify FLAG bits outside of the data stream.
+
+	There is no way to specify the DL field outside of the data stream.
+	The DL could be derived from the RM in memory, although that requires
+	that the controller buffer the entire record before starting the write,
+	or else it must scan the record from memory twice.
+
+	Using the Address Register for formatting would require loading every record,
+	unless it is auto-incrementing - but then log-phy record numbering is
+	not possible (convenient).
+
+	There is no way to specify the track (head/surface), unless that is
+	directly taken from Address Register TT field. This may require
+	updating Address Register in order to format. Or else Address Register
+	is updated from data stream during format operations.
+
+Therefor, a format operation must include the header characters in
+the data stream.  Assert that the first 9 characters will contain the
+header, the remaining characters are the record contents.  Minimal data
+required in data stream would be the FLAG character, although DL may
+also be necessary.
+
+WRITE INITIAL: format record immmediately after index mark.
+
+WRITE: format record under current head position.
+
+READ INITIAL: read header and data from record immediately after index.
+
+READ: read header and data from next record record encountered under current head position.
+
+Assertion: Data returned by READ [INITIAL] is identical to data provided to WRITE [INITIAL].
+
+Normal Disk I/O:
+
+Normal data access uses the SEARCH AND READ/WRITE [NEXT] operations. Only
+the data portion of the record is transferred. For READ, the TLR function
+(indicator) is set according to the TLR bit of the record's header.
+
+Q: How does a SEARCH AND WRITE operation ensure it does not overrun a TLR? 
+Is a TLR protected from SEARCH AND WRITE operations? If the controller
+does the linking automatically, then a TLR is never a candidate for
+SEARCH AND WRITE operations.
+
+Pseudo Code:
+
+Format:
+	1. Seek to desired cylinder.
+	2. setup record with header (and RM?).
+	3. (?) Load address register.
+	4. Issue WRITE (or WRITE INITIAL).
+	5. Wait for completion.
+	6. Repeat to (2) for each addition data record.
+	7. Setup Track Linking Record with header (and RM?).
+	8. (?) Load address register.
+	9. Issue WRITE.
+	10. Wait for completion.
+	11. Repeat to step (2) for additional tracks.
+	12. Repeat to step (1) for additional cylinders.
+
+	If physical records are being written in a (different) logical
+	order, the above sequence is modified in that the TLR write may
+	not be the last on a track.
+
+Presumably, TLR would not exist at end of file (or end of file data in
+cylinder). File/Directory/Volume meta-formatting is not included in the
+above steps.
+
+Read Data:
+	1. (?) Setup RM at end of buffer.
+	2. Load address register. *
+	3. Issue SEARCH AND READ [NEXT] *
+	4. Wait for completion.
+
+Write Data:
+	1. (?) Setup RM at end of buffer.
+	2. Load address register. *
+	3. Issue SEARCH AND WRITE [NEXT] *
+	4. Wait for completion.
+
+* For NEXT operations, presumably the RR field of the Address Register
+  is auto-incremented, and thus no loading of address register is required.
+
+Documentation implies that a "block", consisting of multiple disk records,
+may be transferred in one operation - and that block may span tracks
+via TLRs - but it is not clear how that is communicated through a PDT
+instruction. Perhaps the controller keeps following TLR records until
+it encounters a RM in memory.  Again, there seems to be no way to drive
+that in control characters of PDT.  The documentation also implies that
+TLRs cannot be used to link records on different cylinders. So, absense
+of a TLR may simply indicate that the particular file has no more data
+in that cylinder, and the file directory information must be consulted
+to find more data. There is no information about File or Volume meta
+data, that seems to be entirely up to the software (OS). It would seem
+like a File directory entry would contain a list of addresses (CCTTRR)
+which specify the start of chunks of data.
+
+Unclear if this "block" behavior extends to formatting operations.
+
+
