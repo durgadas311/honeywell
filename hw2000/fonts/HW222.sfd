@@ -21,7 +21,7 @@ OS2Version: 0
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 1
 CreationTime: 1467256892
-ModificationTime: 1467289798
+ModificationTime: 1467820456
 OS2TypoAscent: 0
 OS2TypoAOffset: 1
 OS2TypoDescent: 0
@@ -35,6 +35,7 @@ HheadAscent: 0
 HheadAOffset: 1
 HheadDescent: 0
 HheadDOffset: 1
+OS2Vendor: 'PfEd'
 MarkAttachClasses: 1
 DEI: 91125
 Encoding: UnicodeBmp
@@ -178,7 +179,7 @@ SplineSet
  182.667 657.333 163 622.667 163 566 c 0
  163 516.666 182.667 480.666 222 458 c 1
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: percent
@@ -384,11 +385,10 @@ Fore
 SplineSet
 215 172 m 1
  338 172 l 1
- 218 0 l 5
- 147 0 l 5
+ 195.5 -49.5 l 5
+ 124.5 -49.5 l 5
  215 172 l 1
 EndSplineSet
-Validated: 1
 EndChar
 
 StartChar: hyphen
@@ -806,8 +806,8 @@ Fore
 SplineSet
 205 172 m 1
  328 172 l 1
- 213.5 0 l 5
- 141.5 0 l 5
+ 196.75 -50 l 5
+ 124.75 -50 l 5
  205 172 l 1
 205 418 m 1
  205 571 l 1
@@ -815,7 +815,6 @@ SplineSet
  328 418 l 1
  205 418 l 1
 EndSplineSet
-Validated: 524289
 EndChar
 
 StartChar: less
@@ -1717,7 +1716,7 @@ SplineSet
  387 0 l 1
  69 727.1 l 1
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: bracketright
@@ -2215,7 +2214,7 @@ SplineSet
  401 236 431.333 247 442 269 c 4
  446 277 448 287 448 299 c 4
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: onehalf
@@ -2302,7 +2301,7 @@ SplineSet
  483 229.6 l 1
  483 161.6 l 1
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: block
@@ -2340,7 +2339,7 @@ SplineSet
  60 110.5 l 5
  60 500 l 5
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: H22073
@@ -2362,7 +2361,7 @@ SplineSet
  62 110.5 l 5
  62 500 l 5
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: space
