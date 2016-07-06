@@ -11,14 +11,14 @@ public class HW2000FrontPanel extends JFrame
 	Font bigFont;
 	Font smallFont;
 
-	static final Color btnWhiteOff = new Color(190, 190, 180);
-	static final Color btnWhiteOn = new Color(255, 255, 200);
-	static final Color btnRedOff = new Color(100, 0, 0);
-	static final Color btnRedOn = new Color(255, 0, 0);
-	static final Color btnGreenOff = new Color(0, 100, 0);
-	static final Color btnGreenOn = new Color(0, 255, 0);
-	static final Color indDark = new Color(50, 50, 50);
-	static final Color indLit = new Color(180, 180, 80);
+	public static final Color btnWhiteOff = new Color(190, 190, 180);
+	public static final Color btnWhiteOn = new Color(255, 255, 200);
+	public static final Color btnRedOff = new Color(100, 0, 0);
+	public static final Color btnRedOn = new Color(255, 0, 0);
+	public static final Color btnGreenOff = new Color(0, 100, 0);
+	public static final Color btnGreenOn = new Color(0, 255, 0);
+	public static final Color indDark = new Color(50, 50, 50);
+	public static final Color indLit = new Color(180, 180, 80);
 
 	static final int btnContents = 0x1000;
 	static final int btnAddress = 0x2000;
@@ -204,14 +204,17 @@ public class HW2000FrontPanel extends JFrame
 
 		addControls(lpn, 7, gb, gc);
 
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(40,20));
-		pn.setOpaque(false);
+		// fudge spacing, instead of more-complex paneling
+		lb = new JLabel("HONEYWELL 2000          ");
+		lb.setFont(bigFont);
+		lb.setOpaque(false);
+		lb.setForeground(Color.white);
+		lb.setPreferredSize(new Dimension(560,40));
 		gc.gridx = 0;
 		gc.gridy = 8;
 		gc.gridwidth = gbx;
-		gb.setConstraints(pn, gc);
-		lpn.add(pn);
+		gb.setConstraints(lb, gc);
+		lpn.add(lb);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_word.png"));
 		contents[6].setIcon(icn);
@@ -442,7 +445,7 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(160,20));
+		pn.setPreferredSize(new Dimension(160,40));
 		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridy = 12;
@@ -477,6 +480,9 @@ public class HW2000FrontPanel extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("PunchCard", KeyEvent.VK_H);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Disks", KeyEvent.VK_K);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -1456,6 +1462,11 @@ public class HW2000FrontPanel extends JFrame
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_H) {
 			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_PP);
+			if (p != null) {
+				p.visible(true);
+			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_K) {
+			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_DK);
 			if (p != null) {
 				p.visible(true);
 			}

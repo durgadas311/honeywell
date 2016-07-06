@@ -16,11 +16,24 @@ Formatting:
 	updating Address Register in order to format. Or else Address Register
 	is updated from data stream during format operations.
 
-Therefor, a format operation must include the header characters in
-the data stream.  Assert that the first 9 characters will contain the
-header, the remaining characters are the record contents.  Minimal data
-required in data stream would be the FLAG character, although DL may
-also be necessary.
+	FLAG bits "A-File" and "B-File" may relate to switches on the drive
+	having the same name. The settings of these switches is compared to
+	the bits in headers in order to provide a measure of protection.
+
+	FLAG bit "Data Transfer Mode" is likely taken from/must match the
+	EXTENDED modifier bit for commands.
+
+	The FLAG bits TLR and DEFECTIVE TRACK do not seem to have any way
+	to set from commands or other sources, unless they are specified
+	in the data stream.
+
+Therefor, a format operation must include the header characters in the
+data stream.  Assert that the first 9 characters will contain the header,
+the remaining characters are the record contents.  Minimal data required
+in data stream would be the FLAG character, although DL may also be
+necessary. Head selection (track/surface) may require that (at least)
+the TT field be loaded into the address register (from data stream
+or manually).
 
 WRITE INITIAL: format record immmediately after index mark.
 

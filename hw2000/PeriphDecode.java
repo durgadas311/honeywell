@@ -36,6 +36,8 @@ public class PeriphDecode {
 		p_idevs[P_MT] = p_odevs[P_MT];
 		p_odevs[P_PP] = new P_CardReaderPunch();
 		p_idevs[P_PP] = p_odevs[P_PP];
+		p_odevs[P_DK] = new P_Disk();
+		p_idevs[P_DK] = p_odevs[P_DK];
 	}
 
 	public void reset() {
