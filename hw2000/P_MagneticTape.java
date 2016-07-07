@@ -10,12 +10,14 @@ public class P_MagneticTape extends JFrame
 	byte c4;
 	byte c3;
 	byte c2;
-	int term;
 	int unit;
 	int count;
 	int clc, slc;
 	boolean busy;
 	boolean reverse;
+	boolean backspace;
+	boolean erase;
+	boolean fwdspace;
 	boolean in;
 	boolean beg;
 	boolean end;
@@ -113,6 +115,7 @@ public class P_MagneticTape extends JFrame
 			// Special case defaults, for BOOTSTRAP
 			c3 = (byte)060;	// Read forward
 			c4 = (byte)000;	// Stop at Rec Mark, Std FMT
+					//... or 023 "Load Mode"?
 		}
 		// C3:
 		//	xxxDDD = Tape Drive/Unit DDD
@@ -139,26 +142,33 @@ public class P_MagneticTape extends JFrame
 		//	1xxxxx = 8-bit mode (N/A for tape?)
 		unit = c3 & 007;
 		reverse = false;
+		backspace = false;
+		erase = false;
+		fwdspace = false;
+		count = 0; // use (memory) record mark
 		switch(c3 & 070) {
 		case 000:
 			if (in) {
 				// backspace to C4
-				reverse = true;
+				backspace = true;
 			} else {
 				// erase to C4
+				erase = true;
 			}
-			return;
+			break;
 		case 040:
-			if (in) {
-				// space to C4
+			if (!in) {
+				return;
 			}
-			return;
-		case 020:
+			// space to C4
+			fwdspace = true;
+			break;
+		case 020: // READ REV or WRITE FWD
 			if (in) {
 				reverse = true;
 			}
 			break;
-		case 060:
+		case 060: // READ FWD
 			if (!in) {
 				return;
 			}
@@ -167,17 +177,35 @@ public class P_MagneticTape extends JFrame
 		switch(c4 & 070) {
 		case 000:
 		default:
-			term = 0301; // record mark
+			// use (memory) record mark
 			break;
 		case 010:
-			term = 0303; // file mark
+			// "file mark search"... what's that?
+			// only for SPACE commands? ERASE?
 			break;
 		case 020:
+			// not for SPACE commands? ERASE?
 			int c5 = sys.getXtra(x++);
 			int c6 = sys.getXtra(x++);
 			int c7 = sys.getXtra(x++);
 			count = (c5 << 12) | (c6 << 6) | c7;
-			term = 0;
+			break;
+		}
+		switch(c4 & 007) {
+		case 000:
+			// std 6-bit char xfer
+			break;
+		case 001:
+			// unknown "2x1" mode (8bits packed in 6+2?)
+			break;
+		case 002:
+			// ASCII subset - TBD
+			break;
+		case 003: // only for count field...
+			// "Load Mode" - "1x1" - TBD
+			break;
+		case 004:
+			// EBCDIC subset - TBD
 			break;
 		}
 		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
@@ -206,18 +234,47 @@ public class P_MagneticTape extends JFrame
 	private void doIn(HW2000 sys) {
 		sys.cr[clc] = sys.cr[slc];
 		int a = -1;
+		long fp = 0;
 		try {
+			if (backspace) {
+				fp = dev[unit].getFilePointer();
+				if (fp == 0) {
+					busy = false;
+					return;
+				}
+			}
 			do {
+				if (backspace) {
+					if (--fp == 0) {
+						break;
+					}
+					dev[unit].seek(fp);
+				}
 				a = dev[unit].read();
 				if (a < 0) {
 					break;
 				}
-				if ((a & term) == term) {
-					// do this?
-					sys.rawWriteMem(sys.cr[clc], (byte)0300);
+				if ((a & 0300) == 0300) {
+					// caller must look at CLC (CLC - SLC).
+					// (CLC == SLC) means EOF (File Mark)
+					if (backspace) {
+						// TODO: proper location to leave...
+						dev[unit].seek(fp);
+					}
 					break;
 				}
-				sys.rawWriteMem(sys.cr[clc], (byte)(a & 077));
+				if (fwdspace || backspace) {
+					continue;
+				}
+				sys.rawWriteChar(sys.cr[clc], (byte)(a & 077));
+				a = sys.rawReadMem(sys.cr[clc]) & 0300;
+				if ((count == 0 && a == 0300) ||
+						(count > 0 && --count == 0)) {
+					do {
+						a = dev[unit].read();
+					} while (a >= 0 && (a & 0300) != 0300);
+					break;
+				}
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 					break;
@@ -234,14 +291,21 @@ public class P_MagneticTape extends JFrame
 		try {
 			while (true) {
 				byte a = sys.rawReadMem(sys.cr[clc]);
-				if ((a & 0300)  == 0300) {
-					dev[unit].write(term);
+				if (count == 0 && (a & 0300) == 0300) {
+					// "zero-length record" just means EOF,
+					// a.k.a. "File Mark".
+					dev[unit].write((byte)0300);
 					break;
 				}
 				a &= 077;
 				dev[unit].write(a);
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+					break;
+				}
+				// This does not permit 0-char xfers
+				if (count > 0 && --count == 0) {
+					dev[unit].write((byte)0300);
 					break;
 				}
 			}
