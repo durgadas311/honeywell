@@ -108,14 +108,14 @@ public class P_MagneticTape extends JFrame
 		}
 		c2 = sys.getXtra(x++);
 		in = ((c2 & 040) == 040);
-		if (x < sys.numXtra()) {
-			c3 = sys.getXtra(x++);
-			c4 = sys.getXtra(x++);
-		} else {
+		if (sys.bootstrap) {
 			// Special case defaults, for BOOTSTRAP
-			c3 = (byte)060;	// Read forward
+			c3 = (byte)060;	// Read forward, unit 0
 			c4 = (byte)000;	// Stop at Rec Mark, Std FMT
 					//... or 023 "Load Mode"?
+		} else {
+			c3 = sys.getXtra(x++); // must be present?
+			c4 = sys.getXtra(x++); // might be 00
 		}
 		// C3:
 		//	xxxDDD = Tape Drive/Unit DDD
@@ -129,17 +129,21 @@ public class P_MagneticTape extends JFrame
 		//	11xxxx = C5,C6,C7 present (extended I/O)
 		// C4:
 		//	000000 = RM, 4x3 (char compression)
-		//	000001 = RM, 2x1 (char compression)
+		//	000001 = RM, 2x1 (char compression) **
 		//	000010 = RM, ASCII (subset)
 		//	000100 = RM, EBCDIC (subset)
 		//	001000 = File Mark Search, 4x3
-		//	001001 = File Mark Search, 2x1
+		//	001001 = File Mark Search, 2x1 **
 		//	010000 = Count Field, 4x3
-		//	010001 = Count Field, 2x1
+		//	010001 = Count Field, 2x1 **
 		//	010010 = Count Field, ASCII
-		//	010011 = Count Field, Load mode (1x1)
+		//	010011 = Count Field, Load mode (1x1) ***
 		//	010100 = Count Field, EBCDIC
 		//	1xxxxx = 8-bit mode (N/A for tape?)
+		//
+		// * Special hardware option.
+		// ** Packed-decimal? 2 digits per tape "byte"? signs? fields?
+		// *** Full punctuation transfer?
 		unit = c3 & 007;
 		reverse = false;
 		backspace = false;
@@ -268,6 +272,10 @@ public class P_MagneticTape extends JFrame
 				}
 				sys.rawWriteChar(sys.cr[clc], (byte)(a & 077));
 				a = sys.rawReadMem(sys.cr[clc]) & 0300;
+				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+					break;
+				}
 				if ((count == 0 && a == 0300) ||
 						(count > 0 && --count == 0)) {
 					do {
@@ -275,11 +283,7 @@ public class P_MagneticTape extends JFrame
 					} while (a >= 0 && (a & 0300) != 0300);
 					break;
 				}
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
-					break;
-				}
-			} while (true); // can't rely on memory contents?
+			} while (true);
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}

@@ -62,7 +62,6 @@ public class HW2000FrontPanel extends JFrame
 	boolean listing = false;
 	boolean tape = false;
 	boolean monitor = false;
-	boolean bootstrap = false;
 	int currLow = 0;
 	int currHi = 0;
 
@@ -953,7 +952,7 @@ public class HW2000FrontPanel extends JFrame
 
 	private void doBootStrap() {
 		setRunStop(true);
-		bootstrap = true;
+		sys.bootstrap = true;
 		byte c1 = (byte)011;
 		byte c2 = (byte)(contentsReg | PeriphDecode.P_IN);
 		sys.SR = addressReg;
@@ -964,10 +963,11 @@ public class HW2000FrontPanel extends JFrame
 		sys.setXtra(new byte[]{c1, c2});
 		Instruction op_exec = sys.idc.getExec(InstrDecode.OP_PDT);
 		try {
+			// TODO: should this execute in thread?
 			op_exec.execute(sys);
 		} catch (Exception ee) {
 			setRunStop(false);
-			bootstrap = false;
+			sys.bootstrap = false;
 			warning(this, "Bootstrap", ee.getMessage());
 			return;
 		}
@@ -1029,7 +1029,7 @@ public class HW2000FrontPanel extends JFrame
 				return;
 			}
 			if (a.equals("stop")) {
-				bootstrap = false;
+				sys.bootstrap = false;
 				sys.halt = true;
 				sys.endWait();
 			} else if (a.equals("inter")) {
@@ -1512,10 +1512,10 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	public void run() {
-		if (bootstrap) {
+		if (sys.bootstrap) {
 			sys.waitIO();
 			setRunStop(false);
-			bootstrap = false;
+			sys.bootstrap = false;
 		} else {
 			sys.run();
 		}

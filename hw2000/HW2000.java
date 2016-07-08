@@ -38,6 +38,7 @@ public class HW2000 implements CoreMemory
 	Instruction op_exec;
 	public boolean halt;
 	public boolean singleStep;
+	public boolean bootstrap; // force clearing of punctuation
 	private boolean _proceed;
 	private int tics;
 
@@ -89,6 +90,7 @@ public class HW2000 implements CoreMemory
 	public void reset() {
 		halt = true;
 		singleStep = false;
+		bootstrap = false;
 		_trace = false;
 		tics = 0;
 		ATR = 0;
@@ -274,7 +276,12 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void rawWriteChar(int adr, byte val) {
-		mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
+		if (bootstrap) {
+			// force clearing of punctuation
+			mem[adr] = (byte)(val & 077);
+		} else {
+			mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
+		}
 	}
 
 	public byte readMem(int adr) {
