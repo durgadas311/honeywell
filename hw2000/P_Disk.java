@@ -7,11 +7,15 @@ import java.util.Arrays;
 
 // Semantics/Rationale For I/O are described in DiskSemantics.txt
 //
+// Disk Format:
+//	Index is implied at track[0]
+//	[index][AM][header][DM][data][AM]...[DM][data][EM][garbage]
+//
 public class P_Disk extends JFrame
 		implements Peripheral, ActionListener, WindowListener {
 	static final byte AM = (byte)0304; // start of record header
 	static final byte DM = (byte)0305; // start of record data
-	static final byte EM = (byte)0305; // end of valid track formatting
+	static final byte EM = (byte)0306; // end of valid track formatting
 
 	static final int trk_len = 4700;
 	static final int num_trk = 20;
@@ -169,7 +173,8 @@ public class P_Disk extends JFrame
 		int n = -1;
 		if (sts[unit].dev != null) {
 			try {
-				if (track_dirty && track_cyl != cyl || track_trk != trk) {
+				// already know track_cyl != cyl || track_trk != trk...
+				if (track_dirty) {
 					sts[unit].dev.seek(track_pos);
 					sts[unit].dev.write(track);
 				}
@@ -210,8 +215,14 @@ public class P_Disk extends JFrame
 	private boolean searchHeader() {
 		// we must not be in middle of record data...
 		int r = revs;
+		// should never require searching, except for EM case.
 		while (track[curr_pos] != AM && revs - r < 2) {
-			incrPos(1);
+			if (track[curr_pos] == EM) {
+				curr_pos = 0;
+				++revs;
+			} else {
+				incrPos(1);
+			}
 		}
 		return true;
 	}
@@ -234,21 +245,26 @@ public class P_Disk extends JFrame
 			// now pointing at first header char
 			// we relay on format being sane...
 			// just in case curr_pos was bogus and inside a record.
-			getHeader(curr_pos);
-			// p should now point to DM
+			getHeader(curr_pos + 1);
+			incrPos(10);
 			if (track[curr_pos] != DM) {
+				// something is wrong...
+				// but, abort or skip?
 				return false;
 			}
 			if (curr_cyl == adr_cyl && curr_trk == adr_trk && curr_rec == adr_rec) {
+				// still pointing to DM, not data.
 				return true;
 			}
-			incrPos(curr_len);
+			incrPos(curr_len + 1);
+			// should point to AM or EM...
 		} while (revs < 2);
 		return false;
 	}
 
 	private boolean searchData() {
 		revs = 0;
+		// should never require actual search.
 		while (track[curr_pos] != DM) {
 			if (track[curr_pos] == AM) {
 				getHeader(curr_pos + 1);
@@ -260,7 +276,8 @@ public class P_Disk extends JFrame
 				return false;
 			}
 		}
-		curr_end = curr_pos + curr_len;
+		++curr_pos;
+		curr_end = curr_pos + curr_len; // should point to next AM, or EM
 		return true;
 	}
 
@@ -431,6 +448,7 @@ public class P_Disk extends JFrame
 				error = true;
 				return;
 			}
+			++curr_pos;
 			getHeader(curr_pos);
 			for (int x = 0; x < 9; ++x) {
 				// TODO: strip punc, check RM?
@@ -451,12 +469,8 @@ public class P_Disk extends JFrame
 		}
 		// 'curr_pos' points to first data byte.
 		while (true) {
-			int a = sys.rawReadMem(sys.cr[clc]);
-			if ((a & 0300) == 0300) {
-				curr_pos = curr_end;
-				// TODO: seek end of data...
-				break;
-			}
+			int a;
+			int b = sys.rawReadMem(sys.cr[clc]) & 0300;
 			if (format) {
 				if (curr_pos >= track.length) {
 					curr_pos = 0;
@@ -482,6 +496,10 @@ public class P_Disk extends JFrame
 			if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 				break;
 			}
+			if (b == 0300) {
+				curr_pos = curr_end;
+				break;
+			}
 		}
 	}
 
@@ -495,7 +513,9 @@ public class P_Disk extends JFrame
 			cacheTrack(adr_cyl, adr_trk);
 			if (initial) {
 				curr_pos = 0;
-			// else search for EM?
+			} else {
+				// else search for EM?
+				// if (track[curr_pos] != EM) error...
 			}
 			if (curr_pos + 11 >= track.length) {
 				error = true;
@@ -554,7 +574,9 @@ public class P_Disk extends JFrame
 			}
 		}
 		if (format) {
-			track[curr_pos++] = EM;
+			// need to replace this next record with AM,
+			// do not increment.
+			track[curr_pos] = EM;
 		}
 	}
 
