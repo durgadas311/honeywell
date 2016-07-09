@@ -36,18 +36,18 @@ public class RWChannel implements Runnable {
 	int count = 0;
 
 	public void ctl(HW2000 hw, Peripheral p) {
-		int sr = sys.SR;
+		int sr = hw.SR;
 		if (periph != null) {
 			// is this too draconian?
 			// does only peripheral busy matter?
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
+			hw.BAR = hw.SR;
+			hw.SR = hw.AAR;
 		} else if (p != null) {
 			p.ctl(hw);
 		}
-		if (sr != sys.SR && sr == lastSR) {
+		if (sr != hw.SR && sr == lastSR) {
 			if (++count >= 10000) {
-				sys.waitIO();
+				hw.waitIO();
 				count = 0;
 			}
 		} else {

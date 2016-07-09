@@ -179,6 +179,9 @@ public class P_Disk extends JFrame
 					sts[unit].dev.write(track);
 				}
 				track_dirty = false;
+				if (cyl < 0 || trk < 0) {
+					return true;
+				}
 				track_pos = (cyl * cyl_len) + (trk * trk_len);
 				sts[unit].dev.seek(track_pos);
 				n = sts[unit].dev.read(track);
@@ -186,17 +189,22 @@ public class P_Disk extends JFrame
 					n = track.length;
 					Arrays.fill(track, (byte)0);
 				}
-			} catch (Exception ee) {}
+			} catch (Exception ee) {
+				//ee.printStackTrace();
+			}
 		}
 		if (n < 0) {
-			return  false;
+			error = true;
+			return false;
 		}
+		sts[unit].cyl = cyl;
+		sts[unit].cyl_pn.setText(String.format("%d.%d", cyl, trk));
 		track_cyl = cyl;
 		track_trk = trk;
 		curr_pos = 0;
 		curr_rec = -1;
 		curr_len = 0;
-		return  true;
+		return true;
 	}
 
 	// does not advance curr_pos! does not check bounds!
@@ -210,6 +218,15 @@ public class P_Disk extends JFrame
 		curr_rec |= (track[p++] & 077);
 		curr_len = (track[p++] & 077) << 6;
 		curr_len |= (track[p++] & 077);
+	}
+
+	private void getHeaderMem(int a) {
+		adr_cyl = (sys.rawReadMem(a++) & 077) << 6;
+		adr_cyl |= (sys.rawReadMem(a++) & 077);
+		adr_trk = (sys.rawReadMem(a++) & 077) << 6;
+		adr_trk |= (sys.rawReadMem(a++) & 077);
+		adr_rec = (sys.rawReadMem(a++) & 077) << 6;
+		adr_rec |= (sys.rawReadMem(a++) & 077);
 	}
 
 	private boolean searchHeader() {
@@ -510,6 +527,8 @@ public class P_Disk extends JFrame
 		boolean initial = ((c3 & 003) == 000);
 		sys.cr[clc] = sys.cr[slc];
 		if (format) {
+			track_dirty = true;
+			getHeaderMem(sys.cr[clc] + 1); // loads adr_*
 			cacheTrack(adr_cyl, adr_trk);
 			if (initial) {
 				curr_pos = 0;
@@ -524,14 +543,14 @@ public class P_Disk extends JFrame
 			track[curr_pos++] = AM; // pad with gap?
 			for (int x = 0; x < 9; ++x) {
 				// TODO: strip punc, check RM?
-				track[curr_pos++] = sys.rawReadMem(sys.cr[clc]);
+				track[curr_pos++] = (byte)(sys.rawReadMem(sys.cr[clc]) & 077);
 				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 					error = true;
 					return;
 				}
 			}
-			getHeader(curr_pos - 9);
+			getHeader(curr_pos - 9); // loads curr_* variables
 			track[curr_pos++] = DM;
 			if (curr_pos + curr_len + 1 >= track.length) {
 				error = true;
@@ -545,7 +564,6 @@ public class P_Disk extends JFrame
 			byte a = sys.rawReadMem(sys.cr[clc]);
 			// TODO: how does extended fit with RM check?
 			if ((a & 0300)  == 0300) {
-				cacheTrack(-1, -1);
 				break;
 			}
 			int e;
@@ -564,7 +582,6 @@ public class P_Disk extends JFrame
 				e = writeChar(a);
 			}
 			if (e < 0) { // no more space in cylinder...
-				cacheTrack(-1, -1);
 				error = true; // not an error?
 				break;
 			}
@@ -578,6 +595,7 @@ public class P_Disk extends JFrame
 			// do not increment.
 			track[curr_pos] = EM;
 		}
+		cacheTrack(-1, -1);
 	}
 
 	public void output(String s) {
@@ -708,7 +726,7 @@ public class P_Disk extends JFrame
 				sts[c].dev = null;
 				sts[c].cyl = 0;
 				sts[c].cyl_pn.setText("");
-				sts[c].mnt_pn.setText("No Tape");
+				sts[c].mnt_pn.setText("No Disk Pack");
 			}
 			prot = false;
 			File f = pickFile(s);
