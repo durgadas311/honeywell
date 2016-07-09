@@ -666,8 +666,16 @@ public class Assembler {
 			return processDefCon(mrk, loc, rev, opd, true);
 		} else if (opc.equals("DC")) {
 			return processDefCon(mrk, loc, rev, opd, false);
-		} else if (opc.equals("RESV")) {
-			return processResv(mrk, loc, rev, opd);
+		} else if (opc.startsWith("RESV")) {
+			int fill = -1;
+			if (opc.indexOf(',') == 4) {
+				if (opc.length() < 6) {
+					fill = 015;
+				} else {
+					fill = cvt.asciiToHw((byte)(opc.charAt(5) & 0x7f));
+				}
+			}
+			return processResv(mrk, loc, rev, opd, fill);
 		} else if (opc.equals("DSA")) {
 			return processDefSym(mrk, loc, rev, opd);
 		} else if (opc.equals("DA")) {
@@ -833,10 +841,15 @@ public class Assembler {
 		return len;
 	}
 
-	private int processResv(char mrk, String loc, boolean rev, String opd) {
+	private int processResv(char mrk, String loc, boolean rev, String opd, int fill) {
 		setLabel(loc, rev, 0);
 		int len = Integer.valueOf(opd);
 		int ret = currLoc | 0x100000;
+		if (asmPass && fill >= 0) {
+			// could this be excessively large?
+			code = new byte[len];
+			Arrays.fill(code, (byte)fill);
+		}
 		currLoc += len;
 		setLabel(loc, !rev, len);
 		return ret;

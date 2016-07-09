@@ -46,17 +46,21 @@ public class P_MagneticTape extends JFrame
 			JButton bt = new JButton(String.format("%03o", x));
 			bt.setActionCommand(String.format("%d", x));
 			bt.addActionListener(this);
+			pn.add(bt);
+			bt = new JButton("\u25c4\u25c4");
+			bt.setActionCommand(String.format("R%d", x));
+			bt.addActionListener(this);
+			pn.add(bt);
 			stat_pn[x] = new JLabel();
 			stat_pn[x].setPreferredSize(new Dimension(75, 20));
 			stat_pn[x].setOpaque(true);
 			stat_pn[x].setBackground(Color.white);
+			pn.add(stat_pn[x]);
 			mnt_pn[x] = new JLabel();
 			mnt_pn[x].setPreferredSize(new Dimension(400, 20));
 			mnt_pn[x].setBackground(Color.white);
 			mnt_pn[x].setOpaque(true);
 			mnt_pn[x].setText("No Tape");
-			pn.add(bt);
-			pn.add(stat_pn[x]);
 			pn.add(mnt_pn[x]);
 			add(pn);
 		}
@@ -340,6 +344,8 @@ public class P_MagneticTape extends JFrame
 		//	111001 = Control allow ON
 		//	111100 = Control interrupt OFF
 		//	111101 = Branch if control interrupt ON
+
+		// TODO: revisit this - RWC busy vs. device busy vs. ...
 		if (busy) { // always tested...
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;
@@ -406,31 +412,42 @@ public class P_MagneticTape extends JFrame
 			return;
 		}
 		JButton b = (JButton)e.getSource();
-		int c = b.getActionCommand().charAt(0) - '0';
-		String s = String.format("Mount %03o", c);
-		if (dev[c] != null) {
+		char a = b.getActionCommand().charAt(0);
+		if (a == 'R') {
+			int c = b.getActionCommand().charAt(1) - '0';
+			if (dev[c] != null) {
+				try {
+					dev[c].seek(0L);
+					stat_pn[c].setText("0");
+				} catch (Exception ee) {}
+			}
+		} else {
+			int c = a - '0';
+			String s = String.format("Mount %03o", c);
+			if (dev[c] != null) {
+				try {
+					dev[c].close();
+				} catch (Exception ee) {}
+				dev[c] = null;
+				stat_pn[c].setText("");
+				mnt_pn[c].setText("No Tape");
+			}
+			prot = false;
+			File f = pickFile(s);
+			if (f == null) {
+				return;
+			}
 			try {
-				dev[c].close();
-			} catch (Exception ee) {}
-			dev[c] = null;
-			stat_pn[c].setText("");
-			mnt_pn[c].setText("No Tape");
-		}
-		prot = false;
-		File f = pickFile(s);
-		if (f == null) {
-			return;
-		}
-		try {
-			// TODO: allow write-protect
-			dev[c] = new RandomAccessFile(f, prot ? "r" : "rw");
-			end = false;
-			beg = true;
-			stat_pn[c].setText("0");
-			mnt_pn[c].setText(f.getName());
-			return;
-		} catch (Exception ee) {
-			HW2000FrontPanel.warning(this, s, ee.getMessage());
+				// TODO: allow write-protect
+				dev[c] = new RandomAccessFile(f, prot ? "r" : "rw");
+				end = false;
+				beg = true;
+				stat_pn[c].setText("0");
+				mnt_pn[c].setText(f.getName());
+				return;
+			} catch (Exception ee) {
+				HW2000FrontPanel.warning(this, s, ee.getMessage());
+			}
 		}
 	}
 
