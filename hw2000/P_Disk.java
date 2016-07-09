@@ -259,11 +259,12 @@ public class P_Disk extends JFrame
 			if (!searchHeader()) {
 				break;
 			}
-			// now pointing at first header char
-			// we relay on format being sane...
+			// now pointing at AM
+			// we rely on format being sane...
 			// just in case curr_pos was bogus and inside a record.
 			getHeader(curr_pos + 1);
 			incrPos(10);
+			// now pointing at DM
 			if (track[curr_pos] != DM) {
 				// something is wrong...
 				// but, abort or skip?
@@ -379,6 +380,7 @@ public class P_Disk extends JFrame
 		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
 		// Perform load/store address register now...
 		if (c3 == 004) {
+			sys.cr[clc] = sys.cr[slc];
 			doAdrReg();
 			return;
 		}
@@ -408,6 +410,10 @@ public class P_Disk extends JFrame
 	private boolean checkEOR() {
 		// can't depend on AM since data could be 8-bit.
 		if (curr_pos >= curr_end) { // end of record
+			if ((curr_flg & 040) != 0) {
+				// If we started with a TLR, stop now.
+				return false;
+			}
 			++adr_rec;
 			if (!searchRecord()) {
 				return false;
@@ -486,7 +492,7 @@ public class P_Disk extends JFrame
 		}
 		// 'curr_pos' points to first data byte.
 		while (true) {
-			int a;
+			int a = 0;
 			int b = sys.rawReadMem(sys.cr[clc]) & 0300;
 			if (format) {
 				if (curr_pos >= track.length) {
@@ -497,8 +503,8 @@ public class P_Disk extends JFrame
 					break;
 				}
 				a = track[curr_pos++];
-			} else {
-				a = readChar();
+			} else if (b != 0300) {
+				a = readChar(); // has side affects
 				if (a < 0) { // no more data in cylinder
 					// need to signal short read?
 					break;

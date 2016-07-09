@@ -73,7 +73,10 @@ CLASSES =	CoreMemory.class \
 		System2000.class
 
 ADDCLASSES =	FormTapeEditor$$TapePunch.class \
-		SuffFileChooser$$ChkBox.class
+		SuffFileChooser$$ChkBox.class \
+		P_Console$$ConsoleStatus.class \
+		P_Disk$$DiskStatus.class
+
 
 FONTS = $(wildcard fonts/*.ttf)
 
@@ -81,7 +84,9 @@ ICONS = $(wildcard icons/*.png)
 
 JARES = bringup/bootmt.mti
 
-PROGS = machin.ezc mcetests.ezc monitor.ezc bootstrap.ezc rdrtest.ezc puntest.ezc prog3.pcd
+PROGS = machin.ezc mcetests.ezc monitor.ezc bootstrap.ezc \
+	rdrtest.ezc puntest.ezc prog3.pcd mtitest.ezc \
+	dsktest1.ezc dsktest2.ezc
 
 ship: jar tgz
 
