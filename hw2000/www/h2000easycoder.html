@@ -1,0 +1,51 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Easycoder</TITLE>
+</HEAD>
+<BODY>
+
+<P>The Easycoder assembler used here is actually a cross-assembler
+that is built-in to the Virtual H2000. It currently implements a lot,
+but not all, of the features described for OS/2000.
+<P>Supported assembler directives:
+<DL>
+<DT>PROG</DT><DD></DD>
+<DT>ADMODE</DT><DD></DD>
+<DT>ORG</DT><DD></DD>
+<DT>MORG</DT><DD></DD>
+<DT>DCW</DT><DD></DD>
+<DT>DC</DT><DD></DD>
+<DT>RESV</DT><DD>also supports RESV,fill form</DD>
+<DT>DSA</DT><DD>supports only a single address</DD>
+<DT>EQU</DT><DD></DD>
+<DT>END</DT><DD></DD>
+</DL>
+<P>It is not known if all possible operands will work with the
+above directives.
+<P>In addition, all of the punctuation modifiers (Set I and Set II) are
+supported.
+<P>It also supports indirect and indexed addressing.
+
+<P>None of the pseudo-opcode forms are currently supported, that is, the
+short-hand instructions for specific variant character values.
+
+<P>This assembler is a crude two-pass assembler.
+It should, however, detect re-definition of (duplicate instances) labels
+as well as undefined labels.
+Error handling is also not perfect. In some cases, assembly continues.
+In others, it will abort.
+
+<P>Extended labels are not supported.
+<P>The CLEAR directive is not supported, mainly because it is not yet
+known how those commands are deferred to load time.
+
+<P>The assembler, or rather the front panel which runs the assembler,
+may need help to fully understand a program's memory range. If the
+program uses a block of memory that is not specifically reserved or defined,
+it may be necessary to mark that boundary. For example, the "machin.ezc"
+program has a label "TOP" which specifies the highest memory location
+it will use. Just prior to the END directive, there is an ORG TOP
+and a RESV 1 to provide the necessary boundary.
+
+</BODY>
+</HTML>

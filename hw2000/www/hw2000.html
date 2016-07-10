@@ -36,7 +36,17 @@ assuming 2 microseconds per count.
 <P><A HREF="h2000frontpanel.html">Basic Operation</A>
 <P><A HREF="h2000rwc.html">Notes on Peripheral Read/Write Channels</A>
 <P><A HREF="h2000examples.html">Examples and Demonstrations</A>
+<P><A HREF="h2000easycoder.html">Easycoder Assembler Implementation</A>
 
+<P>Current (at least partially) implemented peripherals:
+<UL>
+<LI><A HREF="h222lineprinter.html">Model 222 Line Printer</A>
+<LI><A HREF="h220console.html">Model 220 Console</A>
+<LI><A HREF="h204magtape.html">Model 204 Magnetic Tape</A>
+<LI><A HREF="h214readerpunch.html">Model 214 Card Reader/Punch</A>
+<LI><A HREF="h274disks.html">Model 274 Disk Pack Devices</A>
+<LI><A HREF="h213timedevices.html">Models 213-3/4 Interval Timer/Time-of-day Clock</A>
+</UL>
 <P>
 The system has two implied modes of operation. The default (without monitor)
 allows a program to be assembled (File->Assemble) into memory
@@ -64,15 +74,6 @@ There are a lot of unanswered questions that may lead to unexpected behavior
 for someone familiar with the original hardware. If you have information
 that can help me improve the authenticity of this project, please share.
 <P>
-Currently (at least partially) implemented peripherals:
-<UL>
-<LI><A HREF="h222lineprinter.html">Model 222 Line Printer</A>
-<LI><A HREF="h220console.html">Model 220 Console</A>
-<LI><A HREF="h204magtape.html">Model 204 Magnetic Tape</A>
-<LI><A HREF="h214readerpunch.html">Model 214 Card Reader/Punch</A>
-<LI><A HREF="h274disks.html">Model 274 Disk Pack Devices</A>
-<LI><A HREF="h213timedevices.html">Models 213-3/4 Interval Timer/Time-of-day Clock</A>
-</UL>
 The BOOTSTRAP button/function now works, and there is a mag tape bootstrap loader program that the
 assembler can use to create a mag tape image of a program, which can be run via BOOTSTRAP.
 When selecting a file to assemble, check the "Tape Image" box. This will result in a ".mti"
