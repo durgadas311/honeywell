@@ -8,6 +8,7 @@ public class PeriphDecode {
 	public static final byte P_PP2 = 003;	// Second Punch-card/Paper-tape
 	public static final byte P_LP = 002;	// Line Printer
 	public static final byte P_DK = 004;	// DisK
+	public static final byte P_TI = 006;	// TIme-related: T.O.D. and Interval Timer
 	public static final byte P_CO = 007;	// COnsole
 	public static final byte P_SEC_MSK = 030;	// Sector bits mask
 	public static final byte P_SEC_ESC = 010;	// Esc sector
@@ -38,6 +39,8 @@ public class PeriphDecode {
 		p_idevs[P_PP] = p_odevs[P_PP];
 		p_odevs[P_DK] = new P_Disk();
 		p_idevs[P_DK] = p_odevs[P_DK];
+		p_odevs[P_TI] = new P_Time();
+		p_idevs[P_TI] = p_odevs[P_TI];
 	}
 
 	public void reset() {

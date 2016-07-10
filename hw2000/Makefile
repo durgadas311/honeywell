@@ -86,7 +86,7 @@ JARES = bringup/bootmt.mti
 
 PROGS = machin.ezc mcetests.ezc monitor.ezc bootstrap.ezc \
 	rdrtest.ezc puntest.ezc prog3.pcd mtitest.ezc \
-	dsktest1.ezc dsktest2.ezc
+	dsktest1.ezc dsktest2.ezc itvtest.ezc
 
 ship: jar tgz
 
