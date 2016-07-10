@@ -1,0 +1,86 @@
+<HTML>
+<HEAD>
+<TITLE>Virtual Honeywell 2000 Computer</TITLE>
+<META NAME="description" LANG="en" CONTENT="Virtual Honeywell 2000 Computer">
+<META NAME="keywords" LANG="en" CONTENT="Honeywell Data Systems,
+Honeywell 2040,
+Honeywell 2050,
+Honeywell 2060,
+Honeywell 2070,
+Honeywell Series 2000,
+Honeywell Series 200,
+Easycoder">
+</HEAD>
+<BODY>
+<IMG SRC="hw2000-4.png">
+<P>
+Virtual Honeywell computer based on Series 2000.
+<P>
+Implements a "fully loaded" system: 512K memory, All instructions including Scientific Unit,
+Memory protections and relocation.
+Based on <A HREF="AG28_Honeywell_Series_2000_Models_2040_through_2070_Programmers_Reference_Manual_May73.pdf">
+Honeywell Series 2000 Programmer's Reference Manual</A>
+<P>
+Here is a short video of it running MACHIN, the Pi computation program.
+<A HREF="https://youtu.be/fphxmBdgQLM">YouTube Video</A>
+<P>
+Sample programs include "monitor.ezc", a simple monitor program that
+will run a job in protected/relocated mode and service interrupts for
+privileged op codes (and allow PDT/PCB), and abort on address violations
+or disallowed op-codes. It is interactive on the console. Two commands are recognized,
+"L" to list currently queued job (if any), and "R" to run current job.
+When job finishes (executes a halt instruction) the monitor prints information including
+the total amount of time used based on the ATR register (and overflows),
+assuming 2 microseconds per count.
+
+<P>
+The system has two implied modes of operation. The default (without monitor)
+allows a program to be assembled (File->Assemble) into memory
+directly and can be executed by pressing the
+"Run" button (i.e. SR is setup by assembler).
+The second mode is entered by selecting File->Monitor and
+choosing "monitor.ezc" (or equivalent), then pressing Run.
+Note, the file browse window has a checkbox for "Listing" which
+enables generation of an assembler listing.
+<P>
+There are still some complications with monitor mode, it may be necessary to
+press Initialize when switching between modes. Note, Initialize currently zeroes
+all of memory.
+<P>
+The built-in assembler is basic but functional. Not all Easycoder directives are
+supported, but there should be enough to get by. All main op-codes are supported,
+but non of the "pseudo" op-codes (e.g. implied variants).
+<P>
+The sample programs include "machin.ezc", which is the program from
+<A HREF="http://www.honeypi.org.uk/">The Honey Pi Project</A>,
+and "mcetests.ezc" which is a test set for the MCE instruction
+and also uses the line printer.
+<P>
+There are a lot of unanswered questions that may lead to unexpected behavior
+for someone familiar with the original hardware. If you have information
+that can help me improve the authenticity of this project, please share.
+<P>
+Currently (at least partially) implemented peripherals:
+<UL>
+<LI><A HREF="h222lineprinter.html">Model 222 Line Printer</A>
+<LI><A HREF="h220console.html">Model 220 Console</A>
+<LI><A HREF="h204magtape.html">Model 204 Magnetic Tape</A>
+<LI><A HREF="h214readerpunch.html">Model 214 Card Reader/Punch</A>
+<LI><A HREF="h274disks.html">Model 274 Disk Pack Devices</A>
+<LI><A HREF="h213timedevices.html">Models 213-3/4 Interval Timer/Time-of-day Clock</A>
+</UL>
+The BOOTSTRAP button/function now works, and there is a mag tape bootstrap loader program that the
+assembler can use to create a mag tape image of a program, which can be run via BOOTSTRAP.
+When selecting a file to assemble, check the "Tape Image" box. This will result in a ".mti"
+file being created, complete with loader, header, and punctuation repair blocks.
+Note, programs used with this loader must be ORG'ed (at least) at 190 (decimal).
+The program "mcetests.ezc" can be assembled with this option, and yields an image that
+can be mounted on Tape Drive Unit 000 and used with the BOOTSTRAP function. Use a boot address of 0.
+<P>
+Downloads are available at <A HREF="http://sebhc.durgadas.com/hw2000">sebhc.durgadas.com/hw2000</A>
+<P>
+Contact: <A HREF="emailto:durgadas311@gmail">durgadas311@gmail</A>
+<P>
+<IMG SRC="punchcards.png">
+</BODY>
+</HTML>

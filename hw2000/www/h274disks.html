@@ -1,0 +1,44 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Model 274 Disk Drives</TITLE>
+</HEAD>
+<BODY>
+The model 274 disk drives (any simmilar model controller) implements
+"random access" storage.
+This implementation uses a window to provide basic control for the 8 drives.
+<P>
+The device is at the traditional address of 04/44.
+Some details are lacking regarding various command specifics.
+The following has been assumed, until more information is available:
+<UL>
+<LI>READ/WRITE INITIAL commmands will format record(s) beginning with the
+index point on the track. Record address information is provided with
+record data.
+<LI>READ/WRITE (plain) commmands will format record(s) beginning with the
+current point on the track. Record address information is provided with
+record data.
+<LI>SEARCH AND READ/WRITE commmands will locate the record identified in
+the address register and read/write data only.
+<LI>SEARCH AND READ/WRITE NEXT commmands will increment the record number and
+locate the record identified in
+the address register and read/write data only.
+<<LI>EXTENDED versions operate on more than one record, governed by the
+size of the buffer (RM in memory). Thhe variation of the command, in the case
+of SEARCH AND versions, will follow Track Linking Records automatically.
+</UL>
+
+<P>Disk geometry as set as 203 cylinders of 20 tracks with 4700 raw characters
+per track. Each record consumes 11 additional characters to the record length.
+Raw capacity is 19 million characters.
+
+<P>Each drive has a "mount/unmount" button that is labeled for the
+drive number (000 - 007). Clicking this button opens a file dialog window
+for selecting the disk image to be mounted (pressing Cancel will leave no
+image mounted).
+In addition, "A" and "B" buttons exist to provide values to match
+against the A-File and B-File bits in record headers.
+<P>Active drives will show current head position/selection
+as Cylinder.Track.
+
+</BODY>
+</HTML>

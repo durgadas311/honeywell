@@ -1,0 +1,23 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Model 214 Card Punch/Reader</TITLE>
+</HEAD>
+<BODY>
+The model 214 punch/reader is a input/output device that uses full 12-punch codes.
+This implementation uses a window to represent the device.
+<P>
+The device is at the traditional address of 01/41.
+PDT instructions always operate on a full card, reegardless of any RM in memory.
+
+<P>
+The "Read Hopper" button selects a file to be used to supply "cards" to the
+reader. The "Punch Hopper" button selects a file to be used to store punched "cards"
+(not as a suppply of pre-punched cards to be over-punched - that is currently not supported).
+Active reader or punch will show the number of cards processed for the given file.
+File format consists of two bytes representing each card column. The two bytes form
+a 16-bit word, where only the low-order 12 bits are used. These 12 bits are
+interpreted as the punch card zones, with bit 11 being zone 12, bit 10 being
+zone 11, bit 9 being zone 0, and so forth with bi 0 being zone 9.
+
+</BODY>
+</HTML>

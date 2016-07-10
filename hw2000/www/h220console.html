@@ -1,0 +1,31 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Model 220 Consoles</TITLE>
+</HEAD>
+<BODY>
+The model 220 console is a simple text input/output device.
+This implementation uses a window to represent the printed paper,
+and keyboard focus on that window to input data.
+<P>
+The device is at the traditional address of 07/47. Without more information,
+this implementation stops printing from a PDT before the RM (character at
+RM is not printed).  This also means that if the first character has a RM, nothing is printed.
+The PDT control character C3 determins whether the output is terminated
+with a Carriage Return (and Line Feed). An automatic CR/LF is inserted after reaching column 80 (it is not known what the actual carriage width of the 220 was).
+
+<P>The console window is hidden by default. It may be made visible,
+and raised to the top, using the Front Panel menu "I/O" and selecting Console.
+Closing the console window only hiddes it, no output is lost or changed.
+A program that prints to the console will cause it to be made visible,
+if not already.
+
+<P>
+Keyboard input is transferred until a Carriage Return (Enter) or until a RM is sensed.
+The PDT C3 control character for input is currently ignored. Each keystroke
+is also printed (echoed) without computer intervention.
+
+<P>Menus allow for saving the current output (printed) buffer to a file,
+or discarding all current output (Tear Off).
+
+</BODY>
+</HTML>
