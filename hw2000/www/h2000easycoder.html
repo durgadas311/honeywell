@@ -47,5 +47,18 @@ program has a label "TOP" which specifies the highest memory location
 it will use. Just prior to the END directive, there is an ORG TOP
 and a RESV 1 to provide the necessary boundary.
 
+<P>The follow ASCII characters may be used for Honeywell special characters that
+have no equivalent in 7-bit ASCII:
+
+<TABLE BORDER>
+<TR><TH>ASCII</TH><TH>Honeywell</TH></TR>
+<TR><TD ALIGN=CENTER>^</TD><TD ALIGN=CENTER>&#162;</TD></TR>
+<TR><TD ALIGN=CENTER>[</TD><TD ALIGN=CENTER>&#9633;</TD></TR>
+<TR><TD ALIGN=CENTER>]</TD><TD ALIGN=CENTER>&#9632;</TD></TR>
+<TR><TD ALIGN=CENTER>~</TD><TD ALIGN=CENTER>credit (&#169;)</TD></TR>
+<TR><TD ALIGN=CENTER>\</TD><TD ALIGN=CENTER>&#8800;</TD></TR>
+</TABLE>
+The above translations are also done by the Model 220 Console implementation.
+
 </BODY>
 </HTML>
