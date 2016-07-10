@@ -1,0 +1,45 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Read/Write Channels</TITLE>
+</HEAD>
+<BODY>
+This implementation does not follow the various Honeywell documentation
+for specific Read/Write Channels and combinations.
+There are 16 completely independent RWCs, with the SLCs (C1 character) numbered
+10-17 and 30-37 (CLCs numbered 00-07 and 20-27, respectively).
+
+<P>RWCs are implemented as independent threads. This means a PDT instruction
+will actually complete before the I/O operation completes, just like
+original hardware.
+In addition, the I/O operation, running in the "background" thread,
+no longer has a guaranteed program context. This is why the CLC and SLC
+registers contain physical addresses.
+In nearly all cases it is required the issue a PCB
+instruction to wait for completion, although it is up to the programmer whether
+that wait is done immediately after the PDT or before the next PDT on the same channel
+(or in some polling fashon).
+
+<P>The association between channel and perihperal is established when the
+PDT instruction is executed, and dissolved once the channel is "not busy".
+
+<P>Currently, peripheral insterrupts are not implemented,
+except for the Interval Timer "timeout".
+
+<P>For many peripherals, it is possible to return less input data than requested.
+A program can query the CLC register to determine this, however since these registers
+contain physical addresses is will normally be necessary to subtract SLC from CLC
+to yield the length of transfer for comparison.
+
+<P>In the case that a request buffer (RM in memory) was not enough to contain
+the peripheral record (typically for Console, Mag Tape, and Disk), the
+CLC will be pointing to one character past the RM character.
+To summarize:
+<UL>
+<LI>When buffer and peripheral record lengths match, CLC will point to the RM character.
+<LI>When the buffer is too small, CLC will point to character RM + 1.
+<LI>When less data was transferred, CLC will point to the character after
+the last valid character (i.e. CLC will point to a location before the RM character).
+</UL>
+
+</BODY>
+</HTML>

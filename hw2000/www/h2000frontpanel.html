@@ -1,0 +1,79 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Front Panel</TITLE>
+</HEAD>
+<BODY>
+The front panel buttons should behave according to normal Honeywell
+series 200/2000 operation, however the power buttons are not functional.
+
+<P> Menus are as follows:
+<UL>
+<LI>File: Assemble a program or assemble the monitor.
+<LI>I/O: Control visibility of I/O device windows. Device windows that are
+hidden or obscured may be raised by selecting the device.
+<LI>Debug: Some debug features.
+</UL>
+
+<H3>File</H3>
+<H4>Assemble</H4>
+Assemble a program into memory. If the monitor has been activated,
+the program will be assembled into a memory region that is relocated
+above the monitor, and the monitor data structures will be filled-in
+to indicate how to run the job.
+<H4>Monitor</H4>
+Assemble the monitor program and setup the Assemble option to use it.
+There is a monitor program supplied in the sample programs tarball,
+"monitor.ezc".
+
+<H3>Debug</H3>
+<H4>Trace</H4>
+Trace is enabled for the range of memory of the last assembled program.
+<H4>Trace Full</H4>
+A dialog is presented for specifying the range of memory to trace.
+<H4>Dump</H4>
+A memory dump is printed to the Line Printer for the range of memory of the last assembled program.
+<H4>Dump Full</H4>
+A dialog is presented for specifying the range of memory to dump.
+
+<P>NOTE: The "Initialize" button currently also clears all memory locations.
+This helps avoid complications due to latent punctuation from previous
+programs, although assembling a program will replace punctuation for all
+segments that produce code
+(i.e. RESV, or regions skipped by ORGs, would otherwise retain previous punctuation).
+
+<P>The assemble dialogs have a checkbox for "Listing". This causes an assembly
+listing to printed on the Line Printer, along with a dump of the symbol table.
+<P>The assemble dialogs also have options for creating a Magnetic Tape Image,
+although the program is still assembled into main memory and then the entire
+range is written to tape. This option creates a self-loading image,
+which has the following record format:
+<OL>
+<LI>The loader, bootmt.mti
+<LI>A header containing information about the program
+<LI>The program image
+<LI>The punctuation map for the program
+</OL>
+The loader will restore punctuation based on the information in the tape image.
+Such a tape image may be mounted on tape drive 000 and used with the
+BOOTSTRAP and RUN buttons to load and run the program. The loader,
+bootmt.mti, was created from bootstrap.ezc in the sample programs.
+
+<H2>Display</H2>
+The Contents and Address indicators will light during a program run, however
+updates are limited to only the instruction op-code extraction and only every 20
+instructions. Otherwise, the GUI updates would signficantly slow down the run.
+When a stop occurs, either by clicking STOP or by executing Halt, the Contents
+and Address are updated with the appropriate values.
+
+<P>The Control address is actually the same address used by the variant character
+for LCR/SCR. So, for example, SR is 77. All unspecified addresses have registers
+behind them, but only the documented ones are used by the processor. These other
+registers may be used as desired.  Also note that CLC/SLC registers may be accessed,
+and should have values from most recent PDT instructions used on them.
+In this implementation, CLC and SLC contain physical addresses, so for programs
+running under the monitor they will have the relocated address, not the
+address used by the program instructions. This means that examining memory
+from the front panel using these registers will have the desired results.
+
+</BODY>
+</HTML>
