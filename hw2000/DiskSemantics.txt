@@ -1,3 +1,25 @@
+Assumption: The Extended I/O feature, whereby bit 6 of C3 drives existence of
+C4-C7, is above and beyond what is documented under Disk Devices in PDT.
+This clouds the meaning of the EXTENDED bit in Disk commands where bit 6
+of C3 is "0". When bit 6 of C3 is "1", this bit (bit 5 of C3) means that
+C5-C7 are present, and if bit 6 of C4 is "1" (8-bit transfer) then C5-C7
+are the transfer count, since a RM in memory cannot be trusted. However,
+with bit 6 of C3 set to "0", as in documented Disk Device commands, EXTENDED
+(in 6-bit transfer mode) is taken to mean that multiple physical records
+may be transferred, until a RM is sensed.
+
+When using RM termination, the results of the transfer may be determined
+by examing CLC as follows:
+
+	   [0] <---- A-field of PDT, SLC, initial CLC
+	   ...
+	   ...
+	   ... <---- CLC anywhere before RM, "short read"
+	   [n-1]
+	RM [n] <---- CLC exactly here, media record size matches program
+	   [n+1] <-- CLC here means media record was too large.
+
+
 Formatting:
 
 	There is no way to specify FLAG bits outside of the data stream.
@@ -21,7 +43,7 @@ Formatting:
 	the bits in headers in order to provide a measure of protection.
 
 	FLAG bit "Data Transfer Mode" is likely taken from/must match the
-	EXTENDED modifier bit for commands.
+	C4 control character.
 
 	The FLAG bits TLR and DEFECTIVE TRACK do not seem to have any way
 	to set from commands or other sources, unless they are specified
@@ -36,20 +58,42 @@ the TT field be loaded into the address register (from data stream
 or manually).
 
 WRITE INITIAL: format record immmediately after index mark.
+	(EXTENDED: multiple records are formatted based on header)
 
 WRITE: format record under current head position.
+	(EXTENDED: multiple records are formatted based on header)
 
 READ INITIAL: read header and data from record immediately after index.
+	(EXTENDED: continue reading *data* from subsequent records, until RM)
 
 READ: read header and data from next record record encountered under current head position.
+	(EXTENDED: continue reading *data* from subsequent records, until RM)
 
 Assertion: Data returned by READ [INITIAL] is identical to data provided to WRITE [INITIAL].
+
+Formatting data layout:
+
+	   [FLAG] <--- A-field of PDT
+	   [CC]
+	   [TT]
+	   [RR]
+	   [DL]
+	   [record data] (DL chars)
+	   [record data] (DL chars) <--- Only if EXTENDED
+	   ... (DL chars) <------------- ...
+	RM [x]
+
+	If not EXTENDED, transfer ends after DL characters even if no RM.
+	Transfer may end prematurely if RM is sensed.
+	NOTE: A partial record may be transferred with EXTENDED.
 
 Normal Disk I/O:
 
 Normal data access uses the SEARCH AND READ/WRITE [NEXT] operations. Only
 the data portion of the record is transferred. For READ, the TLR function
 (indicator) is set according to the TLR bit of the record's header.
+EXTENDED means that multiple records may be read or written, in order to
+fill/use all characters up to RM.
 
 Q: How does a SEARCH AND WRITE operation ensure it does not overrun a TLR? 
 Is a TLR protected from SEARCH AND WRITE operations? If the controller

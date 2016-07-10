@@ -44,6 +44,9 @@ public class P_Disk extends JFrame
 	boolean busy;
 	boolean in;
 	boolean format = false; // switch setting, per drive?
+	boolean extended = false;
+	boolean verify = false;
+	boolean initial = false;
 	boolean error = false;
 	HW2000 sys;
 
@@ -299,6 +302,30 @@ public class P_Disk extends JFrame
 		return true;
 	}
 
+	private void newRecord() {
+		if (curr_pos + 11 >= track.length) {
+			error = true;
+			return; // need to return error...
+		}
+		track[curr_pos++] = AM;
+		++curr_rec;
+		track[curr_pos++] = curr_flg;
+		track[curr_pos++] = (byte)((curr_cyl >> 6) & 077);
+		track[curr_pos++] = (byte)(curr_cyl & 077);
+		track[curr_pos++] = (byte)((curr_trk >> 6) & 077);
+		track[curr_pos++] = (byte)(curr_trk & 077);
+		track[curr_pos++] = (byte)((curr_rec >> 6) & 077);
+		track[curr_pos++] = (byte)(curr_rec & 077);
+		track[curr_pos++] = (byte)((curr_len >> 6) & 077);
+		track[curr_pos++] = (byte)(curr_len & 077);
+		track[curr_pos++] = DM;
+		curr_end = curr_pos + curr_len;
+		if (curr_end + 1 >= track.length) {
+			error = true;
+			return; // need to return error...
+		}
+	}
+
 	// At the very least, this puts curr_pos at the first data char.
 	private boolean findRecord() {
 		if (!cacheTrack(sts[unit].cyl, adr_trk)) {
@@ -410,7 +437,7 @@ public class P_Disk extends JFrame
 	private boolean checkEOR() {
 		// can't depend on AM since data could be 8-bit.
 		if (curr_pos >= curr_end) { // end of record
-			if ((curr_flg & 040) != 0) {
+			if (!extended || (curr_flg & 040) != 0) {
 				// If we started with a TLR, stop now.
 				return false;
 			}
@@ -457,10 +484,10 @@ public class P_Disk extends JFrame
 	}
 
 	private void doIn(HW2000 sys) {
-		boolean extended = ((c3 & 020) == 020);
-		boolean verify = ((c3 & 010) == 010);
-		boolean format = ((c3 & 002) == 000);
-		boolean initial = ((c3 & 003) == 000);
+		extended = ((c3 & 020) == 020);
+		verify = ((c3 & 010) == 010);
+		format = ((c3 & 002) == 000);
+		initial = ((c3 & 003) == 000);
 		sys.cr[clc] = sys.cr[slc];
 		if (format) {
 			cacheTrack(adr_cyl, adr_trk);
@@ -500,7 +527,23 @@ public class P_Disk extends JFrame
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					break;
+					if (!extended) {
+						break;
+					}
+					if (track[curr_pos] == EM) {
+						break;
+					}
+					if (!searchHeader()) {
+						error = true;
+						return;
+					}
+					// TODO: getHeader?
+					// assert curr_len same?
+					// check TLR and stop?
+					if (!searchData()) {
+						error = true;
+						return;
+					}
 				}
 				a = track[curr_pos++];
 			} else if (b != 0300) {
@@ -510,11 +553,8 @@ public class P_Disk extends JFrame
 					break;
 				}
 			}
-			if (extended) {
-				sys.rawWriteMem(sys.cr[clc], (byte)(a & 0377));
-			} else {
-				sys.rawWriteChar(sys.cr[clc], (byte)(a & 077));
-			}
+			// TODO: support 8-bit transfers?
+			sys.rawWriteChar(sys.cr[clc], (byte)(a & 077));
 			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
 			if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
 				break;
@@ -527,10 +567,10 @@ public class P_Disk extends JFrame
 	}
 
 	public void doOut(HW2000 sys) {
-		boolean extended = ((c3 & 020) == 020);
-		boolean verify = ((c3 & 010) == 010);
-		boolean format = ((c3 & 002) == 000);
-		boolean initial = ((c3 & 003) == 000);
+		extended = ((c3 & 020) == 020);
+		verify = ((c3 & 010) == 010);
+		format = ((c3 & 002) == 000);
+		initial = ((c3 & 003) == 000);
 		sys.cr[clc] = sys.cr[slc];
 		if (format) {
 			track_dirty = true;
@@ -558,7 +598,8 @@ public class P_Disk extends JFrame
 			}
 			getHeader(curr_pos - 9); // loads curr_* variables
 			track[curr_pos++] = DM;
-			if (curr_pos + curr_len + 1 >= track.length) {
+			curr_end = curr_pos + curr_len;
+			if (curr_end + 1 >= track.length) {
 				error = true;
 				return;
 			}
@@ -566,21 +607,34 @@ public class P_Disk extends JFrame
 			error = true;
 			return;
 		}
-		while (true) {
+		while (!error) {
 			byte a = sys.rawReadMem(sys.cr[clc]);
 			// TODO: how does extended fit with RM check?
 			if ((a & 0300)  == 0300) {
+				if (format) {
+					while (curr_pos < curr_end) {
+						track[curr_pos++] = 0;
+					}
+					track[curr_pos++] = DM;
+				}
 				break;
 			}
 			int e;
-			if (!extended) {
-				a &= 077;
-			}
+			// TODO: support 8-bit transfers?
+			a &= 077;
 			if (format) {
 				// TODO: force stop based on header DL?
 				if (curr_pos >= track.length) {
+					error = true;
 					curr_pos = 0;
 					break;
+				}
+				if (curr_pos >= curr_end) {
+					if (extended) {
+						newRecord();
+					} else {
+						break;
+					}
 				}
 				track[curr_pos++] = a;
 				e = 0;
