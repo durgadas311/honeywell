@@ -166,6 +166,13 @@ public class Assembler {
 		System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
 		if (errs.size() > 0) {
 			ret = -1;
+			while (errs.size() > 0) {
+				String l = errs.remove(0);
+				if (listing) {
+					listOut("*** " + l + "\n");
+				}
+				System.err.println(l);
+			}
 		}
 		if (ret >= 0 && out != null) {
 			objOut(image);
@@ -343,13 +350,6 @@ public class Assembler {
 				l = "                                 ";
 			}
 			listOut(l + line + "\n");
-		}
-		while (errs.size() > 0) {
-			String l = errs.remove(0);
-			if (listing) {
-				listOut("*** " + l + "\n");
-			}
-			System.err.println(l);
 		}
 		return e;
 	}

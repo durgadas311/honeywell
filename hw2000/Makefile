@@ -85,8 +85,9 @@ ICONS = $(wildcard icons/*.png)
 JARES = bringup/bootmt.mti
 
 PROGS = machin.ezc mcetests.ezc monitor.ezc bootstrap.ezc \
-	rdrtest.ezc puntest.ezc prog3.pcd mtitest.ezc \
-	dsktest1.ezc dsktest2.ezc itvtest.ezc
+	rdrtest.ezc puntest.ezc puntest2.ezc mtitest.ezc \
+	dsktest1.ezc dsktest2.ezc itvtest.ezc \
+	barberpole.mti prog3.pcd
 
 ship: jar tgz
 

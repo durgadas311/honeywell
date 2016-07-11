@@ -16,7 +16,8 @@ but not all, of the features described for OS/2000.
 <DT>DCW</DT><DD></DD>
 <DT>DC</DT><DD></DD>
 <DT>RESV</DT><DD>also supports RESV,fill form</DD>
-<DT>DSA</DT><DD>supports only a single address</DD>
+<DT>DSA</DT><DD>supports only a single address,
+does not support use as general instruction operands</DD>
 <DT>EQU</DT><DD></DD>
 <DT>END</DT><DD></DD>
 </DL>
@@ -30,12 +31,17 @@ supported.
 short-hand instructions for specific variant character values.
 
 <P>This assembler is a crude two-pass assembler.
-It should, however, detect re-definition of (duplicate instances) labels
+It should, however, detect re-definition (duplicate instances) of labels
 as well as undefined labels.
 Error handling is also not perfect. In some cases, assembly continues.
 In others, it will abort.
 
-<P>Extended labels are not supported.
+<P>"Alternate card format" (symbolic tags of up to ten characters, "A" in PROG col 75)
+is not supported.
+
+<P>In general, any features not described in the Programmer's Reference Manual
+are not supported, since the detailed Easycoder documentation is not available.
+
 <P>The CLEAR directive is not supported, mainly because it is not yet
 known how those commands are deferred to load time.
 
@@ -47,7 +53,7 @@ program has a label "TOP" which specifies the highest memory location
 it will use. Just prior to the END directive, there is an ORG TOP
 and a RESV 1 to provide the necessary boundary.
 
-<P>The follow ASCII characters may be used for Honeywell special characters that
+<P>The following ASCII characters may be used for Honeywell special characters that
 have no equivalent in 7-bit ASCII:
 
 <TABLE BORDER>
@@ -58,7 +64,8 @@ have no equivalent in 7-bit ASCII:
 <TR><TD ALIGN=CENTER>~</TD><TD ALIGN=CENTER>credit (&#169;)</TD></TR>
 <TR><TD ALIGN=CENTER>\</TD><TD ALIGN=CENTER>&#8800;</TD></TR>
 </TABLE>
-The above translations are also done by the Model 220 Console implementation.
+The above translations are also done by the Model 220 Console
+implementation of keyboard input.
 
 </BODY>
 </HTML>

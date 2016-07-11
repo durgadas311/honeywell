@@ -277,6 +277,7 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_disp.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnDisplay);
 		btn.addActionListener(this);
+		btn.setToolTipText("Contents Display");
 		gc.gridx = 1;
 		gc.gridy = 2;
 		gc.gridwidth = 1;
@@ -295,6 +296,7 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_enter.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnEnter);
 		btn.addActionListener(this);
+		btn.setToolTipText("Contents Enter");
 		gc.gridx = 4;
 		gc.gridy = 2;
 		gc.gridwidth = 1;
@@ -333,6 +335,7 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_disp.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDisplay);
 		btn.addActionListener(this);
+		btn.setToolTipText("Control Display");
 		gc.gridx = 1;
 		gc.gridy = 6;
 		gc.gridwidth = 1;
@@ -342,6 +345,7 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_plus1.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDispP1);
 		btn.addActionListener(this);
+		btn.setToolTipText("Control Display +1");
 		gc.gridx = 2;
 		gc.gridy = 6;
 		gc.gridwidth = 1;
@@ -351,6 +355,7 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_minus1.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDispM1);
 		btn.addActionListener(this);
+		btn.setToolTipText("Control Display -1");
 		gc.gridx = 3;
 		gc.gridy = 6;
 		gc.gridwidth = 1;
@@ -360,6 +365,7 @@ public class HW2000FrontPanel extends JFrame
 		icn = new ImageIcon(getClass().getResource("icons/fp_enter.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnEnter);
 		btn.addActionListener(this);
+		btn.setToolTipText("Control Enter");
 		gc.gridx = 4;
 		gc.gridy = 6;
 		gc.gridwidth = 1;

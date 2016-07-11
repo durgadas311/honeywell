@@ -4,6 +4,9 @@
 </HEAD>
 <BODY>
 
+For an overview of what is supplied in "hwprogs.tgz", see
+<A HREF="h2000programs.html">List of Sample Files</A>
+
 <H2>MCETESTS</H2>
 This program performs some testing of the MCE instruction.
 The tests are taken from various Honeywell documentation that
@@ -25,6 +28,68 @@ Note, the Honeywell "credit" symbol does not exist in modern unicode/ISO
 character sets, so it will apear here as the copyright symbol.
 The LinePrinter and Console use a custom font that does contain
 a glyph for the credit symbol.
+
+<H2>PUNCHED CARDS</H2>
+
+<P>This demo will take data from a magnetic tape and punch that onto cards,
+and then read those cards and print them on the line printer.
+
+<OL>
+<LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
+tape drive 000.
+<LI>Open/raise the PunchCard window and mount a new file in the Punch Hopper.
+<LI>Select menu File->Assemble and choose the file "puntest2.ezc" and click "Assemble".
+<LI>Press RUN.  The card punch should show 311 cards punched. The tape drive will show about 25192,
+the number of bytes used in the image for records and record marks.
+<LI>Unmount the punch card deck from the Punch Hopper (click Punch Hopper, then
+click Cancel).
+<LI>Mount the newly-punched deck of cards in the Read Hopper.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press RUN. The card reader should show "311 END" to indicate that it read 311
+cards and then ran out of cards. The line printer should show 311 lines of the barber pole pattern.
+</OL>
+
+<H2>DISK PACK</H2>
+
+<P>This demo will take data from a magnetic tape and format that onto a disk pack,
+and then read that disk pack and print the records on the line printer.
+
+<OL>
+<LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
+tape drive 000.
+<LI>Open/raise the Disks window and mount a new file on disk drive 000.
+<LI>Select menu File->Assemble and choose the file "dsktest1.ezc" and click "Assemble".
+<LI>Press RUN. The tape drive should show about 25192 characters read. The disk drive should
+show current position "0.6" for cylinder 0 track 6.
+<LI>It will be necessary to re-mount the disk pack, since these test programs do
+not (yet) restore heads to cylinder 0. Click disk drive 000 button and select the
+same file created earlier. The cylinder indicator should be reset to "0".
+<LI>Select menu File->Assemble and choose the file "dsktest2.ezc" and click "Assemble".
+<LI>Press RUN. The disk drive should show current position "0.6". The line printer 
+should have printed the 311-line barber pole pattern.
+</OL>
+
+<H2>FORTRAN CHARACTER CONVERSION</H2>
+
+<P>This demo will print a punch card deck containing a FORTRAN IV program
+that was punched based on symbols printed by IBM card punches,
+not the Honeywell symbols. This program consults the SENSE 1 switch to
+see whether or not to convert special characters (using a MAT instruction).
+
+<OL>
+<LI>Open/raise the PunchCards window and mount the file "prog3.pcd" in
+the Read Hopper.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press RUN. The short program-segment should be printed on the line printer -
+although many of the special characters will appear wrong for FORTRAN program
+syntax.
+<LI>It will be necessary to re-mount the card deck, in order to start over for
+the next step.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press the SENSE 1 switch (it should now be lighted).
+<LI>Press RUN. The short program-segment should be printed again,
+this time the FORTRAN special characters should appear as expected.
+</OL>
 
 </BODY>
 </HTML>

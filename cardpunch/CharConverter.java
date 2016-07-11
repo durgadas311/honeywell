@@ -7,6 +7,7 @@ class CharConverter {
 	private byte[] xlate_pun;
 	private String[] spcl_pun;
 	private short[] xlate_char;
+	private short[] hw2pun;
 	private byte[] xlate_hw;
 	private byte[] hw2lp;
 	private byte[] ascii2hw;
@@ -129,7 +130,7 @@ class CharConverter {
 		// This defines how keystrokes convert to punch codes.
 		xlate_char = new short[128];
 		Arrays.fill(xlate_char, (short)0x1000);
-		xlate_char[' '] = (short)0x800;
+		xlate_char[' '] = (short)0x000;
 		xlate_char['&'] = (short)0x800;
 		xlate_char['-'] = (short)0x400;
 		xlate_char['0'] = (short)0x200;
@@ -233,6 +234,80 @@ class CharConverter {
 				xlate_char['='] = (short)0x1000;
 			}
 		}
+
+		// This defines how HW codes convert to punch codes.
+		hw2pun = new short[64];
+		hw2pun[015] = (short)0x000;
+		hw2pun[037] = (short)0x800;
+		hw2pun[057] = (short)0x400;
+		hw2pun[000] = (short)0x200;
+		hw2pun[001] = (short)0x100;
+		hw2pun[002] = (short)0x080;
+		hw2pun[003] = (short)0x040;
+		hw2pun[004] = (short)0x020;
+		hw2pun[005] = (short)0x010;
+		hw2pun[006] = (short)0x008;
+		hw2pun[007] = (short)0x004;
+		hw2pun[010] = (short)0x002;
+		hw2pun[011] = (short)0x001;
+
+		hw2pun[021] = (short)0x900;
+		hw2pun[022] = (short)0x880;
+		hw2pun[023] = (short)0x840;
+		hw2pun[024] = (short)0x820;
+		hw2pun[025] = (short)0x810;
+		hw2pun[026] = (short)0x808;
+		hw2pun[027] = (short)0x804;
+		hw2pun[030] = (short)0x802;
+		hw2pun[031] = (short)0x801;
+
+		hw2pun[041] = (short)0x500;
+		hw2pun[042] = (short)0x480;
+		hw2pun[043] = (short)0x440;
+		hw2pun[044] = (short)0x420;
+		hw2pun[045] = (short)0x410;
+		hw2pun[046] = (short)0x408;
+		hw2pun[047] = (short)0x404;
+		hw2pun[050] = (short)0x402;
+		hw2pun[051] = (short)0x401;
+
+		hw2pun[061] = (short)0x300;
+		hw2pun[062] = (short)0x280;
+		hw2pun[063] = (short)0x240;
+		hw2pun[064] = (short)0x220;
+		hw2pun[065] = (short)0x210;
+		hw2pun[066] = (short)0x208;
+		hw2pun[067] = (short)0x204;
+		hw2pun[070] = (short)0x202;
+		hw2pun[071] = (short)0x201;
+
+		hw2pun[012] = (short)0x082;
+		hw2pun[013] = (short)0x042;
+		hw2pun[014] = (short)0x022;
+		hw2pun[060] = (short)0x012;
+		hw2pun[016] = (short)0x00a;
+		hw2pun[017] = (short)0x006;
+
+		hw2pun[020] = (short)0xa00;	// hw 020 ('+')
+		hw2pun[032] = (short)0x882;	// cent
+		hw2pun[033] = (short)0x842;
+		hw2pun[034] = (short)0x822;
+		hw2pun[035] = (short)0x812;
+		hw2pun[036] = (short)0x80a;
+
+		hw2pun[040] = (short)0x600;	// hw 040 ('-')
+		hw2pun[052] = (short)0x482;
+		hw2pun[053] = (short)0x442;
+		hw2pun[054] = (short)0x422;
+		hw2pun[055] = (short)0x412;
+		hw2pun[056] = (short)0x40a;
+
+		hw2pun[072] = (short)0x282;	// No keypunch symbol
+		hw2pun[073] = (short)0x242;
+		hw2pun[074] = (short)0x222;
+		hw2pun[075] = (short)0x212;
+		hw2pun[076] = (short)0x20a;
+		hw2pun[077] = (short)0x206;
 
 		// This defines how (condensed) punch codes convert to HW cpu codes.
 		xlate_hw = new byte[128];
@@ -535,17 +610,11 @@ class CharConverter {
 
 	// punch code from HW2000 "cpu code"
 	public int hwToPun(byte c, boolean alt) {
-		byte b = hw2lp[c & 077];
-		if (b == 0) {
-			return -1;
+		if (alt) {
+			c ^= 017;
 		}
-		if (b == ' ') {
-			return 0;
-		}
-		int p = xlate_char[b];
-		if (p == 0x1000) {
-			return -1;
-		}
+		int p = hw2pun[c & 077];
+		// All codes defined - no errors possible
 		return p;
 	}
 

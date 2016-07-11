@@ -29,9 +29,18 @@ size of the buffer (RM in memory). This variation of the command, in the case
 of SEARCH AND versions, will follow Track Linking Records automatically.
 </UL>
 
-<P>Disk geometry as set as 203 cylinders of 20 tracks with 4700 raw characters
+<P>Disk geometry is set as 203 cylinders of 20 tracks (heads, surfaces)
+with 4700 raw characters
 per track. Each record consumes 11 additional characters to the record length.
 Raw capacity of a disk pack is 19 million characters.
+The image file format consists of 4060 blocks of 4700 bytes each, representing
+the tracks. The first 20 blocks (tracks) represent the first cylinder. 
+Within a track, data is laid out starting with a 1-byte Address Mark followed
+by the header (FCCTTRRDL) followed by a 1-byte Data Mark, then DL bytes of
+data followed by either another Address Mark or an "end of track mark".
+Bytes from the End Mark to 4700th byte are ignored, although format commands
+can write there. The file size grows as tracks get formatted, with "non-existent"
+data effectively being "unformatted".
 
 <P>Each drive has a mount/unmount button that is labeled for the
 drive number (000 - 007). Clicking this button opens a file dialog window
@@ -39,7 +48,8 @@ for selecting the disk image to be mounted (clicking Cancel will leave no
 image mounted).
 In addition, "A" and "B" buttons exist to provide values to match
 against the A-File and B-File bits in record headers. Since no information
-has been found on how these bits are used, this is currently not implemented.
+has been found on how these bits were used on real hardware,
+use of these bits is currently not implemented.
 <P>Active drives will show current head position/selection
 as Cylinder.Track.
 

@@ -13,6 +13,10 @@ Furthermore, a RM in the memory buffer will stop a transfer.
 The CLC and SLC reghisters may be used to determine whether more data existed.
 <P>
 A record of 0-length is a File Mark, typically meaning End Of File.
+End of Tape (EOF on image file) will return 0-length records.
+Full rewind as well as backspace to record/file marks is supported,
+however exact placement after backspace needs to be confirmed
+with details of how real hardware worked.
 
 <P>
 <P>Each drive has a mount/unmount button that is labeled for the
