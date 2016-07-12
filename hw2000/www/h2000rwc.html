@@ -27,19 +27,20 @@ except for the Interval Timer "timeout".
 
 <P>For many peripherals, it is possible to return less input data than requested.
 A program can query the CLC register to determine this, however since these registers
-contain physical addresses is will normally be necessary to subtract SLC from CLC
+contain physical addresses it will normally be necessary to subtract SLC from CLC
 to yield the length of transfer for comparison.
 
-<P>In the case that a request buffer (RM in memory) was not enough to contain
+<P>In the case that a request buffer (RM in memory) was not large enough to contain
 the peripheral record (typically for Console, Mag Tape, and Disk), the
 CLC will be pointing to one character past the RM character.
 To summarize:
 <UL>
-<LI>When buffer and peripheral record lengths match, CLC will point to the RM character.
-<LI>When the buffer is too small, CLC will point to character RM + 1.
+<LI>When buffer and peripheral record lengths match, CLC will point to the RM character (CLC == RM).
+<LI>When the buffer is too small, CLC will point to character RM + 1 (CLC > RM).
 <LI>When less data was transferred, CLC will point to the character after
-the last valid character (i.e. CLC will point to a location before the RM character).
+the last valid character (i.e. CLC will point to some location before the RM character) (CLC < RM).
 </UL>
+None of these consitions are considered errors, from the peripheral's perspective.
 
 </BODY>
 </HTML>

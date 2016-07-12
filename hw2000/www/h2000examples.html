@@ -37,11 +37,11 @@ and then read those cards and print them on the line printer.
 <OL>
 <LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
 tape drive 000.
-<LI>Open/raise the PunchCard window and mount a new file in the Punch Hopper.
+<LI>Open/raise the PunchCard window and mount a new file in the Punch Stacker.
 <LI>Select menu File->Assemble and choose the file "puntest2.ezc" and click "Assemble".
 <LI>Press RUN.  The card punch should show 311 cards punched. The tape drive will show about 25192,
 the number of bytes used in the image for records and record marks.
-<LI>Unmount the punch card deck from the Punch Hopper (click Punch Hopper, then
+<LI>Unmount the punch card deck from the Punch Stacker (click Punch Stacker, then
 click Cancel).
 <LI>Mount the newly-punched deck of cards in the Read Hopper.
 <LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
@@ -89,6 +89,21 @@ the next step.
 <LI>Press the SENSE 1 switch (it should now be lighted).
 <LI>Press RUN. The short program-segment should be printed again,
 this time the FORTRAN special characters should appear as expected.
+</OL>
+
+<H2>RUN TAPE</H2>
+
+<P>This demo will create a "run tape" and then use BOOTSTRAP to run it.
+
+<OL>
+<LI>Select menu File->Assemble and choose the file "mcetests.ezc",
+check the "Tape Image" box, and click "Assemble". This will create "mcetests.mti".
+<LI>Open/raise the MagTape window and mount the file "mcetests.mti" on tape drive 000.
+<LI>Enter 40 into Contents (using the clear button as needed).
+<LI>Ensure Address is 0 (use the clear button as needed).
+<LI>Press BOOTSTRAP. The tape drive should indicate that about 191 bytes were read.
+<LI>Press RUN. The tape drive should stop at about 1828 bytes and the line printer
+should show the output of running the mcetests program.
 </OL>
 
 </BODY>
