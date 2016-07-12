@@ -37,10 +37,8 @@ public class P_Disk extends JFrame
 	}
 
 	// These are all stored by io() and used during run()...
-	byte c2;
 	byte c3;
 	int unit;
-	int clc, slc;
 	boolean busy;
 	boolean in;
 	boolean format = false; // switch setting, per drive?
@@ -353,46 +351,38 @@ public class P_Disk extends JFrame
 		return true;
 	}
 
-	private void doAdrReg() {
-		if (in) {
-			sys.rawWriteChar(sys.cr[clc], (byte)(adr_cyl >> 6));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			sys.rawWriteChar(sys.cr[clc], (byte)(adr_cyl));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			sys.rawWriteChar(sys.cr[clc], (byte)(adr_trk >> 6));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			sys.rawWriteChar(sys.cr[clc], (byte)(adr_trk));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			sys.rawWriteChar(sys.cr[clc], (byte)(adr_rec >> 6));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			sys.rawWriteChar(sys.cr[clc], (byte)(adr_rec));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+	private void doAdrReg(RWChannel rwc) {
+		if (rwc.isInput()) {
+			rwc.writeChar((byte)(adr_cyl >> 6));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_cyl));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_trk >> 6));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_trk));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_rec >> 6));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_rec));
+			rwc.incrCLC();
 		} else {
-			adr_cyl = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			adr_cyl |= (sys.rawReadMem(sys.cr[clc]) & 077);
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			adr_trk = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			adr_trk |= (sys.rawReadMem(sys.cr[clc]) & 077);
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			adr_rec = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			adr_rec |= (sys.rawReadMem(sys.cr[clc]) & 077);
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+			adr_cyl = (rwc.readMem() & 077) << 6;
+			rwc.incrCLC();
+			adr_cyl |= (rwc.readMem() & 077);
+			rwc.incrCLC();
+			adr_trk = (rwc.readMem() & 077) << 6;
+			rwc.incrCLC();
+			adr_trk |= (rwc.readMem() & 077);
+			rwc.incrCLC();
+			adr_rec = (rwc.readMem() & 077) << 6;
+			rwc.incrCLC();
+			adr_rec |= (rwc.readMem() & 077);
+			rwc.incrCLC();
 		}
 	}
 
-	public void io(HW2000 sys) {
-		this.sys = sys;
-		clc = (byte)(sys.getXtra(0) & 027);
-		slc = clc + 010;
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		c2 = sys.getXtra(x++);
-		c3 = sys.getXtra(x++); // operation
+	public void io(RWChannel rwc) {
+		this.sys = rwc.sys;
 		// C3:
 		//	04	Store/Load address reg
 		//	00/10	Read/Write initial
@@ -403,12 +393,12 @@ public class P_Disk extends JFrame
 		//	22/32	Extended Search and Read/Write
 		//	03/13	Search and Read/Write Next
 		//	23/33	Extended Search and Read/Write Next
-		in = ((c2 & 040) == PeriphDecode.P_IN);
-		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
+		in = rwc.isInput();
+		c3 = rwc.c3;
 		// Perform load/store address register now...
-		if (c3 == 004) {
-			sys.cr[clc] = sys.cr[slc];
-			doAdrReg();
+		if (rwc.c3 == 004) {
+			rwc.startCLC();
+			doAdrReg(rwc);
 			return;
 		}
 		if (sts[unit].dev == null) {
@@ -419,14 +409,14 @@ public class P_Disk extends JFrame
 		busy = true;
 	}
 
-	public void run(HW2000 sys) {
+	public void run(RWChannel rwc) {
 		if (!busy) {
 			return;
 		}
-		if (in) {
-			doIn(sys);
+		if (rwc.isInput()) {
+			doIn(rwc);
 		} else {
-			doOut(sys);
+			doOut(rwc);
 		}
 		// cyl not changed by run()...
 		// but if we track record/sector...
@@ -483,12 +473,12 @@ public class P_Disk extends JFrame
 		return 0;
 	}
 
-	private void doIn(HW2000 sys) {
-		extended = ((c3 & 020) == 020);
-		verify = ((c3 & 010) == 010);
-		format = ((c3 & 002) == 000);
-		initial = ((c3 & 003) == 000);
-		sys.cr[clc] = sys.cr[slc];
+	private void doIn(RWChannel rwc) {
+		extended = ((rwc.c3 & 020) == 020);
+		verify = ((rwc.c3 & 010) == 010);
+		format = ((rwc.c3 & 002) == 000);
+		initial = ((rwc.c3 & 003) == 000);
+		rwc.startCLC();
 		if (format) {
 			cacheTrack(adr_cyl, adr_trk);
 			if (initial) {
@@ -502,9 +492,8 @@ public class P_Disk extends JFrame
 			getHeader(curr_pos);
 			for (int x = 0; x < 9; ++x) {
 				// TODO: strip punc, check RM?
-				sys.rawWriteMem(sys.cr[clc], track[curr_pos++]);
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				rwc.writeMem(track[curr_pos++]);
+				if (rwc.incrCLC()) {
 					error = true;
 					return;
 				}
@@ -520,7 +509,7 @@ public class P_Disk extends JFrame
 		// 'curr_pos' points to first data byte.
 		while (true) {
 			int a = 0;
-			int b = sys.rawReadMem(sys.cr[clc]) & 0300;
+			int b = rwc.readMem() & 0300;
 			if (format) {
 				if (curr_pos >= track.length) {
 					curr_pos = 0;
@@ -554,9 +543,8 @@ public class P_Disk extends JFrame
 				}
 			}
 			// TODO: support 8-bit transfers?
-			sys.rawWriteChar(sys.cr[clc], (byte)(a & 077));
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+			rwc.writeChar((byte)(a & 077));
+			if (rwc.incrCLC()) {
 				break;
 			}
 			if (b == 0300) {
@@ -566,15 +554,15 @@ public class P_Disk extends JFrame
 		}
 	}
 
-	public void doOut(HW2000 sys) {
-		extended = ((c3 & 020) == 020);
-		verify = ((c3 & 010) == 010);
-		format = ((c3 & 002) == 000);
-		initial = ((c3 & 003) == 000);
-		sys.cr[clc] = sys.cr[slc];
+	public void doOut(RWChannel rwc) {
+		extended = ((rwc.c3 & 020) == 020);
+		verify = ((rwc.c3 & 010) == 010);
+		format = ((rwc.c3 & 002) == 000);
+		initial = ((rwc.c3 & 003) == 000);
+		rwc.startCLC();
 		if (format) {
 			track_dirty = true;
-			getHeaderMem(sys.cr[clc] + 1); // loads adr_*
+			getHeaderMem(rwc.getCLC() + 1); // loads adr_*
 			cacheTrack(adr_cyl, adr_trk);
 			if (initial) {
 				curr_pos = 0;
@@ -589,9 +577,8 @@ public class P_Disk extends JFrame
 			track[curr_pos++] = AM; // pad with gap?
 			for (int x = 0; x < 9; ++x) {
 				// TODO: strip punc, check RM?
-				track[curr_pos++] = (byte)(sys.rawReadMem(sys.cr[clc]) & 077);
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				track[curr_pos++] = (byte)(rwc.readMem() & 077);
+				if (rwc.incrCLC()) {
 					error = true;
 					return;
 				}
@@ -608,7 +595,7 @@ public class P_Disk extends JFrame
 			return;
 		}
 		while (!error) {
-			byte a = sys.rawReadMem(sys.cr[clc]);
+			byte a = rwc.readMem();
 			// TODO: how does extended fit with RM check?
 			if ((a & 0300)  == 0300) {
 				if (format) {
@@ -645,8 +632,7 @@ public class P_Disk extends JFrame
 				error = true; // not an error?
 				break;
 			}
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+			if (rwc.incrCLC()) {
 				break;
 			}
 		}
@@ -665,7 +651,7 @@ public class P_Disk extends JFrame
 		return busy;
 	}
 
-	public void ctl(HW2000 sys) {
+	public boolean ctl(RWChannel rwc) {
 		// C3-Cn:
 		//	xxxDDD = Tape Drive/Unit DDD
 		// Branch to A if device busy, else...
@@ -686,60 +672,55 @@ public class P_Disk extends JFrame
 		//(out) 111110 = Drive interrupt OFF
 		//(out) 111111 = Branch if device interrupt ON
 
+		int unit;
 		boolean branch = false;
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		boolean in = ((sys.getXtra(x++) & 040) == PeriphDecode.P_IN); // C2
-		byte c3 = sys.getXtra(x);
-		if ((c3 & 070) == 000) { // && sys.getXtra(x + 1) == 0 ?
-			unit = c3 & 007;
+		boolean in = ((rwc.c2 & 040) == PeriphDecode.P_IN); // C2
+		if ((rwc.c3 & 070) == 000) { // && sys.getXtra(x + 1) == 0 ?
+			unit = rwc.c3 & 007;
 			if (sts[unit].busy) {
 				branch = true;
 			}
-		} else if ((c3 & 070) == 020) { // && sys.getXtra(x + 1) == 0 ?
-			unit = c3 & 007;
+		} else if ((rwc.c3 & 070) == 020) { // && rwc.c4 == 0 ?
+			unit = rwc.c3 & 007;
 			if (sts[unit].busy) {
 				branch = true;
 			} else {
-				sts[unit].cyl = (sys.getXtra(x + 2) << 6) | sys.getXtra(x + 3);
+				sts[unit].cyl = (rwc.c5 << 6) | rwc.c6;
 				sts[unit].cyl_pn.setText(String.format("%d", sts[unit].cyl));
 			}
-		} else for (;x < sys.numXtra(); ++x) {
-			byte cx = sys.getXtra(x);
-			if (in) {
-				if ((cx & 070) == 030) {
-					unit = cx & 007;
-					sts[unit].cyl = 0;
-					sts[unit].cyl_pn.setText("0");
+		} else {
+			byte[] cx = new byte[]{ rwc.c3, rwc.c4, rwc.c5, rwc.c6, rwc.c7 };
+			for (int x = 0; x < rwc.cn - 2; ++x) {
+				if (in) {
+					if ((cx[x] & 070) == 030) {
+						unit = cx[x] & 007;
+						sts[unit].cyl = 0;
+						sts[unit].cyl_pn.setText("0");
+					}
+					continue;
 				}
-				continue;
-			}
-			switch(cx & 070) {
-			case 070:
-				// handle interrupt control
-				return;
-			case 060:
-				if ((curr_flg & 040) != 0) {
-					branch = true;
+				switch(cx[x] & 070) {
+				case 070:
+					// handle interrupt control
+					break;
+				case 060:
+					if ((curr_flg & 040) != 0) {
+						branch = true;
+					}
+					break;
+				case 050:
+					if (error) {
+						branch = true;
+						error = false;
+					}
+					break;
+				case 040:
+					format = true;
+					break;
 				}
-				break;
-			case 050:
-				if (error) {
-					branch = true;
-					error = false;
-				}
-				break;
-			case 040:
-				format = true;
-				break;
 			}
 		}
-		if (branch) {
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
-		}
+		return branch;
 	}
 
 	private File pickFile(String purpose) {

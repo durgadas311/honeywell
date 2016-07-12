@@ -7,9 +7,6 @@ import javax.swing.text.*;
 public class P_Console extends JFrame
 		implements Peripheral, KeyListener, ActionListener, WindowListener {
 	private class ConsoleStatus {
-		byte c3;
-		byte c2;
-		int clc, slc;
 		boolean busy;
 		public ConsoleStatus() {
 			busy = false;
@@ -130,49 +127,35 @@ public class P_Console extends JFrame
 		}
 	}
 
-	public void io(HW2000 sys) {
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		byte c2 = sys.getXtra(x++);
-		io = ((c2 & 040) >> 5);
-		sts[io].c2 = c2;
-		sts[io].c3 = sys.getXtra(x);
-		sts[io].clc = (byte)(sys.getXtra(0) & 027);
-		sts[io].slc = sts[io].clc + 010;
+	public void io(RWChannel rwc) {
 		// C3:
 		//	000000: no CR/LF
 		//	000001: CR (LF?)
 		// TODO: does c3 output CR/LF on input?
-		sys.cr[sts[io].slc] = sys.validAdr(sys.AAR);	// translate to physical address
+		int io = ((rwc.c2 & 040) >> 5);
 		sts[io].busy = true;
 	}
 
-	public void run(HW2000 sys) {
+	public void run(RWChannel rwc) {
+		int io = ((rwc.c2 & 040) >> 5);
 		if (!sts[io].busy) {
 			return;
 		}
 		if (io == 0) {
-			doOut(sys);
+			doOut(rwc);
 		} else {
-			doIn(sys);
+			doIn(rwc);
 		}
 	}
 
-	private void doIn(HW2000 sys) {
-		int clc = sts[1].clc;
-		sys.cr[clc] = sys.cr[sts[1].slc];
+	private void doIn(RWChannel rwc) {
+		rwc.startCLC();
 		int a = -1;
 		byte b;
 		try {
 			// TODO: what effect does c3 have? Print CR/LF before input?
 			// Or... use CR as termination of input?
-			b = (byte)(sys.rawReadMem(sys.cr[clc]) & 0300);
-			do {
-				if (b == 0300) {
-					break;
-				}
+			while ((rwc.readMem() & 0300) != 0300) {
 				if (idev != null) {
 					a = idev.read();
 				} else {
@@ -192,36 +175,33 @@ public class P_Console extends JFrame
 				if (ix >= 0) {
 					a = CharConverter.hwAsciiRep.charAt(ix);
 				}
-				byte c = sys.pdc.cvt.asciiToHw((byte)a);
+				byte c = rwc.sys.pdc.cvt.asciiToHw((byte)a);
 				if (col >= 80) {
 					text.insert("\n", carr++);
 					col = 0;
 				}
-				text.insert(sys.pdc.cvt.hwToLP(c), carr++);
+				text.insert(rwc.sys.pdc.cvt.hwToLP(c), carr++);
 				text.setCaretPosition(carr);
 				// Must not disturb punctuation
-				sys.rawWriteChar(sys.cr[sts[1].clc], c);
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				rwc.writeChar(c);
+				if (rwc.incrCLC()) {
 					break;
 				}
-				b = (byte)(sys.rawReadMem(sys.cr[clc]) & 0300);
-			} while (b != 0300); // always end at record mark, right?
+			}
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
 		sts[1].busy = false;
 	}
 
-	public void doOut(HW2000 sys) {
-		int clc = sts[0].clc;
-		sys.cr[clc] = sys.cr[sts[0].slc];
+	public void doOut(RWChannel rwc) {
+		rwc.startCLC();
 		String s = "";
 		boolean print = true;
 		// Printing stops *before* char with record mark...
 		try {
 			while (print) {
-				byte a = sys.rawReadMem(sys.cr[clc]);
+				byte a = rwc.readMem();
 				if ((a & 0300)  == 0300) {
 					break;
 				}
@@ -230,14 +210,13 @@ public class P_Console extends JFrame
 					s += "\n";
 					col = 0;
 				}
-				s += sys.pdc.cvt.hwToLP(a);
+				s += rwc.sys.pdc.cvt.hwToLP(a);
 				++col;
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				if (rwc.incrCLC()) {
 					break;
 				}
 			}
-			if (sts[0].c3 != 0) {
+			if (rwc.c3 != 0) {
 				s += "\n";
 				col = 0;
 			}
@@ -274,21 +253,17 @@ public class P_Console extends JFrame
 		}
 	}
 
-	public void ctl(HW2000 sys) {
+	public boolean ctl(RWChannel rwc) {
 		boolean branch = false;
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		int io = ((sys.getXtra(x++) & 040) >> 5);
-		for (;x < sys.numXtra(); ++x) {
-			byte cx = sys.getXtra(1);
-			if (cx == 010) {
+		int io = ((rwc.c2 & 040) >> 5);
+		byte[] cx = new byte[]{ rwc.c3, rwc.c4, rwc.c5, rwc.c6, rwc.c7 };
+		for (int x = 0; x < rwc.cn - 2; ++x) {
+			if (cx[x] == 010) {
 				if (sts[io].busy) {
 					branch = true;
 				}
-			} else if ((cx & 070) == 070) {
-				switch(cx & 007) {
+			} else if ((cx[x] & 070) == 070) {
+				switch(cx[x] & 007) {
 				case 000:
 					// allow OFF
 					break;
@@ -314,11 +289,7 @@ public class P_Console extends JFrame
 				}
 			}
 		}
-		if (branch) {
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
-			return;
-		}
+		return branch;
 	}
 
 	private File pickFile(String purpose) {

@@ -7,12 +7,15 @@ import javax.swing.text.*;
 public class P_MagneticTape extends JFrame
 		implements Peripheral, ActionListener, WindowListener {
 
-	byte c4;
-	byte c3;
-	byte c2;
+	private class MagTapeStatus {
+		RandomAccessFile dev;
+		boolean beg;
+		boolean end;
+		boolean in;
+	}
+
 	int unit;
 	int count;
-	int clc, slc;
 	boolean busy;
 	boolean reverse;
 	boolean backspace;
@@ -103,23 +106,13 @@ public class P_MagneticTape extends JFrame
 		}
 	}
 
-	public void io(HW2000 sys) {
-		clc = (byte)(sys.getXtra(0) & 027);
-		slc = clc + 010;
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		c2 = sys.getXtra(x++);
-		in = ((c2 & 040) == 040);
-		if (sys.bootstrap) {
+	public void io(RWChannel rwc) {
+		in = ((rwc.c2 & 040) == PeriphDecode.P_IN);
+		if (rwc.sys.bootstrap) {
 			// Special case defaults, for BOOTSTRAP
-			c3 = (byte)060;	// Read forward, unit 0
-			c4 = (byte)000;	// Stop at Rec Mark, Std FMT
+			rwc.c3 = (byte)060;	// Read forward, unit 0
+			rwc.c4 = (byte)000;	// Stop at Rec Mark, Std FMT
 					//... or 023 "Load Mode"?
-		} else {
-			c3 = sys.getXtra(x++); // must be present?
-			c4 = sys.getXtra(x++); // might be 00
 		}
 		// C3:
 		//	xxxDDD = Tape Drive/Unit DDD
@@ -148,13 +141,13 @@ public class P_MagneticTape extends JFrame
 		// * Special hardware option.
 		// ** Packed-decimal? 2 digits per tape "byte"? signs? fields?
 		// *** Full punctuation transfer?
-		unit = c3 & 007;
+		unit = rwc.c3 & 007;
 		reverse = false;
 		backspace = false;
 		erase = false;
 		fwdspace = false;
 		count = 0; // use (memory) record mark
-		switch(c3 & 070) {
+		switch(rwc.c3 & 070) {
 		case 000:
 			if (in) {
 				// backspace to C4
@@ -182,7 +175,7 @@ public class P_MagneticTape extends JFrame
 			}
 			break;
 		}
-		switch(c4 & 070) {
+		switch(rwc.c4 & 070) {
 		case 000:
 		default:
 			// use (memory) record mark
@@ -193,13 +186,10 @@ public class P_MagneticTape extends JFrame
 			break;
 		case 020:
 			// not for SPACE commands? ERASE?
-			int c5 = sys.getXtra(x++);
-			int c6 = sys.getXtra(x++);
-			int c7 = sys.getXtra(x++);
-			count = (c5 << 12) | (c6 << 6) | c7;
+			count = (rwc.c5 << 12) | (rwc.c6 << 6) | rwc.c7;
 			break;
 		}
-		switch(c4 & 007) {
+		switch(rwc.c4 & 007) {
 		case 000:
 			// std 6-bit char xfer
 			break;
@@ -216,7 +206,6 @@ public class P_MagneticTape extends JFrame
 			// EBCDIC subset - TBD
 			break;
 		}
-		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
 		if (dev[unit] == null) {
 			// set error?
 			return;
@@ -224,14 +213,14 @@ public class P_MagneticTape extends JFrame
 		busy = true;
 	}
 
-	public void run(HW2000 sys) {
+	public void run(RWChannel rwc) {
 		if (!busy) {
 			return;
 		}
-		if ((c2 & 040) == PeriphDecode.P_OUT) {
-			doOut(sys);
+		if ((rwc.c2 & 040) == PeriphDecode.P_OUT) {
+			doOut(rwc);
 		} else {
-			doIn(sys);
+			doIn(rwc);
 		}
 		try {
 			stat_pn[unit].setText(
@@ -239,8 +228,8 @@ public class P_MagneticTape extends JFrame
 		} catch (Exception ee) {}
 	}
 
-	private void doIn(HW2000 sys) {
-		sys.cr[clc] = sys.cr[slc];
+	private void doIn(RWChannel rwc) {
+		rwc.startCLC();
 		int a = -1;
 		long fp = 0;
 		try {
@@ -274,10 +263,9 @@ public class P_MagneticTape extends JFrame
 				if (fwdspace || backspace) {
 					continue;
 				}
-				sys.rawWriteChar(sys.cr[clc], (byte)(a & 077));
-				a = sys.rawReadMem(sys.cr[clc]) & 0300;
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				rwc.writeChar((byte)a);
+				a = rwc.readMem() & 0300;
+				if (rwc.incrCLC()) {
 					break;
 				}
 				if ((count == 0 && a == 0300) ||
@@ -294,11 +282,11 @@ public class P_MagneticTape extends JFrame
 		busy = false;
 	}
 
-	public void doOut(HW2000 sys) {
-		sys.cr[clc] = sys.cr[slc];
+	public void doOut(RWChannel rwc) {
+		rwc.startCLC();
 		try {
 			while (true) {
-				byte a = sys.rawReadMem(sys.cr[clc]);
+				byte a = rwc.readMem();
 				if (count == 0 && (a & 0300) == 0300) {
 					// "zero-length record" just means EOF,
 					// a.k.a. "File Mark".
@@ -307,8 +295,7 @@ public class P_MagneticTape extends JFrame
 				}
 				a &= 077;
 				dev[unit].write(a);
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				if (rwc.incrCLC()) {
 					break;
 				}
 				// This does not permit 0-char xfers
@@ -330,7 +317,7 @@ public class P_MagneticTape extends JFrame
 		return busy;
 	}
 
-	public void ctl(HW2000 sys) {
+	public boolean ctl(RWChannel rwc) {
 		// C3:
 		//	xxxDDD = Tape Drive/Unit DDD
 		// (in) 010xxx = Rewind, release
@@ -345,54 +332,64 @@ public class P_MagneticTape extends JFrame
 		//	111100 = Control interrupt OFF
 		//	111101 = Branch if control interrupt ON
 
+		boolean branch = false;
 		// TODO: revisit this - RWC busy vs. device busy vs. ...
-		if (busy) { // always tested...
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
-			return;
+		if (busy) { // always tested...?
+			return true;
 		}
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
+		if (rwc.cn < 2) {
+			return branch;
 		}
-		if (x < sys.numXtra()) {
-			c2 = sys.getXtra(x++);
-			boolean in = ((c2 & 040) == PeriphDecode.P_IN);
-			c3 = sys.getXtra(x++);
-			unit = c3 & 007;
-			switch(c3 & 070) {
-			case 070:
-				// nothing?
-				return;
-			case 060:
-				if ((in && beg) || (!in && end)) {
-					sys.BAR = sys.SR;
-					sys.SR = sys.AAR;
-					return;
-				}
+		boolean in = ((rwc.c2 & 040) == PeriphDecode.P_IN);
+		int unit;
+		switch(rwc.c3 & 070) {
+		case 070:
+			switch(rwc.c3 & 007) {
+			case 0:
+				// allow OFF
 				break;
-			case 040:
-				// never any R/W errors?
+			case 1:
+				// allow ON
 				break;
-			case 020:
-				if (in) {
-					// close, unmount
-					try {
-						dev[unit].close();
-					} catch (Exception ee) {}
-					dev[unit] = null;
-				} else {
-					// rewind
-					try {
-						dev[unit].seek(0L);
-					} catch (Exception ee) {}
-				}
+			case 4:
+				// interrupt OFF
 				break;
-			case 000:
-				// never busy, from here?
+			case 5:
+				// branch if interrupt ON
 				break;
 			}
+			break;
+		case 060:
+			unit = rwc.c3 & 007;
+			if ((in && beg) || (!in && end)) {
+				branch = true;
+			}
+			break;
+		case 040:
+			unit = rwc.c3 & 007;
+			// never any R/W errors?
+			break;
+		case 020:
+			unit = rwc.c3 & 007;
+			if (in) {
+				// close, unmount
+				try {
+					dev[unit].close();
+				} catch (Exception ee) {}
+				dev[unit] = null;
+			} else {
+				// rewind
+				try {
+					dev[unit].seek(0L);
+				} catch (Exception ee) {}
+			}
+			break;
+		case 000:
+			unit = rwc.c3 & 007;
+			// never busy, from here?
+			break;
 		}
+		return branch;
 	}
 
 	private File pickFile(String purpose) {

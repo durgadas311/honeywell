@@ -5,9 +5,9 @@ public interface Peripheral {
 	public void setInput(InputStream dev);
 	public OutputStream getOutput();
 	public InputStream getInput();
-	public void io(HW2000 sys);
-	public void ctl(HW2000 sys);
-	public void run(HW2000 sys);
+	public void io(RWChannel rwc);
+	public void run(RWChannel rwc);
+	public boolean ctl(RWChannel rwc);	// true if branch
 	public void setInterrupt(HW2000 sys);
 	public boolean busy(byte c2);
 	public void output(String s);

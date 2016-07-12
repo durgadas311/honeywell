@@ -53,30 +53,22 @@ public class P_Time
 	// device address. PDT is never issued on INTVL and
 	// the only common PCB code is 10 "branch if busy"
 	// and this device is never (?) busy in that context.
-	public void io(HW2000 sys) {
+	public void io(RWChannel rwc) {
 		// PDT, this must be for TOD.
-		// Also, we satisfy the require now, so
+		// Also, we satisfy the request now, so
 		// there is never a BUSY status.
-		int x = 1;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		byte c2 = sys.getXtra(x++);
 		// check input/output? or ignore?
-		int clc = (byte)(sys.getXtra(0) & 027);
-		int slc = clc + 010;
-		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
-		sys.cr[clc] = sys.cr[slc];
+		rwc.startCLC();
 		Date dt = new Date();
 		String tod = _timestamp.format(dt);
-		for (x = 0; x < 10; ++x) {
-			byte c = sys.pdc.cvt.asciiToHw((byte)tod.charAt(x));
-			sys.rawWriteChar(sys.cr[clc], c);
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
+		for (int x = 0; x < 10; ++x) {
+			byte c = rwc.sys.pdc.cvt.asciiToHw((byte)tod.charAt(x));
+			rwc.writeChar(c);
+			rwc.incrCLC();
 		}
 	}
 
-	public void run(HW2000 sys) {
+	public void run(RWChannel rwc) {
 		// only called for TOD - nothing to do.
 	}
 
@@ -87,19 +79,14 @@ public class P_Time
 		return false;
 	}
 
-	public void ctl(HW2000 sys) {
-		this.sys = sys;
+	public boolean ctl(RWChannel rwc) {
+		this.sys = rwc.sys;
 		boolean branch = false;
-		int x = 2;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			++x;
-		}
-		byte c3 = sys.getXtra(x++);
-		if (c3 == 010) {
+		if (rwc.c3 == 010) {
 			// never busy
-		} else if ((c3 & 070) == 070) {
+		} else if ((rwc.c3 & 070) == 070) {
 			// must be INTVL
-			switch(c3 & 007) {
+			switch(rwc.c3 & 007) {
 			case 000:
 				// allow OFF
 				timer.stop();
@@ -110,9 +97,9 @@ public class P_Time
 				break;
 			case 003:
 				// allow ON with interval
-				int intvl = (sys.getXtra(x++) & 077) << 12;
-				intvl |= (sys.getXtra(x++) & 077) << 6;
-				intvl |= (sys.getXtra(x++) & 077);
+				int intvl = (rwc.c4 & 077) << 12;
+				intvl |= (rwc.c5 & 077) << 6;
+				intvl |= (rwc.c6 & 077);
 				// TODO: what units are 'intvl'???
 				// 0 - 262143 count,
 				// using milliseconds:
@@ -138,11 +125,7 @@ public class P_Time
 				break;
 			}
 		}
-		if (branch) {
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
-			return;
-		}
+		return branch;
 	}
 
 	public void actionPerformed(ActionEvent e) {

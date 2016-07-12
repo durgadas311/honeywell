@@ -67,7 +67,7 @@ public class P_CardReaderPunch extends JFrame
 		// TODO: support non-BLANK cards in punch?
 		pn = new JPanel();
 		pn.setLayout(new FlowLayout());
-		bt = new JButton("Punch Hopper");
+		bt = new JButton("Punch Stacker");
 		bt.setPreferredSize(new Dimension(150, 20));
 		bt.setActionCommand("punch");
 		bt.addActionListener(this);
@@ -134,32 +134,30 @@ public class P_CardReaderPunch extends JFrame
 		card[ix * 2 + 1] = (byte)((p >> 8) & 0x0ff);
 	}
 
-	public void io(HW2000 sys) {
-		clc = (byte)(sys.getXtra(0) & 027);
-		slc = clc + 010;
-		c2 = sys.getXtra(1);
-		in = ((c2 & 040) == 040);
-		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
+	public void io(RWChannel rwc) {
+		in = ((rwc.c2 & 040) == 040);
 		if (in && idev == null) {
-			// set error?
+			// set error? how to handle?
+			// same as EOF: no cards available...
 			return;
 		}
 		busy = true;
 	}
 
-	public void run(HW2000 sys) {
+	public void run(RWChannel rwc) {
 		if (!busy) {
 			return;
 		}
-		if ((c2 & 040) == PeriphDecode.P_OUT) {
-			doOut(sys);
+		if ((rwc.c2 & 040) == PeriphDecode.P_OUT) {
+			doOut(rwc);
 		} else {
-			doIn(sys);
+			doIn(rwc);
 		}
+		busy = false;
 	}
 
-	private void doIn(HW2000 sys) {
-		sys.cr[clc] = sys.cr[slc];
+	private void doIn(RWChannel rwc) {
+		rwc.startCLC();
 		int a = -1;
 		if (idev != null) {
 			try {
@@ -173,7 +171,6 @@ public class P_CardReaderPunch extends JFrame
 			// what status to set?
 			in_count_pn.setText(String.format("%d END", cardsIn));
 			error = true;
-			busy = false;
 			return;
 		}
 		++cardsIn;
@@ -183,52 +180,43 @@ public class P_CardReaderPunch extends JFrame
 			int p = getCol(x);
 			if (code == 2) {
 				// TODO: proper order...
-				sys.rawWriteChar(sys.cr[clc], (byte)((p >> 6) & 077));
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+				rwc.writeChar((byte)((p >> 6) & 077));
+				if (rwc.incrCLC()) {
 					break;
 				}
-				sys.rawWriteChar(sys.cr[clc], (byte)(p & 077));
+				rwc.writeChar((byte)p);
 			} else {
-				int c = sys.pdc.cvt.punToHW(p, (code == 1));
+				int c = rwc.sys.pdc.cvt.punToHW(p, (code == 1));
 				if (c < 0) {
 					illegal = true;
 					c = 0; // TODO: error code?
 				}
-				sys.rawWriteChar(sys.cr[clc], (byte)(c & 077));
+				rwc.writeChar((byte)c);
 			}
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
+			if (rwc.incrCLC()) {
 				break;
 			}
 		}
-		busy = false;
 	}
 
-	public void doOut(HW2000 sys) {
-		sys.cr[clc] = sys.cr[slc];
+	public void doOut(RWChannel rwc) {
+		rwc.startCLC();
 		for (int x = 0; x < 80; ++x) {
 			int p = 0;
 			if (code == 2) {
-				p = (sys.rawReadMem(sys.cr[clc]) & 077) << 6;
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
-					break;
+				p = (rwc.readChar() & 077) << 6;
+				if (rwc.incrCLC()) {
+					return;
 				}
-				p |= (sys.rawReadMem(sys.cr[clc]) & 077);
+				p |= (rwc.readChar() & 077);
 			} else {
-				byte a = sys.rawReadMem(sys.cr[clc]);
-				p = sys.pdc.cvt.hwToPun(a, (code == 1));
+				byte a = rwc.readChar();
+				p = rwc.sys.pdc.cvt.hwToPun(a, (code == 1));
 			}
 			putCol(x, p);
-			sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-			if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
-				break;
+			if (rwc.incrCLC()) {
+				return;
 			}
-		}
-		if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
-			busy = false;
-			return;
 		}
 		if (odev != null) {
 			try {
@@ -239,7 +227,6 @@ public class P_CardReaderPunch extends JFrame
 		}
 		++cardsOut;
 		out_count_pn.setText(String.format("%d", cardsOut));
-		busy = false;
 	}
 
 	public void output(String s) {
@@ -249,7 +236,7 @@ public class P_CardReaderPunch extends JFrame
 		return busy;
 	}
 
-	public void ctl(HW2000 sys) {
+	public boolean ctl(RWChannel rwc) {
 		// Assume this device cannot read/punch at the same time
 		// C3-Cn:
 		//	10	Branch if busy
@@ -271,12 +258,12 @@ public class P_CardReaderPunch extends JFrame
 		//	20	Punch feed read mode (loopback?)
 		//	31	Offset current punch card
 		boolean branch = false;
-		boolean in = ((c2 & 040) == PeriphDecode.P_IN);
-		for (int x = 2; x < sys.numXtra(); ++x) {
-			byte cx = sys.getXtra(x);
+		boolean in = ((rwc.c2 & 040) == PeriphDecode.P_IN);
+		byte[] cx = new byte[]{ rwc.c3, rwc.c4, rwc.c5, rwc.c6, rwc.c7 };
+		for (int x = 0; x < rwc.cn - 2; ++x) {
 			// some are mode changes, stored
 			// Allow multiple conditions?
-			switch(cx) {
+			switch(cx[x]) {
 			case 010:
 				// What does "busy" mean in this context?
 				if (busy) {
@@ -298,9 +285,11 @@ public class P_CardReaderPunch extends JFrame
 				}
 				break;
 			case 027:
+				loopback = false;
+				// FALLTHROUGH
 			case 026:
 			case 025:
-				code = (3 - (cx & 003)); // 0=Hollerith, 1=Spcl, 2=Dir
+				code = (3 - (cx[x] & 003)); // 0=Hollerith, 1=Spcl, 2=Dir
 				break;
 			case 024:
 				// TODO: what resets this?
@@ -335,11 +324,7 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			}
 		}
-		if (branch) {
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
-			return;
-		}
+		return branch;
 	}
 
 	private File pickFile(String purpose) {
@@ -372,7 +357,7 @@ public class P_CardReaderPunch extends JFrame
 				in_count_pn.setText("");
 			}
 		} else {
-			s = "Punch Hopper";
+			s = "Punch Stacker";
 			if (odev != null) {
 				try {
 					odev.close();

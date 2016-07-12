@@ -67,12 +67,12 @@ public class PeriphDecode {
 
 	public RWChannel getChannel(byte ca) {
 		// fudge, rather than use a complex translation
-		ca &= 027;
-		ca = (byte)((ca + (ca & 007)) >> 1);
+		byte cx = (byte)(ca & 027);
+		cx = (byte)((cx + (cx & 007)) >> 1);
 		RWChannel c;
 		// Only create channels as needed
-		if ((c = p_chans[ca]) == null) {
-			c = p_chans[ca] = new RWChannel();
+		if ((c = p_chans[cx]) == null) {
+			c = p_chans[cx] = new RWChannel(ca);
 		}
 		return c;
 	}

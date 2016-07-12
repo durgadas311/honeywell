@@ -9,8 +9,6 @@ public class P_LinePrinter extends JFrame
 		implements Peripheral, ActionListener, WindowListener {
 
 	OutputStream dev;
-	byte c3;
-	int clc, slc;
 	boolean busy;
 	JTextArea text;
 	JScrollPane scroll;
@@ -137,14 +135,7 @@ public class P_LinePrinter extends JFrame
 		}
 	}
 
-	public void io(HW2000 sys) {
-		clc = (byte)(sys.getXtra(0) & 027);
-		slc = clc + 010;
-		if (PeriphDecode.isEsc(sys.getXtra(1))) {
-			c3 = sys.getXtra(3);
-		} else {
-			c3 = sys.getXtra(2);
-		}
+	public void io(RWChannel rwc) {
 		// C3:
 		//	00nnnn: Print then advance nnnn lines.
 		//	01nnnn: Print then advance nnnn lines unless HOF, etc.
@@ -153,41 +144,36 @@ public class P_LinePrinter extends JFrame
 		//	101xxx: Do not print, advance to channel xxx.
 		// NOTE: AAR was checked for protection violation in I_PDT.
 		// No further checks will be made.
-		sys.cr[slc] = sys.validAdr(sys.AAR);	// translate to physical address
 		busy = true;
 	}
 
 	// Must protect against exceptions, and eventually throw them to main thread...
-	public void run(HW2000 sys) {
+	public void run(RWChannel rwc) {
 		if (!busy) {
 			return;
 		}
-		sys.cr[clc] = sys.cr[slc];
+		rwc.startCLC();
 		// Cannot depend on any processor state here.
 		// The processor may be running a completely different program.
 		String s = "";
-		boolean print = ((c3 & 040) == 0 || (c3 & 030) == 0);
+		boolean print = ((rwc.c3 & 040) == 0 || (rwc.c3 & 030) == 0);
 		// Printing stops *before* char with record mark...
 		try {
-			byte a = sys.rawReadMem(sys.cr[clc]);
-			while (print) {
+			byte a;
+			while (print && ((a = rwc.readMem()) & 0300) != 0300) {
 				a &= 077;
 				if (col >= 132) {
 					s += "\n";
 					col = 0;
 					if (++ln >= ftape.length) ln = 0;
 				}
-				s += sys.pdc.cvt.hwToLP(a);
+				s += rwc.sys.pdc.cvt.hwToLP(a);
 				++col;
-				sys.cr[clc] = (sys.cr[clc] + 1) & 01777777;
-				if (sys.cr[clc] == 0) { // sanity check. must stop sometime.
-					break;
-				}
-				a = sys.rawReadMem(sys.cr[clc]);
-				if ((a & 0300)  == 0300) {
+				if (rwc.incrCLC()) {
 					break;
 				}
 			}
+			byte c3 = rwc.c3;
 			if ((c3 & 060) == 040) {
 				// special forms-advance
 				int ch = 1;
@@ -252,13 +238,9 @@ public class P_LinePrinter extends JFrame
 		return busy;
 	}
 
-	public void ctl(HW2000 sys) {
-		if (busy) {
-			sys.BAR = sys.SR;
-			sys.SR = sys.AAR;
-			return;
-		}
-		// TODO: apply control chars
+	public boolean ctl(RWChannel rwc) {
+		// TODO: apply control chars?
+		return busy;
 	}
 
 	private File pickFile(String purpose, String typ, String dsc) {
