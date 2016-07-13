@@ -37,14 +37,15 @@ public class P_Disk extends JFrame
 	}
 
 	// These are all stored by io() and used during run()...
-	byte c3;
-	int unit;
+	int unit = 0; // this would help BOOTSTRAP
 	boolean busy;
-	boolean in;
-	boolean format = false; // switch setting, per drive?
+	boolean fmt_allow = false; // switch setting, per drive?
+	boolean format = false;
 	boolean extended = false;
 	boolean verify = false;
 	boolean initial = false;
+	boolean search = false;
+	boolean next = false;
 	boolean error = false;
 	HW2000 sys;
 
@@ -69,6 +70,7 @@ public class P_Disk extends JFrame
 
 	// cache:
 	byte[] track;
+	int track_unit;
 	int track_cyl;
 	int track_trk;
 	long track_pos;
@@ -91,6 +93,7 @@ public class P_Disk extends JFrame
 		track = new byte[trk_len];
 		track_cyl = -1;
 		track_trk = -1;
+		track_unit = -1;
 
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new DiskStatus();
@@ -147,6 +150,8 @@ public class P_Disk extends JFrame
 	}
 
 	public void reset() {
+		cacheTrack(-1, -1);
+		unit = 0;
 	}
 
 	public void setInterrupt(HW2000 sys) {
@@ -167,22 +172,27 @@ public class P_Disk extends JFrame
 	}
 
 	private boolean cacheTrack(int cyl, int trk) {
-		if (track_cyl >= 0 && track_trk >= 0 &&
-				track_cyl == cyl && track_trk == trk) {
+		if (track_unit >= 0 && track_cyl >= 0 && track_trk >= 0 &&
+		    track_unit == unit && track_cyl == cyl && track_trk == trk) {
+			return true;
+		}
+		if (track_dirty && sts[track_unit].dev != null) {
+			try {
+				sts[track_unit].dev.seek(track_pos);
+				sts[track_unit].dev.write(track);
+			} catch (Exception ee) {
+				//ee.printStackTrace();
+				error = true;
+			}
+		}
+		track_dirty = false;
+		// already know track_cyl != cyl || track_trk != trk...
+		if (cyl < 0 || trk < 0) {
 			return true;
 		}
 		int n = -1;
 		if (sts[unit].dev != null) {
 			try {
-				// already know track_cyl != cyl || track_trk != trk...
-				if (track_dirty) {
-					sts[unit].dev.seek(track_pos);
-					sts[unit].dev.write(track);
-				}
-				track_dirty = false;
-				if (cyl < 0 || trk < 0) {
-					return true;
-				}
 				track_pos = (cyl * cyl_len) + (trk * trk_len);
 				sts[unit].dev.seek(track_pos);
 				n = sts[unit].dev.read(track);
@@ -200,6 +210,7 @@ public class P_Disk extends JFrame
 		}
 		sts[unit].cyl = cyl;
 		sts[unit].cyl_pn.setText(String.format("%d.%d", cyl, trk));
+		track_unit = unit;
 		track_cyl = cyl;
 		track_trk = trk;
 		curr_pos = 0;
@@ -221,13 +232,14 @@ public class P_Disk extends JFrame
 		curr_len |= (track[p++] & 077);
 	}
 
-	private void getHeaderMem(int a) {
-		adr_cyl = (sys.rawReadMem(a++) & 077) << 6;
-		adr_cyl |= (sys.rawReadMem(a++) & 077);
-		adr_trk = (sys.rawReadMem(a++) & 077) << 6;
-		adr_trk |= (sys.rawReadMem(a++) & 077);
-		adr_rec = (sys.rawReadMem(a++) & 077) << 6;
-		adr_rec |= (sys.rawReadMem(a++) & 077);
+	private void getHeaderMem(RWChannel rwc) {
+		int a = rwc.getCLC() + 1; // CLC points to FLAG...
+		adr_cyl = (rwc.sys.rawReadMem(a++) & 077) << 6;
+		adr_cyl |= (rwc.sys.rawReadMem(a++) & 077);
+		adr_trk = (rwc.sys.rawReadMem(a++) & 077) << 6;
+		adr_trk |= (rwc.sys.rawReadMem(a++) & 077);
+		adr_rec = (rwc.sys.rawReadMem(a++) & 077) << 6;
+		adr_rec |= (rwc.sys.rawReadMem(a++) & 077);
 	}
 
 	private boolean searchHeader() {
@@ -327,25 +339,26 @@ public class P_Disk extends JFrame
 	// At the very least, this puts curr_pos at the first data char.
 	private boolean findRecord() {
 		if (!cacheTrack(sts[unit].cyl, adr_trk)) {
+			error = true;
 			return false;
 		}
 		// TODO: check TLR and skip to new track
-		switch(c3 & 007) {
-		case 000: // Initial
+		if (initial) {
 			curr_pos = 0;
-			break;
-		case 001: // (Standard)
-			break;
-		case 003: // Search Next
-			++adr_rec;
-			// FALLTHROUGH
-		case 002: // Search
+		} else if (search) {
+			if (next) {
+				++adr_rec;
+			}
 			if (!searchRecord()) {
+				// This is not an error, unless
+				// something actually failed.
+				// Return 0 characters on "record not found"
+				// (but no disk error).
 				return false;
 			}
-			break;
 		}
 		if (!searchData()) {
+			error = true;
 			return false;
 		}
 		return true;
@@ -393,8 +406,6 @@ public class P_Disk extends JFrame
 		//	22/32	Extended Search and Read/Write
 		//	03/13	Search and Read/Write Next
 		//	23/33	Extended Search and Read/Write Next
-		in = rwc.isInput();
-		c3 = rwc.c3;
 		// Perform load/store address register now...
 		if (rwc.c3 == 004) {
 			rwc.startCLC();
@@ -407,6 +418,12 @@ public class P_Disk extends JFrame
 		}
 		sts[unit].busy = true;
 		busy = true;
+		extended = ((rwc.c3 & 020) == 020);
+		verify = ((rwc.c3 & 010) == 010);
+		format = ((rwc.c3 & 002) == 000);
+		initial = ((rwc.c3 & 003) == 000);
+		search = ((rwc.c3 & 002) == 002);
+		next = ((rwc.c3 & 003) == 003);
 	}
 
 	public void run(RWChannel rwc) {
@@ -443,7 +460,7 @@ public class P_Disk extends JFrame
 				adr_trk |= (track[curr_pos++] & 077);
 				adr_rec = (track[curr_pos++] & 077) << 6;
 				adr_rec |= (track[curr_pos++] & 077);
-				if (!cacheTrack(adr_cyl, adr_trk)) {
+				if (!cacheTrack(sts[unit].cyl, adr_trk)) {
 					return false;
 				}
 				if (!searchRecord()) {
@@ -474,13 +491,9 @@ public class P_Disk extends JFrame
 	}
 
 	private void doIn(RWChannel rwc) {
-		extended = ((rwc.c3 & 020) == 020);
-		verify = ((rwc.c3 & 010) == 010);
-		format = ((rwc.c3 & 002) == 000);
-		initial = ((rwc.c3 & 003) == 000);
 		rwc.startCLC();
 		if (format) {
-			cacheTrack(adr_cyl, adr_trk);
+			cacheTrack(sts[unit].cyl, adr_trk);
 			if (initial) {
 				curr_pos = 0;
 			}
@@ -503,7 +516,7 @@ public class P_Disk extends JFrame
 				return;
 			}
 		} else if (!findRecord()) {
-			error = true;
+			// error set by findRecord()...
 			return;
 		}
 		// 'curr_pos' points to first data byte.
@@ -555,15 +568,12 @@ public class P_Disk extends JFrame
 	}
 
 	public void doOut(RWChannel rwc) {
-		extended = ((rwc.c3 & 020) == 020);
-		verify = ((rwc.c3 & 010) == 010);
-		format = ((rwc.c3 & 002) == 000);
-		initial = ((rwc.c3 & 003) == 000);
 		rwc.startCLC();
 		if (format) {
+			getHeaderMem(rwc); // loads adr_*
+			// if caller did not seek cyl, too bad for them...
+			cacheTrack(sts[unit].cyl, adr_trk);
 			track_dirty = true;
-			getHeaderMem(rwc.getCLC() + 1); // loads adr_*
-			cacheTrack(adr_cyl, adr_trk);
 			if (initial) {
 				curr_pos = 0;
 			} else {
@@ -591,18 +601,20 @@ public class P_Disk extends JFrame
 				return;
 			}
 		} else if (!findRecord()) {
-			error = true;
+			// error set by findRecord()...
 			return;
 		}
 		while (!error) {
 			byte a = rwc.readMem();
 			// TODO: how does extended fit with RM check?
-			if ((a & 0300)  == 0300) {
+			if ((a & 0300) == 0300) {
 				if (format) {
 					while (curr_pos < curr_end) {
 						track[curr_pos++] = 0;
 					}
-					track[curr_pos++] = DM;
+					// break will set EM...
+				} else {
+					curr_pos = curr_end;
 				}
 				break;
 			}
@@ -672,15 +684,32 @@ public class P_Disk extends JFrame
 		//(out) 111110 = Drive interrupt OFF
 		//(out) 111111 = Branch if device interrupt ON
 
-		int unit;
 		boolean branch = false;
-		boolean in = ((rwc.c2 & 040) == PeriphDecode.P_IN); // C2
-		if ((rwc.c3 & 070) == 000) { // && sys.getXtra(x + 1) == 0 ?
+		boolean in = rwc.isInput();
+		switch(rwc.c3 & 070) {
+		case 000:
+			if (in) {
+				break;
+			}
+			// device busy...
 			unit = rwc.c3 & 007;
 			if (sts[unit].busy) {
 				branch = true;
 			}
-		} else if ((rwc.c3 & 070) == 020) { // && rwc.c4 == 0 ?
+			break;
+		case 010:
+			if (in) {
+				break;
+			}
+			// control busy...
+			if (busy) {
+				branch = true;
+			}
+			break;
+		case 020:
+			if (in) {
+				break;
+			}
 			unit = rwc.c3 & 007;
 			if (sts[unit].busy) {
 				branch = true;
@@ -688,37 +717,49 @@ public class P_Disk extends JFrame
 				sts[unit].cyl = (rwc.c5 << 6) | rwc.c6;
 				sts[unit].cyl_pn.setText(String.format("%d", sts[unit].cyl));
 			}
-		} else {
-			byte[] cx = new byte[]{ rwc.c3, rwc.c4, rwc.c5, rwc.c6, rwc.c7 };
-			for (int x = 0; x < rwc.cn - 2; ++x) {
-				if (in) {
-					if ((cx[x] & 070) == 030) {
-						unit = cx[x] & 007;
-						sts[unit].cyl = 0;
-						sts[unit].cyl_pn.setText("0");
-					}
-					continue;
-				}
-				switch(cx[x] & 070) {
-				case 070:
-					// handle interrupt control
-					break;
-				case 060:
-					if ((curr_flg & 040) != 0) {
-						branch = true;
-					}
-					break;
-				case 050:
-					if (error) {
-						branch = true;
-						error = false;
-					}
-					break;
-				case 040:
-					format = true;
-					break;
-				}
+			break;
+		case 030:
+			if (!in) {
+				break;
 			}
+			unit = rwc.c3 & 007;
+			if (sts[unit].busy) {
+				branch = true;
+			} else if (in) {
+				sts[unit].cyl = 0;
+				sts[unit].cyl_pn.setText("0");
+			}
+			break;
+		case 040:
+			if (in) {
+				break;
+			}
+			// what resets this?
+			fmt_allow = true;
+			break;
+		case 050:
+			if (in) {
+				break;
+			}
+			if (error) {
+				branch = true;
+				error = false;
+			}
+			break;
+		case 060:
+			if (in) {
+				break;
+			}
+			if ((curr_flg & 040) != 0) {
+				branch = true;
+			}
+			break;
+		case 070:
+			// TODO: handle interrupt control
+			if (in) {
+				break;
+			}
+			break;
 		}
 		return branch;
 	}
@@ -781,7 +822,7 @@ public class P_Disk extends JFrame
 				sts[c].mnt_pn.setText(f.getName());
 				return;
 			} catch (Exception ee) {
-				HW2000FrontPanel.warning(this, s, ee.getMessage());
+				HW2000FrontPanel.warning(this, s, ee.toString());
 			}
 		}
 	}

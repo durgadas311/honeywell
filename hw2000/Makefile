@@ -75,7 +75,9 @@ CLASSES =	CoreMemory.class \
 ADDCLASSES =	FormTapeEditor$$TapePunch.class \
 		SuffFileChooser$$ChkBox.class \
 		P_Console$$ConsoleStatus.class \
-		P_Disk$$DiskStatus.class
+		P_Disk$$DiskStatus.class \
+		P_MagneticTape$$MagTapeStatus.class \
+		P_CardReaderPunch$$PunchCardStatus.class
 
 
 FONTS = $(wildcard fonts/*.ttf)

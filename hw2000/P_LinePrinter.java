@@ -273,7 +273,7 @@ public class P_LinePrinter extends JFrame
 					_last = sav;
 					// TODO: tear off?
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Save", ee.getMessage());
+					HW2000FrontPanel.warning(this, "Save", ee.toString());
 				}
 			}
 			return;
@@ -317,7 +317,7 @@ public class P_LinePrinter extends JFrame
 					fo.close();
 					_last = sav;
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Save Form Ctl", ee.getMessage());
+					HW2000FrontPanel.warning(this, "Save Form Ctl", ee.toString());
 				}
 			}
 			return;
@@ -335,7 +335,7 @@ public class P_LinePrinter extends JFrame
 					_last = sav;
 					// TODO: protect against blank (channel 1) tape?
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Load Form Ctl", ee.getMessage());
+					HW2000FrontPanel.warning(this, "Load Form Ctl", ee.toString());
 				}
 			}
 			return;

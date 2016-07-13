@@ -142,13 +142,13 @@ public class P_Console extends JFrame
 			return;
 		}
 		if (io == 0) {
-			doOut(rwc);
+			doOut(rwc, sts[io]);
 		} else {
-			doIn(rwc);
+			doIn(rwc, sts[io]);
 		}
 	}
 
-	private void doIn(RWChannel rwc) {
+	private void doIn(RWChannel rwc, ConsoleStatus unit) {
 		rwc.startCLC();
 		int a = -1;
 		byte b;
@@ -191,10 +191,10 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
-		sts[1].busy = false;
+		unit.busy = false;
 	}
 
-	public void doOut(RWChannel rwc) {
+	public void doOut(RWChannel rwc, ConsoleStatus unit) {
 		rwc.startCLC();
 		String s = "";
 		boolean print = true;
@@ -230,7 +230,7 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
-		sts[0].busy = false;
+		unit.busy = false;
 	}
 
 	public void output(String s) {
@@ -324,7 +324,7 @@ public class P_Console extends JFrame
 					_last = sav;
 					// TODO: tear off?
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Save", ee.getMessage());
+					HW2000FrontPanel.warning(this, "Save", ee.toString());
 				}
 			}
 			return;
