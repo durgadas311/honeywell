@@ -8,8 +8,8 @@ The model 213-4 is simple access to the host computer time clock.
 This implentation has no visible (GUI) component.
 <P>
 Both devices are at the address of 06/46. 
-PDT (input) instructions operate on the Time Of Day clock.
-PCB busy-check is a no-op, and PCB interrupt control functions operate
+PDT 46 (input) instructions operate on the Time Of Day clock.
+PCB busy-check is a no-op, and PCB 06 interrupt control functions operate
 on the Interval Timer.
 
 <P>The time of day clock is presented as a formatted string, "HH:mm:ss.S".
@@ -17,7 +17,8 @@ It is not known how the original hardware presented the time data.
 
 <P>The interval value for the Interval timer is assumed to be milliseconds,
 with an effective range of 0 to 262.143 seconds (4.37 minutes). It is not
-known what the actual units for the interval value were.
+known what the actual units for the interval value were. This implementation
+defaults to (powers-up with) a time interval of 500 milliseconds.
 
 </BODY>
 </HTML>

@@ -11,7 +11,13 @@ This implementation uses a window to provide basic control for the 8 drives.
 <P>
 The device is at the traditional address of 04/44.
 Some details are lacking regarding various command specifics.
-The following has been assumed, until more information is available:
+
+<P>The Disks window is hidden by default. It may be made visible,
+and raised to the top, using the Front Panel menu "I/O" and selecting Disks.
+Closing the window only hides it, having no effect on the operation of the drives.
+
+<P>Due to lack of detailed information about these devices,
+the following has been assumed until more information is available:
 <UL>
 <LI>READ/WRITE INITIAL commmands will format record(s) beginning with the
 index point on the track. Record address information is provided with
@@ -27,7 +33,26 @@ the address register and read/write data only.
 <LI>EXTENDED versions operate on more than one record, governed by the
 size of the buffer (RM in memory). This variation of the command, in the case
 of SEARCH AND versions, will follow Track Linking Records automatically.
+<LI>A transfer of 0 characters,
+with no error indicated, implies that
+there are no more records in the cylinder (end of TLR chain).
 </UL>
+
+<P>The description of PDT for Disk Devices shows no method of selecting a
+disk drive (C3 is used for the command, and no other control characters
+are defined). The PCB instruction does define commands that select a drive.
+It is currently being assumed that the PCB drive selection persists
+and is used by PDT instructions. This requires the programmer to use
+a PCB instruction before any (drive related) PDT instruction.
+The "check device busy" operation (C3=0D) seems to be a likely candidate.
+What is not clear is just how this context relates to RWC, control, and drive.
+If there is only one Address Register, in the control, then only one drive
+can be busy at a time - regardless of use of RWC. However, if each drive
+has it's own Address Register (or each RWC), then multiple disk operations
+can be active, if they are tied to separate RWCs. At the moment, the control
+is assumed to be the bottle-neck and only one disk operation can be active
+at a time (i.e. the control has the Address Register as well as drive selector).
+The programmer must ensure that multiple disk operations do not collide.
 
 <P>Disk geometry is set as 203 cylinders of 20 tracks (heads, surfaces)
 with 4700 raw characters

@@ -7,6 +7,9 @@ This implementation does not follow the various Honeywell documentation
 for specific Read/Write Channels and combinations.
 There are 16 completely independent RWCs, with the SLCs (C1 character) numbered
 10-17 and 30-37 (CLCs numbered 00-07 and 20-27, respectively).
+Buffered mode is ignored (bit 40), as is bit 10, so if PDT/PCB instructions
+expect to use different
+RWCs then the bits 27 must be unique.
 
 <P>RWCs are implemented as independent threads. This means a PDT instruction
 will actually complete before the I/O operation completes, just like
@@ -20,7 +23,10 @@ that wait is done immediately after the PDT or before the next PDT on the same c
 (or in some polling fashon).
 
 <P>The association between channel and perihperal is established when the
-PDT instruction is executed, and dissolved once the channel is "not busy".
+PDT instruction is executed, and dissolved once the peripheral operation completes.
+It is not known how a programmer, in a multiprogramming environment, ensures that
+a RWC does not get re-used between the time an operation completes and the
+program queries the status with PCB.
 
 <P>Currently, peripheral insterrupts are not implemented,
 except for the Interval Timer "timeout".
