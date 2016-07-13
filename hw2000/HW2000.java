@@ -637,7 +637,7 @@ public class HW2000 implements CoreMemory
 						HW2000FrontPanel.warning(fp.getContentPane(), "Run II",
 							String.format("%07o: %s",
 								oSR,
-								ie.getMessage()));
+								ie.toString()));
 					} else {
 						ie.printStackTrace();
 					}
@@ -654,7 +654,7 @@ public class HW2000 implements CoreMemory
 						HW2000FrontPanel.warning(fp.getContentPane(), "Run EI",
 							String.format("%07o: %s",
 								oSR,
-								ee.getMessage()));
+								ee.toString()));
 					} else {
 						ee.printStackTrace();
 					}
@@ -665,17 +665,18 @@ public class HW2000 implements CoreMemory
 					HW2000FrontPanel.warning(fp.getContentPane(), "Run Fault",
 						String.format("%07o: %s",
 								oSR,
-								fe.getMessage()));
+								fe.toString()));
 				} else {
 					fe.printStackTrace();
 				}
 				halt = true;
 			} catch (Exception e) {
 				if (fp != null) {
-					HW2000FrontPanel.warning(fp.getContentPane(), "Run EI",
-						String.format("<HTL><PRE>%07o: %s</PRE></HTML>",
+					e.printStackTrace();
+					HW2000FrontPanel.warning(fp.getContentPane(), "Run",
+						String.format("<HTML><PRE>%07o: %s</PRE></HTML>",
 							oSR,
-							e.getMessage()));
+							e.toString()));
 				} else {
 					e.printStackTrace();
 				}

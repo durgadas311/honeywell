@@ -974,7 +974,7 @@ public class HW2000FrontPanel extends JFrame
 		} catch (Exception ee) {
 			setRunStop(false);
 			sys.bootstrap = false;
-			warning(this, "Bootstrap", ee.getMessage());
+			warning(this, "Bootstrap", ee.toString());
 			return;
 		}
 		Thread thrd = new Thread(this);
@@ -1246,7 +1246,7 @@ public class HW2000FrontPanel extends JFrame
 			fo.write(bt);
 			fo.write(0301); // record mark
 		} catch (Exception ee) {
-			warning(this, "Write Boot", ee.getMessage());
+			warning(this, "Write Boot", ee.toString());
 		}
 	}
 	private void pgmHeader(OutputStream fo, int load, int len, int start, int pre) {
@@ -1266,7 +1266,7 @@ public class HW2000FrontPanel extends JFrame
 			fo.write(pre & 077);
 			fo.write(0301); // record mark
 		} catch (Exception ee) {
-			warning(this, "Write Header", ee.getMessage());
+			warning(this, "Write Header", ee.toString());
 		}
 	}
 	private void pgmCode(OutputStream fo, int low, int hi) {
@@ -1276,7 +1276,7 @@ public class HW2000FrontPanel extends JFrame
 			}
 			fo.write(0301); // record mark
 		} catch (Exception ee) {
-			warning(this, "Write Code", ee.getMessage());
+			warning(this, "Write Code", ee.toString());
 		}
 	}
 	private void pgmPreamble(OutputStream fo, int low, int hi) {
@@ -1287,7 +1287,7 @@ public class HW2000FrontPanel extends JFrame
 			}
 			fo.write(0301); // record mark
 		} catch (Exception ee) {
-			warning(this, "Write Punctuation", ee.getMessage());
+			warning(this, "Write Punctuation", ee.toString());
 		}
 	}
 
@@ -1329,7 +1329,7 @@ public class HW2000FrontPanel extends JFrame
 			try {
 				lst = new FileOutputStream(new File(l));
 			} catch (Exception ee) {
-				warning(this, op, ee.getMessage());
+				warning(this, op, ee.toString());
 				return false;
 			}
 			p = sys.pdc.getPeriph(PeriphDecode.P_LP);
@@ -1384,7 +1384,7 @@ public class HW2000FrontPanel extends JFrame
 			try {
 				fo = new FileOutputStream(new File(l));
 			} catch (Exception ee) {
-				warning(this, op, ee.getMessage());
+				warning(this, op, ee.toString());
 				return false;
 			}
 			pgmBoot(fo, "bringup/bootmt.mti");
