@@ -78,5 +78,28 @@ use of these bits is currently not implemented.
 <P>Active drives will show current head position/selection
 as Cylinder.Track.
 
+<P>There is mention in the documentation of status bits in the control
+address register:
+
+<UL>"...in protect mode, an attempt to write results in a
+protect violation status in the disk control address register."</UL>
+
+However, there is no definition of the address register. It is assumed to be
+similar to the disk record header and TLR data, i.e. CCTTRR, but some  of those bits
+are not used:
+<UL>
+<LI>cylinder max (known) value 0312
+<LI>track max 0023 (20 surfaces on 11-platter disk packs)
+<LI>record max 0346 (practical limit for 4602 character tracks)
+</UL>
+Uncertain which bits were status, and what statuses were provided. It would be logical
+to choose the high-order character of the track (TT), since no known disk technology
+of the time had more than 11 platter disk packs. Cylinder and record values are
+based on recording/stepping technology and are not tied (as much) to physical
+characteristics of disk packs,
+and thus could (and did) increase over time as technology advanced (limited
+only by magnetic surface quality of the disk packs).
+
+
 </BODY>
 </HTML>
