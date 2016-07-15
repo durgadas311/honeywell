@@ -252,12 +252,12 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20,140));
+		pn.setPreferredSize(new Dimension(20,170));
 		pn.setOpaque(true);
 		gc.gridx = 5;
 		gc.gridy = 1;
 		gc.gridwidth = 1;
-		gc.gridheight = 9;
+		gc.gridheight = 10;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 
@@ -389,17 +389,17 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(160,20));
-		pn.setOpaque(true);
+		pn.setPreferredSize(new Dimension(140,30));
+		pn.setOpaque(false);
 		gc.gridx = 0;
 		gc.gridy = 10;
-		gc.gridwidth = 6;
+		gc.gridwidth = 5;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20,40));
-		pn.setOpaque(true);
+		pn.setOpaque(false);
 		gc.gridx = 0;
 		gc.gridy = 11;
 		gc.gridwidth = 1;
@@ -455,7 +455,7 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(160,50));
+		pn.setPreferredSize(new Dimension(160,40));
 		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridy = 12;
@@ -518,7 +518,7 @@ public class HW2000FrontPanel extends JFrame
 		run.setToolTipText("Run");
 		stop.setToolTipText("Stop");
 		instr.setToolTipText("Instruct");
-		central.setToolTipText("Central Clear");
+		central.setToolTipText("System Clear");
 		init.setToolTipText("Initialize");
 		boot.setToolTipText("Bootstrap");
 		inter.setToolTipText("Interrupt");
@@ -615,7 +615,7 @@ public class HW2000FrontPanel extends JFrame
 	//	"stop"	Stop
 	//	"init"	Initialize
 	//	"boot"	Bootstrap
-	//	"clear"	Central Clear
+	//	"clear"	System Clear
 	//	"instr"	Instruct
 	//	"am2","am3","am4"	Address mode
 	// TODO: how many of these are directly sent to core system?
