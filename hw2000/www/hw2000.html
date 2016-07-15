@@ -10,19 +10,40 @@ Honeywell 2070,
 Honeywell Series 2000,
 Honeywell Series 200,
 Easycoder">
+<SCRIPT>
+var images = [
+        "hw2000-1.png",
+        "hw2000-2.png",
+        "hw2000-3.png",
+        "hw2000-4.png",
+        "hw2000-5.png",
+        "hw2000-6.png",
+        "hw2000-7.png",
+        "hw2000-8.png",
+        "hw2000-9.png",
+        "hw2000-0.png",
+];
+img = Date.now() % 10;
+</SCRIPT>
 </HEAD>
 <BODY>
-<IMG SRC="hw2000-4.png">
+<SCRIPT TYPE="text/javascript">document.writeln('<IMG SRC="'+images[img]+'" >');</SCRIPT>
 <P>
-Virtual Honeywell computer based on Series 2000.
+Virtual Honeywell computer based on Series 2000 Hardware.
 <P>
-Implements a "fully loaded" system: 512K memory, All instructions including Scientific Unit,
+Implements a "fully loaded" system: 512K memory,
+All instructions including Scientific Unit,
 Memory protection and relocation.
 Based on <A HREF="AG28_Honeywell_Series_2000_Models_2040_through_2070_Programmers_Reference_Manual_May73.pdf">
 Honeywell Series 2000 Programmer's Reference Manual</A>
 (There is mention of 1M memory in this document, but nothing else seems to
 support more than 19 address bits - particularly address modifiers in 4-character
 addressing mode).
+<P>Documentation states that a Type 220 console is required on all Series 2000 Systems,
+which likely means that a full-feature front panel never existed. However,
+the appeal of such direct control over the system, and lack of any information
+about the software that ran the 220 consoles, justifies this deviation from
+authenticity.
 <P>
 Here is a short video of it running MACHIN, the Pi computation program.
 <A HREF="https://youtu.be/fphxmBdgQLM">YouTube Video</A>
