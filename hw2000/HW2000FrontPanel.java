@@ -16,7 +16,7 @@ public class HW2000FrontPanel extends JFrame
 	public static final Color btnRedOff = new Color(100, 0, 0);
 	public static final Color btnRedOn = new Color(255, 0, 0);
 	public static final Color btnGreenOff = new Color(0, 100, 0);
-	public static final Color btnGreenOn = new Color(0, 255, 0);
+	public static final Color btnGreenOn = new Color(0, 255, 160);
 	public static final Color indDark = new Color(50, 50, 50);
 	public static final Color indLit = new Color(180, 180, 80);
 
@@ -668,12 +668,17 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		// TODO: some of these need to be managed...
-		LightedButton btn = new LightedButton(btnGreenOn, btnGreenOff, null, 0);
+		LightedButton btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1);
+		btn.addActionListener(this);
 		btn.setOn(true);
 		gc.gridx = 1;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
-		btn = new LightedButton(btnRedOn, btnRedOff, null, 0);
+		LightedButton btn2 = btn;
+		btn = new LightedButton(btnRedOn, btnRedOff, null, -1);
+		btn.addActionListener(this);
+		btn2.setNext(btn);
+		btn.setNext(btn2);
 		gc.gridx = 2;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -685,12 +690,17 @@ public class HW2000FrontPanel extends JFrame
 		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
-		btn = new LightedButton(btnGreenOn, btnGreenOff, null, 0);
+		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1);
 		btn.setOn(true);
+		btn.addActionListener(this);
 		gc.gridx = 4;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, 0);
+		btn2 = btn;
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, -1);
+		btn.addActionListener(this);
+		btn2.setNext(btn);
+		btn.setNext(btn2);
 		gc.gridx = 5;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -991,7 +1001,9 @@ public class HW2000FrontPanel extends JFrame
 		}
 		LightedButton lb = (LightedButton)e.getSource();
 		int id = lb.getId();
-		if (id != 0) {
+		if (id == -1) {
+			lb.setOn(true);
+		} else if (id != 0) {
 			if (run.isOn()) {
 				return;
 			}
