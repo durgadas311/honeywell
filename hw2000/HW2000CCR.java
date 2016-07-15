@@ -290,6 +290,13 @@ public class HW2000CCR {
 		}
 	}
 
+	public byte peekCR(int x) {
+		if (x < VR || x > EIR) {
+			return 0;
+		}
+		return ccr[x];
+	}
+
 	// This is for SVI only - has side-effects
 	public byte getCR(int x) {
 		if (x < VR || x > EIR) {

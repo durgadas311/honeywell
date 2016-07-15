@@ -1069,6 +1069,14 @@ public class HW2000FrontPanel extends JFrame
 				}
 			} else if (sys.halt) {
 				if (a.equals("run")) {
+					// Restore program state if needed...
+					byte eir = sys.CTL.peekCR(HW2000CCR.EIR);
+					eir &= (HW2000CCR.EIR_EI | HW2000CCR.EIR_II);
+					if ((eir & HW2000CCR.EIR_EI) != 0) {
+						// might be both... EI overrides
+						eir = HW2000CCR.EIR_EI;
+					}
+					setInterrupt(eir);
 					Thread thrd = new Thread(this);
 					thrd.start();
 				} else if (a.equals("instr")) {
