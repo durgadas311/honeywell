@@ -5,7 +5,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 public class HW2000FrontPanel extends JFrame
-		implements FrontPanel, ActionListener, Runnable {
+		implements FrontPanel, ActionListener, ChangeListener, Runnable {
 	HW2000 sys;
 
 	Font bigFont;
@@ -45,6 +45,10 @@ public class HW2000FrontPanel extends JFrame
 	JLabel iintr;
 	JLabel pgm;
 	JLabel prot;
+	JLabel parity;
+	JLabel voltage;
+	JLabel fan;
+	JLabel cb;
 
 	int contentsReg;
 	int addressReg;
@@ -78,6 +82,7 @@ public class HW2000FrontPanel extends JFrame
 
 	public HW2000FrontPanel(HW2000 sys) {
 		super("Honeywell Series 2000");
+		LightedButton.init(64);
 		this.sys = sys; // may be null
 		_last = new File(System.getProperty("user.dir"));
 
@@ -524,6 +529,7 @@ public class HW2000FrontPanel extends JFrame
 		instr.addActionListener(this);
 		central.addActionListener(this);
 		init.addActionListener(this);
+		init.addChangeListener(this);
 		boot.addActionListener(this);
 		inter.addActionListener(this);
 		am2.addActionListener(this);
@@ -597,7 +603,11 @@ public class HW2000FrontPanel extends JFrame
 	public void setInterrupt(int type) {	// Indicator only
 		eintr.setForeground(type == HW2000CCR.EIR_EI ? indLit : indDark);
 		iintr.setForeground(type == HW2000CCR.EIR_II ? indLit : indDark);
+		pgm.setForeground(type == 0 ? indLit : indDark);
 		repaint();
+	}
+	public void setProtect(int type) {	// Indicator only
+		prot.setForeground(type != 0 ? indLit : indDark);
 	}
 
 	// Actions are:
@@ -875,45 +885,45 @@ public class HW2000FrontPanel extends JFrame
 		gbl.setConstraints(prot, gc);
 		npn.add(prot);
 
-		JLabel lb = new JLabel("PARITY");
-		lb.setFont(smallFont);
-		lb.setForeground(indDark);
-		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(50, 15));
+		parity = new JLabel("PARITY");
+		parity.setFont(smallFont);
+		parity.setForeground(indDark);
+		parity.setOpaque(false);
+		parity.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 0;
 		gc.gridx = 27;
 		gc.anchor = GridBagConstraints.NORTH;
-		gbl.setConstraints(lb, gc);
-		npn.add(lb);
-		lb = new JLabel("VOLTAGE");
-		lb.setFont(smallFont);
-		lb.setForeground(indDark);
-		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(50, 15));
+		gbl.setConstraints(parity, gc);
+		npn.add(parity);
+		voltage = new JLabel("VOLTAGE");
+		voltage.setFont(smallFont);
+		voltage.setForeground(indDark);
+		voltage.setOpaque(false);
+		voltage.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 1;
 		gc.anchor = GridBagConstraints.SOUTH;
-		gbl.setConstraints(lb, gc);
-		npn.add(lb);
+		gbl.setConstraints(voltage, gc);
+		npn.add(voltage);
 
-		lb = new JLabel("FAN");
-		lb.setFont(smallFont);
-		lb.setForeground(indDark);
-		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(50, 15));
+		fan = new JLabel("FAN");
+		fan.setFont(smallFont);
+		fan.setForeground(indDark);
+		fan.setOpaque(false);
+		fan.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 0;
 		gc.gridx = 28;
 		gc.anchor = GridBagConstraints.NORTH;
-		gbl.setConstraints(lb, gc);
-		npn.add(lb);
-		lb = new JLabel("CB");
-		lb.setFont(smallFont);
-		lb.setForeground(indDark);
-		lb.setOpaque(false);
-		lb.setPreferredSize(new Dimension(50, 15));
+		gbl.setConstraints(fan, gc);
+		npn.add(fan);
+		cb = new JLabel("CB");
+		cb.setFont(smallFont);
+		cb.setForeground(indDark);
+		cb.setOpaque(false);
+		cb.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 1;
 		gc.anchor = GridBagConstraints.SOUTH;
-		gbl.setConstraints(lb, gc);
-		npn.add(lb);
+		gbl.setConstraints(cb, gc);
+		npn.add(cb);
 
 		run.setActionCommand("run");
 		stop.setActionCommand("stop");
@@ -1074,7 +1084,7 @@ public class HW2000FrontPanel extends JFrame
 					sys.reset();
 					setAddress(sys.SR);
 					setContents(sys.rawReadMem(addressReg));
-					setInterrupt(0);
+					setInterrupt(-1);
 					currLow = 0;
 					currHi = 0;
 				} else if (a.equals("boot")) {
@@ -1510,6 +1520,17 @@ public class HW2000FrontPanel extends JFrame
 
 	}
 
+	public void stateChanged(ChangeEvent evt) {
+		if (evt.getSource() instanceof JButton) {
+			JButton btn = (JButton)evt.getSource();
+			if (btn.getModel().isPressed()) {
+				lampTest(true);
+			} else {
+				lampTest(false);
+			}
+		}
+	}
+
 	public static void warning(Component top, String op, String err) {
 		JOptionPane.showMessageDialog(top,
 			new JLabel(err),
@@ -1527,6 +1548,24 @@ public class HW2000FrontPanel extends JFrame
 			new JLabel(err),
 			op + " Confirmation", JOptionPane.YES_NO_OPTION);
 		return res;
+	}
+
+	boolean inLampTest = false;
+	private void lampTest(boolean test) {
+		if (test == inLampTest) {
+			return;
+		}
+		inLampTest = test;
+		LightedButton.doLampTest(test);
+		Color ind = (test ? indLit : indDark);
+		eintr.setForeground(ind);
+		iintr.setForeground(ind);
+		pgm.setForeground(ind);
+		prot.setForeground(ind);
+		parity.setForeground(ind);
+		voltage.setForeground(ind);
+		fan.setForeground(ind);
+		cb.setForeground(ind);
 	}
 
 	public void run() {

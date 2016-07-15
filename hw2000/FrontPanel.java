@@ -8,6 +8,7 @@ public interface FrontPanel {
 	public void setRunStop(boolean run);
 	public void setAdrMode(int v);
 	public void setInterrupt(int type);	// Indicator only
+	public void setProtect(int type);	// Indicator only
 	public int getSense();
 
 	// ActionCommands are:

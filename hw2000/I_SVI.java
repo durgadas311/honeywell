@@ -21,6 +21,9 @@ public class I_SVI implements Instruction {
 		}
 		if ((v & 020) != 0) {
 			sys.writeMem(sr++, sys.CTL.getCR(HW2000CCR.PIR));
+			if (sys.fp != null) {
+				sys.fp.setProtect(0);
+			}
 		}
 		if ((v & 040) != 0) {
 			sys.writeMem(sr++, sys.CTL.getCR(HW2000CCR.EIR));

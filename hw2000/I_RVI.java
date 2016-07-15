@@ -32,7 +32,11 @@ public class I_RVI implements Instruction {
 			sys.incrAAR(1);
 			sys.CTL.putCR(HW2000CCR.PIR, a);
 			// TODO: delay this until RNM?
-			if ((a & HW2000CCR.PIR_PROTECT) != 0) {
+			a &= HW2000CCR.PIR_PROTECT;
+			if (sys.fp != null) {
+				sys.fp.setProtect(a);
+			}
+			if (a != 0) {
 				sys.adr_min = sys.BRR << 12;
 				sys.adr_max = sys.adr_min + (sys.IBR << 12);
 			} else {

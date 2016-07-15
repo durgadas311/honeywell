@@ -19,6 +19,7 @@ public class LightedButton extends JButton {
 		_on = on;
 		_off = off;
 		isOn = false;
+		LightedButton.add(this);
 	}
 
 	public boolean isOn() { return isOn; }
@@ -48,4 +49,19 @@ public class LightedButton extends JButton {
 	public int getId() { return id; }
 	public LightedButton getNext() { return next; }
 	public void setNext(LightedButton lb) { next = lb; }
+
+	static LightedButton[] btns;
+	static int nbtns;
+	static public void init(int n) {
+		btns = new LightedButton[n];
+		nbtns = 0;
+	}
+	static public void add(LightedButton lb) {
+		btns[nbtns++] = lb;
+	}
+	static public void doLampTest(boolean test) {
+		for (int x = 0; x < nbtns; ++x) {
+			btns[x].lampTest(test);
+		}
+	}
 }
