@@ -30,6 +30,7 @@ public class HW2000 implements CoreMemory
 	public boolean[] denorm;
 
 	public int oSR;
+	public byte opSR; // op-code at oSR (physical)
 	int op_flags;
 	int op_xflags;
 	private byte[] op_xtra;
@@ -524,7 +525,8 @@ public class HW2000 implements CoreMemory
 		oSR = SR;
 		fsr = SR;
 		iaar = -1;
-		setOp(readMem(fsr++));	// might throw illegal op-code
+		opSR = readMem(fsr++); // might throw address violation
+		setOp(opSR);	// might throw illegal op-code
 		// TODO: how to avoid including garbage in variant array.
 		int isr = fsr & 0x7ffff;
 		if (noWM()) {
@@ -574,7 +576,7 @@ public class HW2000 implements CoreMemory
 		if (fp != null && !singleStep) {
 			if (count == 0) {
 				fp.setAddress(oSR);
-				fp.setContents(mem[oSR]);
+				fp.setContents(opSR);
 			}
 			if (++count > 20) {
 				count = 0;
@@ -690,7 +692,7 @@ public class HW2000 implements CoreMemory
 		if (fp != null) {
 			fp.setRunStop(false);
 			fp.setAddress(oSR);
-			fp.setContents(mem[oSR]);
+			fp.setContents(opSR);
 		}
 	}
 
