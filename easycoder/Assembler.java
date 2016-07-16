@@ -720,7 +720,7 @@ public class Assembler {
 		} else if (opc.equals("XBASE")) {
 			return noImpl(opc);
 		} else if (opc.equals("RANGE")) {
-			return noImpl(opc);
+			return processRange(opd);
 		} else if (opc.equals("CLEAR")) {
 			return noImpl(opc);
 		} else if (opc.equals("END")) {
@@ -909,6 +909,23 @@ public class Assembler {
 		currLoc += len;
 		setLabel(loc, !rev, len);
 		return adrMode;
+	}
+
+	private int processRange(String opd) {
+		String[] opds = opd.split(",");
+		if (opds.length != 2 || opds[0].length() == 0 || opds[1].length() == 0) {
+			errs.add("RANGE requires 2 parameters at line " + lineNo);
+			return -1;
+		}
+		int a = parseAdr(opds[0], true);
+		int b = parseAdr(opds[1], true);
+		if (a < 0 || b < 0) {
+			errs.add("RANGE bad address at line " + lineNo);
+			return -1;
+		}
+		minAdr = a;
+		maxAdr = b;
+		return 0;
 	}
 
 	private int noImpl(String op) {

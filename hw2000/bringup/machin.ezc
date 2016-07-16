@@ -1,5 +1,6 @@
 00010         PROG  MACHIN
 00020         ORG   0
+00030         RANGE *,TOP
 00030         ADMODE2
 00040*
 00050* CALCULATE PI USING MACHIN'S FORMULA
@@ -462,6 +463,4 @@
 04600         B     STARTA,00,00       GO TO PRINT LOOP A
 04610         MCW   SCRSET,SCRGET+4    RESTART THE SCRIPT
 04620* ------------------------------
-04630         ORG   TOP
-04630         RESV  1                  LET SYSTEM KNOW HOW MUCH MEMORY
 04630         END   START
