@@ -12,83 +12,9 @@ Note, as is the case for original hardware, most buttons will not function
 unless the STOP indicator is on. The only exceptions are STOP and
 INTERRUPT.
 
-<P> Menus are as follows:
-<UL>
-<LI>File: Assemble a program or assemble the monitor.
-<LI>I/O: Control visibility of I/O device windows. Device windows that are
-hidden or obscured may be raised by selecting the device.
-<LI>Debug: Some debug features.
-</UL>
-
-<H3>File</H3>
-<UL>
-<H4>Assemble</H4>
-<UL>
-Assemble a program into memory. If the monitor has been activated,
-the program will be assembled into a memory region that is relocated
-above the monitor, and the monitor data structures will be filled-in
-to indicate how to run the job.
-</UL>
-<H4>Monitor</H4>
-<UL>
-Assemble the monitor program and setup the Assemble option to use it.
-There is a monitor program supplied in the sample programs tarball,
-"monitor.ezc".
-When the monitor is active, this menu option will be disabled (grayed-out).
-Clicking INITIALIZE (after STOP) will reset monitor mode.
-</UL>
-</UL>
-<H3>Debug</H3>
-<UL>
-<H4>Trace</H4>
-<UL>
-Trace is enabled for the range of memory of the last assembled program.
-Trace output will appear on the line printer.
-</UL>
-<H4>Trace Full</H4>
-<UL>
-A dialog is presented for specifying the range of memory to trace.
-</UL>
-<H4>Trace Off</H4>
-<UL>
-Cancel any active tracing.
-</UL>
-<H4>Dump</H4>
-<UL>
-A memory dump is printed to the Line Printer for the range of memory of the last assembled program.
-</UL>
-<H4>Dump Full</H4>
-<UL>
-A dialog is presented for specifying the range of memory to dump.
-</UL>
-</UL>
-
-<P>NOTE: The "Initialize" button currently also clears all memory locations.
-This helps avoid complications due to latent punctuation from previous
-programs, although assembling a program will replace punctuation for all
-segments that produce code
-(i.e. RESV, or regions skipped by ORGs, would otherwise retain previous punctuation).
-
-<P>The assemble dialogs have a checkbox for "Listing". This causes an assembly
-listing to printed on the Line Printer, along with a dump of the symbol table.
-<P>The assemble dialogs also have options for creating a Magnetic Tape Image,
-although the program is still assembled into main memory and then the entire
-range is written to tape. This option creates a self-loading image,
-which has the following record format:
-<OL>
-<LI>The loader, bootmt.mti
-<LI>A header containing information about the program
-<LI>The program image
-<LI>The punctuation map for the program
-</OL>
-The loader will restore punctuation based on the information in the tape image.
-Such a tape image may be mounted on tape drive 000 and used with the
-BOOTSTRAP and RUN buttons to load and run the program. The loader,
-bootmt.mti, was created from bootstrap.ezc in the sample programs.
-
 <H2>Display</H2>
 The Contents and Address indicators will light during a program run, however
-updates are limited to only the instruction op-code extraction and only every 20
+updates are limited to only the instruction op-code extraction and even then only every 20
 instructions. Otherwise, the GUI updates would signficantly slow down the run.
 When a stop occurs, either by clicking STOP or by executing Halt, the Contents
 and Address are updated with the appropriate values.
@@ -102,6 +28,116 @@ In this implementation, CLC and SLC contain physical addresses, so for programs
 running under the monitor they will have the relocated address, not the
 address used by the program instructions. This means that examining memory
 from the front panel using these registers will have the desired results.
+
+<H2>Debug Buttons</H2>
+
+<P>The CONTENTS buttons represent an 8-bit register that normally shows the contents
+of a memory location, including punctuation. A lighted button indicates a "1" bit
+(dark buttons indicate "0" bits).
+";" is the Item Mark bit, "," is the Word Mark bit (both "1" mean Record Mark).
+Changing this register does not alter any memory location,
+unless/until the ENTER button is pressed. The bits of this register may be
+set to a "1" by pressing the corresponding button, but setting bits to "0" requires using
+the CLEAR button on the far left.
+
+<P>The CONTENTS ENTER button (far upper right, downward pointing arrow)
+will cause the value of the CONTENTS register to be written to the memory location
+indicated by the ADDRESS register. Note: protection, relocation, etc. does not apply.
+The CONTENTS DISPLAY button (upward pointing arrow) will copy the memory location
+indicated by the ADDRESS register into the CONTENTS register.
+
+<P>The ADDRESS buttons represent a 19-bit register that normally shows the
+address of a memory location. A lighted button indicates a "1" bit
+(dark buttons indicate "0" bits).
+Changing this register does not alter any control memory register,
+unless/until the CONTROL ENTER button is pressed.
+The bits of this register may be set to a "1" by pressing the corresponding button,
+but setting bits to "0" requires using the CLEAR button on the far left.
+
+<P>The CONTROL ENTER button (far middle right, downward pointing arrow)
+will cause the value of the ADDRESS register to be written to the control memory register
+indicated by the CONTROL register.
+The CONTROL DISPLAY buttons (plain, +1, -1) will copy the control memory register
+indicated by the CONTROL register and also perform a CONTENTS DISPLAY action.
+The +1 and -1 also do a <U>post</U> increment/decrement
+of the <U>control memory register</U>.
+
+<P>The CONTROL buttons represent a 6-bit register that holds the address of
+a control memory register. This is the same as the variant character used
+for SCR/LCR instructions to access the register. Lighted buttons are "1",
+dark buttons are "0". The buttons will toggle the state of the respective bit,
+so no CLEAR button is required.
+<P><TABLE BORDER>
+<TR><TH>Variant Character</TH><TH>Control Register</TH></TR>
+<TR><TD>00-07</TD><TD>CLC 0-7</TD></TR>
+<TR><TD>10-17</TD><TD>SLC 0-7</TD></TR>
+<TR><TD>20-27</TD><TD>CLC 8-15</TD></TR>
+<TR><TD>30-37</TD><TD>SLC 8-15</TD></TR>
+<TR><TD>40</TD><TD>Work Reg 1</TD></TR>
+<TR><TD>41-43</TD><TD>ACC 0</TD></TR>
+<TR><TD>44</TD><TD>Work Reg 2</TD></TR>
+<TR><TD>45-47</TD><TD>ACC 1</TD></TR>
+<TR><TD>50</TD><TD>Work Reg 3</TD></TR>
+<TR><TD>51-53</TD><TD>ACC 2</TD></TR>
+<TR><TD>54</TD><TD>ATR</TD></TR>
+<TR><TD>55-57</TD><TD>ACC 3</TD></TR>
+<TR><TD>60-63</TD><TD>Work Regs 4-7</TD></TR>
+<TR><TD>64</TD><TD>CSR</TD></TR>
+<TR><TD>66</TD><TD>EIR</TD></TR>
+<TR><TD>67</TD><TD>AAR</TD></TR>
+<TR><TD>70</TD><TD>BAR</TD></TR>
+<TR><TD>76</TD><TD>IIR</TD></TR>
+<TR><TD>77</TD><TD>SR</TD></TR>
+</TABLE>
+<P>This implementation provides register memory for all 64 control memory locations.
+Work registers are not used by this implementation and so may be used for any purpose
+on the front panel, for example to examine a range of memory locations
+(DISPLAY +1, DISPLAY -1) without disturbing registers used by the program
+(allowing the program to continue to run).
+<P>ACC registers are actually shadows of the real data. The
+Front Panel formats real data into these registers when CONTROL DISPLAY
+accesses them, and endeavors to update real data when CONTROL ENTER is pressed.
+Note that updating ACC registers using CONTROL ENTER is not likely to have good results.
+
+<P>At least in this implementation (if not on original hardware), the AAR, BAR, and SR
+registers contain "logical" program addresses. In other words, if the program
+being examined is running with relocation, these addresses cannot be used to
+directly access their respective memory locations. They must be relocated by
+adding the contents of the BRR. It is not known if/where the BRR exists in
+control memory, so there is no way to access it from the front panel.
+The same is true for IBR, Variant Register, AIR, etc.
+
+
+<H2>System Control Buttons</H2>
+
+<P>Most of these buttons are fairly obvious. RUN starts the processor executing
+instructions at the current SR. STOP halts the processor (after current instruction
+completes). INTERRUPT sets a Console/Front-Panel interrupt.
+
+<P>INITIALIZE will reset nearly everything related to the hardware.
+NOTE: The INITIALIZE button currently also clears all memory locations.
+This helps avoid complications due to latent punctuation from previous
+programs, although assembling a program will replace punctuation for all
+segments that produce code
+(i.e. RESV, or regions skipped by ORGs, would otherwise retain previous punctuation).
+
+<P>SYSTEM CLEAR does not currently do anything. The original intent seemed to be
+to reset the processor to the "extraction state", but this implementation does
+not leave the virtual process in a state that requires any reset.
+
+<P>INSTRUCT provides a single-step function. Pressing this button causes
+one instruction to be executed.
+
+<P>BOOTSTRAP provides a more complicated function. It will execute a PDT
+instruction using ADDRESS as the A-Field and CONTENTS as the C2 control character.
+This implementation will use 11 as the C1 control character (RWC), and the device
+selected by C2 will provide "reasonable" defaults for any other control characters
+required. For example, Magnetic Tape (C2 = 40) will choose
+tape drive 000, READ FORWARD, 4x3 9-TRACK record mark termination.
+At the end of a BOOTSTRAP, all of BAR, AAR, and SR will contain the value from ADDRESS.
+The intent is that the load address of the bootstrap code is the same as the start/run
+address for the bootstrap. The operator may, of course, change the SR (or any other
+registers) prior to pressing RUN.
 
 </BODY>
 </HTML>

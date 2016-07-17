@@ -1,0 +1,78 @@
+<HTML>
+<HEAD>
+<TITLE>Virtual Series 2000 Operation</TITLE>
+</HEAD>
+<BODY>
+
+<P><A HREF="h2000frontpanel.html">Notes on operating the Front Panel</A>
+
+<P> Menus are as follows:
+<UL>
+<LI>File: Assemble a program or assemble the monitor.
+<LI>I/O: Control visibility of I/O device windows. Device windows that are
+hidden or obscured may be raised by selecting the device.
+<LI>Debug: Some debug features.
+</UL>
+
+<H3>File</H3>
+<UL>
+<H4>Assemble</H4>
+<UL>
+Assemble a program into memory. If the monitor has been activated,
+the program will be assembled into a memory region that is relocated
+above the monitor, and the monitor data structures will be filled-in
+to indicate how to run the job.
+</UL>
+<H4>Monitor</H4>
+<UL>
+Assemble the monitor program and setup the Assemble option to use it.
+There is a monitor program supplied in the sample programs tarball,
+"monitor.ezc".
+When the monitor is active, this menu option will be disabled (grayed-out).
+Clicking INITIALIZE (after STOP) will reset monitor mode.
+</UL>
+</UL>
+<H3>Debug</H3>
+<UL>
+<H4>Trace</H4>
+<UL>
+Trace is enabled for the range of memory of the last assembled program.
+Trace output will appear on the line printer.
+</UL>
+<H4>Trace Full</H4>
+<UL>
+A dialog is presented for specifying the range of memory to trace.
+</UL>
+<H4>Trace Off</H4>
+<UL>
+Cancel any active tracing.
+</UL>
+<H4>Dump</H4>
+<UL>
+A memory dump is printed to the Line Printer for the range of memory of the last assembled program.
+</UL>
+<H4>Dump Full</H4>
+<UL>
+A dialog is presented for specifying the range of memory to dump.
+</UL>
+</UL>
+
+<P>The assemble dialogs have a checkbox for "Listing". This causes an assembly
+listing to printed on the Line Printer, along with a dump of the symbol table.
+<P>The assemble dialogs also have options for creating a Magnetic Tape Image,
+although the program is still assembled into main memory and then the entire
+range is written to tape. This option creates a self-loading image,
+which has the following record format:
+<OL>
+<LI>The loader, bootmt.mti
+<LI>A header containing information about the program
+<LI>The program image
+<LI>The punctuation map for the program
+</OL>
+The loader will restore punctuation based on the information in the tape image.
+Such a tape image may be mounted on tape drive 000 and used with the
+BOOTSTRAP and RUN buttons to load and run the program. The loader,
+bootmt.mti, was created from bootstrap.ezc in the sample programs.
+
+</BODY>
+</HTML>

@@ -51,7 +51,7 @@ public class I_B_BCT implements Instruction {
 				// SENSE - privileged
 				if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&
 						!sys.isProceed() &&
-						!sys.CTL.privBCT()) {
+						sys.CTL.privBCT()) {
 					throw new IIException("BCT Violation", HW2000CCR.IIR_OPVIO);
 				}
 				byte ss = sys.getSENSE();
