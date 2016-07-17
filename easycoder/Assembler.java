@@ -14,6 +14,7 @@ public class Assembler {
 	int currLoc;
 	int lineNo;
 	int adrMode;
+	int adrMask;
 	private Vector<String> errs;
 	private Map<String,Integer> symTab;
 	byte[] code;
@@ -408,10 +409,12 @@ public class Assembler {
 				ix = opd.length();
 			}
 		}
-		// TODO: handle possible 3rd arg - index ref.
+		if (ix == 0) { // special case: sign prefix on number...
+			ix = opd.length();
+		}
 		String sym = opd.substring(0, ix);
-		if (Character.isDigit(sym.charAt(0))) {
-			adr = Integer.valueOf(sym);
+		if (Character.isDigit(sym.charAt(0)) || sym.charAt(0) == '+' || sym.charAt(0) == '-') {
+			adr = Integer.valueOf(sym) & adrMask;
 		} else if (sym.equals("*")) {
 			adr = currLoc;
 		} else {
@@ -697,7 +700,17 @@ public class Assembler {
 			return noImpl(opc);
 		} else if (opc.equals("ADMODE")) {
 			int m = Integer.valueOf(opd);
-			if (m < 2 || m > 4) {
+			switch(m) {
+			case 2:
+				adrMask = 0x0fff;
+				break;
+			case 3:
+				adrMask = 0x07fff;
+				break;
+			case 4:
+				adrMask = 0x07ffff;
+				break;
+			default:
 				errs.add("Invalid argument " + opd);
 				return -1;
 			}
