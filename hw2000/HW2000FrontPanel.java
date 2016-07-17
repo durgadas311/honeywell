@@ -1346,7 +1346,7 @@ public class HW2000FrontPanel extends JFrame
 		Assembler asm = new Assembler(src);
 		int e = asm.passOne();
 		if (e < 0) {
-			warning(this, op, asm.getErrors());
+			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return false;
 		}
 		Peripheral p = null;
@@ -1384,7 +1384,7 @@ public class HW2000FrontPanel extends JFrame
 		sys.setTrace(currLow, currHi); // trace off
 		e = asm.passTwo(sys, reloc, listing);
 		if (e < 0) {
-			warning(this, op, asm.getErrors());
+			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return false;
 		}
 		if (listing) {
