@@ -17,17 +17,17 @@
 <DT>monitor.ezc</DT>
 	<DD>Example MONITOR program, for testing various advanced features
 	such as protection, relocation, and interrupts.
-	Select File menu option "Monitor" and select this file, then RUN.
+	Select File menu option "Monitor" and select/assemble this file, then RUN.
 	It is interactive on
 	the console. Two commands: "L" to list current job, if queued, and
 	"R" to run current job, if queued. A job is queued by using the
 	Assemble menu option, with monitor running.</DD>
 <DT>bootstrap.ezc</DT>
 	<DD>Example bootstrap program to load a program off Magnetic Tape.
-	A binary version of this is included, and will be prepended to
+	A binary version of this is embedded in the jar, and will be prepended to
 	the tape image when assembling with the "Tape Image" option checked.</DD>
 <DT>rdrtest.ezc</DT>
-	<DD>Simple text of card reader.
+	<DD>Simple test of card reader.
 	Reads cards and prints them on the line printer.
 	If SENSE 1 switch is ON, will also convert characters used
 	in FORTRAN IV programs to equivalent for printing.</DD>
@@ -56,15 +56,17 @@
 	<DD>simple test for the Time-of-day and Interval Timer devices.
 	Prints current time, then sets up timer interrupts for 0.5 seconds
 	(default time value) and then waits for 2 interrupts and prints current
-	time and halts.</DD>
+	time again and halts.</DD>
 <DT>barberpole.mti</DT>
 	<DD>A magnetic tape image that contains 311 records of 80 characters
 	each, in a barber pole pattern. May be used with programs such as
 	"mtitest.ezc" and "dsktest1.ezc".</DD>
 <DT>prog3.pcd</DT>
-	<DD>A fragment of a FORTRAN IV program in punch card image format.
+	<DD>A fragment of a FORTRAN IV program in punch card deck format.
+	Uses Hollerith codes for special characters, as interpreted/printed
+	by an IBM029 keypunch.
 	NOTE: benefits from the SENSE 1 switch in "rdrtest.ezc" to convert
-	punch card FORTRAN special characters to line printer equivalents.</DD>
+	punch card FORTRAN special characters to Honeywell line printer equivalents.</DD>
 </DL>
 
 

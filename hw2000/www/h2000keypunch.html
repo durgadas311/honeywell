@@ -1,0 +1,38 @@
+<HTML>
+<HEAD>
+<TITLE>Details of Keypunch Differences</TITLE>
+</HEAD>
+<BODY>
+<H2>Details of Keypunch Differences</H2>
+
+<P>The Honeywell character set is based on (an extension of) the 48-character
+set of an IBM 026-H keypunch (except for apostrophy).
+This is due to the character set being decided/fixed
+prior to appearance of the IBM 029 keypunch, which defined a full 64-character set.
+Even if cards are punched on an IBM 026-H, the "special code" option needs
+to be set with the PCB instruction in order to get the correct representation for
+the plus and minus characters. It seems that FORTRAN IV programs were normally
+punched on an IBM 026-H keypunch, and the compiler likely used the "special code"
+option to read the program. It is not known if Honeywell built keypunch machines and,
+if so, what character set was used.
+
+<P>The IBM 026 (introduced 1949) had several options that changed the
+keycaps and printing of some of the special characters. The -H option was
+generally used for FORTRAN IV programming, since it supplied the necessary
+special characters. The IBM 029 (introduced 1964) extended the character set of the 026-A,
+assigning new codes for the additional characters of the 026-H,
+and so created a conversion issue if both 029 and 026-H keypunches were being used.
+It was my experience that using an IBM 029 for FORTRAN programs on an H2040 required
+the keypunch operator to understand that certain characters had to be punched
+using different symbols.
+The IBM 029 was available with a 48-character (026-compatible) option,
+in either the -A or -H arrangements, however I never saw those.
+Since the special characters of the -H option did not conflict with
+the corresponding characters of the 029, it is also possible that the
+FORTRAN compiler simply folded both possible punch codes into the same
+character.
+The related example demonstrates a way to automatically
+convert, provided all cards in a program were punched for the same character set.
+
+</BODY>
+</HTML>

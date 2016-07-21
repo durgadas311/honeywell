@@ -70,9 +70,11 @@ should have printed the 311-line barber pole pattern.
 <H2>FORTRAN CHARACTER CONVERSION</H2>
 
 <P>This demo will print a punch card deck containing a FORTRAN IV program
-that was punched based on symbols printed by IBM card punches,
-not the Honeywell symbols. This program consults the SENSE 1 switch to
-see whether or not to convert special characters (using a MAT instruction).
+that was punched based on symbols printed by an IBM 029 keypunch,
+not the Honeywell symbols.
+<A HREF="h2000keypunch.html">Details</A> for those interested.
+This program consults the SENSE 1 switch to
+see whether or not to convert those special characters (using a MAT instruction).
 
 <OL>
 <LI>Open/raise the PunchCards window and mount the file "prog3.pcd" in
@@ -91,7 +93,8 @@ this time the FORTRAN special characters should appear as expected.
 
 <H2>RUN TAPE</H2>
 
-<P>This demo will create a "run tape" and then use BOOTSTRAP to run it.
+<P>This demo will create a "run tape" (self-loading program image on mag tape)
+and then use BOOTSTRAP to run it.
 
 <OL>
 <LI>Select menu File->Assemble and choose the file "mcetests.ezc",
