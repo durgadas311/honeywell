@@ -120,6 +120,14 @@ and the printer did not print for this code.</TD></TR>
 <TR><TD BGCOLOR="lightyellow">yellow</TD><TD CLASS=plain>Codes not recognized/punched by IBM keypunch equipment.</TD></TR>
 </TABLE>
 
+<P>The special code option was for cases where the punch cards were carrying things
+like FORTRAN programs or text, as opposed to conventional data processing (numeric data).
+It was common in punch card data processing to add a sign to a numeric field
+by over-punching the 12 or 11 zone in the last digit. The "normal" Hollerith code
+translation would produce native Honeywell signed decimal fields directly from data punched
+that way. Effectively, [12] and [11] zone punches were attributes of digits.
+For programs and other text, [12] and [11] become characters instead of attributes,
+supplying the plus and minus signs (respectively).
 
 </BODY>
 </HTML>
