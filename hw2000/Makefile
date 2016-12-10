@@ -105,6 +105,9 @@ H2000.jar: $(CLASSES) $(FONTS) $(ICONS) $(EXTCLASSES) $(JARES)
 hwprogs.tgz: $(addprefix bringup/,$(PROGS))
 	tar -czf $@ -C bringup $(PROGS)
 
+hwprogs.zip: $(addprefix bringup/,$(PROGS))
+	zip -j $@ $(addprefix bringup/,$(PROGS))
+
 %.class: %.java
 	javac $?
 
