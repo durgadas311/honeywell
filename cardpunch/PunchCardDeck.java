@@ -13,7 +13,7 @@ import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
 class PunchCardDeck extends PunchCard
-		implements KeyListener, ActionListener, Runnable
+		implements KeyListener, ActionListener, WindowListener, Runnable
 {
 	static final long serialVersionUID = 311614000000L;
 
@@ -46,6 +46,10 @@ class PunchCardDeck extends PunchCard
 	JCheckBox _print_cb;
 	JCheckBox _lzprint_cb;
 	JButton _clear_bn;
+
+	JFrame _help;
+	JEditorPane _text;
+	JScrollPane _scroll;
 
 	JCheckBox _prog_cb;
 	JLabel _col_lb;
@@ -91,7 +95,7 @@ class PunchCardDeck extends PunchCard
 		Arrays.fill(_prog, (byte)0);
 		_progFile = null;
 
-		_menus = new JMenu[2];
+		_menus = new JMenu[3];
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
@@ -119,6 +123,32 @@ class PunchCardDeck extends PunchCard
 		mi.addActionListener(this);
 		mu.add(mi);
 		_menus[1] = mu;
+		mu = new JMenu("Help");
+		mi = new JMenuItem("About", KeyEvent.VK_A);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Show Help", KeyEvent.VK_H);
+		mi.addActionListener(this);
+		mu.add(mi);
+		_menus[2] = mu;
+
+		_help = new JFrame(frame.getTitle() + " Help");
+		java.net.URL url = this.getClass().getResource("docs/CardPunch.html");
+		_help.setLayout(new FlowLayout());
+		try {
+			_text = new JEditorPane(url);
+		} catch (Exception ee) {}
+		_text.setEditable(false);
+		_text.setFont(new Font("Sans-serif", Font.PLAIN, 12));
+		//_text.addHyperlinkListener(this);
+		_scroll = new JScrollPane(_text);
+		_scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		_scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		_scroll.setPreferredSize(new Dimension(600, 320));
+		_help.add(_scroll);
+		_help.pack();
+		_help.addWindowListener(this);
+		//_help.addComponentListener(this);
 
 		_col_lb = new JLabel();
 		_col_lb.setPreferredSize(new Dimension(20, 20));
@@ -731,6 +761,13 @@ class PunchCardDeck extends PunchCard
 		return true;
 	}
 
+	private void showAbout() {
+	}
+
+	private void showHelp() {
+		_help.setVisible(true);
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JButton) {
 			JButton butt = (JButton)e.getSource();
@@ -784,7 +821,23 @@ class PunchCardDeck extends PunchCard
 				}
 			}
 			saveProg(_progFile);
+		} else if (m.getMnemonic() == KeyEvent.VK_A) {
+			showAbout();
+		} else if (m.getMnemonic() == KeyEvent.VK_H) {
+			showHelp();
 		}
 	}
 
+	public void windowActivated(WindowEvent e) { }
+	public void windowClosed(WindowEvent e) { }
+	public void windowIconified(WindowEvent e) { }
+	public void windowOpened(WindowEvent e) { }
+	public void windowDeiconified(WindowEvent e) { }
+	public void windowDeactivated(WindowEvent e) { }
+	public void windowClosing(WindowEvent e) {
+		if (e.getWindow() == _help) {
+			_help.setVisible(false);
+			return;
+		}
+	}
 }
