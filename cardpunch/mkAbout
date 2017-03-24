@@ -1,0 +1,14 @@
+#!/bin/bash
+
+cat <<EOF
+<HTML><CENTER>
+Card Punch Simulator<BR>
+Build: $(date)<BR>
+<BR>
+<IMG SRC="ibm029-sm.png">
+<BR>
+Developed by Douglas Miller<BR>
+http://sims.durgadas.com/<BR>
+<BR>
+</CENTER></HTML>
+EOF

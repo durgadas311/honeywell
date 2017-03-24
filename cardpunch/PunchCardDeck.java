@@ -13,7 +13,7 @@ import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
 class PunchCardDeck extends PunchCard
-		implements KeyListener, ActionListener, WindowListener, Runnable
+		implements KeyListener, ActionListener, Runnable
 {
 	static final long serialVersionUID = 311614000000L;
 
@@ -47,9 +47,7 @@ class PunchCardDeck extends PunchCard
 	JCheckBox _lzprint_cb;
 	JButton _clear_bn;
 
-	JFrame _help;
-	JEditorPane _text;
-	JScrollPane _scroll;
+	GenericHelp _help;
 
 	JCheckBox _prog_cb;
 	JLabel _col_lb;
@@ -132,23 +130,8 @@ class PunchCardDeck extends PunchCard
 		mu.add(mi);
 		_menus[2] = mu;
 
-		_help = new JFrame(frame.getTitle() + " Help");
 		java.net.URL url = this.getClass().getResource("docs/CardPunch.html");
-		_help.setLayout(new FlowLayout());
-		try {
-			_text = new JEditorPane(url);
-		} catch (Exception ee) {}
-		_text.setEditable(false);
-		_text.setFont(new Font("Sans-serif", Font.PLAIN, 12));
-		//_text.addHyperlinkListener(this);
-		_scroll = new JScrollPane(_text);
-		_scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		_scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		_scroll.setPreferredSize(new Dimension(600, 320));
-		_help.add(_scroll);
-		_help.pack();
-		_help.addWindowListener(this);
-		//_help.addComponentListener(this);
+		_help = new GenericHelp(frame.getTitle() + " Help", url);
 
 		_col_lb = new JLabel();
 		_col_lb.setPreferredSize(new Dimension(20, 20));
@@ -762,6 +745,15 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void showAbout() {
+	       java.net.URL url = this.getClass().getResource("docs/About.html");
+	       try {
+			JEditorPane about = new JEditorPane(url);
+			about.setEditable(false);
+			Dimension dim = new Dimension(300, 230);
+			about.setPreferredSize(dim);
+			JOptionPane.showMessageDialog(_frame, about,
+				"About: Card Punch Simulator", JOptionPane.PLAIN_MESSAGE);
+		} catch (Exception ee) { }
 	}
 
 	private void showHelp() {
@@ -825,19 +817,6 @@ class PunchCardDeck extends PunchCard
 			showAbout();
 		} else if (m.getMnemonic() == KeyEvent.VK_H) {
 			showHelp();
-		}
-	}
-
-	public void windowActivated(WindowEvent e) { }
-	public void windowClosed(WindowEvent e) { }
-	public void windowIconified(WindowEvent e) { }
-	public void windowOpened(WindowEvent e) { }
-	public void windowDeiconified(WindowEvent e) { }
-	public void windowDeactivated(WindowEvent e) { }
-	public void windowClosing(WindowEvent e) {
-		if (e.getWindow() == _help) {
-			_help.setVisible(false);
-			return;
 		}
 	}
 }
