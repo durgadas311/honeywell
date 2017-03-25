@@ -1268,59 +1268,6 @@ public class HW2000FrontPanel extends JFrame
 		}
 	}
 
-	private void pgmBoot(OutputStream fo, String boot) {
-		try {
-			InputStream fi = this.getClass().getResourceAsStream(boot);
-			byte[] bt = new byte[fi.available()];
-			fi.read(bt);
-			fo.write(bt);
-			fo.write(0301); // record mark
-		} catch (Exception ee) {
-			warning(this, "Write Boot", ee.toString());
-		}
-	}
-	private void pgmHeader(OutputStream fo, int load, int len, int start, int pre) {
-		// Always 3-char address mode - right?
-		try {
-			fo.write((load >> 12) & 077);
-			fo.write((load >> 6) & 077);
-			fo.write(load & 077);
-			fo.write((len >> 12) & 077);
-			fo.write((len >> 6) & 077);
-			fo.write(len & 077);
-			fo.write((start >> 12) & 077);
-			fo.write((start >> 6) & 077);
-			fo.write(start & 077);
-			fo.write((pre >> 12) & 077);
-			fo.write((pre >> 6) & 077);
-			fo.write(pre & 077);
-			fo.write(0301); // record mark
-		} catch (Exception ee) {
-			warning(this, "Write Header", ee.toString());
-		}
-	}
-	private void pgmCode(OutputStream fo, int low, int hi) {
-		try {
-			for (int a = low; a < hi; ++a) {
-				fo.write(sys.rawReadMem(a) & 077);
-			}
-			fo.write(0301); // record mark
-		} catch (Exception ee) {
-			warning(this, "Write Code", ee.toString());
-		}
-	}
-	private void pgmPreamble(OutputStream fo, int low, int hi) {
-		try {
-			for (int a = low; a < hi; ++a) {
-				int p = sys.rawReadMem(a) & 0300;
-				fo.write((p >> 6) ^ 003);
-			}
-			fo.write(0301); // record mark
-		} catch (Exception ee) {
-			warning(this, "Write Punctuation", ee.toString());
-		}
-	}
-
 	private File pickFile(String purpose, String sfx, String typ, File prev) {
 		File file = null;
 		listing = false;
@@ -1382,7 +1329,28 @@ public class HW2000FrontPanel extends JFrame
 		currLow = 0;
 		currHi = 0;
 		sys.setTrace(currLow, currHi); // trace off
-		e = asm.passTwo(sys, reloc, listing);
+		// TODO: card BRT also...
+		if (tape) {
+			// Mag Tape BRT format...
+			FileOutputStream fo = null;
+			String l = src.getAbsolutePath();
+			if (l.endsWith(".ezc")) {
+				l = l.substring(0, l.length() - 4);
+			}
+			l += ".mti";
+			try {
+				fo = new FileOutputStream(new File(l));
+			} catch (Exception ee) {
+				warning(this, op, ee.toString());
+				return false;
+			}
+			// TODO: Copy mag tape bootstrap to new file...
+			//pgmBoot(fo, "bringup/bootmt.mti");
+			e = asm.passTwo(fo, listing ? sys : null);
+			try { fo.close(); } catch (Exception ee) {}
+		} else {
+			e = asm.passTwo(sys, reloc, listing);
+		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return false;
@@ -1404,26 +1372,6 @@ public class HW2000FrontPanel extends JFrame
 			// TODO: add program name to monitor data
 			//sys.SR = sys.CSR; // with interactive monitor, do not force SR
 		} else if (tape) {
-			// TODO: Copy mag tape bootstrap to new file...
-			FileOutputStream fo = null;
-			String l = src.getAbsolutePath();
-			if (l.endsWith(".ezc")) {
-				l = l.substring(0, l.length() - 4);
-			}
-			l += ".mti";
-			try {
-				fo = new FileOutputStream(new File(l));
-			} catch (Exception ee) {
-				warning(this, op, ee.toString());
-				return false;
-			}
-			pgmBoot(fo, "bringup/bootmt.mti");
-			pgmHeader(fo, low, hi - low, start, (hi + 07777) & ~07777);
-			pgmCode(fo, low, hi);
-			pgmPreamble(fo, low, hi);
-			try {
-				fo.close();
-			} catch (Exception ee) {}
 		} else {
 			sys.SR = start;
 		}

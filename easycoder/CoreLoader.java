@@ -1,0 +1,26 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
+
+public class CoreLoader implements Loader {
+	CoreMemory sys;
+	public CoreLoader(CoreMemory sys) {
+		this.sys = sys;
+	}
+
+	public void begin(int adr) {
+	}
+
+	public void setCode(int adr, byte[] code) {
+		for (int y = 0; y < code.length; ++y) {
+			sys.rawWriteMem(adr + y, code[y]);
+		}
+	}
+
+	public void clear(int start, int end, byte fill) {
+		for (int y = start; y <= end; ++y) {
+			sys.rawWriteMem(y, fill);
+		}
+	}
+
+	public void end(int start) {
+	}
+}

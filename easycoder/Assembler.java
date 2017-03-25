@@ -1,3 +1,5 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.Vector;
@@ -9,7 +11,6 @@ public class Assembler {
 	BufferedReader in;
 	InstrDecode idc;
 	CharConverter cvt;
-	OutputStream out;
 	OutputStream lst;
 	int currLoc;
 	int lineNo;
@@ -28,6 +29,15 @@ public class Assembler {
 	CoreMemory sys;
 	int reloc;
 	boolean listing;
+	Loader loader = null;
+
+	class Clear {
+		public int start;
+		public int end;
+		public int fill;
+	}
+
+	Clear clear = null;
 
 	// TODO:
 	//	Handle ad-hoc constants.
@@ -50,7 +60,6 @@ public class Assembler {
 		}
 		idc = new InstrDecode(true);
 		cvt = new CharConverter();
-		out = null;
 		lst = null;
 		sys = null;
 		image = null;
@@ -117,6 +126,7 @@ public class Assembler {
 		return bb;
 	}
 
+	// 'sys' provides printer output, 'loader' provides destination for code.
 	public int passTwo(CoreMemory sys, int reloc, boolean list) {
 		this.reloc = reloc;
 		try {
@@ -127,14 +137,17 @@ public class Assembler {
 			return -1;
 		}
 		this.sys = sys;
+		loader = new CoreLoader(sys);
 		listing = list;
 		asmPass = true;
 		int ret = 0;
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
+		loader.begin(minAdr); // TODO: necessary?
 		while (!end && (ret = scanOne()) >= 0) {
 		}
+		loader.end(endAdr);
 		try { in.close(); } catch (Exception ee) {}
 		if (errs.size() > 0) {
 			ret = -1;
@@ -142,28 +155,32 @@ public class Assembler {
 		return ret;
 	}
 
-	public int passTwo(File output, File list) {
+	public int passTwo(FileOutputStream output, Object list) {
 		try {
 			in = new BufferedReader(new FileReader(inFile));
-			if (output != null) {
-				out = new FileOutputStream(output);
-			}
-			if (list != null) {
-				lst = new FileOutputStream(list);
-				listing = true;
-			}
+			// TODO: what is expected record length?
+			loader = new BRTLoader(output, 128);
 		} catch (Exception ee) {
 			// 'in' should never fail - already validated in ctor.
 			ee.printStackTrace();
 			return -1;
+		}
+		if (list instanceof FileOutputStream) {
+			lst = (FileOutputStream)list;
+			listing = true;
+		} else if (list instanceof CoreMemory) {
+			this.sys = (CoreMemory)sys;
+			listing = true;
 		}
 		asmPass = true;
 		int ret = 0;
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
+		loader.begin(minAdr); // TODO: necessary?
 		while (!end && (ret = scanOne()) >= 0) {
 		}
+		loader.end(endAdr);
 		System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
 		if (errs.size() > 0) {
 			ret = -1;
@@ -175,23 +192,12 @@ public class Assembler {
 				System.err.println(l);
 			}
 		}
-		if (ret >= 0 && out != null) {
-			objOut(image);
-		}
 		if (listing) {
 			listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
 		try { if (lst != null) lst.close(); } catch (Exception ee) {}
-		try { if (out != null) out.close(); } catch (Exception ee) {}
 		return ret;
-	}
-
-	private void objOut(byte[] b) {
-		try {
-			out.write(b);
-		} catch (Exception ee) {
-		}
 	}
 
 	private String replaceChars(String in, String srch, String repl) {
@@ -318,16 +324,10 @@ public class Assembler {
 			return e;
 		}
 		if (code != null) {
-			if (image != null) {
-				for (int y = 0; y < code.length; ++y) {
-					image[orgLoc - minAdr + y] = code[y];
-				}
-			}
-			if (sys != null) {
-				for (int y = 0; y < code.length; ++y) {
-					sys.rawWriteMem(reloc + orgLoc + y, code[y]);
-				}
-			}
+			loader.setCode(reloc + orgLoc, code);
+		} else if (clear != null) {
+			loader.clear(clear.start, clear.end, (byte)clear.fill);
+			clear = null;
 		}
 		if (listing) {
 			String l = "";
@@ -735,7 +735,7 @@ public class Assembler {
 		} else if (opc.equals("RANGE")) {
 			return processRange(opd);
 		} else if (opc.equals("CLEAR")) {
-			return noImpl(opc);
+			return processClear(opd);
 		} else if (opc.equals("END")) {
 			int ret = 0;
 			if (opd.length() > 0) {
@@ -938,6 +938,35 @@ public class Assembler {
 		}
 		minAdr = a;
 		maxAdr = b;
+		return 0;
+	}
+
+	private int processClear(String opd) {
+		String[] opds = opd.split(",");
+		if (opds.length < 2 || opds[0].length() == 0 || opds[1].length() == 0) {
+			errs.add("CLEAR requires 2 or 3 parameters at line " + lineNo);
+			return -1;
+		}
+		int a = parseAdr(opds[0], true);
+		int b = parseAdr(opds[1], true);
+		int c = 0;
+		if (opds.length > 2) {
+			byte ch;
+			if (opds[2].length() == 0) {
+				ch = ' ';
+			} else {
+				ch = (byte)(opds[2].charAt(0) & 0x7f);
+			}
+			c = cvt.asciiToHw(ch);
+		}
+		if (a < 0 || b < 0) {
+			errs.add("RANGE bad address at line " + lineNo);
+			return -1;
+		}
+		clear = new Clear();
+		clear.start = a;
+		clear.end = b;
+		clear.fill = c;
 		return 0;
 	}
 

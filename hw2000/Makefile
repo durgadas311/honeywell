@@ -1,5 +1,8 @@
 
 EXTCLASSES =	Assembler.class \
+		Loader.class \
+		BRTLoader.class \
+		CoreLoader.class \
 		CharConverter.class
 
 CLASSES =	CoreMemory.class \
