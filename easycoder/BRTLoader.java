@@ -48,9 +48,9 @@ public class BRTLoader implements Loader {
 		byte ctrl = (byte)len;
 		// TODO: how is RM handled? Is RM ever at start of field?
 		if ((code[0] & 0100) != 0) {
-			ctrl |= 0100;
+			ctrl |= 0020;
 		} else if ((code[0] & 0200) != 0) {
-			ctrl |= 0200;
+			ctrl |= 0040;
 		}
 		try {
 			if (dist != adr) {
