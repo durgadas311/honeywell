@@ -161,7 +161,7 @@ public class Assembler {
 		return ret;
 	}
 
-	public int passTwo(FileOutputStream output, boolean cards, Object list) {
+	public int passTwo(Loader ldr, Object list) {
 		try {
 			in = new BufferedReader(new FileReader(inFile));
 		} catch (Exception ee) {
@@ -176,11 +176,7 @@ public class Assembler {
 			this.sys = (CoreMemory)sys;
 			listing = true;
 		}
-		if (cards) {
-			loader = new CardLoader(output, cvt);
-		} else {
-			loader = new TapeLoader(output, cvt);
-		}
+		loader = ldr;
 		asmPass = true;
 		int ret = 0;
 		currLoc = 0;
@@ -249,6 +245,28 @@ public class Assembler {
 			break;
 		}
 		return mk;
+	}
+
+	public CharConverter charCvt() { return cvt; }
+
+	public int lookupSym(String sym) {
+		return symTab.get(sym);
+	}
+
+	public String lookupAdr(int adr) {
+		String sym = null;
+		int min = 99999999;
+		for (Map.Entry<String,Integer> set : symTab.entrySet()) {
+			int d = adr - set.getValue();
+			if (d < 0) {
+				continue;
+			}
+			if (d < min) {
+				min = d;
+				sym = set.getKey();
+			}
+		}
+		return sym;
 	}
 
 	private int scanOne() {

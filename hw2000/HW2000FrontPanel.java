@@ -1345,8 +1345,14 @@ public class HW2000FrontPanel extends JFrame
 				return false;
 			}
 			// TODO: Copy mag tape bootstrap to new file...
+			// TODO: Allow cards vs. tape
+			// TODO: header record "1HDR "
 			//pgmBoot(fo, "bringup/bootmt.mti");
-			e = asm.passTwo(fo, !tape, listing ? sys : null);
+			e = asm.passTwo(new TapeLoader(fo, asm.charCvt()),
+					listing ? sys : null);
+			// TODO: trailer record "1EOF "
+			// TODO: trailer record "1ERI "
+			// TODO: trailer record "1ERI "
 			try { fo.close(); } catch (Exception ee) {}
 		} else {
 			e = asm.passTwo(sys, reloc, listing);

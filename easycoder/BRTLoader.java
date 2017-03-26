@@ -106,6 +106,15 @@ public abstract class BRTLoader implements Loader {
 		setAdr(adr);
 	}
 
+	private void kludge(int adr, byte[] code) {
+		byte[] b1 = new byte[1];
+		byte[] b2 = new byte[code.length - 1];
+		b1[0] = code[0];
+		System.arraycopy(code, 1, b2, 0, b2.length);
+		setCode(adr, b1);
+		setCode(adr + 1, b2);
+	}
+
 	// TODO: reloc should be 0...
 	public void setCode(int adr, byte[] code) {
 		int len = code.length;
@@ -113,7 +122,11 @@ public abstract class BRTLoader implements Loader {
 		// TODO: how is RM handled? Is RM ever at start of field?
 		// 1-char segments use the post-punctuation method...
 		if (len > 1) {
-			if ((code[0] & 0100) != 0) {
+			if ((code[0] & 0300) == 0300) {
+				// Must handle special case that doesn't fit BRT...
+				kludge(adr, code);
+				return;
+			} else if ((code[0] & 0100) != 0) {
 				ctrl |= 0020;
 			} else if ((code[0] & 0200) != 0) {
 				ctrl |= 0040;

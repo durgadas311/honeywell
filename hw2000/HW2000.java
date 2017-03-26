@@ -522,6 +522,7 @@ public class HW2000 implements CoreMemory
 		// In any case, it is programmer's responsibility to ensure
 		// there is no confusion when the instruction is turned off.
 
+		op_xflags = 0;
 		oSR = SR;
 		fsr = SR;
 		iaar = -1;

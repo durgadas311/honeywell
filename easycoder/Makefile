@@ -1,6 +1,6 @@
 all: Assembler.class ezc.class
 
-JAVAS = Assembler.java TapeLoader.java CardLoader.java \
+JAVAS = Assembler.java TapeLoader.java CardLoader.java RawLoader.java \
 	BRTLoader.java CoreLoader.java Loader.java
 
 Assembler.class: $(JAVAS)
