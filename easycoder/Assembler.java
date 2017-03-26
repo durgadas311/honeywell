@@ -22,6 +22,9 @@ public class Assembler {
 	boolean end;
 	boolean asmPass;
 	String prog;
+	String segm;
+	String rev;
+	int vis;
 	int endAdr;
 	int minAdr;
 	int maxAdr;
@@ -49,6 +52,9 @@ public class Assembler {
 	//
 	public Assembler(File input) {
 		prog = null; // or default to file name?
+		segm = "01";
+		rev = "000";
+		vis = 0;	// TODO: needs to be non-zero?
 		inFile = input;
 		symTab = new HashMap<String,Integer>();
 		errs = new Vector<String>();
@@ -144,7 +150,7 @@ public class Assembler {
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
-		loader.begin(minAdr); // TODO: necessary?
+		loader.begin(minAdr, prog, segm, rev, vis);
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		loader.end(endAdr);
@@ -155,11 +161,9 @@ public class Assembler {
 		return ret;
 	}
 
-	public int passTwo(FileOutputStream output, Object list) {
+	public int passTwo(FileOutputStream output, boolean cards, Object list) {
 		try {
 			in = new BufferedReader(new FileReader(inFile));
-			// TODO: what is expected record length?
-			loader = new BRTLoader(output, 128);
 		} catch (Exception ee) {
 			// 'in' should never fail - already validated in ctor.
 			ee.printStackTrace();
@@ -172,12 +176,17 @@ public class Assembler {
 			this.sys = (CoreMemory)sys;
 			listing = true;
 		}
+		if (cards) {
+			loader = new CardLoader(output, cvt);
+		} else {
+			loader = new TapeLoader(output, cvt);
+		}
 		asmPass = true;
 		int ret = 0;
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
-		loader.begin(minAdr); // TODO: necessary?
+		loader.begin(minAdr, prog, segm, rev, vis);
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		loader.end(endAdr);
@@ -684,10 +693,11 @@ public class Assembler {
 		} else if (opc.equals("DA")) {
 			return noImpl(opc);
 		} else if (opc.equals("PROG")) {
-			prog = opd;
+			prog = String.format("%-6.6s", opd);
 			return 0;
 		} else if (opc.equals("SEG")) {
-			return noImpl(opc);
+			segm = String.format("%-2.2s", opd);
+			return 0;
 		} else if (opc.equals("EX")) {
 			return noImpl(opc);
 		} else if (opc.equals("XFR")) {

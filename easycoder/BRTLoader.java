@@ -2,44 +2,108 @@
 
 import java.io.*;
 
-public class BRTLoader implements Loader {
+public abstract class BRTLoader implements Loader {
 	private int dist = -1;
 	private int reclen;
 	private int reccnt;
-	private OutputStream targ;
+	private int seq;
+	private byte[] record;
+	protected CharConverter cvt;
 
-	public BRTLoader(OutputStream targ, int reclen) {
-		this.targ = targ;
+	public BRTLoader(CharConverter cvt, int reclen) {
+		this.cvt = cvt;
 		this.reclen = reclen;
 		reccnt = 0;
+		record = new byte[reclen + 6];
+		seq = 0;
 	}
 
-	private void putAdr(int adr) throws Exception {
-		targ.write((adr >> 12) & 0x3f);
-		targ.write((adr >> 6) & 0x3f);
-		targ.write((adr >> 0) & 0x3f);
+	abstract void writeRec(byte[] rec, int len);
+
+	private void putAdr(int adr) {
+		record[reccnt++] = (byte)((adr >> 12) & 0x3f);
+		record[reccnt++] = (byte)((adr >> 6) & 0x3f);
+		record[reccnt++] = (byte)((adr >> 0) & 0x3f);
 	}
 
-	private void mkSpace(int len) throws Exception {
-		if (reccnt + len >= reclen) {
-			targ.write(077);
-			targ.write(0301); // tape record mark
-			reccnt = 0;
+	private void finRec(boolean last) {
+		++seq;
+		if (!last) {
+			record[reccnt++] = 077;	// read next record
 		}
-		reccnt += len;
+		putLen(reccnt);
+		if (last) {
+			record[0] &= ~07;
+			record[0] |= (byte)04;
+		}
+		writeRec(record, reccnt);
 	}
 
-	private void setAdr(int adr) throws Exception {
+	// Data always follows...
+	private void mkSpace(int len) {
+		if (reccnt + len >= reclen) {
+			finRec(false);
+			initRec();
+		}
+	}
+
+	private void setAdr(int adr) {
 		mkSpace(4);
-		targ.write(060);
+		record[reccnt++] = 060;
 		putAdr(adr);
 		dist = adr;
 	}
 
-	public void begin(int adr) {
-		try {
-			setAdr(adr);
-		} catch (Exception ee) {}
+	private void putLen(int len) {
+		record[1] = (byte)((len >> 12) & 0x3f);
+		record[2] = (byte)((len >> 6) & 0x3f);
+		record[3] = (byte)((len >> 0) & 0x3f);
+	}
+
+	private void putSeq(int seq) {
+		record[4] = (byte)((seq >> 6) & 0x3f);
+		record[5] = (byte)((seq >> 0) & 0x3f);
+	}
+
+	private void initRec() {
+		reccnt = 0;
+		record[0] = (byte)041;
+		putLen(0);	// updated later...
+		putSeq(seq);
+		reccnt = 7;
+		record[6] = (byte)reccnt;
+	}
+
+	// Strings must have already been truncated/padded to exact field length.
+	private void putStr(String str) {
+		for (byte c : str.getBytes()) {
+			record[reccnt++] = cvt.asciiToHw(c);
+		}
+	}
+
+	private void initSeg(String rev, String prg, String seg, int vis) {
+		if (seq > 0) {
+			record[0] = (byte)054;
+		} else {
+			record[0] = (byte)050;
+		}
+		putLen(0);	// updated later...
+		putSeq(seq);	//
+		reccnt = 7;
+		putStr(rev);
+		putStr(prg);
+		putStr(seg);
+		putAdr(vis >> 12);
+		putAdr(vis);
+		// assert reccnt == 24...
+		reccnt = 24;
+		record[6] = (byte)reccnt;
+		seq = 1;
+	}
+
+	public void begin(int adr, String prg, String seg, String rev, int vis) {
+		initSeg(rev, prg, seg, vis);
+		setAdr(adr);
 	}
 
 	// TODO: reloc should be 0...
@@ -47,49 +111,45 @@ public class BRTLoader implements Loader {
 		int len = code.length;
 		byte ctrl = (byte)len;
 		// TODO: how is RM handled? Is RM ever at start of field?
-		if ((code[0] & 0100) != 0) {
-			ctrl |= 0020;
-		} else if ((code[0] & 0200) != 0) {
-			ctrl |= 0040;
+		// 1-char segments use the post-punctuation method...
+		if (len > 1) {
+			if ((code[0] & 0100) != 0) {
+				ctrl |= 0020;
+			} else if ((code[0] & 0200) != 0) {
+				ctrl |= 0040;
+			}
 		}
-		try {
-			if (dist != adr) {
-				setAdr(adr);
-			}
-			mkSpace(len + 1);
-			targ.write(ctrl);
-			for (int y = 0; y < len; ++y) {
-				targ.write(code[y] & 0x3f);
-			}
-			dist += len;
-			if ((code[len - 1] & 0100) != 0) {
-				mkSpace(1);
-				targ.write(063);
-			}
-			if ((code[len - 1] & 0200) != 0) {
-				mkSpace(1);
-				targ.write(064);
-			}
-		} catch (Exception ee) {}
+		if (dist != adr) {
+			setAdr(adr);
+		}
+		mkSpace(len + 1);
+		record[reccnt++] = ctrl;
+		for (int y = 0; y < len; ++y) {
+			record[reccnt++] = (byte)(code[y] & 0x3f);
+		}
+		dist += len;
+		if ((code[len - 1] & 0100) != 0) {
+			mkSpace(1);
+			record[reccnt++] = (byte)063;
+		}
+		if ((code[len - 1] & 0200) != 0) {
+			mkSpace(1);
+			record[reccnt++] = (byte)064;
+		}
 	}
 
 	public void clear(int start, int end, byte fill) {
-		try {
-			mkSpace(8);
-			targ.write(061);
-			putAdr(start);
-			putAdr(end);
-			targ.write(fill);
-		} catch (Exception ee) {}
+		mkSpace(8);
+		record[reccnt++] = (byte)061;
+		putAdr(start);
+		putAdr(end);
+		record[reccnt++] = fill;
 	}
 
 	public void end(int start) {
-		try {
-			mkSpace(4);
-			targ.write(061);
-			putAdr(start);
-			targ.write(0301); //
-			targ.write(0301); // tape file mark
-		} catch (Exception ee) {}
+		mkSpace(4);
+		record[reccnt++] = (byte)061;
+		putAdr(start);
+		finRec(true);
 	}
 }

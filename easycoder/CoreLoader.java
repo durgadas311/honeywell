@@ -6,7 +6,7 @@ public class CoreLoader implements Loader {
 		this.sys = sys;
 	}
 
-	public void begin(int adr) {
+	public void begin(int adr, String prg, String seg, String rev, int vis) {
 	}
 
 	public void setCode(int adr, byte[] code) {

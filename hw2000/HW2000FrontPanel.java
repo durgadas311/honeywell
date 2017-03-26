@@ -1346,7 +1346,7 @@ public class HW2000FrontPanel extends JFrame
 			}
 			// TODO: Copy mag tape bootstrap to new file...
 			//pgmBoot(fo, "bringup/bootmt.mti");
-			e = asm.passTwo(fo, listing ? sys : null);
+			e = asm.passTwo(fo, !tape, listing ? sys : null);
 			try { fo.close(); } catch (Exception ee) {}
 		} else {
 			e = asm.passTwo(sys, reloc, listing);

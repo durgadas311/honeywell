@@ -610,7 +610,7 @@ class CharConverter {
 
 	// punch code from HW2000 "cpu code"
 	public int hwToPun(byte c, boolean alt) {
-		if (alt) {
+		if (alt && (c == 020 || c == 037 || c == 040 || c == 057)) {
 			c ^= 017;
 		}
 		int p = hw2pun[c & 077];

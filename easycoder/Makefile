@@ -1,6 +1,9 @@
 all: Assembler.class ezc.class
 
-Assembler.class: Assembler.java BRTLoader.java CoreLoader.java Loader.java
+JAVAS = Assembler.java TapeLoader.java CardLoader.java \
+	BRTLoader.java CoreLoader.java Loader.java
+
+Assembler.class: $(JAVAS)
 	javac -source 1.7 -target 1.7 Assembler.java
 
 ezc.class: ezc.java Assembler.class

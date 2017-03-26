@@ -2,8 +2,14 @@ import java.io.*;
 
 public class ezc {
 	public static void main(String[] args) {
-		if (args.length < 1) {
-			System.err.println("Usage: ezc <in-file> ..tbd..");
+		boolean cards = false;
+		int x = 0;
+		if (args.length > x && args[x].equals("-c")) {
+			++x;
+			cards = true;
+		}
+		if (args.length - x < 1) {
+			System.err.println("Usage: ezc [-c] <in-file> ..tbd..");
 			System.exit(1);
 		}
 		FileOutputStream fo = null;
@@ -15,10 +21,10 @@ public class ezc {
 			ee.printStackTrace();
 			System.exit(1);
 		}
-		Assembler asm = new Assembler(new File(args[0]));
+		Assembler asm = new Assembler(new File(args[x]));
 		int e = asm.passOne();
 		if (e >= 0) {
-			e = asm.passTwo(fo, lo);
+			e = asm.passTwo(fo, cards, lo);
 		}
 		try { fo.close(); } catch (Exception ee) {}
 	}
