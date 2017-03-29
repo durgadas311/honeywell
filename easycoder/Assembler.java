@@ -382,10 +382,109 @@ public class Assembler {
 		return e;
 	}
 
+	// -1 = error
+	// -2..-16 = X1..X15
+	// -18..-32 = Y1..Y15
+	private int parseArg(String opd) {
+		int adr = 0;
+		if (opd.matches("[XY][0-9]+")) {
+			adr = Integer.valueOf(opd.substring(1));
+			if (adr < 1 ||
+				(adrMode == 3 && (opd.charAt(0) == 'Y' || adr > 6)) ||
+				(adrMode > 3 && adr > 15)) {
+				errs.add("Invalid indexed address " + opd +
+					" at line " + lineNo);
+				return -1;
+			}
+			// adr: 1..15
+			if (opd.charAt(0) == 'Y') {
+				adr += 16; // 17..31
+			}
+			// adr: 1..15, 17..31
+			adr += 1; // adr: 2..16, 18..32
+			return -adr; // -2..-16, -18..-32
+		}
+		if (opd.equals("*")) {
+			return currLoc;
+		}
+		if (Character.isDigit(opd.charAt(0))) {
+			try {
+				return Integer.valueOf(opd) & adrMask;
+			} catch (Exception ee) {
+				errs.add("Invalid number " + opd +
+					" at line " + lineNo);
+				return -1;
+			}
+		}
+		if (symTab.containsKey(opd)) {
+			return symTab.get(opd);
+		} else if (asmPass) {
+			errs.add("Undefined symbol " + opd + " at line " + lineNo);
+			return -1;
+		}
+		return 0;
+	}
+
+	// One or more symbols or numbers, separated by +/-,
+	// and an optional + index-reg (if indexed is true).
+	private int parseExpr(String opd, boolean indexed) {
+		int ix = 0;
+		int adr = 0;
+		char op = '+';
+		while (ix >= 0) {
+			int x = opd.indexOf('+', ix);
+			int y = opd.indexOf('-', ix);
+			if (y >= 0 && (x < 0 || y >= 0 && y < x)) {
+				x = y;
+			}
+			int a;
+			if (x >= 0) {
+				a = parseArg(opd.substring(ix, x));
+				if (a < -1) {
+					errs.add("Indexed must be last " + opd +
+						" at line " + lineNo);
+					return -1;
+				}
+			} else {
+				a = parseArg(opd.substring(ix));
+			}
+			if (a == -1) {
+				// need message?
+				return -1;
+			}
+			if (a < -1) {
+				if (!indexed) {
+					errs.add("Indexed not allowed " + opd +
+						" at line " + lineNo);
+					return -1;
+				}
+				a = -a; // 2..16, 18..32
+				--a;	// 1..16, 17..31
+				if (adrMode == 3) {
+					adr |= (a << 15);
+				} else { // must be 4
+					adr |= (a << 19);
+				}
+				// must be last, could return here
+			} else {
+				if (op == '-') {
+					adr -= a;
+				} else {
+					adr += a;
+				}
+				adr &= adrMask;
+			}
+			ix = x;
+			if (ix >= 0) {
+				op = opd.charAt(ix++);
+			}
+		}
+		return adr;
+	}
+
 	private int parseAdr(String opd, boolean simple) {
 		int ix;
 		int adr = 0;
-		boolean ind = false;
 		int idx = 0;	// 0: not a valid index register - no indexing
 		if (opd.charAt(0) == '(') {
 			if (simple) {
@@ -402,75 +501,19 @@ public class Assembler {
 				return -1;
 			}
 			// TODO: can there be residual after ')' ?
-			ind = true;
-			opd = opd.substring(1, ix);
-		}
-		ix = opd.lastIndexOf('+');
-		if (ix >= 0 && opd.substring(ix).matches("\\+[XY][0-9]+")) {
-			if (ind) {
-				errs.add("Indexed address with indirect at line " + lineNo);
+			adr = parseExpr(opd.substring(1, ix), false);
+			if (adr < 0) {
 				return -1;
 			}
-			if (simple) {
-				errs.add("Indexed address not allowed at line " + lineNo);
-				return -1;
-			}
-			if (adrMode < 3) {
-				errs.add("Indexed address in 2-char mode at line " + lineNo);
-				return -1;
-			}
-			idx = Integer.valueOf(opd.substring(ix + 2));
-			if (idx < 1 || (adrMode == 3 && (opd.charAt(ix + 1) == 'Y' || idx > 6)) || (adrMode > 3 && idx > 15)) {
-				errs.add("Invalid indexed address " + opd + " at line " + lineNo);
-				return -1;
-			}
-			if (opd.charAt(ix + 1) == 'Y') {
-				idx += 16;
-			}
-			opd = opd.substring(0, ix);
-		}
-		ix = opd.indexOf('-');
-		if (ix < 0) {
-			ix = opd.indexOf('+');
-			if (ix < 0) {
-				ix = opd.length();
-			}
-		}
-		if (ix == 0) { // special case: sign prefix on number...
-			ix = opd.length();
-		}
-		String sym = opd.substring(0, ix);
-		if (Character.isDigit(sym.charAt(0)) || sym.charAt(0) == '+' || sym.charAt(0) == '-') {
-			adr = Integer.valueOf(sym) & adrMask;
-		} else if (sym.equals("*")) {
-			adr = currLoc;
-		} else {
-			if (symTab.containsKey(sym)) {
-				adr = symTab.get(sym);
-			} else if (asmPass) {
-				errs.add("Undefined symbol " + sym + " at line " + lineNo);
-				return -1;
-			}
-		}
-		if (ix < opd.length()) {
-			int a = Integer.valueOf(opd.substring(ix + 1));
-			if (opd.charAt(ix) == '-') {
-				adr -= a;
-			} else {
-				adr += a;
-			}
-		}
-		if (ind) {
 			if (adrMode == 3) {
 				adr |= 0700000;
 			} else { // must be 4
 				adr |= 040000000;
 			}
-		} else if (idx > 0) {
-			if (adrMode == 3) {
-				adr |= (idx << 15);
-			} else { // must be 4
-				adr |= (idx << 19);
+		} else {
+			adr = parseExpr(opd, !simple && adrMode >= 3);
+			if (adr < 0) {
+				return -1;
 			}
 		}
 		return adr;

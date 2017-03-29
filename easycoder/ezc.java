@@ -46,6 +46,9 @@ public class ezc {
 		if (e >= 0) {
 			e = asm.passTwo(ldr, lo);
 		}
+		if (e < 0) {
+			System.err.println(asm.getErrors());
+		}
 		try { fo.close(); } catch (Exception ee) {}
 	}
 }
