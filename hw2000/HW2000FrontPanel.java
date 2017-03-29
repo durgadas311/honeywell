@@ -1349,7 +1349,7 @@ public class HW2000FrontPanel extends JFrame
 			// TODO: header record "1HDR "
 			//pgmBoot(fo, "bringup/bootmt.mti");
 			e = asm.passTwo(new TapeLoader(fo, asm.charCvt()),
-					listing ? sys : null);
+					listing ? lst : null);
 			// TODO: trailer record "1EOF "
 			// TODO: trailer record "1ERI "
 			// TODO: trailer record "1ERI "

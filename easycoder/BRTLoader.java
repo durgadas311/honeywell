@@ -118,7 +118,7 @@ public abstract class BRTLoader implements Loader {
 	// TODO: reloc should be 0...
 	public void setCode(int adr, byte[] code) {
 		int len = code.length;
-		byte ctrl = (byte)len;
+		byte ctrl = (byte)0;
 		// TODO: how is RM handled? Is RM ever at start of field?
 		// 1-char segments use the post-punctuation method...
 		if (len > 1) {
@@ -135,12 +135,14 @@ public abstract class BRTLoader implements Loader {
 		if (dist != adr) {
 			setAdr(adr);
 		}
-		mkSpace(len + 1);
-		record[reccnt++] = ctrl;
-		for (int y = 0; y < len; ++y) {
-			record[reccnt++] = (byte)(code[y] & 0x3f);
+		int n = 0;
+		while (len - n > 15) {
+			setCode(adr, code, ctrl, n, n + 15);
+			n += 15;
+			adr += 15;
+			ctrl = 0;
 		}
-		dist += len;
+		setCode(adr, code, ctrl, n, len - n);
 		if ((code[len - 1] & 0100) != 0) {
 			mkSpace(1);
 			record[reccnt++] = (byte)063;
@@ -149,6 +151,18 @@ public abstract class BRTLoader implements Loader {
 			mkSpace(1);
 			record[reccnt++] = (byte)064;
 		}
+	}
+
+	// Only called for lengths <= 15
+	private void setCode(int adr, byte[] code, byte ctrl, int start, int end) {
+		int len = (end - start);
+		ctrl |= len;
+		mkSpace(len + 1);
+		record[reccnt++] = ctrl;
+		for (int y = start; y < end; ++y) {
+			record[reccnt++] = (byte)(code[y] & 0x3f);
+		}
+		dist += (end - start);
 	}
 
 	public void clear(int start, int end, byte fill) {
