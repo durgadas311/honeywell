@@ -603,7 +603,8 @@ public class HW2000FrontPanel extends JFrame
 	public void setInterrupt(int type) {	// Indicator only
 		eintr.setForeground(type == HW2000CCR.EIR_EI ? indLit : indDark);
 		iintr.setForeground(type == HW2000CCR.EIR_II ? indLit : indDark);
-		pgm.setForeground(type == 0 ? indLit : indDark);
+		// TODO: how to detect "program exception"?
+		pgm.setForeground(type == HW2000CCR.EIR_PC ? indLit : indDark);
 		repaint();
 	}
 	public void setProtect(int type) {	// Indicator only

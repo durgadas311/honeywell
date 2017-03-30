@@ -1,5 +1,5 @@
 00010         PROG  MACHIN
-00020         ORG   1000
+00020         ORG   1340
 00030         RANGE *,TOP
 00030         ADMODE2
 00040*

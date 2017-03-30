@@ -386,7 +386,7 @@ public class HW2000 implements CoreMemory
 			ax = (ax << 6) | (rawReadMem(ix++) & 077);
 		}
 		ax &= am_mask;
-		a = (a + ax) & 0x7ffff;
+		a = ((a + ax) & am_mask) | (ref & ~am_mask);
 		return a;
 	}
 
