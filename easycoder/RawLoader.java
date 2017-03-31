@@ -74,6 +74,15 @@ public class RawLoader implements Loader {
 			if ((code[0] & 0200) != 0) {
 				makeSI(adr);
 			}
+			int n = code.length - 1;
+			if (n > 0) {
+				if ((code[n] & 0100) != 0) {
+					makeSW(adr + n);
+				}
+				if ((code[n] & 0200) != 0) {
+					makeSI(adr + n);
+				}
+			}
 		}
 		try {
 			while (curadr < adr) {
