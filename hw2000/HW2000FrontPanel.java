@@ -621,6 +621,8 @@ public class HW2000FrontPanel extends JFrame
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		pack();
 		setVisible(true);
+		Thread thrd = new Thread(this);
+		thrd.start();
 	}
 
 	public void setContents(int v) {
@@ -1029,7 +1031,8 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 2;
 		pn = new JPanel();
 		pn.setOpaque(true);
-		pn.setPreferredSize(new Dimension((d * 30) + ((d + 1) / 3 * 10) + 20, 40)); // will just any width work?
+		// will just any width work?
+		pn.setPreferredSize(new Dimension((d * 30) + ((d + 1) / 3 * 10) + 20, 40));
 		gb.setConstraints(pn, gc);
 		top.add(pn);
 	}
@@ -1055,8 +1058,24 @@ public class HW2000FrontPanel extends JFrame
 			warning(this, "Bootstrap", ee.toString());
 			return;
 		}
-		Thread thrd = new Thread(this);
-		thrd.start();
+	}
+
+	private void endCtrlMode() {
+		Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_CO);
+		if (p != null) {
+			p.poke();
+		}
+	}
+
+	private void doCtrlMode() {
+		// Get one input command and perform action
+		Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_CO);
+		if (p == null) {
+			// need to sleep or something...
+			return;
+		}
+		String s = p.input(sys);
+System.err.format("CONSOLE: \"%s\"\n", s);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -1135,12 +1154,12 @@ public class HW2000FrontPanel extends JFrame
 						eir = HW2000CCR.EIR_EI;
 					}
 					setInterrupt(eir);
-					Thread thrd = new Thread(this);
-					thrd.start();
+					sys.halt = false;
+					endCtrlMode();
 				} else if (a.equals("instr")) {
 					sys.singleStep = true;
-					Thread thrd = new Thread(this);
-					thrd.start();
+					sys.halt = false;
+					endCtrlMode();
 				} else if (a.equals("clear")) {
 					// nothing of interest to do?
 				} else if (a.equals("init")) {
@@ -1589,12 +1608,16 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	public void run() {
-		if (sys.bootstrap) {
-			sys.waitIO();
-			setRunStop(false);
-			sys.bootstrap = false;
-		} else {
-			sys.run();
+		while (true) {
+			if (sys.bootstrap) {
+				sys.waitIO();
+				setRunStop(false);
+				sys.bootstrap = false;
+			} else if (sys.halt) {
+				doCtrlMode();
+			} else {
+				sys.run();
+			}
 		}
 	}
 }

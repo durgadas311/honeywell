@@ -12,6 +12,7 @@ public interface Peripheral {
 	public boolean busy(byte c2);
 	public String input(HW2000 sys);// ASCII, not HW codes
 	public void output(String s);	// ASCII, not HW codes
+	public void poke();
 	public void reset();
 	public void visible(boolean on);
 }

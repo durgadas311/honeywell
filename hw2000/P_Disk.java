@@ -659,6 +659,7 @@ public class P_Disk extends JFrame
 	public String input(HW2000 sys) { return null; }
 
 	public void output(String s) { }
+	public void poke() { }
 
 	public boolean busy(byte c2) {
 		return busy;

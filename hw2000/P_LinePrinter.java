@@ -235,6 +235,7 @@ public class P_LinePrinter extends JFrame
 		text.setCaretPosition(carr);
 		autoVisible(true);
 	}
+	public void poke() { }
 
 	public boolean busy(byte c2) {
 		return busy;

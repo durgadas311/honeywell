@@ -236,6 +236,9 @@ public class P_Console extends JFrame
 		} else {
 			a = kq.take();
 		}
+		if (a < 0) {
+			return -2;
+		}
 		a = Character.toUpperCase((char)a);
 		if (a == '\n') {
 			text.insert("\n", carr++);
@@ -261,8 +264,8 @@ public class P_Console extends JFrame
 	public String input(HW2000 sys) {
 		// TODO: lights up "TYPE"?
 		String ret = "";
+		byte c = -1;
 		try {
-			byte c;
 			while (true) {
 				c = getChar(sys);
 				if (c < 0) {
@@ -271,6 +274,9 @@ public class P_Console extends JFrame
 				ret += sys.pdc.cvt.hwToLP(c);
 			}
 		} catch (Exception ee) { }
+		if (c < -1) {
+			return "";
+		}
 		return ret;
 	}
 
@@ -284,6 +290,10 @@ public class P_Console extends JFrame
 		carr += s.length();
 		text.setCaretPosition(carr);
 		autoVisible(true);
+	}
+
+	public void poke() {
+		kq.add(-1);
 	}
 
 	public boolean busy(byte c2) {
