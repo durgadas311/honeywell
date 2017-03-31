@@ -390,7 +390,7 @@ public class HW2000FrontPanel extends JFrame
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(140,30));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridy = 10;
 		gc.gridwidth = 5;
@@ -399,7 +399,7 @@ public class HW2000FrontPanel extends JFrame
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20,40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridy = 11;
 		gc.gridwidth = 1;
