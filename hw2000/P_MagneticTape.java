@@ -315,8 +315,9 @@ public class P_MagneticTape extends JFrame
 		}
 	}
 
-	public void output(String s) {
-	}
+	public String input(HW2000 sys) { return null; }
+
+	public void output(String s) { }
 
 	public boolean busy(byte c2) {
 		// without unit number, we are not busy?

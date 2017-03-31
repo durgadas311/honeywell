@@ -656,8 +656,9 @@ public class P_Disk extends JFrame
 		cacheTrack(-1, -1);
 	}
 
-	public void output(String s) {
-	}
+	public String input(HW2000 sys) { return null; }
+
+	public void output(String s) { }
 
 	public boolean busy(byte c2) {
 		return busy;

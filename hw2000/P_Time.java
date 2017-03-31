@@ -72,8 +72,9 @@ public class P_Time
 		// only called for TOD - nothing to do.
 	}
 
-	public void output(String s) {
-	}
+	public String input(HW2000 sys) { return null; }
+
+	public void output(String s) { }
 
 	public boolean busy(byte c2) {
 		return false;

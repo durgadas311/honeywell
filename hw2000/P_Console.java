@@ -26,6 +26,7 @@ public class P_Console extends JFrame
 	boolean interrupt = false;
 	boolean dataTerm = false;
 	int io; // only valid between io() and run()
+	JLabel type;
 
 	public P_Console() {
 		super("H220 Console");
@@ -37,7 +38,7 @@ public class P_Console extends JFrame
 		sts[0] = new ConsoleStatus();
 		sts[1] = new ConsoleStatus();
 		setLayout(new FlowLayout());
-		text = new JTextArea(24, 80);
+		text = new JTextArea(24, 64);
 		text.setEditable(false); // this prevents caret... grrr.
 		text.setBackground(Color.white);
 		Font font = null;
@@ -70,6 +71,19 @@ public class P_Console extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
+
+		JPanel pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 30));
+		pn.setOpaque(true);
+		pn.setBackground(Color.black);
+		type = new JLabel("TYPE");
+		type.setForeground(HW2000FrontPanel.indDark);
+		pn.add(type);
+		mb.add(pn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(400, 30));
+		mb.add(pn);
+
 		setJMenuBar(mb);
 
 		addWindowListener(this);
@@ -149,6 +163,7 @@ public class P_Console extends JFrame
 	}
 
 	private void doIn(RWChannel rwc, ConsoleStatus unit) {
+		type.setForeground(HW2000FrontPanel.indLit);
 		rwc.startCLC();
 		int a = -1;
 		byte b;
@@ -156,32 +171,11 @@ public class P_Console extends JFrame
 			// TODO: what effect does c3 have? Print CR/LF before input?
 			// Or... use CR as termination of input?
 			while ((rwc.readMem() & 0300) != 0300) {
-				if (idev != null) {
-					a = idev.read();
-				} else {
-					a = kq.take();
-				}
-				if (a < 0) {
-					break;
-				}
-				a = Character.toUpperCase((char)a);
-				if (a == '\n') {
+				byte c = getChar(rwc.sys);
+				if (c < 0) {
 					// caller must check CLC (CLC - SLC)
-					text.insert("\n", carr++);
-					text.setCaretPosition(carr);
 					break;
 				}
-				int ix = CharConverter.hwAsciiSup.indexOf((char)a);
-				if (ix >= 0) {
-					a = CharConverter.hwAsciiRep.charAt(ix);
-				}
-				byte c = rwc.sys.pdc.cvt.asciiToHw((byte)a);
-				if (col >= 80) {
-					text.insert("\n", carr++);
-					col = 0;
-				}
-				text.insert(rwc.sys.pdc.cvt.hwToLP(c), carr++);
-				text.setCaretPosition(carr);
 				// Must not disturb punctuation
 				rwc.writeChar(c);
 				if (rwc.incrCLC()) {
@@ -192,6 +186,7 @@ public class P_Console extends JFrame
 			// TODO: pass along EI/II exceptions
 		}
 		unit.busy = false;
+		type.setForeground(HW2000FrontPanel.indDark);
 	}
 
 	public void doOut(RWChannel rwc, ConsoleStatus unit) {
@@ -206,7 +201,7 @@ public class P_Console extends JFrame
 					break;
 				}
 				a &= 077;
-				if (col >= 80) {
+				if (col >= 64) {
 					s += "\n";
 					col = 0;
 				}
@@ -231,6 +226,52 @@ public class P_Console extends JFrame
 			// TODO: handle exceptions? pass along?
 		}
 		unit.busy = false;
+	}
+
+	// return -1 on CR
+	private byte getChar(HW2000 sys) throws Exception {
+		int a;
+		if (idev != null) {
+			a = idev.read();
+		} else {
+			a = kq.take();
+		}
+		a = Character.toUpperCase((char)a);
+		if (a == '\n') {
+			text.insert("\n", carr++);
+			text.setCaretPosition(carr);
+			return -1;
+		}
+		if (col >= 64) {
+			text.insert("\n", carr++);
+			col = 0;
+		}
+		int ix = CharConverter.hwAsciiSup.indexOf((char)a);
+		if (ix >= 0) {
+			a = CharConverter.hwAsciiRep.charAt(ix);
+		}
+		byte c = sys.pdc.cvt.asciiToHw((byte)a);
+		text.insert(sys.pdc.cvt.hwToLP(c), carr++);
+		text.setCaretPosition(carr);
+		return c;
+	}
+
+	// Note: may return special chars (unicode).
+	// Called by Control Mode, and Logging Mode (which discards)
+	public String input(HW2000 sys) {
+		// TODO: lights up "TYPE"?
+		String ret = "";
+		try {
+			byte c;
+			while (true) {
+				c = getChar(sys);
+				if (c < 0) {
+					break;
+				}
+				ret += sys.pdc.cvt.hwToLP(c);
+			}
+		} catch (Exception ee) { }
+		return ret;
 	}
 
 	public void output(String s) {

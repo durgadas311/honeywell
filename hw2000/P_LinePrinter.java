@@ -222,6 +222,8 @@ public class P_LinePrinter extends JFrame
 		busy = false;
 	}
 
+	public String input(HW2000 sys) { return null; }
+
 	public void output(String s) {
 		if (dev != null) {
 			try {
