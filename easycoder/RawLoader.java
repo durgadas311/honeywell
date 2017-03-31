@@ -6,7 +6,8 @@ public class RawLoader implements Loader {
 	OutputStream out;
 	Assembler asm;
 	int curadr;
-	String last = null;
+	String lastw = null;
+	String lasti = null;
 	int line = 1;
 	int reclen = 250;
 	int cnt = 0;
@@ -32,12 +33,28 @@ public class RawLoader implements Loader {
 			System.err.format("Unresolved address %07o\n", adr);
 		} else {
 			int d = adr - asm.lookupSym(sym);
-			if (last == null) {
-				last = String.format("%s+%d", sym, d);
+			if (lastw == null) {
+				lastw = String.format("%s+%d", sym, d);
 			} else {
 				System.err.format("%05d         SW    %s,%s+%d\n",
-					line++, last, sym, d);
-				last = null;
+					line++, lastw, sym, d);
+				lastw = null;
+			}
+		}
+	}
+
+	private void makeSI(int adr) {
+		String sym = asm.lookupAdr(adr);
+		if (sym == null) {
+			System.err.format("Unresolved address %07o\n", adr);
+		} else {
+			int d = adr - asm.lookupSym(sym);
+			if (lasti == null) {
+				lasti = String.format("%s+%d", sym, d);
+			} else {
+				System.err.format("%05d         SI    %s,%s+%d\n",
+					line++, lasti, sym, d);
+				lasti = null;
 			}
 		}
 	}
@@ -48,10 +65,15 @@ public class RawLoader implements Loader {
 
 	public void setCode(int adr, byte[] code) {
 		if (asm != null) {
-			// Very simplistic, assume every block starts with WM...
+			// Very simplistic, examines only punc at start of block
 			// Since this is intended for bootstrap programs,
 			// that is probably realistic.
-			makeSW(adr);
+			if ((code[0] & 0100) != 0) {
+				makeSW(adr);
+			}
+			if ((code[0] & 0200) != 0) {
+				makeSI(adr);
+			}
 		}
 		try {
 			while (curadr < adr) {
@@ -77,9 +99,13 @@ public class RawLoader implements Loader {
 	}
 
 	public void end(int start) {
-		if (last != null) {
-			System.err.format("%05d         SW    %s\n", line++, last);
-			last = null;
+		if (lastw != null) {
+			System.err.format("%05d         SW    %s\n", line++, lastw);
+			lastw = null;
+		}
+		if (lasti != null) {
+			System.err.format("%05d         SI    %s\n", line++, lasti);
+			lasti = null;
 		}
 		try {
 			if (cnt > 0) {
