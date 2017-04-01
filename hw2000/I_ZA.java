@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_ZA implements Instruction {
 	// Zero and Add (decimal)
 

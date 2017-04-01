@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public interface CoreMemory {
 	public byte readMem(int adr);
 	public byte readChar(int adr);

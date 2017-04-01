@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_A implements Instruction {
 	// Add (decimal)
 	public static void add_sub(HW2000 sys, boolean sub) {

@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BA implements Instruction {
 	// Binary Add
 

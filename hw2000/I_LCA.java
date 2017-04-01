@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_LCA implements Instruction {
 	// Load Characters to A-field word mark
 	public void execute(HW2000 sys) {

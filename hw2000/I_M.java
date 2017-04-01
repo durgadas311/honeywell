@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.math.BigDecimal;
 
 public class I_M implements Instruction {

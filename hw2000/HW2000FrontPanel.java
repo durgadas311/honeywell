@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.awt.*;
 import java.io.*;
 import java.awt.event.*;

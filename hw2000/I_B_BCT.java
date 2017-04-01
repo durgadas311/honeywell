@@ -1,3 +1,4 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_B_BCT implements Instruction {
 	// Branch or Branch on Condition Test (actually, Branch and Link)
 
