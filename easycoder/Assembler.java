@@ -531,6 +531,7 @@ public class Assembler {
 		try {
 			v = Byte.valueOf(opd, 8);
 		} catch (Exception ee) {
+			errs.add("Invalid variant " + opd + " at line " + lineNo);
 		}
 		return v;
 	}
