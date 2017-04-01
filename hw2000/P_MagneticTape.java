@@ -72,20 +72,6 @@ public class P_MagneticTape extends JFrame
 		pack();
 	}
 
-	public void setOutput(OutputStream dev) {
-	}
-
-	public OutputStream getOutput() {
-		return null;
-	}
-
-	public void setInput(InputStream dev) {
-	}
-
-	public InputStream getInput() {
-		return null;
-	}
-
 	public void reset() {
 	}
 
@@ -314,11 +300,6 @@ public class P_MagneticTape extends JFrame
 			// TODO: handle exceptions? pass along?
 		}
 	}
-
-	public String input(HW2000 sys) { return null; }
-
-	public void output(String s) { }
-	public void poke() { }
 
 	public boolean busy(byte c2) {
 		// without unit number, we are not busy?

@@ -135,20 +135,6 @@ public class P_Disk extends JFrame
 		pack();
 	}
 
-	public void setOutput(OutputStream dev) {
-	}
-
-	public OutputStream getOutput() {
-		return null;
-	}
-
-	public void setInput(InputStream dev) {
-	}
-
-	public InputStream getInput() {
-		return null;
-	}
-
 	public void reset() {
 		cacheTrack(-1, -1);
 		unit = 0;
@@ -655,11 +641,6 @@ public class P_Disk extends JFrame
 		}
 		cacheTrack(-1, -1);
 	}
-
-	public String input(HW2000 sys) { return null; }
-
-	public void output(String s) { }
-	public void poke() { }
 
 	public boolean busy(byte c2) {
 		return busy;

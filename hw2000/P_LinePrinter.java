@@ -108,13 +108,6 @@ public class P_LinePrinter extends JFrame
 		return this.dev;
 	}
 
-	public void setInput(InputStream dev) {
-	}
-
-	public InputStream getInput() {
-		return null;
-	}
-
 	public void reset() {
 	}
 
@@ -222,8 +215,6 @@ public class P_LinePrinter extends JFrame
 		busy = false;
 	}
 
-	public String input(HW2000 sys) { return null; }
-
 	public void output(String s) {
 		if (dev != null) {
 			try {
@@ -235,7 +226,6 @@ public class P_LinePrinter extends JFrame
 		text.setCaretPosition(carr);
 		autoVisible(true);
 	}
-	public void poke() { }
 
 	public boolean busy(byte c2) {
 		return busy;

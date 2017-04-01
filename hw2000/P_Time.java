@@ -23,20 +23,6 @@ public class P_Time
 		// do not start timer until program asks for it.
 	}
 
-	public void setOutput(OutputStream dev) {
-	}
-
-	public OutputStream getOutput() {
-		return null;
-	}
-
-	public void setInput(InputStream dev) {
-	}
-
-	public InputStream getInput() {
-		return null;
-	}
-
 	public void reset() {
 		// TODO
 	}
@@ -71,11 +57,6 @@ public class P_Time
 	public void run(RWChannel rwc) {
 		// only called for TOD - nothing to do.
 	}
-
-	public String input(HW2000 sys) { return null; }
-
-	public void output(String s) { }
-	public void poke() { }
 
 	public boolean busy(byte c2) {
 		return false;

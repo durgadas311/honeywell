@@ -79,6 +79,8 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel dump_pn;
 	int dumpLow;
 	int dumpHi;
+	private P_Console cons;
+	private P_LinePrinter lpt;
 
 	public HW2000FrontPanel(HW2000 sys) {
 		super("Honeywell Series 2000");
@@ -625,6 +627,20 @@ public class HW2000FrontPanel extends JFrame
 		thrd.start();
 	}
 
+	private P_Console getConsole() {
+		if (cons == null) {
+			cons = (P_Console)sys.pdc.getPeriph(PeriphDecode.P_CO);
+		}
+		return cons; // what if still null?
+	}
+
+	private P_LinePrinter getPrinter() {
+		if (lpt == null) {
+			lpt = (P_LinePrinter)sys.pdc.getPeriph(PeriphDecode.P_LP);
+		}
+		return lpt; // what if still null?
+	}
+
 	public void setContents(int v) {
 		contentsReg = v & 0377;
 		setBits(contents, v);
@@ -1061,20 +1077,12 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void endCtrlMode() {
-		Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_CO);
-		if (p != null) {
-			p.poke();
-		}
+		getConsole().poke();
 	}
 
 	private void doCtrlMode() {
 		// Get one input command and perform action
-		Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_CO);
-		if (p == null) {
-			// need to sleep or something...
-			return;
-		}
-		String s = p.input(sys);
+		String s = getConsole().input(sys);
 System.err.format("CONSOLE: \"%s\"\n", s);
 	}
 
@@ -1138,12 +1146,8 @@ System.err.format("CONSOLE: \"%s\"\n", s);
 				sys.halt = true;
 				sys.endWait();
 			} else if (a.equals("inter")) {
-				Peripheral p = null;
-				p = sys.pdc.getPeriph(PeriphDecode.P_CO);
-				if (p != null) {
-					p.setInterrupt(sys);
-					sys.endWait();
-				}
+				getConsole().setInterrupt(sys);
+				sys.endWait();
 			} else if (sys.halt) {
 				if (a.equals("run")) {
 					// Restore program state if needed...
@@ -1386,10 +1390,7 @@ System.err.format("CONSOLE: \"%s\"\n", s);
 				warning(this, op, ee.toString());
 				return false;
 			}
-			p = sys.pdc.getPeriph(PeriphDecode.P_LP);
-			if (p != null) {
-				p.setOutput(lst);
-			}
+			getPrinter().setOutput(lst);
 		}
 		int low = asm.getMin();
 		int hi = asm.getMax();
@@ -1462,9 +1463,7 @@ System.err.format("CONSOLE: \"%s\"\n", s);
 		setContents(sys.rawReadMem(addressReg));
 		currLow = reloc + low;
 		currHi = reloc + hi;
-		if (p != null) {
-			p.setOutput(null);
-		}
+		getPrinter().setOutput(null);
 		if (lst != null) {
 			try { lst.close(); } catch (Exception ee) {}
 		}
@@ -1513,15 +1512,9 @@ System.err.format("CONSOLE: \"%s\"\n", s);
 		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (mi.getMnemonic() == KeyEvent.VK_C) {
-			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_CO);
-			if (p != null) {
-				p.visible(true);
-			}
+			getConsole().visible(true);
 		} else if (mi.getMnemonic() == KeyEvent.VK_P) {
-			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_LP);
-			if (p != null) {
-				p.visible(true);
-			}
+			getPrinter().visible(true);
 		} else if (mi.getMnemonic() == KeyEvent.VK_G) {
 			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_MT);
 			if (p != null) {

@@ -89,20 +89,6 @@ public class P_CardReaderPunch extends JFrame
 		pack();
 	}
 
-	public void setOutput(OutputStream dev) {
-	}
-
-	public OutputStream getOutput() {
-		return null;
-	}
-
-	public void setInput(InputStream dev) {
-	}
-
-	public InputStream getInput() {
-		return null;
-	}
-
 	public void reset() {
 	}
 
@@ -235,11 +221,6 @@ public class P_CardReaderPunch extends JFrame
 		++pcs.cards;
 		pcs.count_pn.setText(String.format("%d", pcs.cards));
 	}
-
-	public String input(HW2000 sys) { return null; }
-
-	public void output(String s) { }
-	public void poke() { }
 
 	public boolean busy(byte c2) {
 		int io = ((c2 & 040) >> 5);
