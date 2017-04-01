@@ -33,4 +33,6 @@ public interface FrontPanel {
 
 	// From JFrame
 	public Container getContentPane();
+
+	public void listOut(String str);
 }

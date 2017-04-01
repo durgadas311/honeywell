@@ -1473,6 +1473,10 @@ System.err.format("CONSOLE: \"%s\"\n", s);
 		return true;
 	}
 
+	public void listOut(String str) {
+		getPrinter().output(str);
+	}
+
 	private int dumpDialog(String name) {
 		JOptionPane dump_dia;
 		dump_dia = new JOptionPane(dump_pn, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION, null, dump_btns);

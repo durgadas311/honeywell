@@ -699,11 +699,11 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void listOut(String str) {
-		Peripheral p = pdc.getPeriph(PeriphDecode.P_LP);
-		if (p == null) {
-			return;
+		if (fp != null) {
+			fp.listOut(str);
+		} else {
+			System.err.format("%s", str);
 		}
-		p.output(str);
 	}
 
 	// Honeywell-style memory dump.
