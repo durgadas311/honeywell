@@ -1082,9 +1082,139 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void doCtrlMode() {
-		// Get one input command and perform action
-		String s = getConsole().input(sys);
-System.err.format("CONSOLE: \"%s\"\n", s);
+		int state = 0;
+		int dc = 0;	// digit count (params)
+		int v = 0;	// value, accumulator
+		P_Console p = getConsole();
+		// must be careful to avoid getting stuck here
+		while (true) {
+			int c = p.inChar(sys);
+			if (c < 0) {
+				if (state != 0) {
+					p.output("!\n");
+				}
+				return;
+			}
+			switch (state) {
+			case 0:
+				switch (c) {
+				case 'A':
+					p.output(" ");
+					break;
+				case 'P':
+					p.output(" ");
+					break;
+				case 'B':
+					p.output(" ");
+					break;
+				case 'L':
+					break;
+				case 'R':
+					p.output("\n");
+	p.output(String.format("AAR = %08o BAR = %08o\n", sys.AAR, sys.BAR));
+					return;
+				case 'S':
+					p.output("\n");
+					sys.singleStep = true;
+					sys.halt = false;
+					return;
+				default:
+					p.output("?\n");
+					return;
+				}
+				state = c;
+				dc = 0;
+				v = 0;
+				break;
+			case 'A':
+			case 'P':
+			case 'B':
+				if (c == ' ' || c == '\n') {
+					if (state == 'A') {
+						if (dc < 7) {
+							setAddress(v);
+							v = 0;
+							dc = 7;
+						} else if ((dc - 7) % 3 != 0) {
+							setContents(v);
+							v = 0;
+							sys.rawWriteMem(addressReg, (byte)contentsReg);
+							setAddress(addressReg + 1);
+							dc = 7;
+						}
+					} else if (dc < 2) {
+						if (state == 'P') {
+							setControl(v);
+						} else {
+							setContents(v);
+						}
+						v = 0;
+						dc = 2;
+					} else if (state == 'B') {
+						setAddress(v);
+						v = 0;
+						dc = 9;
+					}
+					if (c == '\n') {
+						if (state == 'P') {
+	p.output(String.format("CR%02o = %08o\n",
+		controlReg, getCtrlReg((byte)controlReg, 0)));
+						} else if (state == 'B') {
+							doBootStrap();
+						}
+						return;
+					}
+					break;
+				}
+				if (c < '0' || c > '7') {
+					p.output("?\n");
+					return;
+				}
+				++dc;
+				v = (v << 3) | (c & 07);
+				if (state == 'A') {
+					if (dc == 7) {
+						p.output(" ");
+						setAddress(v);
+						v = 0;
+					} else if (dc > 7) {
+						if ((dc - 7) % 3 == 0) {
+							p.output(" ");
+							setContents(v);
+							sys.rawWriteMem(addressReg, (byte)contentsReg);
+							setAddress(addressReg + 1);
+							v = 0;
+							dc = 7;
+						}
+					}
+				} else if (dc == 2) {
+					p.output(" ");
+					if (state == 'P') {
+						setControl(v);
+					} else {
+						setContents(v);
+					}
+					v = 0;
+				} else if (state == 'B') {
+					if (dc == 9) {
+						p.output(" ");
+						setAddress(v);
+						v = 0;
+					}
+				}
+
+				break;
+			case 'L':
+				if (c == '\n') {
+					return;
+				}
+				break;
+			default:
+				state = 0;
+				p.output("?\n");
+				return;
+			}
+		}
 	}
 
 	public void actionPerformed(ActionEvent e) {

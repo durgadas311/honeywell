@@ -262,6 +262,20 @@ public class P_Console extends JFrame
 
 	// Note: may return special chars (unicode).
 	// Called by Control Mode, and Logging Mode (which discards)
+	public int inChar(HW2000 sys) {
+		byte c = -2;
+		try {
+			c = getChar(sys);
+		} catch (Exception ee) {}
+		if (c < -1) {
+			return -1;
+		}
+		if (c < 0) {
+			return '\n';
+		}
+		return sys.pdc.cvt.hwToLP(c).charAt(0);
+	}
+
 	public String input(HW2000 sys) {
 		// TODO: lights up "TYPE"?
 		String ret = "";
