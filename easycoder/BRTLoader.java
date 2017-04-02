@@ -142,7 +142,7 @@ public abstract class BRTLoader implements Loader {
 			adr += 15;
 			ctrl = 0;
 		}
-		setCode(adr, code, ctrl, n, len - n);
+		setCode(adr, code, ctrl, n, len);
 		if ((code[len - 1] & 0100) != 0) {
 			mkSpace(1);
 			record[reccnt++] = (byte)063;

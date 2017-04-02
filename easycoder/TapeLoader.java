@@ -13,7 +13,7 @@ public class TapeLoader extends BRTLoader implements Loader {
 	void writeRec(byte[] rec, int len) {
 		try {
 			targ.write(rec, 0, len);
-			targ.write(0301); // tape record mark
+			targ.write(0300); // tape record mark
 		} catch (Exception ee) {}
 	}
 }

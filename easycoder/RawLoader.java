@@ -27,7 +27,7 @@ public class RawLoader implements Loader {
 			++cnt;
 			if (reclen > 0 && cnt >= reclen) {
 				cnt = 0;
-				out.write(0301);
+				out.write(0300);
 			}
 		} catch (Exception ee) {}
 	}
@@ -119,7 +119,7 @@ public class RawLoader implements Loader {
 		}
 		try {
 			if (cnt > 0) {
-				out.write(0301);
+				out.write(0300);
 			}
 		} catch (Exception ee) {}
 	}

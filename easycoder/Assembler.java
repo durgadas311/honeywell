@@ -173,7 +173,7 @@ public class Assembler {
 			lst = (FileOutputStream)list;
 			listing = true;
 		} else if (list instanceof CoreMemory) {
-			this.sys = (CoreMemory)sys;
+			this.sys = (CoreMemory)list;
 			listing = true;
 		}
 		loader = ldr;
