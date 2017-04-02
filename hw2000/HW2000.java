@@ -287,8 +287,20 @@ public class HW2000 implements CoreMemory
 	}
 
 	public byte readMem(int adr) {
+		if (halt) {
+			throw new HaltException("memory read");
+		}
 		int a = validAdr(adr);
 		++tics;
+		if (fp != null) {
+			if (count == 0) {
+				fp.setAddress(a);
+				fp.setContents(mem[a]);
+			}
+			if (++count > 2000000) {
+				count = 0;
+			}
+		}
 		return mem[a];
 	}
 
@@ -531,16 +543,23 @@ public class HW2000 implements CoreMemory
 		setOp(opSR);	// might throw illegal op-code
 		// TODO: how to avoid including garbage in variant array.
 		int isr = fsr & 0x7ffff;
+		// The problem with enforcing a max here is that some programs
+		// turned off WMs in order to implement conditional execution
+		// of instructions. However, it seems unlikely that such code
+		// would be using that technique to turn off large blocks of
+		// instructions (conditional branches would be more practical).
+		int max = 999; // a reasonable limitation?
 		if (noWM()) {
-			int max = (hasA() ? am_na : 0);
+			max = (hasA() ? am_na : 0);
 			max += (hasB() ? am_na : 0);
-			while (isr != 0 && isr - fsr < max && !chkWord(isr)) {
-				isr = (isr + 1) & 0x7ffff;
+		}
+		while (isr != 0 && isr - fsr < max && !chkWord(isr)) {
+			// With enforced max, this check may not be needed.
+			if (halt) {
+				throw new HaltException("extraction");
 			}
-		} else {
-			while (isr != 0 && !chkWord(isr)) {
-				isr = (isr + 1) & 0x7ffff;
-			}
+			// TODO: add visual feedback?
+			isr = (isr + 1) & 0x7ffff;
 		}
 		// Caller handles exceptions, leave SR at start of instruction
 		// (if during fetch/extract). Exceptions during execute
@@ -565,7 +584,7 @@ public class HW2000 implements CoreMemory
 	private void traceInstr() {
 		String op = op_exec.getClass().getName();
 		String s = String.format("%07o: %s [%07o %07o] ", oSR, op, AAR, BAR);
-		for (int x =  0; x < op_xtra_num; ++x) {
+		for (int x = 0; x < op_xtra_num; ++x) {
 			s += String.format(" %02o", op_xtra[x]);
 		}
 		s += "\n";
@@ -575,15 +594,6 @@ public class HW2000 implements CoreMemory
 	int count = 0;
 
 	public void execute() {
-		if (fp != null && !singleStep) {
-			if (count == 0) {
-				fp.setAddress(oSR);
-				fp.setContents(opSR);
-			}
-			if (++count > 20) {
-				count = 0;
-			}
-		}
 		op_exec.execute(this);
 		updClock();
 	}
@@ -633,6 +643,11 @@ public class HW2000 implements CoreMemory
 			try {
 				fetch();
 				execute();
+			} catch (HaltException he) {
+				// Not fatal, but must cleanup CPU state...
+				halt = true; // in case not already set.
+				SR = oSR; // out best bet is to repeat instruction
+				// TODO: more cleanup required?
 			} catch (IIException ie) {
 				// TODO: need to handle II within II...
 				if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
