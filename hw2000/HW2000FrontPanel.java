@@ -1069,7 +1069,6 @@ public class HW2000FrontPanel extends JFrame
 			sys.bootstrap = true;
 			setRunStop(true);
 			op_exec.execute(sys);
-			endCtrlMode();
 		} catch (Exception ee) {
 			setRunStop(false);
 			sys.bootstrap = false;
@@ -1310,6 +1309,7 @@ public class HW2000FrontPanel extends JFrame
 					currHi = 0;
 				} else if (a.equals("boot")) {
 					doBootStrap();
+					endCtrlMode();
 				} else if (a.equals("am2")) {
 					sys.setAM(HW2000CCR.AIR_AM_2C);
 				} else if (a.equals("am3")) {
@@ -1739,6 +1739,10 @@ public class HW2000FrontPanel extends JFrame
 	public void run() {
 		while (true) {
 			if (sys.bootstrap) {
+				// Pause, for aesthetics
+				try {
+					Thread.sleep(100);
+				} catch (Exception ee) {}
 				sys.waitIO();
 				setRunStop(false);
 				sys.bootstrap = false;

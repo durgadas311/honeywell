@@ -623,6 +623,10 @@ public class HW2000 implements CoreMemory
 	public void run() {
 		if (fp != null) {
 			fp.setRunStop(true);
+			// Pause, for aesthetics
+			try {
+				Thread.sleep(100);
+			} catch (Exception ee) {}
 		}
 		halt = false;
 		while (!halt) {
