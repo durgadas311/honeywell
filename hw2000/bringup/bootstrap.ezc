@@ -54,7 +54,7 @@
 00430         BA    ONE,PTR           SKIP OVER BANNER CHAR
 00060*        SINCE WE CLEARED ALL PUNC, ONLY NEED WM HERE
 00430         SW    (EPTR-3)          SET WM
-00430         EXM   (PTR-3),(DIST-3),77
+00430         EXM   (PTR-3),(DIST-3),37
 00430         CW    (EPTR-3)          REMOVE WM IN CASE NEXT DIFF
 00430         BA    CLC,DIST
 00430         BS    ONE,DIST
