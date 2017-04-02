@@ -1,0 +1,133 @@
+<HTML>
+<HEAD>
+<TITLE>Details of Keypunch Differences</TITLE>
+<STYLE TYPE="text/css">
+td {text-align: center;}
+td.plain {text-align: left;}
+</STYLE>
+</HEAD>
+<BODY>
+<H2>Details of Keypunch Differences</H2>
+
+<P>The Honeywell character set is based on (an extension of) the 48-character
+set of an IBM 026-H keypunch (except for apostrophy).
+This is due to the character set being decided/fixed
+prior to appearance of the IBM 029 keypunch, which defined a full 64-character set.
+Even if cards are punched on an IBM 026-H, the "special code" option needs
+to be set with the PCB instruction in order to get the correct representation for
+the plus and minus characters. It seems that FORTRAN IV programs were normally
+punched on an IBM 026-H keypunch, and the compiler likely used the "special code"
+option to read the program. It is not known if Honeywell built keypunch machines and,
+if so, what character set was used.
+
+<P>The IBM 026 (introduced 1949) had several options that changed the
+keycaps and printing of some of the special characters. The -H option was
+generally used for FORTRAN IV programming, since it supplied the necessary
+special characters. The IBM 029 (introduced 1964) extended the character set of the 026-A,
+assigning new codes for the additional characters of the 026-H,
+and so created a conversion issue if both 029 and 026-H keypunches were being used.
+It was my experience that using an IBM 029 for FORTRAN programs on an H2040 required
+the keypunch operator to understand that certain characters had to be punched
+using different symbols.
+The IBM 029 was available with a 48-character (026-compatible) option,
+in either the -A or -H arrangements, however I never saw those.
+Since the special characters of the -H option did not conflict with
+the corresponding characters of the 029, it is also possible that the
+FORTRAN compiler simply folded both possible punch codes into the same
+character.
+The related example demonstrates a way to automatically
+convert, provided all cards in a program were punched for the same character set.
+
+<P>Here is a table showing Punch Card codes and their Honeywell equivalents.
+The "binary" column shows the 16-bit code stored in "pcd" files.
+A pair of values separated by vertical-bar indicates the normal and "special
+code" as selected by the PCB instruction on the Card Reader/Punch device.
+Notice how the Honeywell characters most-closely align with IBM026-H characters.
+
+<P><TABLE BORDER>
+<TR><TH>binary</TH><TH>punch</TH><TH>IBM026<BR>-A [-H]</TH><TH>IBM029</TH><TH>H2000</TH><TH>H2000-LP</TH></TR>
+<TR><TD>0x0000</TD><TD>no-punch</TD><TD>blank</TD><TD>blank</TD><TD>015</TD><TD>blank</TD></TR>
+<TR><TD>0x0200</TD><TD>[0]</TD><TD>0</TD><TD>0</TD><TD>000</TD><TD>0</TD></TR>
+<TR><TD>0x0100</TD><TD>[1]</TD><TD>1</TD><TD>1</TD><TD>001</TD><TD>1</TD></TR>
+<TR><TD>0x0080</TD><TD>[2]</TD><TD>2</TD><TD>2</TD><TD>002</TD><TD>2</TD></TR>
+<TR><TD>0x0040</TD><TD>[3]</TD><TD>3</TD><TD>3</TD><TD>003</TD><TD>3</TD></TR>
+<TR><TD>0x0020</TD><TD>[4]</TD><TD>4</TD><TD>4</TD><TD>004</TD><TD>4</TD></TR>
+<TR><TD>0x0010</TD><TD>[5]</TD><TD>5</TD><TD>5</TD><TD>005</TD><TD>5</TD></TR>
+<TR><TD>0x0008</TD><TD>[6]</TD><TD>6</TD><TD>6</TD><TD>006</TD><TD>6</TD></TR>
+<TR><TD>0x0004</TD><TD>[7]</TD><TD>7</TD><TD>7</TD><TD>007</TD><TD>7</TD></TR>
+<TR><TD>0x0002</TD><TD>[8]</TD><TD>8</TD><TD>8</TD><TD>010</TD><TD>8</TD></TR>
+<TR><TD>0x0001</TD><TD>[9]</TD><TD>9</TD><TD>9</TD><TD>011</TD><TD>9</TD></TR>
+<TR><TD>0x0900</TD><TD>[12][1]</TD><TD>A</TD><TD>A</TD><TD>021</TD><TD>A</TD></TR>
+<TR><TD>0x0880</TD><TD>[12][2]</TD><TD>B</TD><TD>B</TD><TD>022</TD><TD>B</TD></TR>
+<TR><TD>0x0840</TD><TD>[12][3]</TD><TD>C</TD><TD>C</TD><TD>023</TD><TD>C</TD></TR>
+<TR><TD>0x0820</TD><TD>[12][4]</TD><TD>D</TD><TD>D</TD><TD>024</TD><TD>D</TD></TR>
+<TR><TD>0x0810</TD><TD>[12][5]</TD><TD>E</TD><TD>E</TD><TD>025</TD><TD>E</TD></TR>
+<TR><TD>0x0808</TD><TD>[12][6]</TD><TD>F</TD><TD>F</TD><TD>026</TD><TD>F</TD></TR>
+<TR><TD>0x0804</TD><TD>[12][7]</TD><TD>G</TD><TD>G</TD><TD>027</TD><TD>G</TD></TR>
+<TR><TD>0x0802</TD><TD>[12][8]</TD><TD>H</TD><TD>H</TD><TD>030</TD><TD>H</TD></TR>
+<TR><TD>0x0801</TD><TD>[12][9]</TD><TD>I</TD><TD>I</TD><TD>031</TD><TD>I</TD></TR>
+<TR><TD>0x0500</TD><TD>[11][1]</TD><TD>J</TD><TD>J</TD><TD>041</TD><TD>J</TD></TR>
+<TR><TD>0x0480</TD><TD>[11][2]</TD><TD>K</TD><TD>K</TD><TD>042</TD><TD>K</TD></TR>
+<TR><TD>0x0440</TD><TD>[11][3]</TD><TD>L</TD><TD>L</TD><TD>043</TD><TD>L</TD></TR>
+<TR><TD>0x0420</TD><TD>[11][4]</TD><TD>M</TD><TD>M</TD><TD>044</TD><TD>M</TD></TR>
+<TR><TD>0x0410</TD><TD>[11][5]</TD><TD>N</TD><TD>N</TD><TD>045</TD><TD>N</TD></TR>
+<TR><TD>0x0408</TD><TD>[11][6]</TD><TD>O</TD><TD>O</TD><TD>046</TD><TD>O</TD></TR>
+<TR><TD>0x0404</TD><TD>[11][7]</TD><TD>P</TD><TD>P</TD><TD>047</TD><TD>P</TD></TR>
+<TR><TD>0x0402</TD><TD>[11][8]</TD><TD>Q</TD><TD>Q</TD><TD>050</TD><TD>Q</TD></TR>
+<TR><TD>0x0401</TD><TD>[11][9]</TD><TD>R</TD><TD>R</TD><TD>051</TD><TD>R</TD></TR>
+<TR><TD>0x0280</TD><TD>[0][2]</TD><TD>S</TD><TD>S</TD><TD>062</TD><TD>S</TD></TR>
+<TR><TD>0x0240</TD><TD>[0][3]</TD><TD>T</TD><TD>T</TD><TD>063</TD><TD>T</TD></TR>
+<TR><TD>0x0220</TD><TD>[0][4]</TD><TD>U</TD><TD>U</TD><TD>064</TD><TD>U</TD></TR>
+<TR><TD>0x0210</TD><TD>[0][5]</TD><TD>V</TD><TD>V</TD><TD>065</TD><TD>V</TD></TR>
+<TR><TD>0x0208</TD><TD>[0][6]</TD><TD>W</TD><TD>W</TD><TD>066</TD><TD>W</TD></TR>
+<TR><TD>0x0204</TD><TD>[0][7]</TD><TD>X</TD><TD>X</TD><TD>067</TD><TD>X</TD></TR>
+<TR><TD>0x0202</TD><TD>[0][8]</TD><TD>Y</TD><TD>Y</TD><TD>070</TD><TD>Y</TD></TR>
+<TR><TD>0x0201</TD><TD>[0][9]</TD><TD>Z</TD><TD>Z</TD><TD>071</TD><TD>Z</TD></TR>
+<TR><TD>0x0082</TD><TD>[8][2]</TD><TD>none</TD><TD>:</TD><TD>012</TD><TD>'</TD></TR>
+<TR><TD>0x0042</TD><TD>[8][3]</TD><TD># [=]</TD><TD>#</TD><TD>013</TD><TD>=</TD></TR>
+<TR><TD>0x0022</TD><TD>[8][4]</TD><TD>@ [']</TD><TD>@</TD><TD>014</TD><TD>:</TD></TR>
+<TR><TD>0x0012</TD><TD>[8][5]</TD><TD>none</TD><TD>'</TD><TD>060</TD><TD>&lt;</TD></TR>
+<TR><TD>0x000a</TD><TD>[8][6]</TD><TD>none</TD><TD>=</TD><TD>016</TD><TD>&gt;</TD></TR>
+<TR><TD>0x0006</TD><TD>[8][7]</TD><TD>none</TD><TD>"</TD><TD>017</TD><TD>&amp;</TD></TR>
+<TR><TD>0x0800</TD><TD>[12]</TD><TD>&amp; [+]</TD><TD>&amp;</TD><TD>037|020</TD><TD>?|+</TD></TR>
+<TR><TD>0x0a00</TD><TD>[12][0]</TD><TD>none</TD><TD>none</TD><TD>020|037</TD><TD>+|?</TD></TR>
+<TR><TD>0x0882</TD><TD>[12][8][2]</TD><TD>none</TD><TD>&#162;</TD><TD>032</TD><TD>;</TD></TR>
+<TR><TD>0x0842</TD><TD>[12][8][3]</TD><TD>. </TD><TD>. </TD><TD>033</TD><TD>. </TD></TR>
+<TR><TD>0x0822</TD><TD>[12][8][4]</TD><TD>&#9633; [)]</TD><TD>&lt;</TD><TD>034</TD><TD>)</TD></TR>
+<TR><TD>0x0812</TD><TD>[12][8][5]</TD><TD>none</TD><TD>(</TD><TD>035</TD><TD>%</TD></TR>
+<TR><TD>0x080a</TD><TD>[12][8][6]</TD><TD>none</TD><TD>+</TD><TD>036</TD><TD>&#9632;</TD></TR>
+<TR><TD>0x0806</TD><TD>[12][8][7]</TD><TD>none</TD><TD>|</TD><TD>none</TD><TD>none</TD></TR>
+<TR><TD>0x0400</TD><TD>[11]</TD><TD>&#9472;</TD><TD>&#9472;</TD><TD>057|040</TD><TD>!|&#9472;</TD></TR>
+<TR><TD>0x0600</TD><TD>[11][0]</TD><TD>none</TD><TD>none</TD><TD>040|057</TD><TD>&#9472;|!</TD></TR>
+<TR><TD>0x0482</TD><TD>[11][8][2]</TD><TD>none</TD><TD>!</TD><TD>052</TD><TD>#</TD></TR>
+<TR><TD>0x0442</TD><TD>[11][8][3]</TD><TD>$</TD><TD>$</TD><TD>053</TD><TD>$</TD></TR>
+<TR><TD>0x0422</TD><TD>[11][8][4]</TD><TD>*</TD><TD>*</TD><TD>054</TD><TD>*</TD></TR>
+<TR><TD>0x0412</TD><TD>[11][8][5]</TD><TD>none</TD><TD>)</TD><TD>055</TD><TD>"</TD></TR>
+<TR><TD>0x040a</TD><TD>[11][8][6]</TD><TD>none</TD><TD>;</TD><TD>056</TD><TD>&#8800;</TD></TR>
+<TR><TD>0x0406</TD><TD>[11][8][7]</TD><TD>none</TD><TD>&#172;</TD><TD>none</TD><TD>none</TD></TR>
+<TR><TD>0x0300</TD><TD>[0][1]</TD><TD>/</TD><TD>/</TD><TD>061</TD><TD>/</TD></TR>
+<TR><TD>0x0282</TD><TD>[0][8][2]</TD><TD>none</TD><TD>(note 1)</TD><TD>072</TD><TD>@</TD></TR>
+<TR><TD>0x0242</TD><TD>[0][8][3]</TD><TD>,</TD><TD>,</TD><TD>073</TD><TD>,</TD></TR>
+<TR><TD>0x0222</TD><TD>[0][8][4]</TD><TD>% [(]</TD><TD>%</TD><TD>074</TD><TD>(</TD></TR>
+<TR><TD>0x0212</TD><TD>[0][8][5]</TD><TD>none</TD><TD><B>_</B></TD><TD>075</TD><TD><FONT SIZE="-1"><SUP>C</SUP><SUB>R</SUB></FONT></TD></TR>
+<TR><TD>0x020a</TD><TD>[0][8][6]</TD><TD>none</TD><TD>&gt;</TD><TD>076</TD><TD>&#9633;</TD></TR>
+<TR><TD>0x0206</TD><TD>[0][8][7]</TD><TD>none</TD><TD>?</TD><TD>077</TD><TD>&#162;</TD></TR>
+</TABLE>
+<TABLE>
+<TR><TD>(1)</TD><TD CLASS=plain>A key existed to punch this code, but the keytop was blank<BR>(or said "0-8-2")
+and the printer did not print for this code.</TD></TR>
+<TR><TD>[12][8][7]<BR>[11][8][7]</TD><TD>Codes not recognized by Honeywell equipment.</TD></TR>
+<TR><TD>[12][0]<BR>[11][0]</TD><TD>Codes not recognized/punched by IBM keypunch equipment.</TD></TR>
+</TABLE>
+
+<P>The special code option was for cases where the punch cards were carrying things
+like FORTRAN programs or text, as opposed to conventional data processing (numeric data).
+It was common in punch card data processing to add a sign to a numeric field
+by over-punching the 12 or 11 zone in the last digit. The "normal" Hollerith code
+translation would produce native Honeywell signed decimal fields directly from data punched
+that way. Effectively, [12] and [11] zone punches were attributes of digits.
+For programs and other text, [12] and [11] become characters instead of attributes,
+supplying the plus and minus signs (respectively).
+
+</BODY>
+</HTML>

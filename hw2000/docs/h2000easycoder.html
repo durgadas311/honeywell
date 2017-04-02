@@ -1,0 +1,75 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Easycoder</TITLE>
+</HEAD>
+<BODY>
+
+<P>The Easycoder assembler used here is actually a cross-assembler
+that is built-in to the Virtual H2000. It currently implements a lot,
+but not all, of the features described for OS/2000.
+<P>Supported assembler directives:
+<UL><TABLE>
+<TR><TD>PROG</TD><TD></TD></TR>
+<TR><TD>SEG</TD><TD></TD></TR>
+<TR><TD>ADMODE</TD><TD></TD></TR>
+<TR><TD>RANGE</TD><TD></TD></TR>
+<TR><TD>ORG</TD><TD></TD></TR>
+<TR><TD>MORG</TD><TD></TD></TR>
+<TR><TD>DCW</TD><TD></TD></TR>
+<TR><TD>DC</TD><TD></TD></TR>
+<TR><TD>RESV</TD><TD>also supports RESV,fill form</TD></TR>
+<TR><TD>DSA</TD><TD>supports only a single address,
+does not support use as general instruction operands</TD></TR>
+<TR><TD>EQU</TD><TD></TD></TR>
+<TR><TD>END</TD><TD></TD></TR>
+<TR><TD>RANGE</TD><TD>Unclear exactly how to store this in output</TD></TR>
+<TR><TD>CLEAR</TD><TD>Only in BRT format output or immediate execution</TD></TR>
+</TABLE></UL>
+
+<P>It is not known if all possible operands will work with the
+above directives.
+<P>In addition, all of the punctuation modifiers (Set I and Set II) are
+supported.
+<P>It also supports indirect and indexed addressing.
+
+<P>None of the pseudo-opcode forms are currently supported, that is, the
+short-hand instructions for specific variant character values.
+
+<P>This assembler is a crude two-pass assembler.
+It should, however, detect re-definition (duplicate instances) of labels
+as well as undefined labels.
+Error handling is also not perfect. In some cases, assembly continues.
+In others, it will abort.
+
+<P>"Alternate card format" (symbolic tags of up to ten characters, "A" in PROG col 75)
+is not supported.
+
+<P>In general, any features not described in the Programmer's Reference Manual
+are not supported, since the detailed Easycoder documentation is not available.
+
+<P>The assembler, or rather the front panel which runs the assembler,
+may need help to fully understand a program's memory range. If the
+program uses a block of memory that is not specifically reserved or defined,
+it may be necessary to mark that boundary. For example, the "machin.ezc"
+program has a label "TOP" which specifies the highest memory location
+it will use. Just prior to the END directive, there is an ORG TOP
+and a RESV 1 to provide the necessary boundary. The RANGE directive is intended for
+this, but either method requires that this information be stored in the output
+or somehow made known when the program is run. Such a method is not yet know.
+
+<P>The following ASCII characters may be used for Honeywell special characters that
+have no equivalent in 7-bit ASCII:
+
+<TABLE BORDER>
+<TR><TH>ASCII</TH><TH>Honeywell</TH></TR>
+<TR><TD ALIGN=CENTER>^</TD><TD ALIGN=CENTER>&#162;</TD></TR>
+<TR><TD ALIGN=CENTER>[</TD><TD ALIGN=CENTER>&#9633;</TD></TR>
+<TR><TD ALIGN=CENTER>]</TD><TD ALIGN=CENTER>&#9632;</TD></TR>
+<TR><TD ALIGN=CENTER>~</TD><TD ALIGN=CENTER>credit (&#169;)</TD></TR>
+<TR><TD ALIGN=CENTER>\</TD><TD ALIGN=CENTER>&#8800;</TD></TR>
+</TABLE>
+The above translations are also done by the Model 220 Console
+implementation of keyboard input.
+
+</BODY>
+</HTML>

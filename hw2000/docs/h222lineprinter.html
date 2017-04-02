@@ -1,0 +1,36 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Model 222 Line Printers</TITLE>
+</HEAD>
+<BODY>
+The model 222 line printer is a simple text output device.
+This implementation uses a window to represent the printed paper.
+<P>
+The device is at the traditional address of 02. Without more information,
+this implementation stops printing from a PDT before the RM (character at
+RM is not printed).  This also means that if the first character has a RM, nothing is printed.
+The PDT control character C3 determins whether the output is terminated
+with Line Feed(s) or various vertical tab (form feed) actions.
+An automatic LF is inserted after reaching column 132.
+
+<P>The line printer window is hidden by default. It may be made visible,
+and raised to the top, using the Front Panel menu "I/O" and selecting LinePrinter.
+Closing the line printer window only hides it, no output is lost or changed.
+A program that prints to the line printer will cause it to be made visible,
+if not already.
+
+<P>Menus allow for saving the current output (printed) buffer to a file,
+or discarding all current output (Tear Off). Also there are options for
+advancing the paper one line or to top of form.
+<P>An additional menu under "Form Ctl" allows for managing the Forms Control Tape
+used to specify vertical "tab" stops and paper length. The forms control tape
+may be loaded from a file, saved to a file, or directly edited in a small GUI window.
+The edit window responds to digits "1" through "8" to punch a hole
+in that respective column (channel), or SPACE to magically clear all
+punches for the current line. Insert and Delete keys may be used to magically
+add or remove one line from the tape.  Up and Down arrow keys move the current
+(punch position) accordingly. Closing the edit window, when changes were made,
+will prompt you to keep or discard those changes.
+
+</BODY>
+</HTML>

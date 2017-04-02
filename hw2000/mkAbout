@@ -1,0 +1,14 @@
+#!/bin/bash
+
+cat <<EOF
+<HTML><CENTER>
+Honeywell Series 2000 Simulator<BR>
+Build: $(date)<BR>
+<BR>
+<IMG SRC="h2000-sm.png">
+<BR>
+Developed by Douglas Miller<BR>
+http://honeywell2000.durgadas.com/<BR>
+<BR>
+</CENTER></HTML>
+EOF

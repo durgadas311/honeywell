@@ -36,6 +36,8 @@ public class HW2000FrontPanel extends JFrame
 	static final int btnDispP1 = 0x0ff2;
 	static final int btnDispM1 = 0x0ff3;
 
+	GenericHelp help;
+
 	LightedButton run;
 	LightedButton stop;
 	LightedButton instr;
@@ -577,7 +579,18 @@ public class HW2000FrontPanel extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
+		mu = new JMenu("Help");
+		mi = new JMenuItem("About", KeyEvent.VK_I);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Show Help", KeyEvent.VK_E);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
 		setJMenuBar(mb);
+
+		java.net.URL url = this.getClass().getResource("docs/hw2000.html");
+		help = new GenericHelp(getTitle() + " Help", url);
 
 		run.setToolTipText("Run");
 		stop.setToolTipText("Stop");
@@ -1221,6 +1234,22 @@ public class HW2000FrontPanel extends JFrame
 		}
 	}
 
+	private void showAbout() {
+	       java.net.URL url = this.getClass().getResource("docs/About.html");
+	       try {
+			JEditorPane about = new JEditorPane(url);
+			about.setEditable(false);
+			Dimension dim = new Dimension(570, 400);
+			about.setPreferredSize(dim);
+			JOptionPane.showMessageDialog(this, about,
+				"About: " + getTitle(), JOptionPane.PLAIN_MESSAGE);
+		} catch (Exception ee) { }
+	}
+
+	private void showHelp() {
+		help.setVisible(true);
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			performMenu((JMenuItem)e.getSource());
@@ -1719,6 +1748,10 @@ public class HW2000FrontPanel extends JFrame
 			if (dumpDialog("Dump Parameters") > 0) {
 				sys.dumpHW(dumpLow, dumpHi);
 			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_I) {
+			showAbout();
+		} else if (mi.getMnemonic() == KeyEvent.VK_E) {
+			showHelp();
 		}
 
 	}

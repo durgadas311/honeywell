@@ -1,0 +1,36 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Model 204 1/2" 9-Track Magnetic Tape Units</TITLE>
+</HEAD>
+<BODY>
+<IMG SRC="h204.png">
+<P>The model 204 9-track tape units implement basic sequential-only storage.
+This implementation uses a window to represent and control the 8 tape drives.
+<P>
+The device is at the traditional address of 00/40.
+This implementation relies on tape record marks to delimit records.
+Two adjacent record marks indicate a file mark.
+Furthermore, a RM in the memory buffer will stop a transfer.
+The CLC and SLC registers may be used to determine whether more data existed.
+
+<P>The MagTape window is hidden by default. It may be made visible,
+and raised to the top, using the Front Panel menu "I/O" and selecting MagTape.
+Closing the window only hides it, having no effect on the operation of the drives.
+
+<P>A record of 0-length is a File Mark, typically meaning End Of File.
+End of Tape (EOF on image file) will return 0-length records.
+Full rewind as well as backspace to record/file marks is supported from software,
+however exact placement after backspace needs to be confirmed
+with details of how real hardware worked.
+
+<P>
+<P>Each drive has a mount/unmount button that is labeled for the
+drive number (000 - 007). Clicking this button opens a file dialog window
+for selecting the tape image to be mounted (pressing Cancel will leave no
+image mounted).
+In addition, a rewind button exists. Active drives will show current 
+tape position in characters.
+
+
+</BODY>
+</HTML>

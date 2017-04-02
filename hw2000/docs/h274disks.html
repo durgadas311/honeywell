@@ -1,0 +1,105 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Model 274 Disk Drives</TITLE>
+</HEAD>
+<BODY>
+<IMG SRC="h274.png">
+<P>
+The model 274 disk drives (any similar model controller) implements
+"random access" storage.
+This implementation uses a window to provide basic control for the 8 drives.
+<P>
+The device is at the traditional address of 04/44.
+Some details are lacking regarding various command specifics.
+
+<P>The Disks window is hidden by default. It may be made visible,
+and raised to the top, using the Front Panel menu "I/O" and selecting Disks.
+Closing the window only hides it, having no effect on the operation of the drives.
+
+<P>Due to lack of detailed information about these devices,
+the following has been assumed until more information is available:
+<UL>
+<LI>READ/WRITE INITIAL commmands will format record(s) beginning with the
+index point on the track. Record address information is provided with
+record data.
+<LI>READ/WRITE (plain) commmands will format record(s) beginning with the
+current point on the track. Record address information is provided with
+record data.
+<LI>SEARCH AND READ/WRITE commmands will locate the record identified in
+the address register and read/write data only.
+<LI>SEARCH AND READ/WRITE NEXT commmands will increment the record number and
+locate the record identified in
+the address register and read/write data only.
+<LI>EXTENDED versions operate on more than one record, governed by the
+size of the buffer (RM in memory). This variation of the command, in the case
+of SEARCH AND versions, will follow Track Linking Records automatically.
+<LI>A transfer of 0 characters,
+with no error indicated, implies that
+there are no more records in the cylinder (end of TLR chain).
+</UL>
+
+<P>The description of PDT for Disk Devices shows no method of selecting a
+disk drive (C3 is used for the command, and no other control characters
+are defined). The PCB instruction does define commands that select a drive.
+It is currently being assumed that the PCB drive selection persists
+and is used by PDT instructions. This requires the programmer to use
+a PCB instruction before any (drive related) PDT instruction.
+The "check device busy" operation (C3=0D) seems to be a likely candidate.
+What is not clear is just how this context relates to RWC, control, and drive.
+If there is only one Address Register, in the control, then only one drive
+can be busy at a time - regardless of use of RWC. However, if each drive
+has it's own Address Register (or each RWC), then multiple disk operations
+can be active, if they are tied to separate RWCs. At the moment, the control
+is assumed to be the bottle-neck and only one disk operation can be active
+at a time (i.e. the control has the Address Register as well as drive selector).
+The programmer must ensure that multiple disk operations do not collide.
+
+<P>Disk geometry is set as 203 cylinders of 20 tracks (heads, surfaces)
+with 4700 raw characters
+per track. Each record consumes 11 additional characters to the record length.
+Raw capacity of a disk pack is 19 million characters.
+The image file format consists of 4060 blocks of 4700 bytes each, representing
+the tracks. The first 20 blocks (tracks) represent the first cylinder. 
+Within a track, data is laid out starting with a 1-byte Address Mark followed
+by the header (FCCTTRRDL) followed by a 1-byte Data Mark, then DL bytes of
+data followed by either another Address Mark or an "end of track mark".
+Bytes from the End Mark to 4700th byte are ignored, although format commands
+can write there. The file size grows as tracks get formatted, with "non-existent"
+data effectively being "unformatted".
+
+<P>Each drive has a mount/unmount button that is labeled for the
+drive number (000 - 007). Clicking this button opens a file dialog window
+for selecting the disk image to be mounted (clicking Cancel will leave no
+image mounted).
+In addition, "A" and "B" buttons exist to provide values to match
+against the A-File and B-File bits in record headers. Since no information
+has been found on how these bits were used on real hardware,
+use of these bits is currently not implemented.
+<P>Active drives will show current head position/selection
+as Cylinder.Track.
+
+<P>There is mention in the documentation of status bits in the control
+address register:
+
+<UL>"...in protect mode, an attempt to write results in a
+protect violation status in the disk control address register."</UL>
+
+However, there is no definition of the address register. It is assumed to be
+similar to the disk record header and TLR data, i.e. CCTTRR, but some  of those bits
+are not used:
+<UL>
+<LI>cylinder max (known) value 0312
+<LI>track max 0023 (20 surfaces on 11-platter disk packs)
+<LI>record max 0346 (practical limit for 4602 character tracks)
+</UL>
+Uncertain which bits were status, and what statuses were provided. It would be logical
+to choose the high-order character of the track (TT), since no known disk technology
+of the time had more than 11 platter disk packs. Cylinder and record values are
+based on recording/stepping technology and are not tied (as much) to physical
+characteristics of disk packs,
+and thus could (and did) increase over time as technology advanced (limited
+only by magnetic surface quality of the disk packs).
+
+
+</BODY>
+</HTML>

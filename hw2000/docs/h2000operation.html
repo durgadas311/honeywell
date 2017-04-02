@@ -1,0 +1,70 @@
+<HTML>
+<HEAD>
+<TITLE>Virtual Series 2000 Operation</TITLE>
+</HEAD>
+<BODY>
+
+<P><A HREF="h2000frontpanel.html">Notes on operating the Front Panel</A>
+
+<P> Menus are as follows:
+<UL>
+<LI>File: Assemble a program or assemble the monitor.
+<LI>I/O: Control visibility of I/O device windows. Device windows that are
+hidden or obscured may be raised by selecting the device.
+<LI>Debug: Some debug features.
+</UL>
+
+<B>File</B>
+<UL><B>Assemble</B>
+<UL>Assemble a program into memory. If the monitor has been activated,
+the program will be assembled into a memory region that is relocated
+above the monitor, and the monitor data structures will be filled-in
+to indicate how to run the job. </UL>
+<B>Monitor</B>
+<UL>Assemble the monitor program and setup the Assemble option to use it.
+There is a monitor program supplied in the sample programs tarball,
+"monitor.ezc".
+When the monitor is active, this menu option will be disabled (grayed-out).
+Clicking INITIALIZE (after STOP) will reset monitor mode.</UL>
+</UL>
+<B>Debug</B>
+<UL><B>Trace</B>
+<UL>Trace is enabled for the range of memory of the last assembled program.
+Trace output will appear on the line printer. </UL>
+<B>Trace Full</B>
+<UL>A dialog is presented for specifying the range of memory to trace. </UL>
+<B>Trace Off</B>
+<UL>Cancel any active tracing.</UL>
+<B>Dump</B>
+<UL>A memory dump is printed to the Line Printer for the range of memory of the last assembled program.</UL>
+<B>Dump Full</B>
+<UL>A dialog is presented for specifying the range of memory to dump.</UL>
+</UL>
+
+<P>The assemble dialogs have a checkbox for "Listing". This causes an assembly
+listing to printed on the Line Printer, along with a dump of the symbol table.
+
+<P>The assemble dialogs also have options for creating a Magnetic Tape Image.
+This will produce a "Binary Run Tape" (BRT) with the bootstrap and loader
+records. Eventually, this will be a fairly-complete "Tape Monitor/Loader C"
+implementation, but right now it wraps a singe program in the self-loading
+code which allows for running the program. The procedure is similar to that
+described by "Tape Monitor/Loader C" documentation:
+BOOTSTRAP 41 twice, then RUN <U>once</U>. The following format is used:
+<OL>
+<LI>"1HDR " record (skipped during bootstrap)
+<LI>The loader, bootmt.mti, including bootstrap and loader records
+<LI>The program image in BRT format, single segment, multiple records
+<LI>"1EOF " record
+<LI>Two "1ERI " records
+</OL>
+
+<P>The loader will restore punctuation based on the information in the tape image.
+Such a tape image may be mounted on tape drive 000 and used with the
+BOOTSTRAP and RUN buttons to load and run the program. The loader,
+bootmt.mti, was created from bootstrap.ezc and brtloader.ezc in the sample programs.
+These programs cannot be assembled from the front panel, as they require
+a different output format than BRT.
+
+</BODY>
+</HTML>

@@ -1,0 +1,111 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Examples</TITLE>
+</HEAD>
+<BODY>
+
+For an overview of what is supplied in "hwprogs.tgz", see
+<A HREF="h2000programs.html">List of Sample Files</A>
+
+<H2>MCETESTS</H2>
+This program performs some testing of the MCE instruction.
+The tests are taken from various Honeywell documentation that
+gave examples.
+<P>To run the test, select File->Assemble then choose "mcetests.ezc"
+and click "Assemble". A pop-up window should appear with results of the
+assembly. If the "Listing" option was selected, the LinePrinter window
+should also have appeared, and should have the assembler listing on it.
+
+<P>To run the test, press the RUN button. Output should appear on
+the LinePrinter window for each test performed.
+
+<P>If desired, a memory dump may be produced by selecting
+Debug->Dump. The dump should appear on the LinePrinter window.
+
+<P>A copy of the expected LinePrinter output is
+<A HREF="mcetests.html">here</A>.
+Note, the Honeywell "credit" symbol does not exist in modern unicode/ISO
+character sets, so it will apear here as the copyright symbol.
+The LinePrinter and Console use a custom font that does contain
+a glyph for the credit symbol.
+
+<H2>PUNCHED CARDS</H2>
+
+<P>This demo will take data from a magnetic tape and punch that onto cards,
+and then read those cards and print them on the line printer.
+
+<OL>
+<LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
+tape drive 000.
+<LI>Open/raise the PunchCard window and mount a new file in the Punch Stacker.
+<LI>Select menu File->Assemble and choose the file "puntest2.ezc" and click "Assemble".
+<LI>Press RUN.  The card punch should show 311 cards punched. The tape drive will show about 25192,
+the number of bytes used in the image for records and record marks.
+<LI>Unmount the punch card deck from the Punch Stacker (click Punch Stacker, then
+click Cancel).
+<LI>Mount the newly-punched deck of cards in the Read Hopper.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press RUN. The card reader should show "311 END" to indicate that it read 311
+cards and then ran out of cards. The line printer should show 311 lines of the barber pole pattern.
+</OL>
+
+<H2>DISK PACK</H2>
+
+<P>This demo will take data from a magnetic tape and format that onto a disk pack,
+and then read that disk pack and print the records on the line printer.
+
+<OL>
+<LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
+tape drive 000.
+<LI>Open/raise the Disks window and mount a new file on disk drive 000.
+<LI>Select menu File->Assemble and choose the file "dsktest1.ezc" and click "Assemble".
+<LI>Press RUN. The tape drive should show about 25192 characters read. The disk drive should
+show current position "0.6" for cylinder 0 track 6.
+<LI>Select menu File->Assemble and choose the file "dsktest2.ezc" and click "Assemble".
+<LI>Press RUN. The disk drive should momentarily show "0" and then
+advance to final position "0.6". The line printer 
+should have printed the 311-line barber pole pattern.
+</OL>
+
+<H2>FORTRAN CHARACTER CONVERSION</H2>
+
+<P>This demo will print a punch card deck containing a FORTRAN IV program
+that was punched based on symbols printed by an IBM 029 keypunch,
+not the Honeywell symbols.
+<A HREF="h2000keypunch.html">Details</A> for those interested.
+This program consults the SENSE 1 switch to
+see whether or not to convert those special characters (using a MAT instruction).
+
+<OL>
+<LI>Open/raise the PunchCards window and mount the file "prog3.pcd" in
+the Read Hopper.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press RUN. The short program-segment should be printed on the line printer -
+although many of the special characters will appear wrong for FORTRAN program
+syntax.
+<LI>It will be necessary to re-mount the card deck, in order to start over for
+the next step.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press the SENSE 1 switch (it should now be lighted).
+<LI>Press RUN. The short program-segment should be printed again,
+this time the FORTRAN special characters should appear as expected.
+</OL>
+
+<H2>RUN TAPE</H2>
+
+<P>This demo will create a "run tape" (self-loading program image on mag tape)
+and then use BOOTSTRAP to run it.
+
+<OL>
+<LI>Select menu File->Assemble and choose the file "mcetests.ezc",
+check the "Tape Image" box, and click "Assemble". This will create "mcetests.mti".
+<LI>Open/raise the MagTape window and mount the file "mcetests.mti" on tape drive 000.
+<LI>Enter 40 into Contents (using the clear button as needed).
+<LI>Ensure Address is 0 (use the clear button as needed).
+<LI>Press BOOTSTRAP. The tape drive should indicate that about 191 bytes were read.
+<LI>Press RUN. The tape drive should stop at about 1828 bytes and the line printer
+should show the output of running the mcetests program.
+</OL>
+
+</BODY>
+</HTML>

@@ -1,0 +1,72 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Read/Write Channels</TITLE>
+</HEAD>
+<BODY>
+This implementation does not follow the various Honeywell documentation
+for specific Read/Write Channels and combinations.
+Instead, there are 16 fully independent RWCs, with the SLCs (C1 character) numbered
+10-17 and 30-37 (CLCs numbered 00-07 and 20-27, respectively).
+Buffered mode is ignored (bit 40), as is bit 10, so if PDT/PCB instructions
+expect to use different
+RWCs then the bits 27 must be unique.
+
+<P>Simultaneity will exceed that of the original hardware, but should be
+compatible with any existing software. Also, the degree of simultaneity
+of specific peripherals is not clear from the documentation available,
+so best-guesses are made. For example, the magnetic tape drives seem
+to be completely independent of the control, and so full simultaneity is
+achieved by using a separate RWC for each drive. However, the disk drives
+seem to be dependent on resources in the control (unit selection, address register)
+and thus only one PDT may be active on that control at a time, providing
+no drive simultaneity. The original hardware may have provided simultaneity
+for head movement operations (e.g. seek cylinder), but those operations
+are instantaneous in this implementation.
+
+<P>RWCs are implemented as independent threads. This means a PDT instruction
+will actually complete before the I/O operation completes, just like
+original hardware.
+In addition, the I/O operation, running in the "background" thread,
+no longer has a guaranteed program context (address mode, relocation, etc).
+This is why the CLC and SLC registers contain physical addresses.
+In nearly all cases it is required the issue a PCB
+instruction to wait for completion, although it is up to the programmer whether
+that wait is done immediately after the PDT or before the next PDT on the same channel
+(or in some polling fashion).
+
+<P>The association between channel and perihperal is established when the
+PDT instruction is executed, and dissolved once the peripheral operation completes
+(RWC thread terminates).
+It is not known how a programmer, in a multiprogramming environment, ensures that
+a RWC does not get re-used between the time an operation completes and the
+program queries the status with PCB.
+
+<P>Currently, peripheral insterrupts are not implemented,
+except for the Interval Timer "timeout" and the front panel INTERRUPT button.
+
+<P>For many peripherals, it is possible to return less input data than requested.
+A program can query the CLC register to determine this, however since these registers
+contain physical addresses it will normally be necessary to subtract SLC from CLC
+to yield the length of transfer for comparison.
+
+<P>In the case that a request buffer (RM in memory) was not large enough to contain
+the peripheral record (typically for Console, Mag Tape, and Disk), the
+CLC will be pointing to one character past the RM character.
+To summarize:
+<UL>
+<LI>When buffer and peripheral record lengths match, CLC will point to the RM character (CLC == RM).
+<LI>When the buffer is too small, CLC will point to character RM + 1 (CLC > RM).
+A character would have typically been transferred to the RM location.
+<LI>When less data was transferred, CLC will point to the character after
+the last valid character (i.e. CLC will point to some location before the RM character) (CLC < RM).
+</UL>
+None of these conditions are considered errors, from the peripheral's perspective.
+Also, a condition where 0 characters are transferred (CLC == SLC) may exist.
+If no error was
+reported by the perihperal, this condition usually means "end of file" (or some other
+controlled end-of-data condition). Typically, this is for Magnetic Tape
+and Disk Drives. A 0-length transfer for Console input, for example, would mean
+the operator simply pressed Carriage Return (entered an empty line).
+
+</BODY>
+</HTML>
