@@ -9,21 +9,26 @@ public class RawLoader implements Loader {
 	String lastw = null;
 	String lasti = null;
 	int line = 1;
-	int reclen = 250;
+	int reclen;
 	int cnt = 0;
 
-	public RawLoader(OutputStream out, Assembler asm) {
+	public RawLoader(OutputStream out, Assembler asm, int reclen) {
 		this.out = out;
 		this.asm = asm;	// could be null
+		this.reclen = reclen;
 	}
 
-	private void oneChar() {
-		if (++cnt < reclen) {
-			return;
-		}
-		cnt = 0;
+	private void oneChar(byte chr) {
 		try {
-			out.write(0301);
+			if (reclen > 0 && cnt == 0) {
+				out.write(042);
+			}
+			out.write(chr);
+			++cnt;
+			if (reclen > 0 && cnt >= reclen) {
+				cnt = 0;
+				out.write(0301);
+			}
 		} catch (Exception ee) {}
 	}
 
@@ -84,27 +89,20 @@ public class RawLoader implements Loader {
 				}
 			}
 		}
-		try {
-			while (curadr < adr) {
-				oneChar();
-				out.write((byte)0);
-				++curadr;
-			}
-			for (int y = 0; y < code.length; ++y) {
-				oneChar();
-				out.write(code[y] & 077);
-			}
-			curadr += code.length;
-		} catch (Exception ee) {}
+		while (curadr < adr) {
+			oneChar((byte)0);
+			++curadr;
+		}
+		for (int y = 0; y < code.length; ++y) {
+			oneChar((byte)(code[y] & 077));
+		}
+		curadr += code.length;
 	}
 
 	public void clear(int start, int end, byte fill) {
-		try {
-			for (int y = start; y <= end; ++y) {
-				oneChar();
-				out.write(fill);
-			}
-		} catch (Exception ee) {}
+		for (int y = start; y <= end; ++y) {
+			oneChar(fill);
+		}
 	}
 
 	public void end(int start) {
@@ -120,7 +118,6 @@ public class RawLoader implements Loader {
 			if (cnt > 0) {
 				out.write(0301);
 			}
-			out.write(0301);
 		} catch (Exception ee) {}
 	}
 }

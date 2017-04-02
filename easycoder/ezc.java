@@ -5,6 +5,7 @@ public class ezc {
 	public static void main(String[] args) {
 		boolean cards = false;
 		boolean raw = false;
+		boolean bin = false;
 		boolean rawSW = false;
 		int x = 0;
 
@@ -12,6 +13,13 @@ public class ezc {
 			if (args[x].equals("-c")) {
 				++x;
 				cards = true;
+			} else if (args[x].equals("-b")) {
+				++x;
+				bin = true;
+			} else if (args[x].equals("-B")) {
+				++x;
+				bin = true;
+				rawSW = true;
 			} else if (args[x].equals("-r")) {
 				++x;
 				raw = true;
@@ -38,8 +46,8 @@ public class ezc {
 		Loader ldr;
 		if (cards) {
 			ldr = new CardLoader(fo, asm.charCvt());
-		} else if (raw) {
-			ldr = new RawLoader(fo, rawSW ? asm : null);
+		} else if (raw || bin) {
+			ldr = new RawLoader(fo, rawSW ? asm : null, bin ? 250 : -1);
 		} else {
 			ldr = new TapeLoader(fo, asm.charCvt());
 		}
