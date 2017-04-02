@@ -21,6 +21,10 @@ public class HW2000FrontPanel extends JFrame
 	public static final Color indDark = new Color(50, 50, 50);
 	public static final Color indLit = new Color(180, 180, 80);
 
+	private static final byte[] _1HDR = new byte[]{ 001, 030, 024, 051, 015}; // 1HDR_
+	private static final byte[] _1EOF = new byte[]{ 001, 025, 046, 026, 015}; // 1EOF_
+	private static final byte[] _1ERI = new byte[]{ 001, 025, 051, 031, 015}; // 1ERI_
+
 	static final int btnContents = 0x1000;
 	static final int btnAddress = 0x2000;
 	static final int btnControl = 0x3000;
@@ -1495,6 +1499,38 @@ public class HW2000FrontPanel extends JFrame
 		return file;
 	}
 
+	private void resCopy(String res, SequentialRecordIO p) {
+		try {
+			InputStream r = getClass().getResourceAsStream(res);
+			int n = r.available();
+			byte[] buf = new byte[n];
+			r.read(buf);
+			p.appendBulk(buf, 0, n);
+		} catch (Exception ee) {
+			// TODO: show error?
+		}
+	}
+
+	private void posTo(boolean copy, byte[] targ, SequentialRecordIO p) {
+		while (true) {
+			byte[] b = p.nextRecord();
+			if (b == null) {
+				return;
+			}
+			if (b.length >= targ.length) {
+				int x = 0;
+				for (x = 0; x < targ.length && targ[x] == b[x]; ++x);
+				if (x == targ.length) {
+					p.backspace();
+					return;
+				}
+			}
+			if (copy) {
+				p.appendRecord(b, 0, -1);
+			}
+		}
+	}
+
 	private boolean asmFile(String op) {
 		OutputStream lst = null;
 		File src = pickFile(op + " Program",
@@ -1541,38 +1577,37 @@ public class HW2000FrontPanel extends JFrame
 		sys.setTrace(currLow, currHi); // trace off
 		// TODO: card BRT also...
 		if (tape) {
-			// Mag Tape BRT format...
-			FileOutputStream fo = null;
-			String l = src.getAbsolutePath();
-			if (l.endsWith(".ezc")) {
-				l = l.substring(0, l.length() - 4);
-			}
-			l += ".mti";
-			try {
-				fo = new FileOutputStream(new File(l));
-			} catch (Exception ee) {
-				warning(this, op, ee.toString());
+			// Mag Tape BRT format... TODO: select unit
+			int unit = 0;
+			P_MagneticTape tp = (P_MagneticTape)sys.pdc.getPeriph(PeriphDecode.P_MT);
+			// TODO: are these ever null?
+			boolean copy = !tp.begin(unit); // always 'true' (!copy)?
+			if (!tp.rewind()) {
+				warning(this, op, "No tape mounted");
 				return false;
 			}
-			// TODO: Copy mag tape bootstrap to new file...
+			// TODO: need option to overwrite tape
+			if (tp.empty()) {
+				tp.appendRecord(_1HDR, 0, -1);
+				resCopy("bringup/bootmt.mti", tp);
+			} else {
+				// Find "1EOF " (or EOT)
+				// TODO: fail-safe "1ERI "?
+				posTo(copy, _1EOF, tp);
+			}
 			// TODO: Allow cards vs. tape
-			// TODO: header record "1HDR "
-			//pgmBoot(fo, "bringup/bootmt.mti");
-			e = asm.passTwo(new TapeLoader(fo, asm.charCvt()),
-					listing ? lst : null);
-			// TODO: trailer record "1EOF "
-			// TODO: trailer record "1ERI "
-			// TODO: trailer record "1ERI "
-			try { fo.close(); } catch (Exception ee) {}
+			e = asm.passTwo(new PeriphLoader(tp, asm.charCvt(), 250),
+					listing ? (CoreMemory)sys : null);
+			tp.appendRecord(_1EOF, 0, -1);
+			tp.appendRecord(_1ERI, 0, -1);
+			tp.appendRecord(_1ERI, 0, -1);
+			tp.end();
 		} else {
 			e = asm.passTwo(sys, reloc, listing);
 		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return false;
-		}
-		if (listing) {
-			asm.listSymTab();
 		}
 		if (monitor) {
 			sys.setField(0007, ibr);

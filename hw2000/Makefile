@@ -66,6 +66,8 @@ CLASSES =	CoreMemory.class \
 		LightedButton.class \
 		P_Console.class \
 		PeriphDecode.class \
+		PeriphLoader.class \
+		SequentialRecordIO.class \
 		Peripheral.class \
 		P_LinePrinter.class \
 		P_MagneticTape.class \

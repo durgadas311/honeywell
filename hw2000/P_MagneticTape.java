@@ -6,7 +6,8 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 public class P_MagneticTape extends JFrame
-		implements Peripheral, ActionListener, WindowListener {
+		implements Peripheral, SequentialRecordIO,
+			ActionListener, WindowListener {
 
 	private class MagTapeStatus {
 		RandomAccessFile dev;
@@ -30,6 +31,8 @@ public class P_MagneticTape extends JFrame
 		}
 	}
 	MagTapeStatus[] sts;
+	int vUnit = 0;	// unit in-use by virtual client
+	byte[] vBuf = null;
 
 	boolean prot; // only valid during file choosing
 	File _last = null;
@@ -91,6 +94,17 @@ public class P_MagneticTape extends JFrame
 		if (on) {
 			toFront();
 		}
+	}
+
+	private void updateDisp(int unit) {
+		try {
+			long p = sts[unit].dev.getFilePointer();
+			sts[unit].stat_pn.setText(String.format("%d", p));
+			sts[unit].beg = (p == 0);
+			if (sts[unit].beg) {
+				sts[unit].end = false;
+			}
+		} catch (Exception ee) {}
 	}
 
 	public void io(RWChannel rwc) {
@@ -210,14 +224,7 @@ public class P_MagneticTape extends JFrame
 		} else {
 			doIn(rwc, sts[unit]);
 		}
-		try {
-			long p = sts[unit].dev.getFilePointer();
-			sts[unit].stat_pn.setText(String.format("%d", p));
-			sts[unit].beg = (p == 0);
-			if (sts[unit].beg) {
-				sts[unit].end = false;
-			}
-		} catch (Exception ee) {}
+		updateDisp(unit);
 		sts[unit].busy = false;
 	}
 
@@ -453,5 +460,120 @@ public class P_MagneticTape extends JFrame
 	public void windowClosing(WindowEvent e) {
 		isOn = false;
 		setVisible(false);
+	}
+
+	// TODO: mutex with PDC/PCB...
+	public boolean begin(int unit) {
+		vUnit = unit & 07;
+		return true;
+	}
+	public boolean empty() {
+		if (sts[vUnit].dev == null) {
+			return false; // error, actually
+		}
+		try {
+			return (sts[vUnit].dev.length() == 0);
+		} catch (Exception ee) {}
+		return false; // error, actually
+	}
+	public boolean rewind() {
+		if (sts[vUnit].dev == null) {
+			return false;
+		}
+		try {
+			sts[vUnit].dev.seek(0);
+		} catch (Exception ee) {}
+		updateDisp(vUnit);
+		return true;
+	}
+	public boolean backspace() {
+		if (sts[vUnit].dev == null) {
+			return false;
+		}
+		try {
+			// must go back two tape marks, then fwd one.
+			int c = 2;
+			int b;
+			long fp = sts[vUnit].dev.getFilePointer();
+			while (fp > 0 && c > 0) {
+				--fp;
+				sts[vUnit].dev.seek(fp);
+				b = sts[vUnit].dev.read();
+				if (b < 0) {
+					fp = sts[vUnit].dev.length();
+					if (fp > 0) {
+						--fp;
+					}
+					continue;
+				}
+				if ((b & 0300) == 0300) {
+					// at this point, we are positioned correctly...
+					// ...if c becomes 0...
+					--c;
+				}
+			}
+			if (fp == 0) {
+				// assume we did not start here...
+				sts[vUnit].dev.seek(fp);
+			}
+		} catch (Exception ee) {}
+		updateDisp(vUnit);
+		return true;
+	}
+	public byte[] nextRecord() {
+		if (sts[vUnit].dev == null) {
+			return null;
+		}
+		byte[] ret = null;
+		try {
+			int n = 0;
+			while (true) {
+				int b = sts[vUnit].dev.read();
+				if (b < 0 || (b & 0300) == 0300) {
+					break;
+				}
+				if (vBuf == null || n >= vBuf.length) {
+					byte[] nb = new byte[n + 256];
+					System.arraycopy(vBuf, 0, nb, 0, vBuf.length);
+					vBuf = nb;
+				}
+				vBuf[n++] = (byte)b;
+			}
+			ret = new byte[n];
+			System.arraycopy(vBuf, 0, ret, 0, n);
+		} catch (Exception ee) {}
+		updateDisp(vUnit);
+		return ret;
+	}
+	public void appendBulk(byte[] buf, int start, int len) {
+		if (sts[vUnit].dev == null) {
+			return;
+		}
+		if (len < 0) {
+			len = buf.length - start;
+		}
+		try {
+			sts[vUnit].dev.write(buf, start, len);
+		} catch (Exception ee) {}
+		updateDisp(vUnit);
+	}
+	public void appendRecord(byte[] buf, int start, int len) {
+		if (sts[vUnit].dev == null) {
+			return;
+		}
+		appendBulk(buf, start, len);
+		try {
+			sts[vUnit].dev.write((byte)0300);
+		} catch (Exception ee) {}
+		updateDisp(vUnit);
+	}
+	public void end() {
+		if (sts[vUnit].dev == null) {
+			return;
+		}
+		try {
+			sts[vUnit].dev.write((byte)0300);
+		} catch (Exception ee) {}
+		updateDisp(vUnit);
 	}
 }

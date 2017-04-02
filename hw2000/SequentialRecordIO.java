@@ -11,10 +11,12 @@
 // Disk: begin() returns 'true', rewind()/backspace() set "file" positions back. (TBD)
 //
 public interface SequentialRecordIO {
-	boolean begin();	// 'true' if input == output
+	boolean begin(int unit);// 'true' if input == output
+	boolean empty();	// 'true' if media mounted and has no data.
 	boolean rewind();	// 'false' if no media mounted. may be no-op otherwise
 	boolean backspace();	// 'false' if no media mounted. may be no-op otherwise
 	byte[] nextRecord();	// HW codes. null on EOF
+	void appendBulk(byte[] buf, int start, int len); // HW codes
 	void appendRecord(byte[] buf, int start, int len); // HW codes
 	void end();
 }
