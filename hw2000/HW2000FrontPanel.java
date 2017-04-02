@@ -1055,8 +1055,6 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void doBootStrap() {
-		setRunStop(true);
-		sys.bootstrap = true;
 		byte c1 = (byte)011;
 		byte c2 = (byte)contentsReg;
 		sys.SR = addressReg;
@@ -1068,7 +1066,10 @@ public class HW2000FrontPanel extends JFrame
 		Instruction op_exec = sys.idc.getExec(InstrDecode.OP_PDT);
 		try {
 			// TODO: should this execute in thread?
+			sys.bootstrap = true;
+			setRunStop(true);
 			op_exec.execute(sys);
+			endCtrlMode();
 		} catch (Exception ee) {
 			setRunStop(false);
 			sys.bootstrap = false;
