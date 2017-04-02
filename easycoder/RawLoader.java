@@ -106,12 +106,15 @@ public class RawLoader implements Loader {
 	}
 
 	public void end(int start) {
+		// Single-address SW/SI cannot be used w/o WM (in bootstrap)
 		if (lastw != null) {
-			System.err.format("%05d         SW    %s\n", line++, lastw);
+			System.err.format("%05d         SW    %s,%s\n",
+					line++, lastw, lastw);
 			lastw = null;
 		}
 		if (lasti != null) {
-			System.err.format("%05d         SI    %s\n", line++, lasti);
+			System.err.format("%05d         SI    %s,%s\n",
+					line++, lasti, lasti);
 			lasti = null;
 		}
 		try {
