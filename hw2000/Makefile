@@ -23,6 +23,9 @@ SHIPS = H2000.jar hwprogs.tgz hwprogs.zip h2000.tgz
 
 all: $(CLASSES)
 
+www: __FRC__
+	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/hw2000
+
 ship: $(SHIPS)
 	rsync -Wuv $(SHIPS) ../cardpunch/CardPunch.jar \
 		durgadas.com:/http/durgadas.com/sebhc/hw2000

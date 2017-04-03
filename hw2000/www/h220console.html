@@ -6,12 +6,15 @@
 The model 220 console is a simple text input/output device.
 This implementation uses a window to represent the printed paper,
 and keyboard focus on that window to input data.
+There is a TYPE indicator on the menu bar, which will light when
+a PDT instruction (to address 47) is waiting for input to be typed.
+
 <P>
 The device is at the traditional address of 07/47. Without more information,
 this implementation stops printing from a PDT before the RM (character at
 RM is not printed).  This also means that if the first character has a RM, nothing is printed.
 The PDT control character C3 determins whether the output is terminated
-with a Carriage Return (and Line Feed). An automatic CR/LF is inserted after reaching column 80 (it is not known what the actual carriage width of the 220 was).
+with a Carriage Return (and Line Feed). An automatic CR/LF is inserted after reaching column 64.
 
 <P>The console window is hidden by default. It may be made visible,
 and raised to the top, using the Front Panel menu "I/O" and selecting Console.
@@ -37,6 +40,28 @@ are made:
 <TR><TD ALIGN=CENTER>~</TD><TD ALIGN=CENTER>credit (&#169;)</TD></TR>
 <TR><TD ALIGN=CENTER>\</TD><TD ALIGN=CENTER>&#8800;</TD></TR>
 </TABLE>
+
+<P>The "console typewriter" also functions as an extension to the control panel.
+The real H2000-series systems had a limited control panel and relied on the
+typewriter for some operations. The following is supported on the typewriter,
+when the system is in the STOP mode:
+
+<TABLE BORDER>
+<TR><TH>Command</TH><TH>Purpose</TH></TR>
+<TR><TD>A <I>adr chr</I>...</TD><TD>Place <I>chr</I>(s) in memory starting at <I>adr</I>. Values may include punctuation (8-bit octal).</TD></TR>
+<TR><TD>P <I>ctl</I></TD><TD>Print contents of Control Register <I>ctl</I></TD></TR>
+<TR><TD>B <I>per adr</I></TD><TD>Bootstrap from peripheral address <I>per</I> into memory at <I>adr</I></TD></TR>
+<TR><TD>R</TD><TD>Print contents of AAR and BAR</TD></TR>
+<TR><TD>S</TD><TD>Single-step (same as INSTRUCT button)</TD></TR>
+<TR><TD>L <I>text</I></TD><TD>Log </I>text</I> (used to put information on paper but not input to computer)</TD></TR>
+</TABLE>
+
+<P>All numbers are input/output in octal. In this mode, the console will automatically
+insert blanks into commands when certain obvious limits are reached.
+These commands also update the control panel Contents, Address, and Control values
+as appropriate.
+
+<P>Documentation of this control mode is very limited, so the above is only a guess.
 
 </BODY>
 </HTML>

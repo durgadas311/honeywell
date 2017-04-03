@@ -8,7 +8,7 @@
 This implementation uses a window to represent and control the 8 tape drives.
 <P>
 The device is at the traditional address of 00/40.
-This implementation relys on tape record marks to delimit records.
+This implementation relies on tape record marks to delimit records.
 Two adjacent record marks indicate a file mark.
 Furthermore, a RM in the memory buffer will stop a transfer.
 The CLC and SLC registers may be used to determine whether more data existed.
@@ -19,7 +19,7 @@ Closing the window only hides it, having no effect on the operation of the drive
 
 <P>A record of 0-length is a File Mark, typically meaning End Of File.
 End of Tape (EOF on image file) will return 0-length records.
-Full rewind as well as backspace to record/file marks is supported,
+Full rewind as well as backspace to record/file marks is supported from software,
 however exact placement after backspace needs to be confirmed
 with details of how real hardware worked.
 
