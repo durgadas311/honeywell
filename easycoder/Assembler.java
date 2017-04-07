@@ -321,6 +321,8 @@ public class Assembler {
 		} else {
 			loc = loc.trim();
 		}
+		// TODO: handle numeric loc, i.e. absolute memory address
+		// (*temporary* currLoc). Also out-of-sequence base?
 		int e = 0;
 		// first, preserve "quotes"...
 		if (opd.length() > 0 && opd.charAt(0) == '@') {
@@ -382,18 +384,21 @@ public class Assembler {
 		return e;
 	}
 
+	private void errsAdd(String err) {
+		// TODO: intersperse errors in listing...
+		errs.add(err + " at line " + lineNo);
+	}
+
 	// -1 = error
 	// -2..-16 = X1..X15
 	// -18..-32 = Y1..Y15
 	private int parseArg(String opd) {
 		int adr = 0;
-		if (opd.matches("[XY][0-9]+")) {
+		// TODO: handle context (index vs. address).
+		if (opd.matches("^[XY][1-9]$") || opd.matches("^[XY]1[0-5]$")) {
 			adr = Integer.valueOf(opd.substring(1));
-			if (adr < 1 ||
-				(adrMode == 3 && (opd.charAt(0) == 'Y' || adr > 6)) ||
-				(adrMode > 3 && adr > 15)) {
-				errs.add("Invalid indexed address " + opd +
-					" at line " + lineNo);
+			if (adrMode == 3 && (opd.charAt(0) == 'Y' || adr > 6)) {
+				errsAdd("Invalid indexed address " + opd);
 				return -1;
 			}
 			// adr: 1..15
@@ -411,15 +416,14 @@ public class Assembler {
 			try {
 				return Integer.valueOf(opd) & adrMask;
 			} catch (Exception ee) {
-				errs.add("Invalid number " + opd +
-					" at line " + lineNo);
+				errsAdd("Invalid number " + opd);
 				return -1;
 			}
 		}
 		if (symTab.containsKey(opd)) {
 			return symTab.get(opd);
 		} else if (asmPass) {
-			errs.add("Undefined symbol " + opd + " at line " + lineNo);
+			errsAdd("Undefined symbol " + opd);
 			return -1;
 		}
 		return 0;
@@ -441,8 +445,7 @@ public class Assembler {
 			if (x >= 0) {
 				a = parseArg(opd.substring(ix, x));
 				if (a < -1) {
-					errs.add("Indexed must be last " + opd +
-						" at line " + lineNo);
+					errsAdd("Indexed must be last " + opd);
 					return -1;
 				}
 			} else {
@@ -454,8 +457,7 @@ public class Assembler {
 			}
 			if (a < -1) {
 				if (!indexed) {
-					errs.add("Indexed not allowed " + opd +
-						" at line " + lineNo);
+					errsAdd("Indexed not allowed " + opd);
 					return -1;
 				}
 				a = -a; // 2..16, 18..32
@@ -488,16 +490,16 @@ public class Assembler {
 		int idx = 0;	// 0: not a valid index register - no indexing
 		if (opd.charAt(0) == '(') {
 			if (simple) {
-				errs.add("Indirect address not allowed at line " + lineNo);
+				errsAdd("Indirect address not allowed");
 				return -1;
 			}
 			if (adrMode < 3) {
-				errs.add("Indirect address in 2-char mode at line " + lineNo);
+				errsAdd("Indirect address in 2-char mode");
 				return -1;
 			}
 			ix = opd.indexOf(')');
 			if (ix < 0) {
-				errs.add("Invalid indirect address " + opd + " at line " + lineNo);
+				errsAdd("Invalid indirect address " + opd);
 				return -1;
 			}
 			// TODO: can there be residual after ')' ?
@@ -531,7 +533,7 @@ public class Assembler {
 		try {
 			v = Byte.valueOf(opd, 8);
 		} catch (Exception ee) {
-			errs.add("Invalid variant " + opd + " at line " + lineNo);
+			errsAdd("Invalid variant " + opd);
 		}
 		return v;
 	}
@@ -600,7 +602,7 @@ public class Assembler {
 			bb[e - 1] |= (byte)(c == '-' ? 040 : 020);
 			return bb;
 		} else {
-			errs.add("Unsupported constant " + opd);
+			errsAdd("Unsupported constant " + opd);
 			return null;
 		}
 	}
@@ -612,7 +614,7 @@ public class Assembler {
 				--v;
 			}
 			if (symTab.containsKey(loc) && symTab.get(loc) != v) {
-				errs.add("Redefined symbol " + loc + " at line " + lineNo);
+				errsAdd("Redefined symbol " + loc);
 				return;
 			}
 			symTab.put(loc, v);
@@ -640,7 +642,7 @@ public class Assembler {
 		int ox = 0;
 
 		if ((flags & InstrDecode.OP_INVAL) != 0) { // not possible?
-			errs.add(String.format("Invalid op code %02o at line %d", op, lineNo));
+			errsAdd(String.format("Invalid op code %02o", op));
 			return -1;
 		}
 		if ((flags & InstrDecode.OP_SPC) != 0) {
@@ -659,7 +661,7 @@ public class Assembler {
 				xflags |= InstrDecode.OP_HAS_A;
 				++ox;
 			} else if ((flags & InstrDecode.OP_REQ_A) != 0) {
-				errs.add("Reqd A field missing at line " + lineNo);
+				errsAdd("Reqd A field missing");
 				return -1;
 			}
 		}
@@ -670,7 +672,7 @@ public class Assembler {
 				xflags |= InstrDecode.OP_HAS_B;
 				++ox;
 			} else if ((flags & InstrDecode.OP_REQ_B) != 0) {
-				errs.add("Reqd B field missing at line " + lineNo);
+				errsAdd("Reqd B field missing");
 				return -1;
 			}
 		}
@@ -682,7 +684,7 @@ public class Assembler {
 				xflags |= InstrDecode.OP_HAS_C;
 				++ox;
 			} else if ((flags & InstrDecode.OP_REQ_C) != 0) {
-				errs.add("Reqd C field missing at line " + lineNo);
+				errsAdd("Reqd C field missing");
 				return -1;
 			}
 		} else if (ox < opds.length && opds[ox].length() > 0) {
@@ -697,7 +699,7 @@ public class Assembler {
 			xflags |= InstrDecode.OP_HAS_V;
 			ox = opds.length;
 		} else if ((flags & InstrDecode.OP_REQ_V) != 0) {
-			errs.add("Reqd variants missing at line " + lineNo);
+			errsAdd("Reqd variants missing");
 			return -1;
 		}
 		if (!asmPass) {
@@ -783,7 +785,7 @@ public class Assembler {
 				adrMask = 0x07ffff;
 				break;
 			default:
-				errs.add("Invalid argument " + opd);
+				errsAdd("Invalid argument " + opd);
 				return -1;
 			}
 			adrMode = m;
@@ -916,7 +918,7 @@ public class Assembler {
 		setLabel(loc, rev, 0);
 		code = parseCon(opd);
 		if (code == null) {
-			errs.add("Could not parse constant " + opd);
+			errsAdd("Could not parse constant " + opd);
 			return -1;
 		}
 		int len = code.length;
@@ -947,7 +949,7 @@ public class Assembler {
 		} else if (symTab.containsKey(opd)) {
 			adr = symTab.get(opd);
 		} else {
-			errs.add("Undefined symbol " + opd + " at line " + lineNo);
+			errsAdd("Undefined symbol " + opd);
 			return -1;
 		}
 		setLabel(loc, rev, 0);
@@ -960,7 +962,7 @@ public class Assembler {
 		int adr;
 		adr = Integer.valueOf(opd);
 		if (((adr - 1) & adr) != 0) {
-			errs.add("MORG not power-of-two at line " + lineNo);
+			errsAdd("MORG not power-of-two");
 			return -1;
 		}
 		--adr;
@@ -999,13 +1001,13 @@ public class Assembler {
 	private int processRange(String opd) {
 		String[] opds = opd.split(",");
 		if (opds.length != 2 || opds[0].length() == 0 || opds[1].length() == 0) {
-			errs.add("RANGE requires 2 parameters at line " + lineNo);
+			errsAdd("RANGE requires 2 parameters");
 			return -1;
 		}
 		int a = parseAdr(opds[0], true);
 		int b = parseAdr(opds[1], true);
 		if (a < 0 || b < 0) {
-			errs.add("RANGE bad address at line " + lineNo);
+			errsAdd("RANGE bad address");
 			return -1;
 		}
 		minAdr = a;
@@ -1016,7 +1018,7 @@ public class Assembler {
 	private int processClear(String opd) {
 		String[] opds = opd.split(",");
 		if (opds.length < 2 || opds[0].length() == 0 || opds[1].length() == 0) {
-			errs.add("CLEAR requires 2 or 3 parameters at line " + lineNo);
+			errsAdd("CLEAR requires 2 or 3 parameters");
 			return -1;
 		}
 		int a = parseAdr(opds[0], true);
@@ -1032,7 +1034,7 @@ public class Assembler {
 			c = cvt.asciiToHw(ch);
 		}
 		if (a < 0 || b < 0) {
-			errs.add("RANGE bad address at line " + lineNo);
+			errsAdd("RANGE bad address");
 			return -1;
 		}
 		clear = new Clear();
@@ -1043,7 +1045,7 @@ public class Assembler {
 	}
 
 	private int noImpl(String op) {
-		errs.add(op + " not supported at line " + lineNo);
+		errsAdd(op + " not supported");
 		return -1;
 	}
 }
