@@ -1,11 +1,16 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
-EXTCLASSES =	Assembler.class \
+CPCLASSES =	CharConverter.class
+
+EZCLASSES =	Assembler.class \
 		Loader.class \
 		BRTLoader.class \
 		CoreLoader.class \
-		CharConverter.class
+		CardLoader.class \
+		TapeLoader.class
+
+EXTCLASSES = $(CPCLASSES) $(EZCLASSES)
 
 FONTS = $(wildcard fonts/*.ttf)
 
@@ -21,7 +26,7 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 
 SHIPS = H2000.jar hwprogs.tgz hwprogs.zip h2000.tgz
 
-all: $(CLASSES)
+all: $(EXTCLASSES) $(CLASSES)
 
 www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/hw2000
@@ -63,9 +68,12 @@ hwprogs.zip: $(addprefix bringup/,$(PROGS))
 	zip -j $@ $(addprefix bringup/,$(PROGS))
 
 %.class: %.java
-	javac $?
+	javac -source 1.7 -target 1.7 $?
 
-$(EXTCLASSES):
-	ln -s ../*/$@ .
+$(CPCLASSES):
+	ln -s ../cardpunch/$@ .
+
+$(EZCLASSES):
+	ln -s ../easycoder/$@ .
 
 __FRC__:
