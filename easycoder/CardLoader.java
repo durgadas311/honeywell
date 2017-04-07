@@ -4,13 +4,21 @@ import java.util.Arrays;
 import java.io.*;
 
 public class CardLoader extends BRTLoader implements Loader {
-	private OutputStream targ;
+	private OutputStream targ = null;
+	private RandomAccessFile rwf = null;
 	private byte[] card;
 	private int csq;
 
-	public CardLoader(OutputStream targ, CharConverter cvt) {
+	public CardLoader(OutputStream f, CharConverter cvt) {
 		super(cvt, 80);
-		this.targ = targ;
+		targ = f;
+		card = new byte[2*80];
+		csq = 1;
+	}
+
+	public CardLoader(RandomAccessFile f, CharConverter cvt) {
+		super(cvt, 80);
+		rwf = f;
 		card = new byte[2*80];
 		csq = 1;
 	}
@@ -35,7 +43,11 @@ public class CardLoader extends BRTLoader implements Loader {
 			card[x * 2 + 1] = (byte)(p >> 8);
 		}
 		try {
-			targ.write(card);
+			if (targ != null) {
+				targ.write(card);
+			} else {
+				rwf.write(card);
+			}
 		} catch (Exception ee) {}
 	}
 }

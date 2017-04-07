@@ -3,17 +3,28 @@
 import java.io.*;
 
 public class TapeLoader extends BRTLoader implements Loader {
-	private OutputStream targ;
+	private OutputStream targ = null;
+	private RandomAccessFile rwf = null;
 
-	public TapeLoader(OutputStream targ, CharConverter cvt) {
+	public TapeLoader(OutputStream f, CharConverter cvt) {
 		super(cvt, 250);
-		this.targ = targ;
+		targ = f;
+	}
+
+	public TapeLoader(RandomAccessFile f, CharConverter cvt) {
+		super(cvt, 250);
+		rwf = f;
 	}
 
 	void writeRec(byte[] rec, int len) {
 		try {
-			targ.write(rec, 0, len);
-			targ.write(0300); // tape record mark
+			if (targ != null) {
+				targ.write(rec, 0, len);
+				targ.write(0300); // tape record mark
+			} else {
+				rwf.write(rec, 0, len);
+				rwf.write(0300); // tape record mark
+			}
 		} catch (Exception ee) {}
 	}
 }

@@ -12,12 +12,18 @@ public class EasyCoder extends JFrame implements ActionListener {
 	JButton asmb;
 	JCheckBox listing;
 	JCheckBox swi;
+	JCheckBox self;
+	JCheckBox ovrw;
 	ButtonGroup outBg;
 	JRadioButton brt;
 	JRadioButton brtCard;
 	JRadioButton boot;
 	JRadioButton raw;
 	JTextField inFile;
+
+	private static final byte[] _1HDR = new byte[]{ 001, 030, 024, 051, 015}; // 1HDR_
+	private static final byte[] _1EOF = new byte[]{ 001, 025, 046, 026, 015}; // 1EOF_
+	private static final byte[] _1ERI = new byte[]{ 001, 025, 051, 031, 015}; // 1ERI_
 
 	public EasyCoder(String[] args) {
 		super("EasyCoder Assembler");
@@ -26,6 +32,9 @@ public class EasyCoder extends JFrame implements ActionListener {
 
 		pick = new JButton("Pick");
 		listing = new JCheckBox("Listing");
+		self = new JCheckBox("Self Loading");
+		self.addActionListener(this);
+		ovrw = new JCheckBox("Overwrite");
 		swi = new JCheckBox("SW/SI");
 		outBg = new ButtonGroup();
 		brt = new JRadioButton("BRT (Tape)");
@@ -42,6 +51,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 		outBg.add(raw);
 		brt.setSelected(true);
 		swi.setEnabled(false);
+		ovrw.setEnabled(false);
 
 		inFile = new JTextField();
 		inFile.setPreferredSize(new Dimension(200, 20));
@@ -63,17 +73,109 @@ public class EasyCoder extends JFrame implements ActionListener {
 		pn.add(boot);
 		pn.add(raw);
 		pn2.add(pn);
-		pn2.add(swi);
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.Y_AXIS));
+		pn.add(self);
+		pn.add(ovrw);
+		pn.add(swi);
+		pn2.add(pn);
 		add(pn2);
-		add(asmb);
+		pn = new JPanel();
+		pn.add(asmb);
+		add(pn);
 
 		pack();
 		setVisible(true);
 	}
 
+	private void resCopy(String res, RandomAccessFile p) throws Exception {
+		InputStream r = getClass().getResourceAsStream(res);
+		int n = r.available();
+		byte[] buf = new byte[n];
+		r.read(buf);
+		p.write(buf);
+	}
+
+	// Assumes at first char of record...
+	private int skipRec(RandomAccessFile brt) throws Exception {
+		int c1 = brt.read();
+		if ((c1 & 0300) == 0300) {
+			return -1;
+		}
+		while (true) {
+			int b = brt.read();
+			if (b < 0) {
+				break; // or fail?
+			}
+			if ((b & 0300) == 0300) {
+				break;
+			}
+		}
+		return c1;
+	}
+
+	private void setupSelfLdr(RandomAccessFile brt, boolean tape) {
+try {
+		if (brt.length() == 0) {
+			brt.write(_1HDR);
+			brt.write(0300);
+			resCopy("bootmt.mti", brt);
+		} else {
+			brt.seek(0);
+			byte[] hdr = new byte[_1HDR.length];
+			int n = brt.read(hdr);
+			int e = brt.read();
+			if (n != hdr.length || !hdr.equals(_1HDR) ||
+					(e & 0300) != 0300) {
+				// throw error...
+				brt.close();
+				return;
+			}
+			// Skip Bootstrap record
+			if (skipRec(brt) != 022) {
+				// throw error...
+				brt.close();
+				return;
+			}
+			int b;
+			// Skip Loader records
+			while ((b = skipRec(brt)) == 042) { }
+			// Now skip 050/054/041/044 records...
+			// i.e. skip to "1EOF " record...
+			while (b == 050 || b == 054 || b == 041 || b == 044) {
+				b = skipRec(brt);
+			}
+			if (b < 0) {
+				// throw error?
+				brt.close();
+				return;
+			}
+			if (b == 001) {
+				// possibly EOF/ERI...
+				brt.seek(brt.getFilePointer() - 1);
+			}
+			// Should be at "1EOF " record...
+			n = brt.read(hdr);
+			e = brt.read();
+			if (n != hdr.length || !hdr.equals(_1EOF) ||
+					(e & 0300) != 0300) {
+				// throw error...
+				brt.close();
+				return;
+			}
+			// Backup to overwrite "1EOF "
+			brt.seek(brt.getFilePointer() - hdr.length - 1);
+		}
+} catch (Exception ee) {
+	// TODO: handle
+}
+	}
+
 	private void assemble() {
 		boolean cards = brtCard.isSelected();
 		boolean bin = raw.isSelected();
+		boolean slf = self.isSelected();
+		boolean ovr = ovrw.isSelected();
 		boolean bs = boot.isSelected();
 		boolean list = listing.isSelected();
 		boolean rawSW = swi.isSelected();
@@ -83,13 +185,44 @@ public class EasyCoder extends JFrame implements ActionListener {
 			return;
 		}
 		String s = inFile.getText().replaceFirst("\\.ezc$", "");
-		File out = new File(s + ".out");
 		File lst = new File(s + ".lst");
 
-		FileOutputStream fo = null;
+		Assembler asm = new Assembler(in);
+		int e = asm.passOne();
+		if (e < 0) {
+			// TODO: pop-up
+			System.err.println(asm.getErrors());
+			return;
+		}
+		Loader ldr;
+		Closeable fo = null;
 		FileOutputStream lo = null;
 		try {
-			fo = new FileOutputStream(out);
+			if (slf) {
+				File out = new File(s + ".mti");
+				RandomAccessFile f = new RandomAccessFile(out, "rw");
+				fo = f;
+				if (ovr) {
+					f.setLength(0);
+				}
+				setupSelfLdr(f, !cards);
+				if (cards) {
+					ldr = new CardLoader(f, asm.charCvt());
+				} else {
+					ldr = new TapeLoader(f, asm.charCvt());
+				}
+			} else {
+				File out = new File(s + ".out");
+				FileOutputStream f = new FileOutputStream(out);
+				fo = f;
+				if (cards) {
+					ldr = new CardLoader(f, asm.charCvt());
+				} else if (bs || bin) {
+					ldr = new RawLoader(f, rawSW ? asm : null, bin ? 250 : -1);
+				} else {
+					ldr = new TapeLoader(f, asm.charCvt());
+				}
+			}
 			if (list) {
 				lo = new FileOutputStream(lst);
 			}
@@ -97,29 +230,30 @@ public class EasyCoder extends JFrame implements ActionListener {
 			ee.printStackTrace();
 			return;
 		}
-		Assembler asm = new Assembler(in);
-		Loader ldr;
-		if (cards) {
-			ldr = new CardLoader(fo, asm.charCvt());
-		} else if (bs || bin) {
-			ldr = new RawLoader(fo, rawSW ? asm : null, bin ? 250 : -1);
-		} else {
-			ldr = new TapeLoader(fo, asm.charCvt());
-		}
-		int e = asm.passOne();
-		if (e >= 0) {
-			e = asm.passTwo(ldr, lo);
-		}
+		e = asm.passTwo(ldr, lo);
 		if (e < 0) {
+			// TODO: pop-up
 			System.err.println(asm.getErrors());
 		}
 		try { fo.close(); } catch (Exception ee) {}
 		if (lo != null) {
-			try { fo.close(); } catch (Exception ee) {}
+			try { lo.close(); } catch (Exception ee) {}
 		}
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof JCheckBox) {
+			JCheckBox btn = (JCheckBox)e.getSource();
+			if (btn == self) {
+				if (self.isSelected()) {
+					ovrw.setEnabled(true);
+				} else {
+					ovrw.setSelected(false);
+					ovrw.setEnabled(false);
+				}
+			}
+			return;
+		}
 		if (e.getSource() instanceof JButton) {
 			JButton btn = (JButton)e.getSource();
 			if (btn == asmb) {
@@ -130,10 +264,15 @@ public class EasyCoder extends JFrame implements ActionListener {
 		if (e.getSource() instanceof JRadioButton) {
 			JRadioButton btn = (JRadioButton)e.getSource();
 			if (btn == boot || btn == raw) {
+				self.setSelected(false);
+				ovrw.setSelected(false);
+				self.setEnabled(false);
+				ovrw.setEnabled(false);
 				swi.setEnabled(true);
 			} else {
-				swi.setEnabled(false);
 				swi.setSelected(false);
+				swi.setEnabled(false);
+				self.setEnabled(true);
 			}
 			return;
 		}
