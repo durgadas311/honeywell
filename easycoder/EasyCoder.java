@@ -8,6 +8,8 @@ import javax.swing.*;
 public class EasyCoder extends JFrame implements ActionListener {
 	static EasyCoder thus;
 
+	static final Color done = new Color(200,255,200);
+	File dir;
 	JButton pick;
 	JButton asmb;
 	JCheckBox listing;
@@ -20,7 +22,11 @@ public class EasyCoder extends JFrame implements ActionListener {
 	JRadioButton boot;
 	JRadioButton raw;
 	JTextField inFile;
+	JTextArea min;
+	JTextArea max;
+	JTextArea start;
 
+	// TODO: These are supposed to be 80-char (both Tape and Card)
 	private static final byte[] _1HDR = new byte[]{ 001, 030, 024, 051, 015}; // 1HDR_
 	private static final byte[] _1EOF = new byte[]{ 001, 025, 046, 026, 015}; // 1EOF_
 	private static final byte[] _1ERI = new byte[]{ 001, 025, 051, 031, 015}; // 1ERI_
@@ -30,12 +36,18 @@ public class EasyCoder extends JFrame implements ActionListener {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 
+		dir = new File(System.getProperty("user.dir"));
+
 		pick = new JButton("Pick");
+		pick.addActionListener(this);
 		listing = new JCheckBox("Listing");
+		listing.addActionListener(this);
 		self = new JCheckBox("Self Loading");
 		self.addActionListener(this);
 		ovrw = new JCheckBox("Overwrite");
+		ovrw.addActionListener(this);
 		swi = new JCheckBox("SW/SI");
+		swi.addActionListener(this);
 		outBg = new ButtonGroup();
 		brt = new JRadioButton("BRT (Tape)");
 		brt.addActionListener(this);
@@ -49,6 +61,16 @@ public class EasyCoder extends JFrame implements ActionListener {
 		outBg.add(brtCard);
 		outBg.add(boot);
 		outBg.add(raw);
+		min = new JTextArea();
+		min.setPreferredSize(new Dimension(50, 20));
+		min.setEditable(false);
+		max = new JTextArea();
+		max.setPreferredSize(new Dimension(50, 20));
+		max.setEditable(false);
+		start = new JTextArea();
+		start.setPreferredSize(new Dimension(50, 20));
+		start.setEditable(false);
+
 		brt.setSelected(true);
 		swi.setEnabled(false);
 		ovrw.setEnabled(false);
@@ -80,6 +102,24 @@ public class EasyCoder extends JFrame implements ActionListener {
 		pn.add(swi);
 		pn2.add(pn);
 		add(pn2);
+		pn2 = new JPanel();
+		pn2.setLayout(new BoxLayout(pn2, BoxLayout.X_AXIS));
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel(" Min:"));
+		pn.add(min);
+		pn2.add(pn);
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel(" Max:"));
+		pn.add(max);
+		pn2.add(pn);
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel(" Start:"));
+		pn.add(start);
+		pn2.add(pn);
+		add(pn2);
 		pn = new JPanel();
 		pn.add(asmb);
 		add(pn);
@@ -90,6 +130,11 @@ public class EasyCoder extends JFrame implements ActionListener {
 
 	private void resCopy(String res, RandomAccessFile p) throws Exception {
 		InputStream r = getClass().getResourceAsStream(res);
+		if (r == null) {
+			// TODO: throw error
+			System.err.format("No resource: %s\n", res);
+			return;
+		}
 		int n = r.available();
 		byte[] buf = new byte[n];
 		r.read(buf);
@@ -114,8 +159,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 		return c1;
 	}
 
-	private void setupSelfLdr(RandomAccessFile brt, boolean tape) {
-try {
+	private void setupSelfLdr(RandomAccessFile brt, boolean tape) throws Exception {
 		if (brt.length() == 0) {
 			brt.write(_1HDR);
 			brt.write(0300);
@@ -166,12 +210,20 @@ try {
 			// Backup to overwrite "1EOF "
 			brt.seek(brt.getFilePointer() - hdr.length - 1);
 		}
-} catch (Exception ee) {
-	// TODO: handle
-}
+	}
+
+	private void finishSelfLdr(RandomAccessFile brt, boolean tape) throws Exception {
+		brt.write(_1EOF);
+		brt.write(0300);
+		brt.write(_1ERI);
+		brt.write(0300);
+		brt.write(_1ERI);
+		brt.write(0300);
+		brt.write(0300);
 	}
 
 	private void assemble() {
+		boolean errs = false;
 		boolean cards = brtCard.isSelected();
 		boolean bin = raw.isSelected();
 		boolean slf = self.isSelected();
@@ -179,7 +231,7 @@ try {
 		boolean bs = boot.isSelected();
 		boolean list = listing.isSelected();
 		boolean rawSW = swi.isSelected();
-		File in = new File(inFile.getText());
+		File in = new File(dir, inFile.getText());
 		if (!in.exists()) {
 			System.err.format("No file: %s\n", inFile.getText());
 			return;
@@ -190,26 +242,26 @@ try {
 		Assembler asm = new Assembler(in);
 		int e = asm.passOne();
 		if (e < 0) {
-			// TODO: pop-up
-			System.err.println(asm.getErrors());
+			setError(asm);
 			return;
 		}
 		Loader ldr;
 		Closeable fo = null;
 		FileOutputStream lo = null;
+		RandomAccessFile brt = null;
 		try {
 			if (slf) {
 				File out = new File(s + ".mti");
-				RandomAccessFile f = new RandomAccessFile(out, "rw");
-				fo = f;
+				brt = new RandomAccessFile(out, "rw");
+				fo = brt;
 				if (ovr) {
-					f.setLength(0);
+					brt.setLength(0);
 				}
-				setupSelfLdr(f, !cards);
+				setupSelfLdr(brt, !cards);
 				if (cards) {
-					ldr = new CardLoader(f, asm.charCvt());
+					ldr = new CardLoader(brt, asm.charCvt());
 				} else {
-					ldr = new TapeLoader(f, asm.charCvt());
+					ldr = new TapeLoader(brt, asm.charCvt());
 				}
 			} else {
 				File out = new File(s + ".out");
@@ -218,7 +270,12 @@ try {
 				if (cards) {
 					ldr = new CardLoader(f, asm.charCvt());
 				} else if (bs || bin) {
-					ldr = new RawLoader(f, rawSW ? asm : null, bin ? 250 : -1);
+					PrintStream swi =null;
+					if (rawSW) {
+						swi = new PrintStream(s + ".swi");
+					}
+					ldr = new RawLoader(f, swi,
+						rawSW ? asm : null, bin ? 250 : -1);
 				} else {
 					ldr = new TapeLoader(f, asm.charCvt());
 				}
@@ -231,17 +288,53 @@ try {
 			return;
 		}
 		e = asm.passTwo(ldr, lo);
-		if (e < 0) {
-			// TODO: pop-up
-			System.err.println(asm.getErrors());
-		}
-		try { fo.close(); } catch (Exception ee) {}
+		errs = (e < 0);
+		try {
+			if (slf) {
+				finishSelfLdr(brt, !cards);
+			}
+			fo.close();
+		} catch (Exception ee) {}
 		if (lo != null) {
 			try { lo.close(); } catch (Exception ee) {}
+		}
+		if (errs) {
+			setError(asm);
+		} else {
+			setSuccess(asm);
+		}
+	}
+
+	private void setError(Assembler asm) {
+		inFile.setBackground(Color.pink);
+		warning(inFile.getText(),
+			"<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
+	}
+
+	private void setSuccess(Assembler asm) {
+		inFile.setBackground(done);
+		min.setText(String.format("%07o", asm.getMin()));
+		max.setText(String.format("%07o", asm.getMax()));
+		start.setText(String.format("%07o", asm.getStart()));
+	}
+
+	private void pickFile() {
+		SuffFileChooser ch = new SuffFileChooser("EasyCoder Source",
+				new String[]{"ezc"}, new String[]{"EasyCoder"},
+				dir, null);
+		int rv = ch.showDialog(this);
+		if (rv == JFileChooser.APPROVE_OPTION) {
+			File f = ch.getSelectedFile();
+			inFile.setText(f.getName());
+			dir = f.getParentFile();
 		}
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		inFile.setBackground(Color.white);
+		min.setText("");
+		max.setText("");
+		start.setText("");
 		if (e.getSource() instanceof JCheckBox) {
 			JCheckBox btn = (JCheckBox)e.getSource();
 			if (btn == self) {
@@ -258,6 +351,8 @@ try {
 			JButton btn = (JButton)e.getSource();
 			if (btn == asmb) {
 				assemble();
+			} else if (btn == pick) {
+				pickFile();
 			}
 			return;
 		}
@@ -276,6 +371,12 @@ try {
 			}
 			return;
 		}
+	}
+
+	private void warning(String op, String err) {
+		JOptionPane.showMessageDialog(this,
+			new JLabel(err),
+			op, JOptionPane.WARNING_MESSAGE);
 	}
 
 	public static void main(String[] args) {

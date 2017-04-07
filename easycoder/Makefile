@@ -1,12 +1,12 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
-all: Assembler.class ezc.class EasyCoder.class
+all: $(CLASSES)
 
 jar: EasyCoder.jar
 
-JAVAS = Assembler.java TapeLoader.java CardLoader.java RawLoader.java \
-	BRTLoader.java CoreLoader.java Loader.java
+%.class: %.java
+	javac -source 1.7 -target 1.7 $?
 
 Assembler.class: $(JAVAS)
 	javac -source 1.7 -target 1.7 Assembler.java
@@ -17,8 +17,11 @@ ezc.class: ezc.java Assembler.class
 EasyCoder.class: EasyCoder.java Assembler.class
 	javac -source 1.7 -target 1.7 EasyCoder.java
 
-EasyCoder.jar: all
+EasyCoder.jar: all bootmt.mti
 	echo "Main-Class: EasyCoder" >Manifest.txt
-	jar cfm $@ Manifest.txt *.class
+	jar cfm $@ Manifest.txt *.class bootmt.mti
+
+bootmt.mti:
+	ln -s ../hw2000/bringup/bootmt.mti .
 
 __FRC__:

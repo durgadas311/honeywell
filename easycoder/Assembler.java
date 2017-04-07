@@ -73,6 +73,7 @@ public class Assembler {
 		listing = false;
 	}
 
+	// This is destructive, clears errors.
 	public String getErrors() {
 		String s = "";
 		while (errs.size() > 0) {
@@ -186,15 +187,14 @@ public class Assembler {
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		loader.end(endAdr);
-		System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
+		//System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
 		if (errs.size() > 0) {
 			ret = -1;
-			while (errs.size() > 0) {
-				String l = errs.remove(0);
-				if (listing) {
+			if (listing) {
+				// TODO: intersperse with listing...
+				for (String l : errs) {
 					listOut("*** " + l + "\n");
 				}
-				System.err.println(l);
 			}
 		}
 		if (listing) {

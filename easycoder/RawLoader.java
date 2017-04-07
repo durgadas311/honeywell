@@ -4,6 +4,7 @@ import java.io.*;
 
 public class RawLoader implements Loader {
 	OutputStream out;
+	PrintStream swi;
 	Assembler asm;
 	int curadr;
 	String lastw = null;
@@ -12,8 +13,9 @@ public class RawLoader implements Loader {
 	int reclen;
 	int cnt = 0;
 
-	public RawLoader(OutputStream out, Assembler asm, int reclen) {
+	public RawLoader(OutputStream out, PrintStream swi, Assembler asm, int reclen) {
 		this.out = out;
+		this.swi = swi;
 		this.asm = asm;	// could be null
 		this.reclen = reclen;
 	}
@@ -41,7 +43,7 @@ public class RawLoader implements Loader {
 			if (lastw == null) {
 				lastw = String.format("%s+%d", sym, d);
 			} else {
-				System.err.format("%05d         SW    %s,%s+%d\n",
+				swi.format("%05d         SW    %s,%s+%d\n",
 					line++, lastw, sym, d);
 				lastw = null;
 			}
@@ -57,7 +59,7 @@ public class RawLoader implements Loader {
 			if (lasti == null) {
 				lasti = String.format("%s+%d", sym, d);
 			} else {
-				System.err.format("%05d         SI    %s,%s+%d\n",
+				swi.format("%05d         SI    %s,%s+%d\n",
 					line++, lasti, sym, d);
 				lasti = null;
 			}
@@ -108,12 +110,12 @@ public class RawLoader implements Loader {
 	public void end(int start) {
 		// Single-address SW/SI cannot be used w/o WM (in bootstrap)
 		if (lastw != null) {
-			System.err.format("%05d         SW    %s,%s\n",
+			swi.format("%05d         SW    %s,%s\n",
 					line++, lastw, lastw);
 			lastw = null;
 		}
 		if (lasti != null) {
-			System.err.format("%05d         SI    %s,%s\n",
+			swi.format("%05d         SI    %s,%s\n",
 					line++, lasti, lasti);
 			lasti = null;
 		}

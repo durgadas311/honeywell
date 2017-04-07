@@ -47,7 +47,7 @@ public class ezc {
 		if (cards) {
 			ldr = new CardLoader(fo, asm.charCvt());
 		} else if (raw || bin) {
-			ldr = new RawLoader(fo, rawSW ? asm : null, bin ? 250 : -1);
+			ldr = new RawLoader(fo, System.err, rawSW ? asm : null, bin ? 250 : -1);
 		} else {
 			ldr = new TapeLoader(fo, asm.charCvt());
 		}

@@ -25,7 +25,7 @@ class SuffFileChooser extends JFileChooser {
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
 		if (opts != null) {
-			addAccessories(opts);
+			setAccessory(opts);
 		}
 	}
 	public int showDialog(Component frame) {
