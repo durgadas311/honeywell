@@ -271,6 +271,7 @@ public class Assembler {
 
 	private int scanOne() {
 		// TODO: tolerate "illegal" TAB characters
+		// TODO: input from punchcard vs ASCII file (vs MagTape?)
 		String line = "";
 		code = null;
 		int orgLoc = currLoc;
@@ -325,8 +326,12 @@ public class Assembler {
 		// (*temporary* currLoc). Also out-of-sequence base?
 		int e = 0;
 		// first, preserve "quotes"...
-		if (opd.length() > 0 && opd.charAt(0) == '@') {
-			e = opd.indexOf('@', 1);
+		// Punchcards ambiguity: '@' or '\'' (card) is ':' (listing)
+		// TODO: IBM029 has different '\''
+		if (opd.length() > 0 &&
+				(opd.charAt(0) == '@' || opd.charAt(0) == '\'' ||
+					opd.charAt(0) == ':')) {
+			e = opd.indexOf(opd.charAt(0), 1);
 			if (e < 0) {
 				e = 0;
 			}
@@ -540,17 +545,23 @@ public class Assembler {
 
 	private byte[] parseCon(String opd) {
 		char c = opd.charAt(0);
-		if (c == '@') {
-			int e = opd.indexOf('@', 1);
+		if (c == '@' || c == ':' || c == '\'') {
+			// Punchcards ambiguity: '@' or '\'' (card) is ':' (listing)
+			// TODO: IBM029 has different '\'' ('<')
+			int e = opd.indexOf(c, 1);
 			if (e < 0) {
+				// TODO: should be error?
 				e = opd.length();
 			}
 			byte[] bb = new byte[e - 1];
 			for (int y = 1; y < e; ++y) {
+				// TODO: check for invalid chars?
 				bb[y - 1] = cvt.asciiToHw((byte)(opd.charAt(y) & 0x7f));
 			}
 			return bb;
-		} else if (c == '#') {
+		} else if (c == '#' || c == '=') {
+			// Punchcards ambiguity: '#' or '=' (card) is '=' (listing)
+			// TODO: IBM029 has different '=' ('>')
 			int e = opd.indexOf('B', 1);
 			int base = 10;
 			if (e < 0) {
