@@ -10,7 +10,7 @@ EZCLASSES =	Assembler.class \
 		CardLoader.class \
 		TapeLoader.class
 
-EXTCLASSES = $(CPCLASSES) $(EZCLASSES)
+EXTCLASSES = $(CPCLASSES) $(EZCLASSES) $(F4CLASSES)
 
 FONTS = $(wildcard fonts/*.ttf)
 

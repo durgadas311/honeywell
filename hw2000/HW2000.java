@@ -1,5 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 import java.io.*;
 import java.util.concurrent.Semaphore;
 
@@ -43,6 +45,7 @@ public class HW2000 implements CoreMemory
 	public boolean bootstrap; // force clearing of punctuation
 	private boolean _proceed;
 	private int tics;
+	private Map<String, HW2000Trap> traps;
 
 	private int fsr;
 	public int iaar;	// needed by branch instructions
@@ -65,6 +68,7 @@ public class HW2000 implements CoreMemory
 		Arrays.fill(denorm, false);
 		mem = new byte[524288]; // TODO: mmap file
 		Arrays.fill(mem, (byte)0);
+		traps = new HashMap<String, HW2000Trap>();
 		cr = new int[64];
 		Arrays.fill(cr, 0);
 		idc = new InstrDecode(false);
@@ -630,6 +634,33 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	private void trap() {
+		String t = "";
+		int a = BAR;
+		// TODO: limit scan!
+		while (true) {
+			t += pdc.cvt.hwToLP((byte)(mem[a] & 077));
+			if ((mem[a++] & 0200) != 0) break;
+		}
+		System.err.format("Trap %07o \"%s\"\n", SR, t);
+		if (t.equals("FORTRAN")) {
+			if (!traps.containsKey(t)) {
+				traps.put(t, new FortranRunTime());
+			}
+		} else {
+			halt = true;
+		}
+		SR = a;
+	}
+
+	private void doTraps() {
+		for (HW2000Trap trap : traps.values()) {
+			if (trap.doTrap(this)) {
+				return;
+			}
+		}
+	}
+
 	public void run() {
 		if (fp != null) {
 			fp.setRunStop(true);
@@ -640,6 +671,11 @@ public class HW2000 implements CoreMemory
 		}
 		halt = false;
 		while (!halt) {
+			if (SR == (-1 & am_mask)) {
+				trap();
+				continue; // needed?
+			}
+			doTraps();
 			try {
 				fetch();
 				execute();
