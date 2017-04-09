@@ -1,9 +1,10 @@
 // Copyright (c) 2017 douglas Miller <durgadas311@gmail.com>
 
 import java.io.*;
+import java.util.regex.Pattern;
 
 public class IfStatement extends FortranItem {
-	static final String _IF = "^IF("; // may have nested parens
+	static final String _PAT = "IF\\(.*"; // may have nested parens
 	private String errors = "";
 	private FortranExpr expr;
 	int[] arith = null;
@@ -23,10 +24,10 @@ public class IfStatement extends FortranItem {
 			}
 			++y;
 		}
-		exp = pars.parseExpr(stmt.substring(x, y));
+		expr = pars.parseExpr(stmt.substring(x, y));
 		x = y; // 'y' already points past end paren
 		String rest = stmt.substring(x);
-		if (rest.matches("^[0-9]+,[0-9]+,[0-9]+$")) {
+		if (rest.matches("[0-9]+,[0-9]+,[0-9]+")) {
 			// must be arith IF...
 			String[] nn = rest.split(",");
 			arith = new int[3];
@@ -42,20 +43,20 @@ public class IfStatement extends FortranItem {
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
-		if (!pot.matches(_SFC)) {
+		if (!pot.matches(_PAT)) {
 			return null;
 		}
 		return new IfStatement(pot, pars);
 	}
 
-	public void genDefs(OutputStream out, FortranParser pars) {
+	public void genDefs(PrintStream out, FortranParser pars) {
 		// Anything for us?
 		if (stmt != null) {
 			stmt.genDefs(out, pars);
 		}
 	}
 
-	public void genCode(OutputStream out, FortranParser pars) {
+	public void genCode(PrintStream out, FortranParser pars) {
 		pars.setExpr(expr); // TODO: where to put result
 		if (stmt != null) {
 			// LOGICAL expression, result is Zero-balance for .FALSE.
@@ -73,7 +74,7 @@ public class IfStatement extends FortranItem {
 	}
 
 	public boolean error() {
-		return errors.length > 0;
+		return errors.length() > 0;
 	}
 
 	public String errorMessages() {

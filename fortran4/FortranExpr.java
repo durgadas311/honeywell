@@ -6,20 +6,24 @@ public class FortranExpr {
 	public static final int LOGICAL = 3;
 	public static final int COMPLEX = 4;
 
+	int type = 0;
+
 	public FortranExpr(String expr) {
+		type = INTEGER;
 	}
 
-	public int type() { return INTEGER; }
+	public int type() { return type; }
 	public String getResult() {
+		// TODO: get these from parser...
 		switch (type) {
 		case INTEGER:
 			return "$TMPI";
 		case REAL:
-			return "$TMPR;
+			return "$TMPR";
 		case COMPLEX:
-			return "$TMPX;
+			return "$TMPX";
 		case LOGICAL:
-			return "$TMPL;
+			return "$TMPL";
 		}
 		return "$FOO";
 	}
