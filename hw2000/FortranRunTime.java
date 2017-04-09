@@ -4,6 +4,18 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class FortranRunTime implements HW2000Trap {
+	// HW codes for format specifiers that we might support
+	static final int A = 021;
+	static final int D = 024;
+	static final int E = 025;
+	static final int F = 026;
+	static final int G = 027;
+	static final int I = 031;
+	static final int L = 043;
+	static final int P = 047;
+	static final int T = 063;
+	static final int X = 067;
+	static final int Z = 071;
 	private String fmt;
 	private String buf;
 	private int idx;
@@ -37,6 +49,7 @@ public class FortranRunTime implements HW2000Trap {
 	private void exit(HW2000 sys) {
 		System.err.format("exit %07o\n", sys.SR);
 		// remove traps...
+		sys.SR = sys.BAR;
 	}
 
 	private void acboio(HW2000 sys) {

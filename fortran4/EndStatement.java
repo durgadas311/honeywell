@@ -21,7 +21,8 @@ public class EndStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		pars.emit("         H");
+		// let compiler handle this?
+		//pars.emit("         H");
 	}
 
 	public boolean error() {

@@ -642,7 +642,7 @@ public class HW2000 implements CoreMemory
 			t += pdc.cvt.hwToLP((byte)(mem[a] & 077));
 			if ((mem[a++] & 0200) != 0) break;
 		}
-		System.err.format("Trap %07o \"%s\"\n", SR, t);
+		//System.err.format("Trap %07o \"%s\"\n", SR, t);
 		if (t.equals("FORTRAN")) {
 			if (!traps.containsKey(t)) {
 				traps.put(t, new FortranRunTime());

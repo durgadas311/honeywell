@@ -156,7 +156,7 @@ public class Fortran4 implements FortranParser {
 		emit(" R       DCW   @FORTRAN@");
 		setCode();
 		emit("         B     $EXIT");
-		emit("         H");
+		emit("         H     *");
 		emit("         NOP");
 		emit("         END   $START");
 		if (errs.size() > 0) {
@@ -263,8 +263,7 @@ if (next != null) {
 			return -1;
 		}
 		String lab = line.substring(0, 5).trim();
-		// TODO: must preserve blanks in char constants!
-		String stmt = line.substring(6).replaceAll("\\s", "");
+		String stmt = squeeze(line, 6);
 
 		int labl = -1;
 		if (lab.length() > 0) {
@@ -296,6 +295,42 @@ if (next != null) {
 		itm.src = curLine;
 		program.add(itm);
 		return (itm == null ? -1 : 0);
+	}
+
+	private String squeeze(String in, int e) {
+		int n = in.length();
+		boolean q = false;
+		int i = 0;
+		int h = 0;
+		String s = "";
+		for (int x = e; x < n; ++x) {
+			char c = in.charAt(x);
+			if (c == ' ' && !q && h == 0) {
+				continue;
+			}
+			s += c;
+			if (c == '\'' && h == 0) {
+				q = !q;
+				continue;
+			}
+			if (h > 0) {
+				--h;
+				continue;
+			}
+			if (q) {
+				continue;
+			}
+			if (c == 'H' && i > 0) {
+				h = i;
+				continue;
+			}
+			if (!Character.isDigit(c)) {
+				i = 0;
+				continue;
+			}
+			i = (i * 10) + (c - '0');
+		}
+		return s;
 	}
 
 	private void checkDo(FortranItem itm) {
