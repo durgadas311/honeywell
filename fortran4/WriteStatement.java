@@ -43,7 +43,7 @@ public class WriteStatement extends FortranItem {
 		} else {
 			pars.emit("         DSA   0");
 		}
-		pars.emit(String.format("         DCW   %02o", dev & 077));
+		pars.emit(String.format(" R       DCW   #1C%02o", dev & 077));
 		for (int z = 0; z < list.length; ++z) {
 			pars.emit(String.format("         LCA   %s,%s", list[z], tmp));
 			pars.emit("         CSM");
@@ -54,7 +54,7 @@ public class WriteStatement extends FortranItem {
 		} else {
 			pars.emit("         DSA   0");
 		}
-		pars.emit("         DCW   77");
+		pars.emit(" R       DCW   #1C77");
 	}
 
 	public boolean error() {

@@ -60,13 +60,13 @@ public class IfStatement extends FortranItem {
 		pars.setExpr(expr); // TODO: where to put result
 		if (stmt != null) {
 			// LOGICAL expression, result is Zero-balance for .FALSE.
-			pars.emit(String.format("         BCT   #%05d,60", src));
+			pars.emit(String.format("         BCT   /%05d,60", src));
 			stmt.genCode(out, pars);
-			pars.emit(String.format("  #%05d RESV  0", src));
+			pars.emit(String.format("  /%05d RESV  0", src));
 		} else {
 			// Arith expression, result is where???
 			// TODO: only INTEGER can compare this way...
-			pars.emit(String.format("         C     =0,%s", expr.getResult()));
+			pars.emit(String.format("         C     :0,%s", expr.getResult()));
 			pars.emit(String.format("         BCT   $%05d,41", arith[0]));
 			pars.emit(String.format("         BCT   $%05d,42", arith[1]));
 			pars.emit(String.format("         B     $%05d", arith[2]));

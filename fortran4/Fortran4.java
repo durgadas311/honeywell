@@ -141,17 +141,24 @@ public class Fortran4 implements FortranParser {
 		emit(String.format("         PROG  %s", prog));
 		emit("         ADMODE3");
 		emit("         ORG   1340");
-		emit("  $EXIT  DC    0");
-		emit("  $ACBOIODC    0");
+		// TODO: get these from FortranRunTime?
+		emit("  $EXIT  DC    #1B0");
+		emit("  $ACBOIODC    #1B1");
+		emit("         DC    #1B2");
+		//
 		emit("  $TEMPI DCW   #4B0"); // TODO: precision
 		emit("  $TEMPR DCW   #10B0"); // TODO: precision
 		emit("  $TEMPL DCW   #1B0");
 		emit("  $TEMPA DSA   0");
 		emit("  $TEMPX DCW   #20B0"); // TODO: precision
 		setDefs();
-		emit("  $START B     -1"); // TODO: special trap
+		emit("  $START B     0-1"); // TODO: special trap
 		emit(" R       DCW   @FORTRAN@");
 		setCode();
+		emit("         B     $EXIT");
+		emit("         H");
+		emit("         NOP");
+		emit("         END   $START");
 		if (errs.size() > 0) {
 			ret = -1;
 		}
@@ -334,7 +341,7 @@ if (next != null) {
 	}
 
 	public void setConst(int konst) {
-		String sym = String.format("=%d", konst);
+		String sym = String.format(":%d", konst);
 		setVariable(sym, konst);
 	}
 

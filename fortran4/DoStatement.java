@@ -51,8 +51,8 @@ public class DoStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		pars.emit(String.format("         LCA   =%d,%s", start, var));
-		pars.emit(String.format("  #%05d RESV  0", src));
+		pars.emit(String.format("         LCA   :%d,%s", start, var));
+		pars.emit(String.format("  /%05d RESV  0", src));
 	}
 
 	public boolean error() {
@@ -68,8 +68,8 @@ public class DoStatement extends FortranItem {
 	public DoStatement getNext() { return next; }
 
 	public void genLoop(OutputStream out, FortranParser pars) {
-		pars.emit(String.format("         BA    =%d,%s", step, var));
-		pars.emit(String.format("         C     =%d,%s", end, var));
-		pars.emit(String.format("         BCT   #%05d,43", src));
+		pars.emit(String.format("         BA    :%d,%s", step, var));
+		pars.emit(String.format("         C     :%d,%s", end, var));
+		pars.emit(String.format("         BCT   /%05d,43", src));
 	}
 }

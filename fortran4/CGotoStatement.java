@@ -35,7 +35,7 @@ public class CGotoStatement extends FortranItem {
 		pars.setConst(1);
 		pars.setConst(max);
 		// This works since index is 1-based
-		pars.emit(String.format("  #T%05dDSA   *", src));
+		pars.emit(String.format("  /T%05dDSA   *", src));
 		for (int t : targs) {
 			pars.emit(String.format("         DSA   $%05d", t));
 		}
@@ -43,11 +43,11 @@ public class CGotoStatement extends FortranItem {
 
 	public void genCode(PrintStream out, FortranParser pars) {
 		String tmp = pars.tempAdr();
-		pars.emit(String.format("         C     %s,=%d", var, max));
-		pars.emit(String.format("         BCT   #%05d,41", src));
-		pars.emit(String.format("         C     %s,=1", var));
-		pars.emit(String.format("         BCT   #%05d,44", src));
-		pars.emit(String.format("         LCA   #T%05d,%s", src, tmp));
+		pars.emit(String.format("         C     %s,:%d", var, max));
+		pars.emit(String.format("         BCT   /%05d,41", src));
+		pars.emit(String.format("         C     %s,:1", var));
+		pars.emit(String.format("         BCT   /%05d,44", src));
+		pars.emit(String.format("         LCA   /T%05d,%s", src, tmp));
 		pars.emit(String.format("         BA    %s,%s", var, tmp));
 		pars.emit(String.format("         BA    %s,%s", var, tmp));
 		pars.emit(String.format("         BA    %s,%s", var, tmp));
@@ -57,7 +57,7 @@ public class CGotoStatement extends FortranItem {
 		} else {
 			pars.emit(String.format("         B     (%s-2)", tmp));
 		}
-		pars.emit(String.format("  #%05d RESV  0"));
+		pars.emit(String.format("  /%05d RESV  0"));
 	}
 
 	public boolean error() {
