@@ -20,7 +20,6 @@ public class IfStatement extends FortranItem {
 				++p;
 			} else if (stmt.charAt(y) == ')') {
 				--p;
-			} else {
 			}
 			++y;
 		}

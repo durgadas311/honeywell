@@ -45,8 +45,8 @@ public class WriteStatement extends FortranItem {
 		}
 		pars.emit(String.format(" R       DCW   #1C%02o", dev & 077));
 		for (int z = 0; z < list.length; ++z) {
-			pars.emit(String.format("         LCA   %s,%s", list[z], tmp));
 			pars.emit("         CSM");
+			pars.emit(String.format(" R       DSA   %s", list[z]));
 		}
 		pars.emit("         B     $ACBOIO");
 		if (fmt > 0) {

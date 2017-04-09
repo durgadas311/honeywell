@@ -3,6 +3,7 @@
 // Convenience methods for statements to access parser
 public interface FortranParser {
 	int getLine();	// Source file line number for current code
+	void setName(String var);
 	void setVariable(String var, int val);
 	void setConst(int val);
 	void setLocalVar(String scope, String var, int val);

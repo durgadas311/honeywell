@@ -263,6 +263,7 @@ if (next != null) {
 			return -1;
 		}
 		String lab = line.substring(0, 5).trim();
+		// TODO: must preserve blanks in char constants!
 		String stmt = line.substring(6).replaceAll("\\s", "");
 
 		int labl = -1;
@@ -285,6 +286,8 @@ if (next != null) {
 		if (itm == null) { itm = WriteStatement.parse(stmt, this); }
 		if (itm == null) { itm = EndStatement.parse(stmt, this); }
 		if (itm == null) { itm = ContStatement.parse(stmt, this); }
+		if (itm == null) { itm = FormatStatement.parse(stmt, this); }
+		if (itm == null) { itm = ProgramStatement.parse(stmt, this); }
 		if (itm == null) {
 			System.err.format("Unknown: %s\n", stmt);
 			return -1;
@@ -376,4 +379,7 @@ if (next != null) {
 	public String tempLog() { return "$TEMPL"; }
 	public String tempComplex() { return "$TEMPX"; }
 	public int addrMode() { return 3; }
+	public void setName(String nm) {
+		prog = nm;
+	}
 }
