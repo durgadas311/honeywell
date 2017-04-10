@@ -20,7 +20,7 @@ public class Fortran4 implements FortranParser {
 	int ezcLine;
 	int adrMode;
 	private Vector<String> errs;
-	private Map<String,Integer> symTab;
+	private Map<String, String> symTab;
 	boolean end;
 	String prog;
 	int endAdr;
@@ -36,7 +36,7 @@ public class Fortran4 implements FortranParser {
 	public Fortran4(File input) {
 		prog = null; // or default to file name?
 		inFile = input;
-		symTab = new HashMap<String,Integer>();
+		symTab = new HashMap<String, String>();
 		doLoops = new Stack<DoStatement>();
 		doStmts = new HashMap<Integer, DoStatement>();
 		program = new Vector<FortranItem>();
@@ -69,8 +69,8 @@ public class Fortran4 implements FortranParser {
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");
-		for (Map.Entry<String, Integer> entry : symTab.entrySet()) {
-			String l = String.format("  %6s %07o", entry.getKey(), entry.getValue());
+		for (Map.Entry<String, String> entry : symTab.entrySet()) {
+			String l = String.format("  %6s=%7s", entry.getKey(), entry.getValue());
 			++x;
 			if (x >= 7) {
 				x = 0;
@@ -368,14 +368,27 @@ if (next != null) {
 		}
 	}
 
+	private int uniq = 0;
+	private String uniqueName() {
+		return String.format("/U%05d", uniq++);
+	}
+
+	// TODO: convert to using FortranOperand...
 	public void setVariable(String var, int val) {
 		if (!symTab.containsKey(var)) {
 			emit(String.format("  %-7sDCW   #%dB%d", var, addrMode(), val));
-			symTab.put(var, val);
+			// TODO: generate unique name if needed
+			symTab.put(var, var);
 		}
 	}
 
 	public void setLocalVar(String scope, String var, int val) {
+		String sym = scope + '.' + var;
+		if (!symTab.containsKey(var)) {
+			String u = uniqueName();
+			emit(String.format("  %-7sDCW   #%dB%d", u, addrMode(), val));
+			symTab.put(var, u);
+		}
 	}
 
 	public void setConst(int konst) {
