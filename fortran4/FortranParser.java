@@ -15,6 +15,8 @@ public interface FortranParser {
 	FortranExpr parseExpr(String expr);
 	FortranItem recurse(String stmt);
 
+	String uniqueName();
+	boolean addConst(FortranConstant konst);
 	String tempAdr();
 	String tempInt();
 	String tempReal();

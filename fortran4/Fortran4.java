@@ -369,8 +369,17 @@ if (next != null) {
 	}
 
 	private int uniq = 0;
-	private String uniqueName() {
-		return String.format("/U%05d", uniq++);
+	public String uniqueName() {
+		return String.format("/U%04d", uniq++);
+	}
+
+	public FortranOperand addConst(String id, FortranConstant konst) {
+		if (!symTab.containsKey(id)) {
+			symTab.put(id, konst);
+			return konst;
+		} else {
+			return symTab.get(id);
+		}
 	}
 
 	// TODO: convert to using FortranOperand...
