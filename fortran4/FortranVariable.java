@@ -11,6 +11,17 @@ public class FortranVariable extends FortranOperand {
 		this.name = name;
 	}
 
+	public static FortranVariable get(FortranParser pars, String id) {
+		// TODO: when to generate unique name...
+		FortranOperand fo = pars.getSym(id);
+		if (fo == null) {
+			// TODO: guess at type...
+			fo = new FortranVariable(id, INTEGER, 3);
+			pars.addSym(id, fo);
+		}
+		return fo;
+	}
+
 	public int kind() { return VARIABLE; }
 	public String name() { return name; }
 

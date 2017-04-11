@@ -16,6 +16,8 @@ public interface FortranParser {
 	FortranItem recurse(String stmt);
 
 	String uniqueName();
+	FortranOperand getSym(String id);
+	void addSym(String id, FortranOperand op);
 	boolean addConst(FortranConstant konst);
 	String tempAdr();
 	String tempInt();

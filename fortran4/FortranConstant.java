@@ -4,78 +4,87 @@ import java.io.*;
 
 public class FortranConstant extends FortranOperand {
 	private String name;
-	private String value;
 	private int vi;
 	private boolean vl;
 	private float vr;
 	private float vx;
 
-	public FortranVariable(Object val) {
-		super(0, 0); // re-set type, precision later...
+	public FortranConstant(int type, int prec) {
+		super(type, prec);
+	}
 		// TODO: also save true value?
-		if (val instanceof Integer) {
-			type = INTEGER:
-			vi = (Integer)val;
-			int p = 32 - Integer.numberOfLeadingZeros(vi);
-			p = (p + 5) / 6;
-			prec = p;
-			break;
-		} else if (val instanceof Boolean) {
-			type = LOGICAL:
-			vl = (Boolean)val;
-			break;
-		} else if (val instanceof Float) {
-			type = REAL:
-			prec = 7;
-			vr = (Float)val;
-			break;
-		} else if (val instanceof Float[]) {
-			type = COMPLEX:
-			prec = 7;
-			float[] v = (Float[])val;
-			vr = v[0];
-			vx = v[1];
-			break;
+	public static FortranConstant get(FortranParser pars, int val) {
+		String id = String.format(":%d", val);
+		int p = 32 - Integer.numberOfLeadingZeros(val);
+		p = (p + 5) / 6;
+		FortranOperand fo = pars.getSym(id);
+		if (fo == null) {
+			fo = new FortranVariable(INTEGER, p);
+			fo.vi = val;
+			if (p > 3) {
+				fo.name = pars.uniqueName();
+			} else {
+				fo.name = id;
+			}
+			pars.addSym(id, fo);
 		}
+		return fo;
+	}
+	public static FortranConstant get(FortranParser pars, boolean val) {
+		String id = String.format(":%d", val ? 1 : 0);
+		FortranOperand fo = pars.getSym(id);
+		if (fo == null) {
+			fo = new FortranVariable(LOGICAL, 1);
+			fo.vl = val;
+			fo.name = id;
+			pars.addSym(id, fo);
+		}
+		return fo;
+	}
+	public static FortranConstant get(FortranParser pars, float val) {
+		String id = String.format("R%g", val);
+		FortranOperand fo = pars.getSym(id);
+		if (fo == null) {
+			fo = new FortranVariable(REAL, 7);
+			fo.vr = val;
+			fo.name = pars.uniqueName();
+			pars.addSym(id, fo);
+		}
+		return fo;
+	}
+	public static FortranConstant get(FortranParser pars, float[] val) {
+		String id = String.format("R%gI%g", vf, vx);
+		FortranOperand fo = pars.getSym(id);
+		if (fo == null) {
+			fo = new FortranVariable(COMPLEX, 7);
+			fo.vr = val[0];
+			fo.vx = val[1];
+			fo.name = pars.uniqueName();
+			pars.addSym(id, fo);
+		}
+		return fo;
 	}
 
 	public int kind() { return VARIABLE; }
 	public String name() { return name; } // no names for constants...???
 
+	// Will only be called once, no matter how many references
 	public void genDefs(PrintStream out, FortranParser pars) {
-		String val;
-		String id;
 		switch (type) {
 		case INTEGER:
-			value = String.format("#%dB%d", prec, vi);
-			if (prec > 3) {
-				name = pars.uniqueName();
-			} else {
-				name = String.format(":%d", vi);
-			}
-			id = name;
+			pars.emit(String.format("  %-7sDCW   #%dB%d", name, prec, vi));
 			break;
 		default:
 		case LOGICAL:
-			val = String.format("#1B%d", vl ? 1 : 0);
-			name = String.format(":%d", vl ? 1 : 0);
-			id = name;
+			pars.emit(String.format("  %-7sDCW   #1B%d", name, vl ? 1 : 0));
 			break;
 		case REAL:
-			id = String.format("F%g", vf);
-			name = pars.uniqueName();
 			emitReal(pars, name, vf);
 			break;
 		case COMPLEX:
-			id = String.format("F%gI%g", vf, vx);
-			if (
-			name = pars.uniqueName();
 			emitReal(pars, name, vf);
 			emitReal(pars, "", vx);
 			break;
-		}
-		if (pars.addConst(this)) {
-			pars.emit(String.format("  %-7sDCW   %s", name, val));
 		}
 	}
 

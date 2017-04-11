@@ -373,12 +373,23 @@ if (next != null) {
 		return String.format("/U%04d", uniq++);
 	}
 
-	public FortranOperand addConst(String id, FortranConstant konst) {
-		if (!symTab.containsKey(id)) {
-			symTab.put(id, konst);
-			return konst;
-		} else {
+	public FortranOperand getSym(String id) {
+		if (symTab.containsKey(id)) {
 			return symTab.get(id);
+		} else {
+			return null;
+		}
+	}
+
+	public void addSym(String id, FortranOperand op) {
+		symTab.put(id, op);
+	}
+
+	public FortranOperand getVar(String id) {
+		if (symTab.containsKey(id)) {
+			return symTab.get(id);
+		} else {
+			return null;
 		}
 	}
 
