@@ -4,9 +4,6 @@
 public interface FortranParser {
 	int getLine();	// Source file line number for current code
 	void setName(String var);
-	void setVariable(String var, int val);
-	void setConst(int val);
-	void setLocalVar(String scope, String var, int val);
 	void setFuncSubr(String name, String[] args);
 	void setExpr(FortranExpr expr);
 	void setFuncDefs(String fnc, String[] args);
@@ -15,14 +12,15 @@ public interface FortranParser {
 	FortranExpr parseExpr(String expr);
 	FortranItem recurse(String stmt);
 
+	int addrMode();
+
 	String uniqueName();
 	FortranOperand getSym(String id);
 	void addSym(String id, FortranOperand op);
-	boolean addConst(FortranConstant konst);
-	String tempAdr();
-	String tempInt();
-	String tempReal();
-	String tempLog();
-	String tempComplex();
-	int addrMode();
+
+	FortranOperand parseConstant(String id);
+	FortranOperand parseVariable(String id);
+	FortranOperand parseOperand(String id);
+	FortranOperand getIntTemp(int id);
+	FortranOperand getAdrTemp(int id);
 }

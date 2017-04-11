@@ -6,10 +6,10 @@ public class DoStatement extends FortranItem {
 	static final String _PAT = "DO[0-9]+[A-Z][A-Z0-9]*=[A-Z0-9]+,[A-Z0-9]+.*";
 	private String errors = "";
 	private int term;	// loop-termination label
-	private String var;	// loop control variable name
-	private int start;	// loop control starting value
-	private int end;	// loop control ending value
-	private int step = 1;	// loop control step value
+	private FortranOperand var;	// loop control variable name
+	private FortranOperand start;	// loop control starting value
+	private FortranOperand end;	// loop control ending value
+	private FortranOperand step;	// loop control step value
 	private DoStatement next = null;
 
 	public DoStatement(String stmt, FortranParser pars) {
@@ -20,19 +20,21 @@ public class DoStatement extends FortranItem {
 		term = Integer.valueOf(stmt.substring(x, y));
 		x = y;
 		y = stmt.indexOf('=', x);
-		var = stmt.substring(x, y);
+		var = pars.parseVariable(stmt.substring(x, y));
 		x = y + 1;
 		y = stmt.indexOf(',', x);
-		start = Integer.valueOf(stmt.substring(x, y));
+		start = pars.parseOperand(stmt.substring(x, y));
 		x = y + 1;
 		y = stmt.indexOf(',', x);
 		if (y < 0) {
 			y = n;
 		}
-		end = Integer.valueOf(stmt.substring(x, y));
+		end = pars.parseOperand(stmt.substring(x, y));
 		x = y + 1;
 		if (x < n) {
-			step = Integer.valueOf(stmt.substring(x));
+			step = pars.parseOperand(stmt.substring(x));
+		} else {
+			step = pars.parseConstant("1");
 		}
 	}
 
@@ -44,14 +46,11 @@ public class DoStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		pars.setVariable(var, 0); 
-		pars.setConst(start);
-		pars.setConst(end);
-		pars.setConst(step);
+		// variables and constants already gen'ed...
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		pars.emit(String.format("         LCA   :%d,%s", start, var));
+		pars.emit(String.format("         LCA   %s,%s", start.name(), var.name()));
 		pars.emit(String.format("  /%05d RESV  0", src));
 	}
 
@@ -68,8 +67,8 @@ public class DoStatement extends FortranItem {
 	public DoStatement getNext() { return next; }
 
 	public void genLoop(OutputStream out, FortranParser pars) {
-		pars.emit(String.format("         BA    :%d,%s", step, var));
-		pars.emit(String.format("         C     :%d,%s", end, var));
+		pars.emit(String.format("         BA    %s,%s", step.name(), var.name()));
+		pars.emit(String.format("         C     %s,%s", end.name(), var.name()));
 		pars.emit(String.format("         BCT   /%05d,43", src));
 	}
 }

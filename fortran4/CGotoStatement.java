@@ -5,9 +5,11 @@ import java.io.*;
 public class CGotoStatement extends FortranItem {
 	static final String _PAT = "GOTO\\([0-9][0-9,]*\\),[A-Z][A-Z0-9]*";
 	private String errors = "";
-	String var;
+	FortranOperand var;
 	int[] targs;
-	int max;
+	FortranOperand max;
+	FortranOperand one;
+	FortranOperand tmp;
 
 	public CGotoStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
@@ -19,9 +21,11 @@ public class CGotoStatement extends FortranItem {
 			targs[z] = Integer.valueOf(tg[z]);
 		}
 		x = y + 2; // skip l-paren, comma
-		var = stmt.substring(x);
+		var = pars.parseVariable(stmt.substring(x));
 		// index var is 1..max
-		max = targs.length;
+		one = pars.parseConstant("1");
+		max = pars.parseConstant(Integer.toString(targs.length));
+		tmp = pars.getAdrTemp(1);
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
@@ -32,8 +36,6 @@ public class CGotoStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		pars.setConst(1);
-		pars.setConst(max);
 		// This works since index is 1-based
 		pars.emit(String.format("  /T%05dDSA   *", src));
 		for (int t : targs) {
@@ -42,21 +44,17 @@ public class CGotoStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		String tmp = pars.tempAdr();
-		pars.emit(String.format("         C     %s,:%d", var, max));
+		pars.emit(String.format("         C     %s,%s", var.name(), max.name()));
 		pars.emit(String.format("         BCT   /%05d,41", src));
-		pars.emit(String.format("         C     %s,:1", var));
+		pars.emit(String.format("         C     %s,%s", var.name(), one.name()));
 		pars.emit(String.format("         BCT   /%05d,44", src));
-		pars.emit(String.format("         LCA   /T%05d,%s", src, tmp));
-		pars.emit(String.format("         BA    %s,%s", var, tmp));
-		pars.emit(String.format("         BA    %s,%s", var, tmp));
-		pars.emit(String.format("         BA    %s,%s", var, tmp));
-		if (pars.addrMode() > 3) {
-			pars.emit(String.format("         BA    %s,%s", var, tmp));
-			pars.emit(String.format("         B     (%s-3)", tmp));
-		} else {
-			pars.emit(String.format("         B     (%s-2)", tmp));
+		pars.emit(String.format("         LCA   /T%05d,%s", src, tmp.name()));
+		for (int x = 0; x < pars.addrMode(); ++x) {
+			pars.emit(String.format("         BA    %s,%s",
+					var.name(), tmp.name()));
 		}
+		pars.emit(String.format("         B     (%s-%d)",
+					tmp.name(), pars.addrMode() - 1));
 		pars.emit(String.format("  /%05d RESV  0"));
 	}
 

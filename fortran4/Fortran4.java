@@ -20,7 +20,7 @@ public class Fortran4 implements FortranParser {
 	int ezcLine;
 	int adrMode;
 	private Vector<String> errs;
-	private Map<String, String> symTab;
+	private Map<String, FortranOperand> symTab;
 	boolean end;
 	String prog;
 	int endAdr;
@@ -32,11 +32,18 @@ public class Fortran4 implements FortranParser {
 	Stack<DoStatement> doLoops;
 	Map<Integer, DoStatement> doStmts;
 	Vector<FortranItem> program;
+	int[] implicits;
+	int intPrec = 3;
 
 	public Fortran4(File input) {
 		prog = null; // or default to file name?
 		inFile = input;
-		symTab = new HashMap<String, String>();
+		implicits = new int[26];
+		Arrays.fill(implicits, FortranOperand.REAL);
+		for (int x = 'I'; x <= 'N'; ++x) {
+			implicits[x - 'A'] = FortranOperand.INTEGER;
+		}
+		symTab = new HashMap<String, FortranOperand>();
 		doLoops = new Stack<DoStatement>();
 		doStmts = new HashMap<Integer, DoStatement>();
 		program = new Vector<FortranItem>();
@@ -69,8 +76,8 @@ public class Fortran4 implements FortranParser {
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");
-		for (Map.Entry<String, String> entry : symTab.entrySet()) {
-			String l = String.format("  %6s=%7s", entry.getKey(), entry.getValue());
+		for (Map.Entry<String, FortranOperand> entry : symTab.entrySet()) {
+			String l = String.format("  %6s=%7s", entry.getKey(), entry.getValue().name());
 			++x;
 			if (x >= 7) {
 				x = 0;
@@ -385,35 +392,67 @@ if (next != null) {
 		symTab.put(id, op);
 	}
 
-	public FortranOperand getVar(String id) {
-		if (symTab.containsKey(id)) {
-			return symTab.get(id);
-		} else {
+	// integer, real, ".TRUE.", ".FALSE.", "nnHxxxx..."
+	public FortranOperand parseConstant(String id) {
+		FortranOperand fo;
+		// must normalize the value for 'id'...
+		if (id.equals(".TRUE.") || id.equals(".TRUE.")) {
+			boolean v = id.equals(".TRUE.");
+			return FortranConstant.get(this, v);
+		}
+		if (id.matches("[-+]?[0-9]+.*")) {
+			int v = Integer.valueOf(id);
+			return FortranConstant.get(this, v);
+		}
+		if (id.matches("[0-9]+H.*") || id.matches("'.*'")) {
+			// TODO: how to handle char constants...
 			return null;
 		}
+		if (id.matches("([-+.E0-9]*,[-+.E0-9]*)")) {
+			int e = id.length() - 1;
+			int x = id.indexOf(',');
+			double[] v = new double[2];
+			v[0] = Double.valueOf(id.substring(1, x));
+			v[1] = Double.valueOf(id.substring(x + 1, e));
+			return FortranConstant.get(this, v);
+		}
+		// must be REAL
+		double v = Double.valueOf(id);
+		return FortranConstant.get(this, v);
 	}
 
-	// TODO: convert to using FortranOperand...
-	public void setVariable(String var, int val) {
-		if (!symTab.containsKey(var)) {
-			emit(String.format("  %-7sDCW   #%dB%d", var, addrMode(), val));
-			// TODO: generate unique name if needed
-			symTab.put(var, var);
+	public FortranOperand parseVariable(String id) {
+		int type = implicits[id.charAt(0) - 'A'];
+		return parseVariable(id, type);
+	}
+
+	public FortranOperand parseVariable(String id, int type) {
+		if (symTab.containsKey(id)) {
+			return symTab.get(id);
+		}
+		// only INTEGER has variable precision, at this level
+		FortranOperand fo = new FortranVariable(id, type, intPrec);
+		addSym(id, fo);
+		return fo;
+	}
+
+	// TODO: array-ref and function-call?
+	public FortranOperand parseOperand(String id) {
+		// TODO: do all constants start with +/-/digit?
+		char c = id.charAt(0);
+		if (Character.isDigit(c) || c == '+' || c == '-' || c == '.') {
+			return parseConstant(id);
+		} else {
+			return parseVariable(id);
 		}
 	}
 
-	public void setLocalVar(String scope, String var, int val) {
-		String sym = scope + '.' + var;
-		if (!symTab.containsKey(var)) {
-			String u = uniqueName();
-			emit(String.format("  %-7sDCW   #%dB%d", u, addrMode(), val));
-			symTab.put(var, u);
-		}
+	public FortranOperand getIntTemp(int id) {
+		return parseVariable(String.format("$ITMP%d", id), FortranOperand.INTEGER);
 	}
 
-	public void setConst(int konst) {
-		String sym = String.format(":%d", konst);
-		setVariable(sym, konst);
+	public FortranOperand getAdrTemp(int id) {
+		return parseVariable(String.format("$ATMP%d", id), FortranOperand.ADDRESS);
 	}
 
 	public void setFuncDefs(String fnc, String[] args) {
@@ -441,11 +480,6 @@ if (next != null) {
 	}
 
 	public int getLine() { return curLine; }
-	public String tempAdr() { return "$TEMPA"; }
-	public String tempInt() { return "$TEMPI"; }
-	public String tempReal() { return "$TEMPR"; }
-	public String tempLog() { return "$TEMPL"; }
-	public String tempComplex() { return "$TEMPX"; }
 	public int addrMode() { return 3; }
 	public void setName(String nm) {
 		prog = nm;

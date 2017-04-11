@@ -11,7 +11,7 @@ public class FortranVariable extends FortranOperand {
 		this.name = name;
 	}
 
-	public static FortranVariable get(FortranParser pars, String id) {
+	public static FortranOperand get(FortranParser pars, String id) {
 		// TODO: when to generate unique name...
 		FortranOperand fo = pars.getSym(id);
 		if (fo == null) {
@@ -26,23 +26,22 @@ public class FortranVariable extends FortranOperand {
 	public String name() { return name; }
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		String val;
 		switch (type) {
 		case INTEGER:
-			val = String.format("#%dB0", prec);
+			pars.emit(String.format("  %-7sDCW   #%dB0", name, prec));
 			break;
 		case LOGICAL:
-			val = "#1B0";
-			break;
-		case REAL:
-			// TODO: word marks
-			val = String.format("#%dB0", prec + 3);
+			pars.emit(String.format("  %-7sDCW   #1B0", name));
 			break;
 		case COMPLEX:
-			// TODO: word marks
-			val = String.format("#%dB0", 2 * (prec + 3));
+			pars.emit("         DCW   F0");
+			// FALLTHROUGH
+		case REAL:
+			pars.emit(String.format("  %-7sDCW   F0", name));
+			break;
+		case ADDRESS:
+			pars.emit(String.format("  %-7sDSA   0", name));
 			break;
 		}
-		pars.emit(String.format("  %-7sDCW   %s", name, val));
 	}
 }

@@ -5,7 +5,7 @@ import java.io.*;
 public class AsgnStatement extends FortranItem {
 	static final String _PAT = "ASSIGN[0-9]+TO[A-Z][A-Z0-9]*";
 	private String errors = "";
-	String var;
+	FortranOperand var;
 	int targ;
 
 	public AsgnStatement(String stmt, FortranParser pars) {
@@ -14,7 +14,7 @@ public class AsgnStatement extends FortranItem {
 		int y = stmt.indexOf('T', x);
 		targ = Integer.valueOf(stmt.substring(x, y));
 		x = y + 2; // skip TO
-		var = stmt.substring(x);
+		var = pars.parseVariable(stmt.substring(x));
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
@@ -25,11 +25,11 @@ public class AsgnStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		pars.setVariable(var, 0);
+		// Variables already done...
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		pars.emit(String.format("         LCA   $I%05d,%s", targ, var));
+		pars.emit(String.format("         LCA   $I%05d,%s", targ, var.name()));
 	}
 
 	public boolean error() {

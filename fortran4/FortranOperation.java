@@ -21,6 +21,8 @@ public class FortranOperation extends FortranOperand {
 	private FortranOperand left;
 	private FortranOperand right;
 
+	FortranOperand tmp = null;
+
 	public FortranOperation(int op) {
 		super(0, 0);
 		left = null;
@@ -31,6 +33,7 @@ public class FortranOperation extends FortranOperand {
 	public String name() { return null; } // TODO: what is 'name' for us?
 
 	public void genDefs(PrintStream out, FortranParser pars) {
+		// TODO: need to get temp var type and num...
 		// TODO: might reference an external function
 		if (left != null) {
 			left.genDefs(out, pars);
@@ -43,16 +46,26 @@ public class FortranOperation extends FortranOperand {
 	// Only for FortranOperation:
 	public FortranOperand getLeft() { return left; }
 	public FortranOperand getRight() { return right; }
-	public void setLeft(FortranOperand opd) { left = opd; }
-	public void setRight(FortranOperand opd) { right = opd; }
+	public void setLeft(FortranOperand opd) {
+		// TODO: adjust type...
+		left = opd;
+	}
+
+	public void setRight(FortranOperand opd) {
+		// TODO: adjust type...
+		right = opd;
+	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
 		// TODO: how does this work... or is it done externally?
-		if (left != null) {
-			left.genCode(out, pars);
+		if (left instanceof FortranOperation) {
+			((FortranOperation)left).genCode(out, pars);
 		}
-		if (right != null) {
-			right.genCode(out, pars);
+		pars.emit(String.format("         LCA   %s,%s", left.name(), tmp.name()));
+		if (right instanceof FortranOperation) {
+			((FortranOperation)right).genCode(out, pars);
 		}
+		// TODO: specialize operation...
+		pars.emit(String.format("         BA    %s,%s", right.name(), tmp.name()));
 	}
 }

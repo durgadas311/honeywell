@@ -5,14 +5,14 @@ import java.io.*;
 public class AGotoStatement extends FortranItem {
 	static final String _PAT = "GOTO[A-Z][A-Z0-9]*,\\([0-9][0-9,]*\\)";
 	private String errors = "";
-	String var;
+	FortranOperand var;
 	int[] targs;
 
 	public AGotoStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
 		int x = 4; // skip GOTO
 		int y = stmt.indexOf(',', x);
-		var = stmt.substring(x, y);
+		var = pars.parseVariable(stmt.substring(x, y));
 		x = y + 2; // skip l-paren, too
 		y = stmt.indexOf(')', x); // should be end of string...
 		String[] tg = stmt.substring(x, y).split(",");
@@ -30,7 +30,6 @@ public class AGotoStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		pars.setVariable(var, 0);
 		for (int t : targs) {
 			pars.emit(String.format("  $I%05dDSA   $%05d", t, t));
 		}
@@ -38,9 +37,9 @@ public class AGotoStatement extends FortranItem {
 
 	public void genCode(PrintStream out, FortranParser pars) {
 		if (pars.addrMode() > 3) {
-			pars.emit(String.format("         B     (%s-3)", var));
+			pars.emit(String.format("         B     (%s-3)", var.name()));
 		} else {
-			pars.emit(String.format("         B     (%s-2)", var));
+			pars.emit(String.format("         B     (%s-2)", var.name()));
 		}
 	}
 

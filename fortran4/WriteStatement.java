@@ -36,7 +36,6 @@ public class WriteStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		String tmp = pars.tempAdr();
 		pars.emit("         B     $ACBOIO");
 		if (fmt > 0) {
 			pars.emit(String.format("         DSA   $%05d", fmt));

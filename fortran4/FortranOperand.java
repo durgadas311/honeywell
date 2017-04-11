@@ -3,11 +3,14 @@
 import java.io.*;
 
 public abstract class FortranOperand {
+	// types...
 	static final int INTEGER = 1;
 	static final int REAL = 2;
 	static final int LOGICAL = 3;
 	static final int COMPLEX = 4;
+	static final int ADDRESS = 5; // not a FORTRAN type, per se.
 
+	// kinds...
 	static final int CONSTANT = 1;
 	static final int VARIABLE = 2;
 	static final int FUNCTION = 3;
