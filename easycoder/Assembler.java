@@ -533,6 +533,32 @@ public class Assembler {
 		}
 	}
 
+	// This is a clone of I_FMA.nativeToHw() - KEEP IN SYNC!
+	private void nativeToHw(byte[] bb, double dd, boolean denorm, int ptr) {
+		long d = Double.doubleToLongBits(dd);
+		if ((d & 0x7fffffffffffffffL) == 0) {
+			d = 0; // TODO: does HW allow -0 ?
+		} else {
+			byte ms = (byte)((d >> 63) & 1);
+			int x = (int)((d >> 52) & 0x7ff);
+			x -= 1023;
+			long m = (d >> 18) & 0x03ffffffffL;
+			if (!denorm) {
+				// implied "1"...
+				m |= 0x0400000000L;
+			}
+			if (ms != 0) {
+				m = -m;
+			}
+			d = (m << 12) | (x & 0xfff);
+		}
+		for (int ix = 0; ix < 8; ++ix) {
+			byte b = (byte)(d & 077);
+			bb[ptr--] = b;
+			d >>= 6;
+		}
+	}
+
 	private byte parseVar(String opd) {
 		byte v = 0;
 		try {
@@ -603,14 +629,32 @@ public class Assembler {
 				l >>= 6;
 			}
 			return bb;
-		} else if (c == '+' || c == '-') {
-			int e = opd.length() - 1;
-			byte[] bb = new byte[e];
-			for (int y = 0; y < e; ++y) {
-				// assume all are decimal digits...
-				bb[y] = (byte)(opd.charAt(y + 1) & 017);
+		} else if (c == 'F') {
+			double dd = 0.0;
+			try {
+				dd = Double.valueOf(opd.substring(1));
+			} catch (Exception ee) {
+				errsAdd("Invalid floating point number " + opd);
 			}
-			bb[e - 1] |= (byte)(c == '-' ? 040 : 020);
+			byte[] bb = new byte[8];
+			nativeToHw(bb, dd, false, 7);
+			return bb;
+		} else if (Character.isDigit(c) || c == '+' || c == '-') {
+			int s = 0;
+			int e = opd.length();
+			if (!Character.isDigit(c)) {
+				++s;
+			}
+			byte[] bb = new byte[e - s];
+			for (int y = s; y < e; ++y) {
+				// assume all are decimal digits...
+				bb[y - s] = (byte)(opd.charAt(y) & 017);
+			}
+			if (c == '-') {
+				bb[e - s - 1] |= (byte)040;
+			} else if (c == '+') {
+				bb[e - s - 1] |= (byte)020;
+			}
 			return bb;
 		} else {
 			errsAdd("Unsupported constant " + opd);
