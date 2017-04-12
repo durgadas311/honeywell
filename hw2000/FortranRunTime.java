@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class FortranRunTime implements HW2000Trap {
+	static final int base = 1340;
+	static final int numOps = 5;
+
 	// HW codes for format specifiers that we might support
 	static final int A = 021;
 	static final int D = 024;
@@ -24,7 +27,7 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	public boolean doTrap(HW2000 sys) {
-		if (sys.SR < 1340 || sys.SR > 1342) {
+		if (sys.SR < base || sys.SR - base >= numOps) {
 			return false;
 		}
 		int op = sys.rawReadMem(sys.SR);
@@ -33,10 +36,16 @@ public class FortranRunTime implements HW2000Trap {
 			exit(sys);
 			break;
 		case 1:
-			acboio(sys);
+			acboio(sys);	// start/end I/O
 			break;
 		case 2:
-			acboio_x(sys);
+			acboio_x(sys); // each parameter in I/O list...
+			break;
+		case 3:
+			acbfph(sys);	// floating point assist, h/w
+			break;
+		case 4:
+			acbfxp(sys);	// fixed-point assist
 			break;
 		default:
 			// our best guess...
@@ -47,8 +56,8 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void exit(HW2000 sys) {
-		System.err.format("exit %07o\n", sys.SR);
-		// remove traps...
+		// System.err.format("exit %07o\n", sys.SR);
+		// TODO: remove traps...
 		sys.SR = sys.BAR;
 	}
 
@@ -76,6 +85,53 @@ public class FortranRunTime implements HW2000Trap {
 		doParam(sys, var);
 	}
 
+	private void acbfph(HW2000 sys) {
+		int a = getAdr(sys);
+		int b = getAdr(sys);
+		int fnc = sys.rawReadMem(sys.SR++) & 077;
+		double l = getReal(sys, a);
+		double r = getReal(sys, b);
+		switch (fnc) {
+		case 016:	// add
+			r = l + r;
+			break;
+		case 017:	// subtract
+			r = l - r;
+			break;
+		case 020:	// multiply
+			r = l * r;
+			break;
+		case 021:	// divide
+			r = l / r;
+			break;
+		case 022:	// pwer
+			r = Math.pow(l, r);
+			break;
+		}
+		putReal(sys, b, r);
+	}
+
+	private void acbfxp(HW2000 sys) {
+		int a = getAdr(sys);
+		int b = getAdr(sys);
+		int fnc = sys.rawReadMem(sys.SR++) & 077;
+		int l = getInt(sys, a);
+		int r = getInt(sys, b);
+		switch (fnc) {
+		case 020:	// multiply
+			r = l * r;
+			break;
+		case 021:	// divide
+			r = l / r;
+			break;
+		case 022:	// pwer
+			r = pow(l, r);
+			break;
+		}
+		putInt(sys, b, r);
+	}
+
+
 	// Doesn't check IM...
 	private int getAdr(HW2000 sys) {
 		int a = 0;
@@ -99,6 +155,44 @@ public class FortranRunTime implements HW2000Trap {
 			i = (i << 6) | (sys.rawReadMem(b++) & 077);
 		}
 		return i;
+	}
+	private void putInt(HW2000 sys, int a, int v) {
+		int b;
+		// TODO: re-use routines from instructions?
+		for (b = a; b >= 0; --b) {
+			sys.rawWriteChar(b, (byte)(v & 077));
+			v >>= 6;
+			if ((sys.rawReadMem(b) & 0100) != 0) {
+				break;
+			}
+		}
+	}
+	private double getReal(HW2000 sys, int a) {
+		return I_FMA.hwToNative(sys, a);
+	}
+	private void putReal(HW2000 sys, int a, double v) {
+		I_FMA.nativeToHw(sys, v, false, a);
+	}
+
+	private int pow(int b, int e) {
+		if (e < 0) {
+			return 0;
+		}
+		if (e == 0) {
+			return 1;
+		}
+		if (e == 1) {
+			return b;
+		}
+		int r = 1;
+		while (e > 0) {
+			if ((e & 1) != 0) {
+				r *= b;
+			}
+			e >>= 1;
+			b *= b;
+		}
+		return r;
 	}
 
 	private void getFormat(HW2000 sys, int a) {
