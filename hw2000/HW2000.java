@@ -586,7 +586,12 @@ public class HW2000 implements CoreMemory
 	}
 
 	private void traceInstr() {
-		String op = op_exec.getClass().getName();
+		String op;
+		if (op_exec == null) {
+			op = "null";
+		} else {
+			op = op_exec.getClass().getName();
+		}
 		String s = String.format("%07o: %s [%07o %07o] ", oSR, op, AAR, BAR);
 		for (int x = 0; x < op_xtra_num; ++x) {
 			s += String.format(" %02o", op_xtra[x]);

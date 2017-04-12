@@ -86,6 +86,7 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void acbfph(HW2000 sys) {
+		sys.SR = sys.BAR;
 		int a = getAdr(sys);
 		int b = getAdr(sys);
 		int fnc = sys.rawReadMem(sys.SR++) & 077;
@@ -112,6 +113,7 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void acbfxp(HW2000 sys) {
+		sys.SR = sys.BAR;
 		int a = getAdr(sys);
 		int b = getAdr(sys);
 		int fnc = sys.rawReadMem(sys.SR++) & 077;
@@ -209,10 +211,10 @@ public class FortranRunTime implements HW2000Trap {
 		}
 		idx = 0;
 		buf = "";
-		nextParam();
 	}
 
 	private void doParam(HW2000 sys, int a) {
+		nextParam();
 		// For now, only 'I'...
 		int c = fmt.charAt(idx++);
 		if (c != 'I') {
