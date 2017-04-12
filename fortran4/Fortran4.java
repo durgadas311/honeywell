@@ -152,6 +152,8 @@ public class Fortran4 implements FortranParser {
 		emit("  $EXIT  DC    #1B0");
 		emit("  $ACBOIODC    #1B1");
 		emit("         DC    #1B2");
+		emit("  $ACBFPHDC    #1B3");
+		emit("  $ACBFXPDC    #1B4");
 		//
 		setDefs();
 		emit("  $START B     0-1"); // special trap "load runtime"
@@ -279,16 +281,12 @@ if (next != null) {
 			doStmts.put(du.getTerm(), du);
 		}
 		if (itm == null) { itm = StmtFunction.parse(stmt, this); }
-		if (itm == null) { itm = GotoStatement.parse(stmt, this); }
-		if (itm == null) { itm = AGotoStatement.parse(stmt, this); }
-		if (itm == null) { itm = CGotoStatement.parse(stmt, this); }
-		if (itm == null) { itm = AsgnStatement.parse(stmt, this); }
 		if (itm == null) { itm = IfStatement.parse(stmt, this); }
-		if (itm == null) { itm = WriteStatement.parse(stmt, this); }
 		if (itm == null) { itm = EndStatement.parse(stmt, this); }
-		if (itm == null) { itm = ContStatement.parse(stmt, this); }
 		if (itm == null) { itm = FormatStatement.parse(stmt, this); }
 		if (itm == null) { itm = ProgramStatement.parse(stmt, this); }
+		// The above statements CANNOT be target of IF. parseAction() CAN.
+		if (itm == null) { itm = parseAction(stmt); }
 		if (itm == null) {
 			System.err.format("Unknown: %s\n", stmt);
 			return -1;
@@ -297,6 +295,18 @@ if (next != null) {
 		itm.src = curLine;
 		program.add(itm);
 		return (itm == null ? -1 : 0);
+	}
+
+	private FortranItem parseAction(String stmt) {
+		FortranItem itm = null;
+		if (itm == null) { itm = WriteStatement.parse(stmt, this); }
+		if (itm == null) { itm = GotoStatement.parse(stmt, this); }
+		if (itm == null) { itm = AGotoStatement.parse(stmt, this); }
+		if (itm == null) { itm = CGotoStatement.parse(stmt, this); }
+		if (itm == null) { itm = AsgnStatement.parse(stmt, this); }
+		if (itm == null) { itm = ContStatement.parse(stmt, this); }
+		if (itm == null) { itm = LetStatement.parse(stmt, this); }
+		return itm;
 	}
 
 	private String squeeze(String in, int e) {
@@ -449,6 +459,18 @@ if (next != null) {
 		return parseVariable(String.format("$ITMP%d", id), FortranOperand.INTEGER);
 	}
 
+	public FortranOperand getLogTemp(int id) {
+		return parseVariable(String.format("$LTMP%d", id), FortranOperand.LOGICAL);
+	}
+
+	public FortranOperand getRealTemp(int id) {
+		return parseVariable(String.format("$RTMP%d", id), FortranOperand.REAL);
+	}
+
+	public FortranOperand getCplxTemp(int id) {
+		return parseVariable(String.format("$XTMP%d", id), FortranOperand.COMPLEX);
+	}
+
 	public FortranOperand getAdrTemp(int id) {
 		return parseVariable(String.format("$ATMP%d", id), FortranOperand.ADDRESS);
 	}
@@ -463,6 +485,7 @@ if (next != null) {
 	}
 
 	public void setExpr(FortranExpr expr) {
+		expr.genCode(out, this);
 	}
 
 	public void emit(String ezc) {
@@ -470,11 +493,11 @@ if (next != null) {
 	}
 
 	public FortranExpr parseExpr(String expr) {
-		return new FortranExpr(expr);
+		return new FortranExpr(expr, this);
 	}
 
 	public FortranItem recurse(String stmt) {
-		return null;
+		return parseAction(stmt);
 	}
 
 	public int getLine() { return curLine; }

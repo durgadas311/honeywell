@@ -44,7 +44,7 @@ public class FortranConstant extends FortranOperand {
 		return fc;
 	}
 	public static FortranOperand get(FortranParser pars, double val) {
-		String id = String.format("R%g", val);
+		String id = String.format(":R%g", val);
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
 			return fo;
@@ -56,7 +56,7 @@ public class FortranConstant extends FortranOperand {
 		return fc;
 	}
 	public static FortranOperand get(FortranParser pars, double[] val) {
-		String id = String.format("R%gI%g", val[0], val[1]);
+		String id = String.format(":R%gI%g", val[0], val[1]);
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
 			return fo;

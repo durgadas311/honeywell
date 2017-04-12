@@ -22,5 +22,8 @@ public interface FortranParser {
 	FortranOperand parseVariable(String id);
 	FortranOperand parseOperand(String id);
 	FortranOperand getIntTemp(int id);
+	FortranOperand getLogTemp(int id);
+	FortranOperand getRealTemp(int id);
+	FortranOperand getCplxTemp(int id);
 	FortranOperand getAdrTemp(int id);
 }
