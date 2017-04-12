@@ -153,14 +153,9 @@ public class Fortran4 implements FortranParser {
 		emit("  $ACBOIODC    #1B1");
 		emit("         DC    #1B2");
 		//
-		emit("  $TEMPI DCW   #4B0"); // TODO: precision
-		emit("  $TEMPR DCW   #10B0"); // TODO: precision
-		emit("  $TEMPL DCW   #1B0");
-		emit("  $TEMPA DSA   0");
-		emit("  $TEMPX DCW   #20B0"); // TODO: precision
 		setDefs();
-		emit("  $START B     0-1"); // TODO: special trap
-		emit(" R       DCW   @FORTRAN@");
+		emit("  $START B     0-1"); // special trap "load runtime"
+		emit(" R       DCW   @FORTRAN@"); // runtime to "load"
 		setCode();
 		emit("         B     $EXIT");
 		emit("         H     *");
@@ -359,6 +354,9 @@ if (next != null) {
 	}
 
 	private void setDefs() {
+		for (FortranOperand fo : symTab.values()) {
+			fo.genDefs(out, this);
+		}
 		for (FortranItem itm : program) {
 			itm.genDefs(out, this);
 		}
