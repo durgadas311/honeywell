@@ -18,7 +18,7 @@ public class Fortran4 implements FortranParser {
 	int lineNo;
 	int curLine;
 	int ezcLine;
-	int adrMode;
+	int adrMode = 3;
 	private Vector<String> errs;
 	private Map<String, FortranOperand> symTab;
 	boolean end;
@@ -146,7 +146,7 @@ public class Fortran4 implements FortranParser {
 		ezcLine = 1;
 		// Can errors be generated during this phase?
 		emit(String.format("         PROG  %s", prog));
-		emit("         ADMODE3");
+		emit(String.format("         ADMODE%d", adrMode));
 		emit("         ORG   1340");
 		// TODO: get these from FortranRunTime?
 		emit("  $EXIT  DC    #1B0");
@@ -156,7 +156,8 @@ public class Fortran4 implements FortranParser {
 		emit("  $ACBFXPDC    #1B4");
 		//
 		setDefs();
-		emit("  $START B     0-1"); // special trap "load runtime"
+		emit(String.format("  $START CAM   %02o", adrMode == 4 ? 060 : 000));
+		emit("         B     0-1"); // special trap "load runtime"
 		emit(" R       DCW   @FORTRAN@"); // runtime to "load"
 		setCode();
 		emit("         B     $EXIT");
@@ -176,6 +177,37 @@ public class Fortran4 implements FortranParser {
 	}
 
 	private void processDATA(String ln) {
+	}
+
+	private void processJOBID(String ln) {
+		String[] args = ln.split("[ ,]+");
+		for (int x = 1; x < args.length; ++x) {
+			String s = args[x];
+			if (s.startsWith("IO")) {
+				// I/O devices
+			} else if (s.startsWith("*")) {
+			} else if (s.startsWith("M")) {
+				// memory limits - affects address mode?
+				int m = Integer.valueOf(s.substring(1));
+				if (m >= 32768) {
+					adrMode = 4;
+				}
+			} else if (s.startsWith("F")) {
+				// all REAL same size...
+			} else if (s.startsWith("I")) {
+				int p = Integer.valueOf(s.substring(1));
+				if (p >=3 && p <= 12) {
+					intPrec = p;
+				}
+			} else if (s.equals("SAVE")) {
+			} else if (s.equals("PUNCH")) {
+			} else if (s.equals("NOLIST")) {
+			} else if (s.equals("LIST")) {
+			} else if (s.equals("TAPEIP")) {
+			} else {
+				errsAdd("Invalid *JOBID option " +s);
+			}
+		}
 	}
 
 	private String replaceChars(String in, String srch, String repl) {
@@ -253,8 +285,13 @@ if (next != null) {
 			}
 			return 0;
 		}
+		// TODO: some of these must be before any FORTRAN cards...
 		if (line.startsWith(" TITLE")) {
 			prog = line.substring(6).trim();
+			return 0;
+		}
+		if (line.startsWith("*JOBID")) {
+			processJOBID(line);
 			return 0;
 		}
 		if (line.startsWith("DATA")) {
@@ -390,6 +427,11 @@ if (next != null) {
 		return String.format("/U%04d", uniq++);
 	}
 
+	public void errsAdd(String err) {
+		// TODO: intersperse errors in listing...
+		errs.add(err + " at line " + lineNo);
+	}
+
 	public FortranOperand getSym(String id) {
 		if (symTab.containsKey(id)) {
 			return symTab.get(id);
@@ -507,7 +549,7 @@ if (next != null) {
 	}
 
 	public int getLine() { return curLine; }
-	public int addrMode() { return 3; }
+	public int addrMode() { return adrMode; }
 	public void setName(String nm) {
 		prog = nm;
 	}

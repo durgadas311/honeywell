@@ -17,6 +17,7 @@ public interface FortranParser {
 	String uniqueName();
 	FortranOperand getSym(String id);
 	void addSym(String id, FortranOperand op);
+	void errsAdd(String err);
 
 	void setImplicit(char ltr, int type);
 	FortranOperand parseConstant(String id);

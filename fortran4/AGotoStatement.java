@@ -36,11 +36,8 @@ public class AGotoStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		if (pars.addrMode() > 3) {
-			pars.emit(String.format("         B     (%s-3)", var.name()));
-		} else {
-			pars.emit(String.format("         B     (%s-2)", var.name()));
-		}
+		pars.emit(String.format("         B     (%s-%d)",
+				var.name(), pars.addrMode() - 1));
 	}
 
 	public boolean error() {
