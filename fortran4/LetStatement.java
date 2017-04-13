@@ -18,6 +18,9 @@ public class LetStatement extends FortranItem {
 		var = pars.parseVariable(stmt.substring(x, y));
 		x = y + 1;
 		expr = pars.parseExpr(stmt.substring(x));
+		if (expr != null && expr.type() != var.type()) {
+			pars.errsAdd("Assigment of mis-matched types");
+		}
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

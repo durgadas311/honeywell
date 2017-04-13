@@ -13,16 +13,17 @@ public class EndStatement extends FortranItem {
 		if (!pot.matches(_PAT)) {
 			return null;
 		}
-		return new EndStatement(pot, pars);
+		if (pars.inSubroutine()) {
+			return new ReturnStatement("RETURN", pars);
+		} else {
+			return new StopStatement("STOP", pars, 4);
+		}
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		// Anything for us?
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		// let compiler handle this?
-		//pars.emit("         H");
 	}
 
 	public boolean error() {

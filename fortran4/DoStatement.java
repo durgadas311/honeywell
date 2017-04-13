@@ -33,8 +33,18 @@ public class DoStatement extends FortranItem {
 		x = y + 1;
 		if (x < n) {
 			step = pars.parseOperand(stmt.substring(x));
+			if (step == null) {
+				// log additional error?
+				return;
+			}
 		} else {
 			step = pars.parseConstant("1");
+		}
+		if (var.type() != FortranOperand.INTEGER ||
+				start.type() != FortranOperand.INTEGER ||
+				end.type() != FortranOperand.INTEGER ||
+				step.type() != FortranOperand.INTEGER) {
+			pars.errsAdd("DO parameter is not INTEGER");
 		}
 	}
 

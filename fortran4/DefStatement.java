@@ -33,7 +33,13 @@ public class DefStatement extends FortranItem {
 			if (y < 0) {
 				y = n;
 			}
-			pars.parseVariable(stmt.substring(x, y), type);
+			String v = stmt.substring(x, y);
+			if (v.matches("[A-Z][A-Z0-9]*")) {
+				pars.parseVariable(stmt.substring(x, y), type);
+			} else {
+				pars.errsAdd(String.format(
+					"Illegal variable name \"%s\"", v));
+			}
 			x = y + 1;
 		}
 	}

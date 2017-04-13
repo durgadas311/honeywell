@@ -35,8 +35,9 @@ public class ImplStatement extends FortranItem {
 			}
 			if (y - x == 1) {
 				pars.setImplicit(stmt.charAt(x), type);
-			} else {
-				// must be "X-Y"?
+			} else if (y - x == 3 && Character.isLetter(stmt.charAt(x)) &&
+					Character.isLetter(stmt.charAt(y - 1)) &&
+					stmt.charAt(x + 1) == '-') {
 				char a = stmt.charAt(x);
 				char b = stmt.charAt(y - 1);
 				if (a > b) {
@@ -48,6 +49,10 @@ public class ImplStatement extends FortranItem {
 					pars.setImplicit(a, type);
 					++a;
 				}
+			} else {
+				pars.errsAdd(String.format(
+					"Malformed IMPLICIT expression \"%s\"",
+					stmt.substring(x, y)));
 			}
 			x = y + 1;
 		}

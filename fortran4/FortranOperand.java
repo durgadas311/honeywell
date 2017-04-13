@@ -4,6 +4,7 @@ import java.io.*;
 
 public abstract class FortranOperand {
 	// types...
+	static final int VOID = 0;
 	static final int INTEGER = 1;
 	static final int REAL = 2;
 	static final int LOGICAL = 3;
@@ -15,6 +16,7 @@ public abstract class FortranOperand {
 	static final int VARIABLE = 2;
 	static final int FUNCTION = 3;
 	static final int OPERATOR = 4;
+	static final int PARAMETER = 5;
 
 	protected int type = 0;
 	protected int prec = 0; // "0" means not yet known

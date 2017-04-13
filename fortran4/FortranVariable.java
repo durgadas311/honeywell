@@ -3,7 +3,7 @@
 import java.io.*;
 
 public class FortranVariable extends FortranOperand {
-	private String name;
+	protected String name;
 
 	public FortranVariable(String name, int type, int prec) {
 		super(type, prec);
@@ -11,15 +11,9 @@ public class FortranVariable extends FortranOperand {
 		this.name = name;
 	}
 
-	public static FortranOperand get(FortranParser pars, String id) {
-		// TODO: when to generate unique name...
-		FortranOperand fo = pars.getSym(id);
-		if (fo == null) {
-			// TODO: guess at type...
-			fo = new FortranVariable(id, INTEGER, 3);
-			pars.addSym(id, fo);
-		}
-		return fo;
+	public FortranVariable(String name, int type) {
+		super(type, 0);
+		this.name = name;
 	}
 
 	public int kind() { return VARIABLE; }

@@ -13,6 +13,10 @@ public class AGotoStatement extends FortranItem {
 		int x = 4; // skip GOTO
 		int y = stmt.indexOf(',', x);
 		var = pars.parseVariable(stmt.substring(x, y));
+		// TODO: force variable to be ADDRESS?
+		if (var.type() != FortranOperand.INTEGER) {
+			pars.errsAdd("Assigned GOTO variable not INTEGER");
+		}
 		x = y + 2; // skip l-paren, too
 		y = stmt.indexOf(')', x); // should be end of string...
 		String[] tg = stmt.substring(x, y).split(",");
@@ -30,6 +34,7 @@ public class AGotoStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
+		// TODO: validate existence of statement labels...
 		for (int t : targs) {
 			pars.emit(String.format("  $I%05dDSA   $%05d", t, t));
 		}

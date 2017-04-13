@@ -21,6 +21,10 @@ public class Fortran4 implements FortranParser {
 	int adrMode = 3;
 	private Vector<String> errs;
 	private Map<String, FortranOperand> symTab;
+	private Map<String, FortranOperand> allSyms;
+	boolean inProg;
+	boolean inSubr; // SUBR or FUNC, also inProg...
+	FortranOperand curSubr;
 	boolean end;
 	String prog;
 	int endAdr;
@@ -44,6 +48,7 @@ public class Fortran4 implements FortranParser {
 			implicits[x - 'A'] = FortranOperand.INTEGER;
 		}
 		symTab = new HashMap<String, FortranOperand>();
+		allSyms = new HashMap<String, FortranOperand>();
 		doLoops = new Stack<DoStatement>();
 		doStmts = new HashMap<Integer, DoStatement>();
 		program = new Vector<FortranItem>();
@@ -76,7 +81,7 @@ public class Fortran4 implements FortranParser {
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");
-		for (Map.Entry<String, FortranOperand> entry : symTab.entrySet()) {
+		for (Map.Entry<String, FortranOperand> entry : allSyms.entrySet()) {
 			String l = String.format("  %6s=%7s", entry.getKey(), entry.getValue().name());
 			++x;
 			if (x >= 7) {
@@ -118,24 +123,35 @@ public class Fortran4 implements FortranParser {
 		int ret = 0;
 		lineNo = 0;
 		end = false;
+		inProg = false;
 		while (!end && (ret = scanOne()) >= 0) {
 		}
-		try { in.close(); } catch (Exception ee) {}
 		if (errs.size() > 0) {
 			ret = -1;
 		}
+		if (listing) {
+			for (String l : errs) {
+				listOut("*** " + l + "\n");
+			}
+			listOut(String.format("END OF COMPILE%s\n",
+					ret < 0 ? " (ERRORS)" : ""));
+		}
+		try { in.close(); } catch (Exception ee) {}
 		return ret;
 	}
 
 	public int generate(File output, File list) {
+		lst = null;
+		if (output == null) {
+			errsAdd("No output file");
+			return -1;
+		}
 		try {
-			if (output != null) {
-				out = new PrintStream(output);
-			}
+			out = new PrintStream(output);
 			if (list != null) {
 				// TODO: append? or not used at all?
-				lst = new PrintStream(list);
-				listing = true;
+				//lst = new PrintStream(list);
+				//listing = true;
 			}
 		} catch (Exception ee) {
 			// 'in' should never fail - already validated in ctor.
@@ -160,15 +176,15 @@ public class Fortran4 implements FortranParser {
 		emit("         B     0-1"); // special trap "load runtime"
 		emit(" R       DCW   @FORTRAN@"); // runtime to "load"
 		setCode();
-		emit("         B     $EXIT");
-		emit("         H     *");
+		// Termination handled by END statements...
+		// END => STOP or RETURN...
 		emit("         NOP");
 		emit("         END   $START");
 		if (errs.size() > 0) {
 			ret = -1;
 		}
 		if (listing) {
-			listSymTab();
+			// listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
 		try { if (lst != null) lst.close(); } catch (Exception ee) {}
@@ -191,6 +207,9 @@ public class Fortran4 implements FortranParser {
 				int m = Integer.valueOf(s.substring(1));
 				if (m >= 32768) {
 					adrMode = 4;
+					if (intPrec < adrMode) {
+						intPrec = adrMode;
+					}
 				}
 			} else if (s.startsWith("F")) {
 				// all REAL same size...
@@ -198,6 +217,9 @@ public class Fortran4 implements FortranParser {
 				int p = Integer.valueOf(s.substring(1));
 				if (p >=3 && p <= 12) {
 					intPrec = p;
+				}
+				if (intPrec < adrMode) {
+					intPrec = adrMode;
 				}
 			} else if (s.equals("SAVE")) {
 			} else if (s.equals("PUNCH")) {
@@ -236,67 +258,72 @@ public class Fortran4 implements FortranParser {
 		}
 	}
 
+	private void listSrc(String src) {
+		listOut(String.format("%5d %s\n", lineNo, src));
+	}
+
 	private int scanOne() {
 		// TODO: tolerate "illegal" TAB characters
 		// TODO: track source line number with statements
 		String line = next;
 		curLine = lineNo;
-while (true) {
-		try {
-			next = in.readLine();
-			if (next == null && line == null) {
-				end = true;
-				return 0;
+		while (true) {
+			try {
+				next = in.readLine();
+				if (next == null && line == null) {
+					end = true;
+					return 0;
+				}
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				return -1;
 			}
-		} catch (Exception ee) {
-			ee.printStackTrace();
-			return -1;
+			if (next != null) {
+				++lineNo;
+				if (listing) {
+					listSrc(next);
+				}
+				int e = next.length();
+				if (e > 72) {
+					e = 72;
+				}
+				if (line == null) {
+					curLine = lineNo;
+					line = next.substring(0, e);;
+					continue;
+				}
+				if (inProg && next.length() >= 6 && next.charAt(5) != ' '
+						&& next.charAt(5) != '0') {
+					line += next.substring(6, e);
+					continue;
+				}
+			}
+			// We have a statement...
+			break;
 		}
-if (next != null) {
-		++lineNo;
-		int e = next.length();
-		if (e > 72) {
-			e = 72;
-		}
-		// TODO: echo 'next' to listing?
-		if (line == null) {
-			curLine = lineNo;
-			line = next.substring(0, e);;
-			continue;
-		}
-		if (next.length() >= 6 && next.charAt(5) != ' ' && next.charAt(5) != '0') {
-			line += next.substring(6, e);
-			continue;
-		}
-}
-		// We have a statement...
-		break;
-}
 		// first do convenience translations of special chars
 		line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
 		if (line.length() == 0) {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
-		if (line.charAt(0) == 'C') {
-			if (listing) {
-				String l = line + "\n";
-				listOut(l);
-			}
+		if (inProg && line.charAt(0) == 'C') {
 			return 0;
 		}
 		// TODO: some of these must be before any FORTRAN cards...
-		if (line.startsWith(" TITLE")) {
-			prog = line.substring(6).trim();
-			return 0;
-		}
-		if (line.startsWith("*JOBID")) {
-			processJOBID(line);
-			return 0;
-		}
-		if (line.startsWith("DATA")) {
-			processDATA(line);
-			return 0;
+		if (!inProg) {
+			if (line.startsWith(" TITLE")) {
+				prog = line.substring(6).trim();
+				return 0;
+			}
+			if (!inProg && line.startsWith("*JOBID")) {
+				processJOBID(line);
+				return 0;
+			}
+			if (line.startsWith("DATA")) {
+				processDATA(line);
+				return 0;
+			}
 		}
 		// Must be a FORTRAN non-comment card...
 		if (line.length() < 7) {
@@ -312,6 +339,7 @@ if (next != null) {
 		}
 		FortranItem itm = null;
 		DoStatement du;
+		// TODO: enforce inProg for these...
 		if ((du = (DoStatement)DoStatement.parse(stmt, this)) != null) {
 			itm = du;
 			doLoops.push(du);
@@ -319,16 +347,38 @@ if (next != null) {
 		}
 		if (itm == null) { itm = StmtFunction.parse(stmt, this); }
 		if (itm == null) { itm = IfStatement.parse(stmt, this); }
-		if (itm == null) { itm = EndStatement.parse(stmt, this); }
 		if (itm == null) { itm = FormatStatement.parse(stmt, this); }
-		if (itm == null) { itm = ProgramStatement.parse(stmt, this); }
+		if (itm == null) {
+			itm = ProgramStatement.parse(stmt, this);
+			// TODO: error-check state?
+			if (itm != null) inProg = true; // same for SUBR/FUNC
+		}
+		if (itm == null) {
+			SubrStatement sub = SubrStatement.parse(stmt, this);
+			// TODO: error-check state?
+			if (sub != null) {
+				itm = sub;
+				inProg = true;
+				inSubr = true;
+				curSubr = sub.getSubr();
+			}
+		}
+		if (itm == null) {
+			itm = EndStatement.parse(stmt, this);
+			if (itm != null) {
+				inProg = false;
+				inSubr = false;
+				allSyms.putAll(symTab);
+				symTab.clear();
+			}
+		}
 		if (itm == null) { itm = DefStatement.parse(stmt, this); }
 		if (itm == null) { itm = ImplStatement.parse(stmt, this); }
-		// The above statements CANNOT be target of IF. parseAction() CAN.
+		// The above statements CANNOT be target of IF, parseAction() CAN.
 		if (itm == null) { itm = parseAction(stmt); }
 		if (itm == null) {
-			System.err.format("Unknown: %s\n", stmt);
-			return -1;
+			errsAdd(String.format("Unrecognized statement \"%s\"", line));
+			return -1; // or continue?
 		}
 		itm.label = labl;
 		itm.src = curLine;
@@ -345,6 +395,9 @@ if (next != null) {
 		if (itm == null) { itm = AsgnStatement.parse(stmt, this); }
 		if (itm == null) { itm = ContStatement.parse(stmt, this); }
 		if (itm == null) { itm = LetStatement.parse(stmt, this); }
+		if (itm == null) { itm = StopStatement.parse(stmt, this); }
+		if (itm == null) { itm = CallStatement.parse(stmt, this); }
+		if (itm == null) { itm = ReturnStatement.parse(stmt, this); }
 		return itm;
 	}
 
@@ -403,7 +456,7 @@ if (next != null) {
 	}
 
 	private void setDefs() {
-		for (FortranOperand fo : symTab.values()) {
+		for (FortranOperand fo : allSyms.values()) {
 			fo.genDefs(out, this);
 		}
 		for (FortranItem itm : program) {
@@ -413,7 +466,6 @@ if (next != null) {
 
 	private void setCode() {
 		for (FortranItem itm : program) {
-			// TODO: need to emit label defs...
 			if (itm.label > 0) {
 				emit(String.format("  $%05d RESV  0", itm.label));
 			}
@@ -427,9 +479,13 @@ if (next != null) {
 		return String.format("/U%04d", uniq++);
 	}
 
+	public void errsAdd(int line, String err) {
+		// TODO: intersperse errors in listing... if compile phase
+		errs.add(err + " at line " + line);
+	}
+
 	public void errsAdd(String err) {
-		// TODO: intersperse errors in listing...
-		errs.add(err + " at line " + lineNo);
+		errsAdd(curLine, err);
 	}
 
 	public FortranOperand getSym(String id) {
@@ -469,8 +525,13 @@ if (next != null) {
 			return FortranConstant.get(this, v);
 		}
 		// must be REAL
-		double v = Double.valueOf(id);
-		return FortranConstant.get(this, v);
+		try {
+			double v = Double.valueOf(id);
+			return FortranConstant.get(this, v);
+		} catch (Exception ee) {
+		}
+		errsAdd(String.format("Invalid constant \"%s\"", id));
+		return null;
 	}
 
 	public void setImplicit(char ltr, int type) {
@@ -483,13 +544,55 @@ if (next != null) {
 	}
 
 	public FortranOperand parseVariable(String id, int type) {
+		String sym = id;
+		if (inSubr) {
+			sym = uniqueName();
+			id = curSubr.name() + "." + id;
+		}
 		if (symTab.containsKey(id)) {
 			return symTab.get(id);
 		}
 		// only INTEGER has variable precision, at this level
-		FortranOperand fo = new FortranVariable(id, type, intPrec);
+		FortranOperand fo = new FortranVariable(sym, type, intPrec);
 		addSym(id, fo);
 		return fo;
+	}
+
+	// For "early" parsing of function/subroutine parameters... before inSubr
+	// These variables are not defined in the normal sequence, as they
+	// must be contiguous.
+	public FortranParameter parseParameter(String id, FortranOperand scope) {
+		String sym = uniqueName();
+		// TODO: can parameter types be overridden?
+		int type = implicits[id.charAt(0) - 'A'];
+		id = scope.name() + "." + id;
+		if (symTab.containsKey(id)) {
+			// should not happen
+			FortranOperand fo = symTab.get(id);
+			if (fo.kind() != FortranOperand.PARAMETER) {
+				return null;
+			}
+			return (FortranParameter)fo;
+		}
+		FortranParameter fo = new FortranParameter(sym, type);
+		addSym(id, fo);
+		return fo;
+	}
+
+	public FortranSubprogram parseSubprogram(String id, int type) {
+		if (type < 0) {
+			type = implicits[id.charAt(0) - 'A'];
+		}
+		if (symTab.containsKey(id)) {
+			FortranOperand fo = symTab.get(id);
+			if (fo.kind() != FortranOperand.FUNCTION) {
+				return null;
+			}
+			return (FortranSubprogram)fo;
+		}
+		FortranSubprogram fs = new FortranSubprogram(id, type);
+		addSym(id, fs);
+		return fs;
 	}
 
 	// TODO: array-ref and function-call?
@@ -502,6 +605,13 @@ if (next != null) {
 			return parseVariable(id);
 		}
 	}
+
+	public FortranOperand currSubr() {
+		if (inSubr) return curSubr;
+		return null;
+	}
+	public boolean inSubroutine() { return inProg && inSubr; }
+	public boolean inMainProg() { return inProg && !inSubr; }
 
 	public FortranOperand getIntTemp(int id) {
 		return parseVariable(String.format("$ITMP%d", id), FortranOperand.INTEGER);

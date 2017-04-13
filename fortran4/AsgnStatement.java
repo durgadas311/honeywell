@@ -15,6 +15,10 @@ public class AsgnStatement extends FortranItem {
 		targ = Integer.valueOf(stmt.substring(x, y));
 		x = y + 2; // skip TO
 		var = pars.parseVariable(stmt.substring(x));
+		// TODO: force variable to be ADDRESS?
+		if (var.type() != FortranOperand.INTEGER) {
+			pars.errsAdd("ASSIGN variable not INTEGER");
+		}
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
@@ -26,6 +30,7 @@ public class AsgnStatement extends FortranItem {
 
 	public void genDefs(PrintStream out, FortranParser pars) {
 		// Variables already done...
+		// TODO: validate existence of statement label...
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {

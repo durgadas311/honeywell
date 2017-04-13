@@ -22,6 +22,9 @@ public class CGotoStatement extends FortranItem {
 		}
 		x = y + 2; // skip l-paren, comma
 		var = pars.parseVariable(stmt.substring(x));
+		if (var.type() != FortranOperand.INTEGER) {
+			pars.errsAdd("Computed GOTO variable not INTEGER");
+		}
 		// index var is 1..max
 		one = pars.parseConstant("1");
 		max = pars.parseConstant(Integer.toString(targs.length));
@@ -36,6 +39,7 @@ public class CGotoStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
+		// TODO: validate existence of statement label...
 		// This works since index is 1-based
 		pars.emit(String.format("  /T%05dDSA   *", src));
 		for (int t : targs) {

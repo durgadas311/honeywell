@@ -17,13 +17,19 @@ public interface FortranParser {
 	String uniqueName();
 	FortranOperand getSym(String id);
 	void addSym(String id, FortranOperand op);
-	void errsAdd(String err);
+	void errsAdd(String err);		// for compile-time errors (curLine)
+	void errsAdd(int line, String err);	// for generate-time errors
 
 	void setImplicit(char ltr, int type);
 	FortranOperand parseConstant(String id);
 	FortranOperand parseVariable(String id);
 	FortranOperand parseVariable(String id, int type);
+	FortranParameter parseParameter(String id, FortranOperand scope);
+	FortranSubprogram parseSubprogram(String id, int type);
 	FortranOperand parseOperand(String id);
+	boolean inSubroutine();
+	boolean inMainProg();
+	FortranOperand currSubr();
 	FortranOperand getIntTemp(int id);
 	FortranOperand getLogTemp(int id);
 	FortranOperand getRealTemp(int id);

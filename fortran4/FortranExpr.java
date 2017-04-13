@@ -60,7 +60,7 @@ dump(this.expr, 0);
 			// TODO: could be COMPLEX, also...
 			++idx;
 			++level;
-			fo = parse(parent); // parent or null?
+			fo = parse(parent); // pass parent or null?
 			--level;
 			// Can we assume/insist we have ')'?
 			if (idx < len && exprStr.charAt(idx) == ')') {
@@ -87,6 +87,10 @@ dump(this.expr, 0);
 			// TODO: error if level != 0
 			op = FortranOperation.get(exprStr, idx);
 			if (op == null) {
+				// This is where most errors end up,
+				// regardless of whether this was intended
+				// as an operator...
+				pars.errsAdd("Invalid operator");
 				return null;
 			}
 			idx += op.parseLen();
@@ -154,7 +158,8 @@ dump(this.expr, 0);
 			}
 		} catch (Exception ee) {
 		}
-		return null; // need better error action
+		pars.errsAdd(String.format("Invalid number \"%s\"", num));
+		return null;
 	}
 
 	static private void dump(FortranOperand op, int level) {

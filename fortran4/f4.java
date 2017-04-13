@@ -12,7 +12,7 @@ public class f4 {
 			System.exit(1);
 		}
 		Fortran4 cmp = new Fortran4(new File(args[x]));
-		int e = cmp.compile(null);
+		int e = cmp.compile(new File("f4.lst"));
 		if (e >= 0) {
 			e = cmp.generate(new File("f4.ezc"), null);
 		}

@@ -23,6 +23,10 @@ public class IfStatement extends FortranItem {
 			}
 			++y;
 		}
+		// Something must follow expression...
+		if (y >= n || p != 0) {
+			pars.errsAdd("Malformed IF expression");
+		}
 		expr = pars.parseExpr(stmt.substring(x, y));
 		x = y; // 'y' already points past end paren
 		String rest = stmt.substring(x);
@@ -34,10 +38,20 @@ public class IfStatement extends FortranItem {
 			arith[1] = Integer.valueOf(nn[1]);
 			arith[2] = Integer.valueOf(nn[2]);
 			// expr must be REAL or INTEGER
+			if (expr != null && expr.type() != FortranOperand.REAL &&
+					expr.type() != FortranOperand.INTEGER) {
+				pars.errsAdd("Arith IF expression must be numeric");
+			}
 		} else {
 			// TODO: restricted statements, must skip...
 			this.stmt = pars.recurse(rest);
 			// expr must be LOGICAL
+			if (expr != null && expr.type() != FortranOperand.LOGICAL) {
+				pars.errsAdd("Logical IF expression must be LOGICAL");
+			}
+			if (stmt == null) {
+				pars.errsAdd("Invalid IF action statement");
+			}
 		}
 	}
 
