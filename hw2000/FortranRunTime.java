@@ -217,15 +217,50 @@ public class FortranRunTime implements HW2000Trap {
 		nextParam();
 		// For now, only 'I'...
 		int c = fmt.charAt(idx++);
-		if (c != 'I') {
+		int n;
+		int m;
+		double dd;
+		int val;
+		String v;
+		switch (c) {
+		case 'I':
+			n = getNum();
+			val = getInt(sys, a);
+			v = String.format("%%%dd", n);
+			v = String.format(v, val);
+			break;
+		case 'L':
+			n = getNum();
+			val = getInt(sys, a);
+			v = String.format("%%%ds", n);
+			v = String.format(v, val != 0 ? "T" : "F");
+			break;
+		case 'F':
+			c = 'f';
+			// FALLTHROUGH
+		case 'E':
+			n = getNum();
+			if (fmt.charAt(idx) == '.') {
+				++idx;
+				m = getNum();
+			} else {
+				m = 0;
+			}
+			dd = getReal(sys, a);
+			v = String.format("%%%d.%d%c", n, m, c);
+			v = String.format(v, dd);
+			break;
+		default:
 			nextParam(); // certain to fail
 			return;
 		}
-		int n = getNum();
-		int val = getInt(sys, a);
-		// TODO: field overflow
-		String v = String.format("%%%dd", n);
-		buf += String.format(v, val);
+		if (v.length() > n) {
+			v = "*";
+			while (v.length() < n) {
+				v += '*';
+			}
+		}
+		buf += v;
 	}
 
 	private void nextParam() {
