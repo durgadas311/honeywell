@@ -173,9 +173,9 @@ public class FortranOperation extends FortranOperand {
 
 	private void genCodeInt(PrintStream out, FortranParser pars) {
 		int acbfxp = 0;
-		// TODO: avoid dangerous LCA... use BS+BA?
 		if (!left.name().equals(tmp.name())) {
-			pars.emit(String.format("         LCA   %s,%s",
+			pars.emit(String.format("         BS    %s", tmp.name()));
+			pars.emit(String.format("         BA    %s,%s",
 						left.name(), tmp.name()));
 		}
 		switch (op) {
@@ -218,7 +218,8 @@ public class FortranOperation extends FortranOperand {
 			pars.emit(String.format("         BA    %s,%s",
 						right.name(), tmp.name()));
 			pars.emit(String.format("         BCT   %s,60", sym));
-			pars.emit(String.format("         LCA   :1,%s", tmp.name()));
+			pars.emit(String.format("         BS    %s", tmp.name()));
+			pars.emit(String.format("         BA    :1,%s", tmp.name()));
 			pars.emit(String.format("  %-7sRESV  0", sym));
 			break;
 		case NOT:
@@ -264,6 +265,12 @@ public class FortranOperation extends FortranOperand {
 
 	private void genCodeReal(PrintStream out, FortranParser pars) {
 		int acbfph = 0;
+		if (!left.name().equals(tmp.name())) {
+			// All REAL are same size, LCA is safe...
+			pars.emit(String.format("         LCA   %s,%s",
+						left.name(), tmp.name()));
+		}
+		// TODO: add conversion calls?
 		switch (op) {
 		case ADD:
 			acbfph = 016; // we're just making this up...

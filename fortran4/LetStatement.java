@@ -33,8 +33,18 @@ public class LetStatement extends FortranItem {
 
 	public void genCode(PrintStream out, FortranParser pars) {
 		pars.setExpr(expr);
-		pars.emit(String.format("         LCA   %s,%s",
-				expr.getResult(), var.name()));
+		switch (var.type()) {
+		case FortranOperand.INTEGER:
+		case FortranOperand.LOGICAL:
+			pars.emit(String.format("         BS    %s", var.name()));
+			pars.emit(String.format("         BA    %s,%s",
+					expr.getResult(), var.name()));
+			break;
+		default:
+			pars.emit(String.format("         LCA   %s,%s",
+					expr.getResult(), var.name()));
+			break;
+		}
 	}
 
 	public boolean error() {

@@ -86,7 +86,7 @@ public class FortranConstant extends FortranOperand {
 			pars.emit(String.format("         DCW   F%.11E", vx));
 			// FALLTHROUGH
 		case REAL:
-			String fmt = String.format("  %-7sDCW   F%.11E", name, vr);
+			pars.emit(String.format("  %-7sDCW   F%.11E", name, vr));
 			break;
 		}
 	}
