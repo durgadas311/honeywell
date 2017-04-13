@@ -285,6 +285,8 @@ if (next != null) {
 		if (itm == null) { itm = EndStatement.parse(stmt, this); }
 		if (itm == null) { itm = FormatStatement.parse(stmt, this); }
 		if (itm == null) { itm = ProgramStatement.parse(stmt, this); }
+		if (itm == null) { itm = DefStatement.parse(stmt, this); }
+		if (itm == null) { itm = ImplStatement.parse(stmt, this); }
 		// The above statements CANNOT be target of IF. parseAction() CAN.
 		if (itm == null) { itm = parseAction(stmt); }
 		if (itm == null) {
@@ -427,6 +429,10 @@ if (next != null) {
 		// must be REAL
 		double v = Double.valueOf(id);
 		return FortranConstant.get(this, v);
+	}
+
+	public void setImplicit(char ltr, int type) {
+		implicits[ltr - 'A'] = type;
 	}
 
 	public FortranOperand parseVariable(String id) {

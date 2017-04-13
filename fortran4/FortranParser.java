@@ -18,8 +18,10 @@ public interface FortranParser {
 	FortranOperand getSym(String id);
 	void addSym(String id, FortranOperand op);
 
+	void setImplicit(char ltr, int type);
 	FortranOperand parseConstant(String id);
 	FortranOperand parseVariable(String id);
+	FortranOperand parseVariable(String id, int type);
 	FortranOperand parseOperand(String id);
 	FortranOperand getIntTemp(int id);
 	FortranOperand getLogTemp(int id);
