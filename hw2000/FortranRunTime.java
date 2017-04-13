@@ -136,10 +136,42 @@ public class FortranRunTime implements HW2000Trap {
 
 	// Doesn't check IM...
 	private int getAdr(HW2000 sys) {
+		int a = fetchAdr(sys, sys.SR);
+		sys.SR += sys.am_na;
+		return a;
+	}
+
+	// This is a clone of HW2000.fetchAddr() - keep in sync!
+	private int fetchAdr(HW2000 sys, int p) {
 		int a = 0;
 		for (int n = 0; n < sys.am_na; ++n) {
-			a = (a << 6) | (sys.rawReadMem(sys.SR++) & 077);
+			a = (a << 6) | (sys.rawReadMem(p++) & 077);
 		}
+		int x = (a >> sys.am_shift);
+		a &= sys.am_mask; // TODO: need? | (ref & ~am_mask);
+		if (x == 0) {
+			return a;
+		}
+		if (sys.am_na == 3 && x == 0x07 || x == 0x10) {
+			return fetchAdr(sys, a);
+		}
+		int ix = ((x & 0x0f) * 4) - sys.am_na + 1;
+		if (x > 0x10) {
+			if (!sys.CTL.isRELOC()) {
+				ix += (sys.IBR << 12);
+			}
+		} else if (sys.am_na == 4) {
+			// all set for X1-X15?
+		} else {
+			if (!sys.CTL.isRELOC()) {
+				ix += (sys.SR & ~0x07fff);
+			}
+		}
+		if (sys.CTL.isRELOC()) {
+			ix += (sys.BRR << 12);
+		}
+		a += fetchAdr(sys, ix);
+		a &= sys.am_mask; // need ref?
 		return a;
 	}
 
