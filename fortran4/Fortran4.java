@@ -39,6 +39,7 @@ public class Fortran4 implements FortranParser {
 	Vector<FortranItem> program;
 	int[] implicits;
 	int intPrec = 3;
+	int[] devices;
 
 	public Fortran4(File input) {
 		prog = null; // or default to file name?
@@ -55,6 +56,12 @@ public class Fortran4 implements FortranParser {
 		doStmts = new HashMap<Integer, DoStatement>();
 		program = new Vector<FortranItem>();
 		errs = new Vector<String>();
+		// TODO: Tape Units... dev 5 => unit 1, dev 4 => unit 0,
+		// others TBD. Also, how to rewrite if devices re-assigned.
+		devices = new int[]{
+			007, 007, 010, 020, 000, 001, 002, 003, 004,
+			005, 006, 007, 007, 007, 007, 007, 007, 007,
+		};
 		try {
 			in = new BufferedReader(new FileReader(inFile));
 		} catch (Exception ee) {
@@ -203,7 +210,8 @@ public class Fortran4 implements FortranParser {
 		for (int x = 1; x < args.length; ++x) {
 			String s = args[x];
 			if (s.startsWith("IO")) {
-				// I/O devices
+				// I/O devices IOiioopp (reader, printer, punch)
+				// alter devices[] accordingly...
 			} else if (s.startsWith("*")) {
 			} else if (s.startsWith("M")) {
 				// memory limits - affects address mode?
@@ -496,6 +504,10 @@ public class Fortran4 implements FortranParser {
 
 	public void errsAdd(String err) {
 		errsAdd(curLine, err);
+	}
+
+	public int getDev(int code) {
+		return devices[code & 017];
 	}
 
 	public FortranOperand getSym(String id) {

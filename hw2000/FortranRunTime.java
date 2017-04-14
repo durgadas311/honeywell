@@ -22,6 +22,10 @@ public class FortranRunTime implements HW2000Trap {
 	private String fmt;
 	private String buf;
 	private int idx;
+	private int dev;
+	private int unit;
+	private Peripheral perph;
+	private boolean input;
 
 	public FortranRunTime() {
 	}
@@ -69,10 +73,20 @@ public class FortranRunTime implements HW2000Trap {
 		sys.CSR = 1342;
 		if (t == 077) {
 			// write record...
-			// TODO: carriage control, etc...
-			sys.listOut(buf + '\n');
+			dispatchIO(sys, buf);
 			buf = null;
 		} else {
+			// TODO: how to determine READ vs WRITE
+			input = (t & 040) != 0;
+			dev = (t >> 3) & 003; // TODO: '3' is not a std addr...
+			if (input) {
+				dev |= 040;
+			}
+			unit = (t & 007);
+			perph = sys.pdc.getPeriph((byte)dev);
+			if (perph == null) {
+				return;
+			}
 			getFormat(sys, fmt);
 		}
 	}
@@ -82,6 +96,9 @@ public class FortranRunTime implements HW2000Trap {
 		sys.SR = sys.CSR;
 		sys.CSR = 1342;
 		int var = getAdr(sys);
+		if (perph == null) {
+			return;
+		}
 		doParam(sys, var);
 	}
 
@@ -247,7 +264,6 @@ public class FortranRunTime implements HW2000Trap {
 
 	private void doParam(HW2000 sys, int a) {
 		nextParam();
-		// For now, only 'I'...
 		int c = fmt.charAt(idx++);
 		int n;
 		int m;
@@ -345,5 +361,39 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void copyQuoted() {
+	}
+
+	private void dispatchIO(HW2000 sys, String buf) {
+		if (perph instanceof P_LinePrinter) {
+			// TODO: carriage control, etc...
+			// ...or just send through actual peripheral...
+			String cc = "\n";
+			char cr = buf.charAt(0);
+			switch (cr) {
+			case ' ': break;
+			case '+': cc = ""; break;
+			case '0': cc += '\n'; break;
+			case '1': break; // TODO: Form Feed
+			case '9':
+				cc += '\n';
+			case '8':
+				cc += '\n';
+			case '7':
+				cc += '\n';
+			case '6':
+				cc += '\n';
+			case '5':
+				cc += '\n';
+			case '4':
+				cc += '\n';
+			case '3':
+				cc += '\n';
+			case '2':
+				cc += '\n';
+				break;
+			}
+			sys.listOut(cc + buf.substring(1));
+		}
+		// TODO: SequentialRecordIO devices
 	}
 }

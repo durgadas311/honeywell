@@ -15,6 +15,7 @@ public interface FortranParser {
 	int addrMode();
 
 	String uniqueName();
+	int getDev(int code);
 	FortranOperand getSym(String id);
 	void addSym(String id, FortranOperand op);
 	void errsAdd(String err);		// for compile-time errors (curLine)

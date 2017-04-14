@@ -50,13 +50,14 @@ public class WriteStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
+		int perph = pars.getDev(dev);
 		pars.emit("         B     $ACBOIO");
 		if (fmt > 0) {
 			pars.emit(String.format("         DSA   $%05d", fmt));
 		} else {
 			pars.emit("         DSA   0");
 		}
-		pars.emit(String.format(" R       DCW   #1C%02o", dev & 077));
+		pars.emit(String.format(" R       DCW   #1C%02o", perph & 077));
 		for (int z = 0; z < list.length; ++z) {
 			pars.emit("         CSM");
 			pars.emit(String.format(" R       DSA   %s", list[z].name()));
