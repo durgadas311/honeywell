@@ -12,6 +12,7 @@
 //
 public interface SequentialRecordIO {
 	boolean begin(int unit);// 'true' if input == output
+	boolean ready();	// 'true' if media mounted.
 	boolean empty();	// 'true' if media mounted and has no data.
 	boolean rewind();	// 'false' if no media mounted. may be no-op otherwise
 	boolean backspace();	// 'false' if no media mounted. may be no-op otherwise

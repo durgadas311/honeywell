@@ -49,7 +49,7 @@ public class IfStatement extends FortranItem {
 			if (expr != null && expr.type() != FortranOperand.LOGICAL) {
 				pars.errsAdd("Logical IF expression must be LOGICAL");
 			}
-			if (stmt == null) {
+			if (this.stmt == null) {
 				pars.errsAdd("Invalid IF action statement");
 			}
 		}

@@ -16,8 +16,8 @@ public class CallStatement extends FortranItem {
 		if (y < 0) {
 			y = n;
 		}
-		subr = pars.parseVariable(stmt.substring(x, y), FortranOperand.ADDRESS);
-		if (subr.type != FortranOperand.ADDRESS) {
+		subr = pars.parseSubprogram(stmt.substring(x, y), FortranOperand.VOID);
+		if (subr.type != FortranOperand.VOID) {
 			pars.errsAdd("Subroutine name not unique");
 		}
 		if (y >= n) {

@@ -467,6 +467,9 @@ public class P_MagneticTape extends JFrame
 		vUnit = unit & 07;
 		return true;
 	}
+	public boolean ready() {
+		return (sts[vUnit].dev != null);
+	}
 	public boolean empty() {
 		if (sts[vUnit].dev == null) {
 			return false; // error, actually
@@ -551,6 +554,9 @@ public class P_MagneticTape extends JFrame
 		}
 		if (len < 0) {
 			len = buf.length - start;
+		}
+		if (len == 0) {
+			return;
 		}
 		try {
 			sts[vUnit].dev.write(buf, start, len);

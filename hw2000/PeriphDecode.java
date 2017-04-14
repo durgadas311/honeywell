@@ -36,7 +36,7 @@ public class PeriphDecode {
 		p_idevs[P_CO] = p_odevs[P_CO];
 		p_odevs[P_MT] = new P_MagneticTape();
 		p_idevs[P_MT] = p_odevs[P_MT];
-		p_odevs[P_PP] = new P_CardReaderPunch();
+		p_odevs[P_PP] = new P_CardReaderPunch(cvt);
 		p_idevs[P_PP] = p_odevs[P_PP];
 		p_odevs[P_DK] = new P_Disk();
 		p_idevs[P_DK] = p_odevs[P_DK];

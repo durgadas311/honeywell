@@ -2,16 +2,16 @@
 
 import java.io.*;
 
-public class WriteStatement extends FortranItem {
-	static final String _PAT = "WRITE\\([^)]+\\)[^=]*";
+public class ReadStatement extends FortranItem {
+	static final String _PAT = "READ\\([^)]+\\)[^=]*";
 	private String errors = "";
 	int dev;
 	int fmt = 0;
 	FortranOperand[] list;
 
-	public WriteStatement(String stmt, FortranParser pars) {
+	public ReadStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
-		int x = 6; // skip WRITE and l-paren
+		int x = 5; // skip READ and l-paren
 		int y = stmt.indexOf(')', x);
 		String[] v = stmt.substring(x, y).split(",");
 		// TODO: support all forms...
@@ -25,12 +25,12 @@ public class WriteStatement extends FortranItem {
 		}
 		x = y + 1;
 		// TODO: must support complex lists...
-		// must at least be variable/constant...
-		// TODO: handle arrays/functions?
+		// must all be variables...
+		// TODO: handle arrays
 		String [] lst = stmt.substring(x).split(",");
 		list = new FortranOperand[lst.length];
 		for (x = 0; x < lst.length; ++x) {
-			list[x] = pars.parseOperand(lst[x]);
+			list[x] = pars.parseVariable(lst[x]);
 			if (list[x] == null) {
 				pars.errsAdd(String.format(
 					"Invalid list item \"%s\"", lst[x]));
@@ -42,7 +42,7 @@ public class WriteStatement extends FortranItem {
 		if (!pot.matches(_PAT)) {
 			return null;
 		}
-		return new WriteStatement(pot, pars);
+		return new ReadStatement(pot, pars);
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
@@ -51,7 +51,7 @@ public class WriteStatement extends FortranItem {
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
-		int perph = pars.getDev(dev);
+		int perph = pars.getDev(dev) | 040;
 		pars.emit("         B     $ACBOIO");
 		if (fmt > 0) {
 			pars.emit(String.format("         DSA   $%05d", fmt));

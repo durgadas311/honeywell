@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 public class P_CardReaderPunch extends JFrame
-		implements Peripheral, ActionListener, WindowListener {
+		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
 
 	private class PunchCardStatus {
 		boolean busy = false;
@@ -34,9 +34,12 @@ public class P_CardReaderPunch extends JFrame
 	boolean isOn = false;
 	InputStream idev;
 	OutputStream odev;
+	CharConverter cvt;
+	int vUnit;
 
-	public P_CardReaderPunch() {
+	public P_CardReaderPunch(CharConverter cvt) {
 		super("H214 Card Reader/Punch");
+		this.cvt = cvt;
 		_last = new File(System.getProperty("user.dir"));
 		sts = new PunchCardStatus[2];
 		sts[0] = new PunchCardStatus(); // output - punch
@@ -150,8 +153,7 @@ public class P_CardReaderPunch extends JFrame
 		}
 	}
 
-	private void doIn(RWChannel rwc, PunchCardStatus pcs) {
-		rwc.startCLC();
+	private boolean getCard(PunchCardStatus pcs) {
 		int a = -1;
 		if (idev != null) {
 			try {
@@ -165,10 +167,18 @@ public class P_CardReaderPunch extends JFrame
 			// what status to set?
 			pcs.count_pn.setText(String.format("%d END", pcs.cards));
 			pcs.error = true;
-			return;
+			return false;
 		}
 		++pcs.cards;
 		pcs.count_pn.setText(String.format("%d", pcs.cards));
+		return true;
+	}
+
+	private void doIn(RWChannel rwc, PunchCardStatus pcs) {
+		rwc.startCLC();
+		if (!getCard(pcs)) {
+			return;
+		}
 		for (int x = 0; x < 80; ++x) {
 			// Must not disturb punctuation...
 			int p = getCol(pcs, x);
@@ -180,7 +190,7 @@ public class P_CardReaderPunch extends JFrame
 				}
 				rwc.writeChar((byte)p);
 			} else {
-				int c = rwc.sys.pdc.cvt.punToHW(p, (pcs.code == 1));
+				int c = cvt.punToHW(p, (pcs.code == 1));
 				if (c < 0) {
 					pcs.illegal = true;
 					c = 0; // TODO: error code?
@@ -205,13 +215,17 @@ public class P_CardReaderPunch extends JFrame
 				p |= (rwc.readChar() & 077);
 			} else {
 				byte a = rwc.readChar();
-				p = rwc.sys.pdc.cvt.hwToPun(a, (pcs.code == 1));
+				p = cvt.hwToPun(a, (pcs.code == 1));
 			}
 			putCol(pcs, x, p);
 			if (rwc.incrCLC()) {
 				return;
 			}
 		}
+		putCard(pcs);
+	}
+
+	private void putCard(PunchCardStatus pcs) {
 		if (odev != null) {
 			try {
 				odev.write(pcs.card);
@@ -400,5 +414,64 @@ public class P_CardReaderPunch extends JFrame
 	public void windowClosing(WindowEvent e) {
 		isOn = false;
 		setVisible(false);
+	}
+
+	public boolean begin(int unit) {
+		// use unit for PCS code... TBD...
+		vUnit = unit;
+		return false; // input != output
+	}
+	public boolean ready() {
+		return true; // TODO: check input or output???
+	}
+	public boolean empty() {
+		return true; // TODO: check input or output???
+	}
+	public boolean rewind() {
+		return true; // TODO: check input or output???
+	}
+	public boolean backspace() {
+		return true; // TODO: check input or output???
+	}
+	public byte[] nextRecord() {
+		if (!getCard(sts[1])) {
+			return null;
+		}
+		byte[] b = new byte[vUnit == 2 ? 160 : 80];
+		// TODO: conversion modes...
+		for (int x = 0; x < 80; ++x) {
+			int p = getCol(sts[1], x);
+			if (vUnit == 2) { // raw mode...
+				b[x * 2] = (byte)((p >> 6) & 077);
+				b[x * 2 + 1] = (byte)p;
+			} else {
+				int c = cvt.punToHW(p, (vUnit == 1));
+				if (c < 0) {
+					c = 0; // TODO: error code?
+				}
+				b[x] = (byte)c;
+			}
+		}
+		return b;
+	}
+	public void appendBulk(byte[] buf, int start, int len) {
+		for (int x = 0; x < 80; ++x) {
+			int p = 0;
+			if (vUnit == 2) {
+				if (x * 2 + 1 < buf.length) {
+					p = (buf[x * 2] & 077) << 6;
+					p |= (buf[x * 2 + 1] & 077);
+				}
+			} else if (x < buf.length) {
+				p = cvt.hwToPun(buf[x], (vUnit == 1));
+			}
+			putCol(sts[0], x, p);
+		}
+		putCard(sts[0]);
+	}
+	public void appendRecord(byte[] buf, int start, int len) {
+		appendBulk(buf, start, len);
+	}
+	public void end() {
 	}
 }

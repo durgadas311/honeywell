@@ -2,54 +2,65 @@
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Vector;
 
 public class FortranRunTime implements HW2000Trap {
 	static final int base = 1340;
-	static final int numOps = 5;
+	static final int numOps = 10;
 
-	// HW codes for format specifiers that we might support
-	static final int A = 021;
-	static final int D = 024;
-	static final int E = 025;
-	static final int F = 026;
-	static final int G = 027;
-	static final int I = 031;
-	static final int L = 043;
-	static final int P = 047;
-	static final int T = 063;
-	static final int X = 067;
-	static final int Z = 071;
-	private String fmt;
 	private String buf;
 	private int idx;
+	private int ip;
 	private int dev;
 	private int unit;
+	private int eofCode;
+	private int eotCode;
 	private Peripheral perph;
 	private boolean input;
+	private FormatSpec[] fmt;
+	private HW2000 sys;
 
-	public FortranRunTime() {
+	public FortranRunTime(HW2000 sys) {
+		this.sys = sys;
+		eofCode = 2;
+		eotCode = 2;
 	}
 
-	public boolean doTrap(HW2000 sys) {
+	public boolean doTrap() {
 		if (sys.SR < base || sys.SR - base >= numOps) {
 			return false;
 		}
 		int op = sys.rawReadMem(sys.SR);
 		switch (op) {
 		case 0:
-			exit(sys);
+			exit();
 			break;
 		case 1:
-			acboio(sys);	// start/end I/O
+			acboio();	// start/end I/O
 			break;
 		case 2:
-			acboio_x(sys); // each parameter in I/O list...
+			acboio_x(); // each parameter in I/O list...
 			break;
 		case 3:
-			acbfph(sys);	// floating point assist, h/w
+			acbfph();	// floating point assist, h/w
 			break;
 		case 4:
-			acbfxp(sys);	// fixed-point assist
+			acbfxp();	// fixed-point assist
+			break;
+		case 5:
+			eof();
+			break;
+		case 6:
+			eot();
+			break;
+		case 7:
+			endfile();
+			break;
+		case 8:
+			rewind();
+			break;
+		case 9:
+			backspace();
 			break;
 		default:
 			// our best guess...
@@ -59,21 +70,25 @@ public class FortranRunTime implements HW2000Trap {
 		return true;
 	}
 
-	private void exit(HW2000 sys) {
+	private void exit() {
 		// System.err.format("exit %07o\n", sys.SR);
 		// TODO: remove traps...
 		sys.SR = sys.BAR;
 	}
 
-	private void acboio(HW2000 sys) {
+	private void acboio() {
+		eofCode = 2;
+		eotCode = 2;
 		sys.SR = sys.BAR;
-		int fmt = getAdr(sys);
+		int fmt = getAdr();
 		// Doesn't check IM...
 		int t = sys.rawReadMem(sys.SR++) & 077;
 		sys.CSR = 1342;
 		if (t == 077) {
-			// write record...
-			dispatchIO(sys, buf);
+			if (!input) {
+				// write record...
+				dispatchOutput(buf);
+			}
 			buf = null;
 		} else {
 			// TODO: how to determine READ vs WRITE
@@ -87,28 +102,33 @@ public class FortranRunTime implements HW2000Trap {
 			if (perph == null) {
 				return;
 			}
-			getFormat(sys, fmt);
+			getFormat(fmt);
+			if (input) {
+				// read record...
+				dispatchInput();
+				ip = 0;
+			}
 		}
 	}
 
 	// Called by CSM!
-	private void acboio_x(HW2000 sys) {
+	private void acboio_x() {
 		sys.SR = sys.CSR;
 		sys.CSR = 1342;
-		int var = getAdr(sys);
+		int var = getAdr();
 		if (perph == null) {
 			return;
 		}
-		doParam(sys, var);
+		doParam(var);
 	}
 
-	private void acbfph(HW2000 sys) {
+	private void acbfph() {
 		sys.SR = sys.BAR;
-		int a = getAdr(sys);
-		int b = getAdr(sys);
+		int a = getAdr();
+		int b = getAdr();
 		int fnc = sys.rawReadMem(sys.SR++) & 077;
-		double l = getReal(sys, a);
-		double r = getReal(sys, b);
+		double l = getReal(a);
+		double r = getReal(b);
 		switch (fnc) {
 		case 016:	// add
 			r = l + r;
@@ -122,20 +142,20 @@ public class FortranRunTime implements HW2000Trap {
 		case 021:	// divide
 			r = l / r;
 			break;
-		case 022:	// pwer
+		case 022:	// power
 			r = Math.pow(l, r);
 			break;
 		}
-		putReal(sys, b, r);
+		putReal(b, r);
 	}
 
-	private void acbfxp(HW2000 sys) {
+	private void acbfxp() {
 		sys.SR = sys.BAR;
-		int a = getAdr(sys);
-		int b = getAdr(sys);
+		int a = getAdr();
+		int b = getAdr();
 		int fnc = sys.rawReadMem(sys.SR++) & 077;
-		int l = getInt(sys, a);
-		int r = getInt(sys, b);
+		int l = getInt(a);
+		int r = getInt(b);
 		switch (fnc) {
 		case 020:	// multiply
 			r = l * r;
@@ -143,23 +163,69 @@ public class FortranRunTime implements HW2000Trap {
 		case 021:	// divide
 			r = l / r;
 			break;
-		case 022:	// pwer
+		case 022:	// power
 			r = pow(l, r);
 			break;
 		}
-		putInt(sys, b, r);
+		putInt(b, r);
 	}
 
+	private void eof() {
+		sys.SR = sys.BAR;
+		int a = getAdr();
+		putInt(a, eofCode);
+		eofCode = 2;
+	}
+	private void eot() {
+		sys.SR = sys.BAR;
+		int a = getAdr();
+		putInt(a, eotCode);
+		eotCode = 2;
+	}
+	private void tapeCtl(char cmd) {
+		sys.SR = sys.BAR;
+		int t = sys.rawReadMem(sys.SR++) & 077;
+		dev = (t >> 3) & 003; // TODO: '3' is not a std addr...
+		unit = (t & 007);
+		perph = sys.pdc.getPeriph((byte)dev);
+		if (!(perph instanceof P_MagneticTape)) {
+			return;
+		}
+		SequentialRecordIO sqio = (SequentialRecordIO)perph;
+		sqio.begin(unit);
+		switch (cmd) {
+		case 'R':
+			sqio.rewind();
+			break;
+		case 'B':
+			sqio.backspace();
+			break;
+		case 'E':
+			sqio.appendRecord(null, 0, 0);
+			sqio.appendRecord(null, 0, 0);
+			break;
+		}
+		sqio.end();
+	}
+	private void endfile() {
+		tapeCtl('E');
+	}
+	private void rewind() {
+		tapeCtl('R');
+	}
+	private void backspace() {
+		tapeCtl('B');
+	}
 
 	// Doesn't check IM...
-	private int getAdr(HW2000 sys) {
-		int a = fetchAdr(sys, sys.SR);
+	private int getAdr() {
+		int a = fetchAdr(sys.SR);
 		sys.SR += sys.am_na;
 		return a;
 	}
 
 	// This is a clone of HW2000.fetchAddr() - keep in sync!
-	private int fetchAdr(HW2000 sys, int p) {
+	private int fetchAdr(int p) {
 		int a = 0;
 		for (int n = 0; n < sys.am_na; ++n) {
 			a = (a << 6) | (sys.rawReadMem(p++) & 077);
@@ -170,7 +236,7 @@ public class FortranRunTime implements HW2000Trap {
 			return a;
 		}
 		if (sys.am_na == 3 && x == 0x07 || x == 0x10) {
-			return fetchAdr(sys, a);
+			return fetchAdr(a);
 		}
 		int ix = ((x & 0x0f) * 4) - sys.am_na + 1;
 		if (x > 0x10) {
@@ -187,13 +253,45 @@ public class FortranRunTime implements HW2000Trap {
 		if (sys.CTL.isRELOC()) {
 			ix += (sys.BRR << 12);
 		}
-		a += fetchAdr(sys, ix);
+		a += fetchAdr(ix);
 		a &= sys.am_mask; // need ref?
 		return a;
 	}
 
+	// Search backward until WM... TODO: is that right?
+	private String getStr(int a) {
+		String s = "";
+		int b;
+		for (b = a; b >= 0; --b) {
+			if ((sys.rawReadMem(b) & 0100) != 0) {
+				break;
+			}
+		}
+		while (b <= a) {
+			s += sys.pdc.cvt.hwToLP((byte)(sys.rawReadMem(b++) & 077));
+		}
+		return s;
+	}
+
+	private void putStr(int a, String s) {
+		int b;
+		for (b = a; b >= 0; --b) {
+			if ((sys.rawReadMem(b) & 0100) != 0) {
+				break;
+			}
+		}
+		int x = 0;
+		while (b <= a) {
+			byte bb = (byte)015; // blank space
+			if (x < s.length()) {
+				bb = sys.pdc.cvt.asciiToHw((byte)s.charAt(x++));
+			}
+			sys.rawWriteChar(b, bb);
+		}
+	}
+
 	// Works backward until WM...
-	private int getInt(HW2000 sys, int a) {
+	private int getInt(int a) {
 		int i = 0;
 		int b;
 		// TODO: re-use routines from instructions?
@@ -207,7 +305,7 @@ public class FortranRunTime implements HW2000Trap {
 		}
 		return i;
 	}
-	private void putInt(HW2000 sys, int a, int v) {
+	private void putInt(int a, int v) {
 		int b;
 		// TODO: re-use routines from instructions?
 		for (b = a; b >= 0; --b) {
@@ -218,10 +316,10 @@ public class FortranRunTime implements HW2000Trap {
 			}
 		}
 	}
-	private double getReal(HW2000 sys, int a) {
+	private double getReal(int a) {
 		return I_FMA.hwToNative(sys, a);
 	}
-	private void putReal(HW2000 sys, int a, double v) {
+	private void putReal(int a, double v) {
 		I_FMA.nativeToHw(sys, v, false, a);
 	}
 
@@ -246,10 +344,10 @@ public class FortranRunTime implements HW2000Trap {
 		return r;
 	}
 
-	private void getFormat(HW2000 sys, int a) {
+	private void getFormat(int a) {
 		// translate/interpret characters until IM...
 		// TODO: handle implied-DO, etc...
-		fmt = "";
+		String fmt = "";
 		// TODO: limit scan!
 		while (true) {
 			int m = sys.rawReadMem(a++);
@@ -259,47 +357,97 @@ public class FortranRunTime implements HW2000Trap {
 			}
 		}
 		idx = 0;
+		this.fmt = scanFormat(fmt, 0);
+		idx = 0;
 		buf = "";
 	}
 
-	private void doParam(HW2000 sys, int a) {
+	private void doParam(int a) {
+		if (input) {
+			doParamIn(a);
+		} else {
+			doParamOut(a);
+		}
+	}
+
+	private void doParamIn(int a) {
 		nextParam();
-		int c = fmt.charAt(idx++);
-		int n;
+		int c = fmt[idx].spec;
+		int n = fmt[idx].width;
+		if (ip >= buf.length()) {
+			++idx;
+			return;
+		}
+		if (ip + n > buf.length()) {
+			n = buf.length() - ip;
+		}
+		double dd;
+		int val;
+		int b = 10;
+		switch (c) {
+		case 'A':
+			putStr(a, buf.substring(ip, ip + n));
+			break;
+		case 'O':
+			b = 8;
+		case 'I':
+			try {
+				val = Integer.valueOf(buf.substring(ip, ip + n), b); 
+				putInt(a, val);
+			} catch (Exception ee) { }
+			break;
+		case 'L':
+			boolean l = (buf.charAt(n - 1) == 'T');
+			putInt(a, l ? 1 : 0);
+			break;
+		case 'E':
+		case 'F':
+		case 'G':
+			try {
+				dd = Double.valueOf(buf.substring(ip, ip + n)); 
+				putReal(a, dd);
+			} catch (Exception ee) { }
+			break;
+		case 'H': // done in nextParam()... TODO: move here?
+		default:
+			++idx;
+			return;
+		}
+		ip += n;
+		++idx;
+	}
+
+	private void doParamOut(int a) {
+		nextParam();
+		int c = fmt[idx].spec;
+		int n = fmt[idx].width;
 		int m;
 		double dd;
 		int val;
-		String v;
+		String v = "";
 		switch (c) {
+		case 'A':
+			v = getStr(a);
+			v = String.format(fmt[idx].format, v);
+			break;
 		case 'I':
-			n = getNum();
-			val = getInt(sys, a);
-			v = String.format("%%%dd", n);
-			v = String.format(v, val);
+		case 'O':
+			val = getInt(a);
+			v = String.format(fmt[idx].format, val);
 			break;
 		case 'L':
-			n = getNum();
-			val = getInt(sys, a);
-			v = String.format("%%%ds", n);
-			v = String.format(v, val != 0 ? "T" : "F");
+			val = getInt(a);
+			v = String.format(fmt[idx].format, val != 0 ? "T" : "F");
 			break;
 		case 'F':
-			c = 'f';
-			// FALLTHROUGH
+		case 'G':
 		case 'E':
-			n = getNum();
-			if (fmt.charAt(idx) == '.') {
-				++idx;
-				m = getNum();
-			} else {
-				m = 0;
-			}
-			dd = getReal(sys, a);
-			v = String.format("%%%d.%d%c", n, m, c);
-			v = String.format(v, dd);
+			dd = getReal(a);
+			v = String.format(fmt[idx].format, dd);
 			break;
+		case 'H': // done in nextParam()... TODO: move here?
 		default:
-			nextParam(); // certain to fail
+			++idx;
 			return;
 		}
 		if (v.length() > n) {
@@ -309,61 +457,117 @@ public class FortranRunTime implements HW2000Trap {
 			}
 		}
 		buf += v;
+		++idx;
 	}
 
 	private void nextParam() {
-		int count = 0;
-		while (count < 2) {
-			while (idx < fmt.length() && (fmt.charAt(idx) == ' ' ||
-					fmt.charAt(idx) == ',')) {
-				++idx;
-			}
-			if (idx >= fmt.length()) {
-				idx = 0;
-				++count;
-				continue;
-			}
-			int c = fmt.charAt(idx);
-			if (Character.isDigit(c)) {
-				// must be nnHccccc... (or ???)
-				copyHollerith();
-			} else if (c == '\'') {
-				// TODO: handle quoted string?
-				copyQuoted();
+		// TODO: work out correct algorithm/repeat scheme
+		while (idx < fmt.length && fmt[idx].spec == 'H') {
+			if (input) {
+				ip += fmt[idx].width;
 			} else {
-				// stop and wait for param...
-				break;
+				buf += fmt[idx].format;
 			}
+			++idx;
 		}
+		if (idx >= fmt.length) idx = 0;
 	}
 
-	private int getNum() {
+	private FormatSpec[] scanFormat(String f, int lev) {
+		Vector<FormatSpec> fmt = new Vector<FormatSpec>();
+		while (idx < f.length()) {
+			while (idx < f.length() && (f.charAt(idx) == ' ' ||
+					f.charAt(idx) == ',')) {
+				++idx;
+			}
+			if (idx >= f.length()) {
+				break;
+			}
+			int c = f.charAt(idx);
+			int r = 1;
+			if (Character.isDigit(c)) {
+				// could be nnHxxx or rIw etc...
+				r = getNum(f);
+				c = f.charAt(idx);
+			}
+			switch (c) {
+			case '(':
+				// This gets tricky with global 'idx'...
+				++idx;
+				FormatSpec[] f1 = scanFormat(f, lev + 1);
+				while (r > 0) {
+					for (FormatSpec fs : f1) {
+						fmt.add(fs);
+					}
+					--r;
+				}
+				break;
+			case ')':
+				++idx;
+				if (lev > 0) {
+					return fmt.toArray(new FormatSpec[0]);
+				}
+				// else error...
+				break;
+			case 'H':
+				++idx;
+				fmt.add(new FormatSpec('H', r, getHollerith(f, r)));
+				break;
+			case '\'':
+				// repetition count not allowed?
+				++idx;
+				String q = getQuoted(f);
+				++idx;
+				fmt.add(new FormatSpec('H', q.length(), q));
+				break;
+			default:
+				++idx;
+				int w = getNum(f);
+				int d = -1;
+				if (f.charAt(idx) == '.') {
+					++idx;
+					d = getNum(f);
+				}
+				while (r > 0) {
+					fmt.add(new FormatSpec(c, w, d));
+					--r;
+				}
+			}
+		}
+		return fmt.toArray(new FormatSpec[0]);
+	}
+
+	private int getNum(String f) {
 		int n = 0;
-		while (idx < fmt.length() &&
-				Character.isDigit(fmt.charAt(idx))) {
-			n = (n * 10) + (fmt.charAt(idx++) - '0');
+		while (idx < f.length() &&
+				Character.isDigit(f.charAt(idx))) {
+			n = (n * 10) + (f.charAt(idx++) - '0');
 		}
 		return n;
 	}
 
-	private void copyHollerith() {
-		int n = getNum();
-		// assert fmt.charAt(idx) == 'H'...
-		++idx; // skip 'H'
-		while (idx < fmt.length() && n > 0) {
-			buf += fmt.charAt(idx++);
+	private String getHollerith(String f, int n) {
+		String s = "";
+		while (idx < f.length() && n > 0) {
+			s += f.charAt(idx++);
 			--n;
 		}
 		while (n > 0) {
-			buf += ' ';
+			s += ' ';
 			--n;
 		}
+		return s;
 	}
 
-	private void copyQuoted() {
+	private String getQuoted(String f) {
+		String s = "";
+		while (idx < f.length() && f.charAt(idx) != '\'') {
+			s += f.charAt(idx++);
+		}
+		return s;
 	}
 
-	private void dispatchIO(HW2000 sys, String buf) {
+	private void dispatchOutput(String buf) {
 		if (perph instanceof P_LinePrinter) {
 			// TODO: carriage control, etc...
 			// ...or just send through actual peripheral...
@@ -393,7 +597,54 @@ public class FortranRunTime implements HW2000Trap {
 				break;
 			}
 			sys.listOut(cc + buf.substring(1));
+		} else if (perph instanceof SequentialRecordIO) {
+			SequentialRecordIO sqio = (SequentialRecordIO)perph;
+			sqio.begin(unit);
+			if (!sqio.ready()) {
+				return;
+			}
+			byte[] b = new byte[buf.length()];
+			for (int x = 0; x < buf.length(); ++x) {
+				b[x] = sys.pdc.cvt.asciiToHw((byte)buf.charAt(x));
+			}
+			sqio.appendRecord(b, 0, b.length);
+			sqio.end();
+		} else {
+			System.err.format("Output on unsupported device %02o %o\n", dev, unit);
 		}
-		// TODO: SequentialRecordIO devices
+	}
+
+	private void dispatchInput() {
+		if (!(perph instanceof SequentialRecordIO)) {
+			System.err.format("Input on unsupported device %02o %o\n", dev, unit);
+			return;
+		}
+		buf = "";
+		SequentialRecordIO sqio = (SequentialRecordIO)perph;
+		sqio.begin(unit);
+		if (!sqio.ready()) {
+			// TODO: EOF? error?
+			eofCode = 1;
+			eotCode = 1;
+			sqio.end();
+			return;
+		}
+		byte[] b = sqio.nextRecord();
+		if (b == null) {
+			eotCode = 1;
+			sqio.end();
+			return;
+		}
+		if (b.length == 0) {
+			eofCode = 1;
+			sqio.end();
+			return;
+		}
+		// Need ASCII in order to scan numbers, but want HW for strings!
+		// Also, may not want LP special chars (unicode).
+		for (int x = 0; x < b.length; ++x) {
+			buf += sys.pdc.cvt.hwToLP(b[x]);
+		}
+		sqio.end();
 	}
 }

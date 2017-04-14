@@ -650,7 +650,7 @@ public class HW2000 implements CoreMemory
 		//System.err.format("Trap %07o \"%s\"\n", SR, t);
 		if (t.equals("FORTRAN")) {
 			if (!traps.containsKey(t)) {
-				traps.put(t, new FortranRunTime());
+				traps.put(t, new FortranRunTime(this));
 			}
 		} else {
 			halt = true;
@@ -660,7 +660,7 @@ public class HW2000 implements CoreMemory
 
 	private void doTraps() {
 		for (HW2000Trap trap : traps.values()) {
-			if (trap.doTrap(this)) {
+			if (trap.doTrap()) {
 				return;
 			}
 		}

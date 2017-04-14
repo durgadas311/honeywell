@@ -179,6 +179,11 @@ public class Fortran4 implements FortranParser {
 		emit("         DC    #1B2");
 		emit("  $ACBFPHDC    #1B3");
 		emit("  $ACBFXPDC    #1B4");
+		emit("  EOF    DC    #1B5");
+		emit("  EOT    DC    #1B6");
+		emit("  $ENDFILDC    #1B7");
+		emit("  $REWINDDC    #1B8");
+		emit("  $BKSPACDC    #1B9");
 		//
 		setDefs();
 		emit(String.format("  $START CAM   %02o", adrMode == 4 ? 060 : 000));
@@ -401,6 +406,7 @@ public class Fortran4 implements FortranParser {
 	private FortranItem parseAction(String stmt) {
 		FortranItem itm = null;
 		if (itm == null) { itm = WriteStatement.parse(stmt, this); }
+		if (itm == null) { itm = ReadStatement.parse(stmt, this); }
 		if (itm == null) { itm = GotoStatement.parse(stmt, this); }
 		if (itm == null) { itm = AGotoStatement.parse(stmt, this); }
 		if (itm == null) { itm = CGotoStatement.parse(stmt, this); }
@@ -410,6 +416,7 @@ public class Fortran4 implements FortranParser {
 		if (itm == null) { itm = StopStatement.parse(stmt, this); }
 		if (itm == null) { itm = CallStatement.parse(stmt, this); }
 		if (itm == null) { itm = ReturnStatement.parse(stmt, this); }
+		if (itm == null) { itm = TapeCtlStatement.parse(stmt, this); }
 		return itm;
 	}
 
