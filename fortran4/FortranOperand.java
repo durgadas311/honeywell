@@ -17,6 +17,7 @@ public abstract class FortranOperand {
 	static final int FUNCTION = 3;
 	static final int OPERATOR = 4;
 	static final int PARAMETER = 5;
+	static final int ARRAY = 6;
 
 	protected int type = 0;
 	protected int prec = 0; // "0" means not yet known
@@ -28,6 +29,17 @@ public abstract class FortranOperand {
 
 	public int type() { return type; }
 	public int precision() { return prec; }
+	public int sizeof() {
+		switch (type) {
+		case VOID: return 0;
+		case INTEGER: return prec;
+		case REAL: return 8;
+		case LOGICAL: return 1;
+		case COMPLEX: return 16;
+		case ADDRESS: return prec;
+		default: return 0;
+		}
+	}
 	abstract int kind();
 	abstract String name();
 	abstract void genDefs(PrintStream out, FortranParser pars);

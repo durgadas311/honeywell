@@ -22,6 +22,7 @@ public class Fortran4 implements FortranParser {
 	private Vector<String> errs;
 	private Map<String, FortranOperand> symTab;
 	private Map<String, FortranOperand> allSyms;
+	private Map<String, FortranArray> arrays;
 	boolean inProg;
 	boolean inSubr; // SUBR or FUNC, also inProg...
 	FortranOperand curSubr;
@@ -49,6 +50,7 @@ public class Fortran4 implements FortranParser {
 		}
 		symTab = new HashMap<String, FortranOperand>();
 		allSyms = new HashMap<String, FortranOperand>();
+		arrays = new HashMap<String, FortranArray>();
 		doLoops = new Stack<DoStatement>();
 		doStmts = new HashMap<Integer, DoStatement>();
 		program = new Vector<FortranItem>();
@@ -179,6 +181,7 @@ public class Fortran4 implements FortranParser {
 		// Termination handled by END statements...
 		// END => STOP or RETURN...
 		emit("         NOP");
+		setData();
 		emit("         END   $START");
 		if (errs.size() > 0) {
 			ret = -1;
@@ -348,6 +351,7 @@ public class Fortran4 implements FortranParser {
 		if (itm == null) { itm = StmtFunction.parse(stmt, this); }
 		if (itm == null) { itm = IfStatement.parse(stmt, this); }
 		if (itm == null) { itm = FormatStatement.parse(stmt, this); }
+		if (itm == null) { itm = DimStatement.parse(stmt, this); }
 		if (itm == null) {
 			itm = ProgramStatement.parse(stmt, this);
 			// TODO: error-check state?
@@ -474,6 +478,12 @@ public class Fortran4 implements FortranParser {
 		}
 	}
 
+	private void setData() {
+		for (FortranArray ary : arrays.values()) {
+			ary.genData(out, this);
+		}
+	}
+
 	private int uniq = 0;
 	public String uniqueName() {
 		return String.format("/U%04d", uniq++);
@@ -544,6 +554,10 @@ public class Fortran4 implements FortranParser {
 	}
 
 	public FortranOperand parseVariable(String id, int type) {
+		int p = intPrec;
+		if (type == FortranOperand.ADDRESS) {
+			p = adrMode;
+		}
 		String sym = id;
 		if (inSubr) {
 			sym = uniqueName();
@@ -553,7 +567,7 @@ public class Fortran4 implements FortranParser {
 			return symTab.get(id);
 		}
 		// only INTEGER has variable precision, at this level
-		FortranOperand fo = new FortranVariable(sym, type, intPrec);
+		FortranOperand fo = new FortranVariable(sym, type, p);
 		addSym(id, fo);
 		return fo;
 	}
@@ -593,6 +607,35 @@ public class Fortran4 implements FortranParser {
 		FortranSubprogram fs = new FortranSubprogram(id, type);
 		addSym(id, fs);
 		return fs;
+	}
+
+	public FortranArray parseArray(String id, int type, int[] dims) {
+		String sym = id;
+		if (type < 0) {
+			type = implicits[id.charAt(0) - 'A'];
+		}
+		if (inSubr) {
+			sym = uniqueName();
+			id = curSubr.name() + "." + id;
+		}
+		if (symTab.containsKey(id)) {
+			// TODO: compare dimensions, names, ...
+			FortranOperand fo = symTab.get(id);
+			if (fo.kind() != FortranOperand.ARRAY) {
+				return null;
+			}
+			return (FortranArray)fo;
+		}
+		int prec = 0;
+		if (type == FortranOperand.INTEGER) {
+			prec = intPrec;
+		} else if (type == FortranOperand.ADDRESS) {
+			prec = adrMode;
+		}
+		FortranArray fa = new FortranArray(sym, type, prec, dims);
+		addSym(id, fa);
+		arrays.put(id, fa);
+		return fa;
 	}
 
 	// TODO: array-ref and function-call?
