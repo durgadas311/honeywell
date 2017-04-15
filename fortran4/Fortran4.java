@@ -334,8 +334,10 @@ public class Fortran4 implements Compiler, FortranParser {
 					line = next.substring(0, e);;
 					continue;
 				}
-				if (inProg && next.length() >= 6 && next.charAt(5) != ' '
-						&& next.charAt(5) != '0') {
+				if (inProg && next.length() >= 6 &&
+						next.charAt(0) != 'C' &&
+						next.charAt(5) != ' ' &&
+						next.charAt(5) != '0') {
 					line += next.substring(6, e);
 					continue;
 				}
@@ -349,8 +351,7 @@ public class Fortran4 implements Compiler, FortranParser {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
-		// TODO: only in program code?
-		if (line.charAt(0) == 'C') {
+		if (inProg && line.charAt(0) == 'C') {
 			return 0;
 		}
 		// TODO: some of these must be before any FORTRAN cards...

@@ -162,6 +162,14 @@ public class Assembler {
 		if (errs.size() > 0) {
 			ret = -1;
 		}
+		if (listing) {
+			// TODO: intersperse with listing...
+			for (String l : errs) {
+				listOut("*** " + l + "\n");
+			}
+			listOut(String.format("END OF ASSEMBLY%s\n",
+				ret < 0 ? " (ERRORS)" : ""));
+		}
 		return ret;
 	}
 
@@ -193,14 +201,14 @@ public class Assembler {
 		//System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
 		if (errs.size() > 0) {
 			ret = -1;
-			if (listing) {
-				// TODO: intersperse with listing...
-				for (String l : errs) {
-					listOut("*** " + l + "\n");
-				}
-				listOut(String.format("END OF ASSEMBLY%s\n",
-					ret < 0 ? " (ERRORS)" : ""));
+		}
+		if (listing) {
+			// TODO: intersperse with listing...
+			for (String l : errs) {
+				listOut("*** " + l + "\n");
 			}
+			listOut(String.format("END OF ASSEMBLY%s\n",
+				ret < 0 ? " (ERRORS)" : ""));
 		}
 		try { in.close(); } catch (Exception ee) {}
 		return ret;
