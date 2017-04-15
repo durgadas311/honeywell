@@ -1,5 +1,6 @@
 // Copyright (c) 2017 douglas Miller <durgadas311@gmail.com>
 
+import java.util.Vector;
 import java.io.*;
 
 public class CallStatement extends FortranItem {
@@ -7,7 +8,7 @@ public class CallStatement extends FortranItem {
 	static final String _APAT = "CALL[A-Z][A-Z0-9]*";
 	private String errors = "";
 	FortranOperand subr;
-	FortranOperand[] args = null;
+	FortranExpr[] args = null;
 
 	public CallStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
@@ -16,21 +17,26 @@ public class CallStatement extends FortranItem {
 		if (y < 0) {
 			y = n;
 		}
-		subr = pars.parseSubprogram(stmt.substring(x, y), FortranOperand.VOID);
+		String f = stmt.substring(x, y);
+		x = y;
+		int na = 0;
+		if (x < n) {
+			Vector<FortranExpr> vx = new Vector<FortranExpr>();
+			do {
+				y = pars.matchingComma(stmt, x);
+				if (y < 0) {
+					y = n;
+				}
+				vx.add(new FortranExpr(stmt.substring(x, y), pars));
+				// TODO: check errors?
+				x = y + 1;
+			} while (x < n);
+			args = vx.toArray(new FortranExpr[0]);
+			na = args.length;
+		}
+		subr = pars.parseSubprogram(f, FortranOperand.VOID, na);
 		if (subr.type != FortranOperand.VOID) {
 			pars.errsAdd("Subroutine name not unique");
-		}
-		if (y >= n) {
-			return;
-		}
-		x = y + 1;
-		y = stmt.indexOf(')', x); // should be last char
-		if (y > x) {
-			String[] av = stmt.substring(x, y).split(",");
-			args = new FortranOperand[av.length];
-			for (x = 0; x < av.length; ++x) {
-				args[x] = pars.parseOperand(av[x]);
-			}
 		}
 	}
 
@@ -46,17 +52,20 @@ public class CallStatement extends FortranItem {
 
 	public void genCode(FortranParser pars) {
 		// TODO: confirm number of calling parameters...
+		int x;
+		for (x = 0; x < args.length; ++x) {
+			args[x].genCode(pars);
+		}
 		pars.emit(String.format("         B     %s", subr.name()));
 		if (args == null) {
 			return;
 		}
-		int x = 0;
-		for (; x < args.length - 1; ++x) {
+		for (x = 0; x < args.length - 1; ++x) {
 			pars.emit(String.format("         DSA   %s",
-							args[x].name()));
+							args[x].getResult()));
 		}
 		pars.emit(String.format(" R       DSA   %s",
-							args[x].name()));
+							args[x].getResult()));
 	}
 
 	public boolean error() {
