@@ -28,31 +28,31 @@ dump(this.expr, 0);
 	}
 
 	public void setTemp(FortranParser pars, int level) {
-		if (expr instanceof FortranOperation) {
-			((FortranOperation)expr).setTemp(pars, level);
+		if (expr instanceof FortranOperator) {
+			((FortranOperator)expr).setTemp(pars, level);
 		}
 	}
 
 	public void genDefs(FortranParser pars) {
 		// Variables and temps already defined...
 		// anything else?
-		if (expr instanceof FortranOperation || expr instanceof FortranArrayRef) {
+		if (expr instanceof FortranOperator || expr instanceof FortranArrayRef) {
 			expr.genDefs(pars);
 		}
 	}
 
 	public void genCode(FortranParser pars) {
-		if (expr instanceof FortranOperation) {
-			((FortranOperation)expr).genCode(pars);
+		if (expr instanceof FortranOperator) {
+			((FortranOperator)expr).genCode(pars);
 		} else {
 			// no code?
 		}
 	}
 
-	private FortranOperand parse(FortranOperation parent) {
+	private FortranOperand parse(FortranOperator parent) {
 		int y = idx;
 		FortranOperand fo = null;
-		FortranOperation op = null;
+		FortranOperator op = null;
 		char c = exprStr.charAt(idx);
 		if (Character.isLetter(c)) {
 			// must be variable, array, or function...
@@ -118,7 +118,7 @@ dump(this.expr, 0);
 		}
 		if (idx < len && exprStr.charAt(idx) != ')') {
 			// TODO: error if level != 0
-			op = FortranOperation.get(exprStr, idx);
+			op = FortranOperator.get(exprStr, idx);
 			if (op == null) {
 				// This is where most errors end up,
 				// regardless of whether this was intended
@@ -131,8 +131,8 @@ dump(this.expr, 0);
 			op.setLeft(fo);
 			fo = parse(op);
 			// might need to re-balance based on precedence...
-			if (fo instanceof FortranOperation) {
-				FortranOperation ofo = (FortranOperation)fo;
+			if (fo instanceof FortranOperator) {
+				FortranOperator ofo = (FortranOperator)fo;
 				if (ofo.preced() > op.preced()) {
 					op.setRight(ofo.getLeft());
 					ofo.setLeft(op);
@@ -166,7 +166,7 @@ dump(this.expr, 0);
 			if (Character.isDigit(c)) continue;
 			if (!exp && !decimal && c == '.') {
 				// must ensure this is not ".EQ."...
-				if (FortranOperation.relCheck(exprStr, idx)) {
+				if (FortranOperator.relCheck(exprStr, idx)) {
 					break;
 				}
 				decimal = true;
@@ -200,8 +200,8 @@ dump(this.expr, 0);
 			System.err.format("[%d] NULL\n", level);
 			return;
 		}
-		if (op instanceof FortranOperation) {
-			FortranOperation fo = (FortranOperation)op;
+		if (op instanceof FortranOperator) {
+			FortranOperator fo = (FortranOperator)op;
 			System.err.format("[%d] OP %d: %s %d %d\n",
 				level, fo.oper(), fo.name(), fo.type(), fo.kind());
 			dump(fo.getLeft(), level + 1);

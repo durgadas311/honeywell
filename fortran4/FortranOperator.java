@@ -2,7 +2,7 @@
 
 import java.io.*;
 
-public class FortranOperation extends FortranOperand {
+public class FortranOperator extends FortranOperand {
 	static final int PWR = 1;
 	static final int MULT = 2;
 	static final int DIV = 3;
@@ -37,7 +37,7 @@ public class FortranOperation extends FortranOperand {
 	FortranOperand tmp = null;
 
 	// TODO: need to ensure constant "1" exists...
-	public FortranOperation(int op) {
+	public FortranOperator(int op) {
 		super(0, 0);
 		this.op = op;
 		left = null;
@@ -51,15 +51,15 @@ public class FortranOperation extends FortranOperand {
 	public void genDefs(FortranParser pars) {
 		// TODO: need to get temp var type and num...
 		// TODO: might reference an external function
-		if (left instanceof FortranOperation || left instanceof FortranArrayRef) {
+		if (left instanceof FortranOperator || left instanceof FortranArrayRef) {
 			left.genDefs(pars);
 		}
-		if (right instanceof FortranOperation || left instanceof FortranArrayRef) {
+		if (right instanceof FortranOperator || left instanceof FortranArrayRef) {
 			right.genDefs(pars);
 		}
 	}
 
-	// ----- Only for FortranOperation -----
+	// ----- Only for FortranOperator -----
 	public int oper() { return op; }
 
 	public void setTemp(FortranParser pars, int level) {
@@ -78,13 +78,13 @@ public class FortranOperation extends FortranOperand {
 			break;
 		default:
 		}
-		if (left instanceof FortranOperation) {
-			((FortranOperation)left).setTemp(pars, level + 1);
+		if (left instanceof FortranOperator) {
+			((FortranOperator)left).setTemp(pars, level + 1);
 		} else if (left instanceof FortranArrayRef) {
 			((FortranArrayRef)left).setTemp(pars, level + 1);
 		}
-		if (right instanceof FortranOperation) {
-			((FortranOperation)right).setTemp(pars, level + 1);
+		if (right instanceof FortranOperator) {
+			((FortranOperator)right).setTemp(pars, level + 1);
 		} else if (right instanceof FortranArrayRef) {
 			((FortranArrayRef)right).setTemp(pars, level + 1);
 		}
@@ -102,10 +102,10 @@ public class FortranOperation extends FortranOperand {
 	}
 
 	// TODO: unary "-" ?
-	static public FortranOperation get(String op, int idx) {
+	static public FortranOperator get(String op, int idx) {
 		for (int x = 1; x < parse.length; ++x) {
 			if (op.startsWith(parse[x], idx)) {
-				return new FortranOperation(x);
+				return new FortranOperator(x);
 			}
 		}
 		return null;
@@ -153,14 +153,14 @@ public class FortranOperation extends FortranOperand {
 
 	public void genCode(FortranParser pars) {
 		// TODO: how does this work... or is it done externally?
-		if (left instanceof FortranOperation) {
-			((FortranOperation)left).genCode(pars);
+		if (left instanceof FortranOperator) {
+			((FortranOperator)left).genCode(pars);
 		} else if (left instanceof FortranArrayRef) {
 			((FortranArrayRef)left).genCode(pars);
 		}
 		// TODO: unary op handling...
-		if (right instanceof FortranOperation) {
-			((FortranOperation)right).genCode(pars);
+		if (right instanceof FortranOperator) {
+			((FortranOperator)right).genCode(pars);
 		} else if (right instanceof FortranArrayRef) {
 			((FortranArrayRef)right).genCode(pars);
 		}
