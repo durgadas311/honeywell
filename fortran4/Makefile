@@ -3,16 +3,18 @@ CLASSES = $(subst .java,.class,$(JAVAS))
 
 CPCLASSES =	CharConverter.class
 
-HWCLASSES =	CoreMemory.class
+HWCLASSES =	CoreMemory.class \
+		InstrDecode.class
 
 EZCLASSES =	Assembler.class \
 		Loader.class \
 		BRTLoader.class \
+		RawLoader.class \
 		CoreLoader.class \
 		CardLoader.class \
 		TapeLoader.class
 
-EXTCLASSES = $(CPCLASSES) $(HWCLASSES)
+EXTCLASSES = $(CPCLASSES) $(HWCLASSES) $(EZCLASSES)
 
 all: $(EXTCLASSES) $(CLASSES)
 
