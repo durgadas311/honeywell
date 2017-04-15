@@ -66,8 +66,6 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void acboio() {
-		eofCode = 2;
-		eotCode = 2;
 		sys.SR = sys.BAR;
 		int fmt = getAdr();
 		// Doesn't check IM...
@@ -80,6 +78,8 @@ public class FortranRunTime implements HW2000Trap {
 			}
 			buf = null;
 		} else {
+			eofCode = 2;
+			eotCode = 2;
 			// TODO: how to determine READ vs WRITE
 			input = (t & 040) != 0;
 			dev = (t >> 3) & 003; // TODO: '3' is not a std addr...

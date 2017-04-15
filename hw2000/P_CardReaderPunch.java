@@ -435,7 +435,7 @@ public class P_CardReaderPunch extends JFrame
 	}
 	public byte[] nextRecord() {
 		if (!getCard(sts[1])) {
-			return null;
+			return new byte[0]; // like MagTape EOF mark...
 		}
 		byte[] b = new byte[vUnit == 2 ? 160 : 80];
 		// TODO: conversion modes...
