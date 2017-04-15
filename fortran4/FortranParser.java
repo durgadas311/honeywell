@@ -13,6 +13,7 @@ public interface FortranParser {
 	FortranItem recurse(String stmt);
 
 	int addrMode();
+	int intPrecision();
 
 	String uniqueName();
 	int getDev(int code);
@@ -20,15 +21,18 @@ public interface FortranParser {
 	void addSym(String id, FortranOperand op);
 	void errsAdd(String err);		// for compile-time errors (curLine)
 	void errsAdd(int line, String err);	// for generate-time errors
+	int matchingParen(String str, int lparen);
+	int matchingComma(String str, int start);
 
 	void setImplicit(char ltr, int type);
 	FortranOperand parseConstant(String id);
 	FortranOperand parseVariable(String id);
 	FortranOperand parseVariable(String id, int type);
 	FortranParameter parseParameter(String id, FortranOperand scope);
-	FortranSubprogram parseSubprogram(String id, int type);
+	FortranSubprogram parseSubprogram(String id, int type, int argc);
 	FortranArray parseArray(String id, int type, int[] dims);
 	FortranArrayRef parseArrayRef(FortranArray ary, String dims);
+	FortranFuncCall parseFuncCall(FortranSubprogram fnc, String nm, String args);
 	FortranOperand parseOperand(String id);
 	boolean inSubroutine();
 	boolean inMainProg();

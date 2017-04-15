@@ -16,16 +16,15 @@ public class SubrStatement extends FortranItem {
 		if (y < 0) {
 			y = n;
 		}
-		subr = pars.parseSubprogram(stmt.substring(x, y), FortranOperand.VOID);
-		if (subr == null || subr.type() != FortranOperand.VOID) {
-			pars.errsAdd("Subroutine name not unique");
-		}
-		if (y >= n) {
-			return;
-		}
+		String s = stmt.substring(x, y);
 		x = y + 1;
-		y = stmt.indexOf(')', x); // should be last char
-		if (y > x) {
+		int na = 0;
+		if (y < n) {
+			y = stmt.indexOf(')', x); // should be last char
+			if (y <= x) {
+				pars.errsAdd("Malformed Subroutine Statement");
+				return;
+			}
 			// do not "register" these, they are private, dummy, vars...
 			// they must be contiguous for EXM...
 			String[] av = stmt.substring(x, y).split(",");
@@ -33,6 +32,11 @@ public class SubrStatement extends FortranItem {
 			for (x = 0; x < av.length; ++x) {
 				args[x] = pars.parseParameter(av[x], subr);
 			}
+			na = args.length;
+		}
+		subr = pars.parseSubprogram(s, FortranOperand.VOID, na);
+		if (subr == null || subr.type() != FortranOperand.VOID) {
+			pars.errsAdd("Subroutine name not unique");
 		}
 	}
 

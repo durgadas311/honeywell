@@ -184,6 +184,15 @@ public class Fortran4 implements FortranParser {
 		emit("  $ENDFILDC    #1B7");
 		emit("  $REWINDDC    #1B8");
 		emit("  $BKSPACDC    #1B9");
+		emit("  AINT   DC    #1B10");
+		emit("  INT    DC    #1B11");
+		emit("  SQRT   DC    #1B12");
+		emit("  IAND   DC    #1B13");
+		emit("  IOR    DC    #1B14");
+		emit("  ICOMPL DC    #1B15");
+		emit("  IEXCLR DC    #1B16");
+		// TODO: enter templates for library functions...
+		// new FortranSubprogram(...) ?
 		//
 		setDefs();
 		emit(String.format("  $START CAM   %02o", adrMode == 4 ? 060 : 000));
@@ -519,6 +528,47 @@ public class Fortran4 implements FortranParser {
 		errsAdd(curLine, err);
 	}
 
+	// finds next comman that is at same paren level
+	public int matchingComma(String str, int start) {
+		int x = start;
+		int y = x;
+		int p = 0;
+		int n = str.length();
+		while (y < n && (str.charAt(y) != ',' || p > 0)) {
+			if (str.charAt(y) == '(') {
+				++p;
+			} else if (str.charAt(y) == ')') {
+				--p;
+			}
+			++y;
+		}
+		if (p != 0) {
+			return -1;
+		}
+		return y; // points to comma...
+	}
+	public int matchingParen(String str, int lparen) {
+		if (str.charAt(lparen) != '(') {
+			return -1;
+		}
+		int x = lparen;
+		int y = x + 1; // start inside first paren...
+		int p = 1; // inside 1 paren...
+		int n = str.length();
+		while (p > 0 && y < n) {
+			if (str.charAt(y) == '(') {
+				++p;
+			} else if (str.charAt(y) == ')') {
+				--p;
+			}
+			++y;
+		}
+		if (p != 0) {
+			return -1;
+		}
+		return y;
+	}
+
 	public int getDev(int code) {
 		return devices[code & 017];
 	}
@@ -645,18 +695,24 @@ public class Fortran4 implements FortranParser {
 		return fo;
 	}
 
-	public FortranSubprogram parseSubprogram(String id, int type) {
+	public FortranSubprogram parseSubprogram(String id, int type, int argc) {
 		if (type < 0) {
 			type = implicits[id.charAt(0) - 'A'];
 		}
+		FortranSubprogram fs;
 		if (symTab.containsKey(id)) {
 			FortranOperand fo = symTab.get(id);
-			if (fo.kind() != FortranOperand.FUNCTION) {
+			if (fo.kind() != FortranOperand.FUNCTION ||
+					fo.type() != type ||
+					((FortranSubprogram)fo).numArgs() != argc) {
+				errsAdd("Subprogram name conflict");
 				return null;
 			}
 			return (FortranSubprogram)fo;
 		}
-		FortranSubprogram fs = new FortranSubprogram(id, type);
+		// TODO: track dummy argument types...
+		// complicated by possible subsequent (re)defines...
+		fs = new FortranSubprogram(id, type, argc, this);
 		addSym(id, fs);
 		return fs;
 	}
@@ -704,6 +760,13 @@ public class Fortran4 implements FortranParser {
 		}
 		FortranExpr xpr = new FortranExpr(ex, this);
 		return new FortranArrayRef(ary, xpr);
+	}
+
+	public FortranFuncCall parseFuncCall(FortranSubprogram fnc, String nm, String args) {
+		// could include parenthesised expressions... including function calls...
+		// this is essentially a FortranExpr... for each arg...
+		// that recursion is handled in FortranFuncCall...
+		return new FortranFuncCall(fnc, nm, args, this);
 	}
 
 	// TODO: array-ref and function-call?
@@ -771,6 +834,7 @@ public class Fortran4 implements FortranParser {
 
 	public int getLine() { return curLine; }
 	public int addrMode() { return adrMode; }
+	public int intPrecision() { return intPrec; }
 	public void setName(String nm) {
 		prog = nm;
 	}

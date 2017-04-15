@@ -13,21 +13,12 @@ public class IfStatement extends FortranItem {
 	public IfStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
 		int x = 2; // skip IF
-		int y = x + 1; // start inside first paren...
-		int p = 1; // inside 1 paren...
-		while (p > 0 && y < n) {
-			if (stmt.charAt(y) == '(') {
-				++p;
-			} else if (stmt.charAt(y) == ')') {
-				--p;
-			}
-			++y;
-		}
+		int y = pars.matchingParen(stmt, x);
 		// Something must follow expression...
-		if (y >= n || p != 0) {
+		if (y < 0 || y >= n) {
 			pars.errsAdd("Malformed IF expression");
 		}
-		expr = pars.parseExpr(stmt.substring(x, y));
+		expr = pars.parseExpr(stmt.substring(x, y)); // strip parens?
 		x = y; // 'y' already points past end paren
 		String rest = stmt.substring(x);
 		if (rest.matches("[0-9]+,[0-9]+,[0-9]+")) {

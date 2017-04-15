@@ -6,7 +6,7 @@ import java.util.Vector;
 
 public class FortranRunTime implements HW2000Trap {
 	static final int base = 1340;
-	static final int numOps = 10;
+	static final int numOps = 17;
 
 	private String buf;
 	private int idx;
@@ -32,36 +32,23 @@ public class FortranRunTime implements HW2000Trap {
 		}
 		int op = sys.rawReadMem(sys.SR);
 		switch (op) {
-		case 0:
-			exit();
-			break;
-		case 1:
-			acboio();	// start/end I/O
-			break;
-		case 2:
-			acboio_x(); // each parameter in I/O list...
-			break;
-		case 3:
-			acbfph();	// floating point assist, h/w
-			break;
-		case 4:
-			acbfxp();	// fixed-point assist
-			break;
-		case 5:
-			eof();
-			break;
-		case 6:
-			eot();
-			break;
-		case 7:
-			endfile();
-			break;
-		case 8:
-			rewind();
-			break;
-		case 9:
-			backspace();
-			break;
+		case 0: exit(); break;
+		case 1: acboio(); break;	// start/end I/O
+		case 2: acboio_x(); break;	// each parameter in I/O list...
+		case 3: acbfph(); break;	// floating point assist, h/w
+		case 4: acbfxp(); break;	// fixed-point assist
+		case 5: eof(); break;
+		case 6: eot(); break;
+		case 7: endfile(); break;
+		case 8: rewind(); break;
+		case 9: backspace(); break;
+		case 10: aint(); break;
+		case 11: iint(); break;
+		case 12: sqrt(); break;
+		case 13: iand(); break;
+		case 14: ior(); break;
+		case 15: icompl(); break;
+		case 16: iexclr(); break;
 		default:
 			// our best guess...
 			sys.SR = sys.BAR;
@@ -168,6 +155,64 @@ public class FortranRunTime implements HW2000Trap {
 			break;
 		}
 		putInt(b, r);
+	}
+
+	private void aint() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.floor(l);
+		putReal(r, l);
+	}
+
+	private void iint() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		int i = (int)Math.floor(l);
+		putInt(r, i);
+	}
+
+	private void sqrt() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.sqrt(l);
+		putReal(r, l);
+	}
+
+	private void iand() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int b = getAdr();
+		putInt(r, getInt(a) & getInt(b));
+	}
+
+	private void ior() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int b = getAdr();
+		putInt(r, getInt(a) | getInt(b));
+	}
+
+	private void icompl() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		putInt(r, ~getInt(a));
+	}
+
+	private void iexclr() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int b = getAdr();
+		putInt(r, getInt(a) ^ getInt(b));
 	}
 
 	private void eof() {

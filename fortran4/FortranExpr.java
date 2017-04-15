@@ -65,20 +65,20 @@ dump(this.expr, 0);
 				// array or function.  arrays must be pre-defined,
 				// so if nothing yet exists in symTab it must be
 				// a function (?)
+				int x = pars.matchingParen(exprStr, idx);
+				if (x < 0) {
+					pars.errsAdd("Unmatched parenthesis");
+					return null;
+				}
+				// 'x' points beyond r-paren
+				String e = exprStr.substring(idx + 1, x - 1);
+				idx = x;
 				fo = pars.getSym(f);
 				if (fo == null || fo.kind() == FortranOperand.FUNCTION) {
-					pars.errsAdd("Function call not supported");
-					return null;
+					// 'fo' could be null going in to this...
+					fo = pars.parseFuncCall((FortranSubprogram)fo, f, e);
 				} else if (fo.kind() == FortranOperand.ARRAY) {
-					// No nesting... simple expressions, integer vars
-					int x = exprStr.indexOf(')', idx);
-					if (x < 0) {
-						pars.errsAdd("Open array reference");
-						return null;
-					}
-					fo = pars.parseArrayRef((FortranArray)fo,
-						exprStr.substring(idx + 1, x));
-					idx = x + 1;
+					fo = pars.parseArrayRef((FortranArray)fo, e);
 				} else {
 					pars.errsAdd("Not array or function: " + f);
 					return null;

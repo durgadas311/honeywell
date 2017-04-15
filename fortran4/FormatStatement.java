@@ -10,21 +10,12 @@ public class FormatStatement extends FortranItem {
 	public FormatStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
 		int x = 6; // skip FORMAT
-		int y = x + 1; // start inside first paren...
-		int p = 1; // inside 1 paren...
-		while (p > 0 && y < n) {
-			if (stmt.charAt(y) == '(') {
-				++p;
-			} else if (stmt.charAt(y) == ')') {
-				--p;
-			}
-			++y;
-		}
+		int y = pars.matchingParen(stmt, x);
 		// [x,y] include parens...
-		if (y < n || p != 0) {
+		if (y < n) { // includes y < 0 error case
 			pars.errsAdd("Malformed FORMAT string");
 		}
-		fmtStr = stmt.substring(x + 1, y - 1);
+		fmtStr = stmt.substring(x + 1, y - 1); // strip parens
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

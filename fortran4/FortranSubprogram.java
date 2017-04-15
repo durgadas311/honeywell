@@ -3,8 +3,18 @@
 import java.io.*;
 
 public class FortranSubprogram extends FortranVariable {
-	public FortranSubprogram(String name, int type) {
+	private int nargs;
+	private FortranOperand ret = null;
+
+	public FortranSubprogram(String name, int type, int argc, FortranParser pars) {
 		super(name, type);
+		nargs = argc;
+		if (type != VOID) {
+			// Create return value
+			String sym = pars.uniqueName();
+			ret = new FortranVariable(sym, type, pars.intPrecision());
+			pars.addSym(name + "." + name, ret);
+		}
 	}
 
 	@Override
@@ -13,4 +23,7 @@ public class FortranSubprogram extends FortranVariable {
 	@Override
 	public void genDefs(FortranParser pars) {
 	}
+
+	public String getResult() { return ret.name(); }
+	public int numArgs() { return nargs; }
 }
