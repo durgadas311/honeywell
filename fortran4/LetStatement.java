@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.regex.Pattern;
 
 public class LetStatement extends FortranItem {
-	static final String _PAT = "[A-Z][A-Z0-9]*=.*"; // TODO: arrays
+	static final String _PAT = "[A-Z].*=.*"; // TODO: arrays
 	private String errors = "";
 	private FortranExpr expr;
 	int[] arith = null;
@@ -15,6 +15,7 @@ public class LetStatement extends FortranItem {
 		int n = stmt.length();
 		int x = 0;
 		int y = stmt.indexOf('=', x);
+		// This will include array dimensions!
 		var = pars.parseVariable(stmt.substring(x, y));
 		x = y + 1;
 		expr = pars.parseExpr(stmt.substring(x));
@@ -31,11 +32,14 @@ public class LetStatement extends FortranItem {
 	}
 
 	public void genDefs(PrintStream out, FortranParser pars) {
-		// Anything for us?
+		expr.genDefs(out, pars);
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
 		pars.setExpr(expr);
+		if (var instanceof FortranArrayRef) {
+			((FortranArrayRef)var).genCode(out, pars);
+		}
 		switch (var.type()) {
 		case FortranOperand.INTEGER:
 		case FortranOperand.LOGICAL:

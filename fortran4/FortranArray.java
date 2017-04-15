@@ -4,6 +4,7 @@ import java.io.*;
 
 public class FortranArray extends FortranVariable {
 	private int[] dims;
+	private String ind;
 
 	public FortranArray(String name, int type, int prec, int[] dims) {
 		super(name, type, prec);
@@ -15,9 +16,12 @@ public class FortranArray extends FortranVariable {
 
 	@Override
 	public void genDefs(PrintStream out, FortranParser pars) {
+		ind = pars.uniqueName();
+		pars.emit(String.format("  %-7sDSA   %s", ind, name));
 	}
 
 	// For Arrays only:
+	public String ref() { return ind; }
 	public int numDims() { return dims.length; }
 	public int[] getDims() { return dims; }
 	public int getDim(int x) { return dims[x]; } // TODO: range check

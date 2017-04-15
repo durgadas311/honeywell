@@ -28,6 +28,7 @@ public interface FortranParser {
 	FortranParameter parseParameter(String id, FortranOperand scope);
 	FortranSubprogram parseSubprogram(String id, int type);
 	FortranArray parseArray(String id, int type, int[] dims);
+	FortranArrayRef parseArrayRef(FortranArray ary, String dims);
 	FortranOperand parseOperand(String id);
 	boolean inSubroutine();
 	boolean inMainProg();

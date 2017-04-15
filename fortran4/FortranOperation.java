@@ -45,16 +45,16 @@ public class FortranOperation extends FortranOperand {
 	}
 
 	public int kind() { return OPERATOR; }
-	public String name() { return tmp.name(); }
+	public String name() { return tmp == null ? "null" : tmp.name(); }
 	public int preced() { return precedence[op]; }
 
 	public void genDefs(PrintStream out, FortranParser pars) {
 		// TODO: need to get temp var type and num...
 		// TODO: might reference an external function
-		if (left != null) {
+		if (left instanceof FortranOperation || left instanceof FortranArrayRef) {
 			left.genDefs(out, pars);
 		}
-		if (right != null) {
+		if (right instanceof FortranOperation || left instanceof FortranArrayRef) {
 			right.genDefs(out, pars);
 		}
 	}
@@ -76,12 +76,17 @@ public class FortranOperation extends FortranOperand {
 		case COMPLEX:
 			tmp = pars.getCplxTemp(level);
 			break;
+		default:
 		}
 		if (left instanceof FortranOperation) {
 			((FortranOperation)left).setTemp(pars, level + 1);
+		} else if (left instanceof FortranArrayRef) {
+			((FortranArrayRef)left).setTemp(pars, level + 1);
 		}
 		if (right instanceof FortranOperation) {
 			((FortranOperation)right).setTemp(pars, level + 1);
+		} else if (right instanceof FortranArrayRef) {
+			((FortranArrayRef)right).setTemp(pars, level + 1);
 		}
 	}
 
@@ -150,10 +155,14 @@ public class FortranOperation extends FortranOperand {
 		// TODO: how does this work... or is it done externally?
 		if (left instanceof FortranOperation) {
 			((FortranOperation)left).genCode(out, pars);
+		} else if (left instanceof FortranArrayRef) {
+			((FortranArrayRef)left).genCode(out, pars);
 		}
 		// TODO: unary op handling...
 		if (right instanceof FortranOperation) {
 			((FortranOperation)right).genCode(out, pars);
+		} else if (right instanceof FortranArrayRef) {
+			((FortranArrayRef)right).genCode(out, pars);
 		}
 		switch (type) {
 		case INTEGER:

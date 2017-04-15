@@ -60,6 +60,9 @@ public class ReadStatement extends FortranItem {
 		}
 		pars.emit(String.format(" R       DCW   #1C%02o", perph & 077));
 		for (int z = 0; z < list.length; ++z) {
+			if (list[z] instanceof FortranArrayRef) {
+				((FortranArrayRef)list[z]).genCode(out, pars);
+			}
 			pars.emit("         CSM");
 			pars.emit(String.format(" R       DSA   %s", list[z].name()));
 		}

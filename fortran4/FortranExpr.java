@@ -27,9 +27,18 @@ dump(this.expr, 0);
 		return expr.name();
 	}
 
+	public void setTemp(FortranParser pars, int level) {
+		if (expr instanceof FortranOperation) {
+			((FortranOperation)expr).setTemp(pars, level);
+		}
+	}
+
 	public void genDefs(PrintStream out, FortranParser pars) {
 		// Variables and temps already defined...
 		// anything else?
+		if (expr instanceof FortranOperation || expr instanceof FortranArrayRef) {
+			expr.genDefs(out, pars);
+		}
 	}
 
 	public void genCode(PrintStream out, FortranParser pars) {
@@ -54,8 +63,32 @@ dump(this.expr, 0);
 				}
 				++idx;
 			}
-			// TODO: charAt(idx) == '(' means array or func...
-			fo = pars.parseVariable(exprStr.substring(y, idx));
+			String f = exprStr.substring(y, idx);
+			if (idx < len && exprStr.charAt(idx) == '(') {
+				// array or function.  arrays must be pre-defined,
+				// so if nothing yet exists in symTab it must be
+				// a function (?)
+				fo = pars.getSym(f);
+				if (fo == null || fo.kind() == FortranOperand.FUNCTION) {
+					pars.errsAdd("Function call not supported");
+					return null;
+				} else if (fo.kind() == FortranOperand.ARRAY) {
+					// No nesting... simple expressions, integer vars
+					int x = exprStr.indexOf(')', idx);
+					if (x < 0) {
+						pars.errsAdd("Open array reference");
+						return null;
+					}
+					fo = pars.parseArrayRef((FortranArray)fo,
+						exprStr.substring(idx + 1, x));
+					idx = x + 1;
+				} else {
+					pars.errsAdd("Not array or function: " + f);
+					return null;
+				}
+			} else {
+				fo = pars.parseVariable(f);
+			}
 		} else if (c == '(') {
 			// TODO: could be COMPLEX, also...
 			++idx;
@@ -164,7 +197,7 @@ dump(this.expr, 0);
 
 	static private void dump(FortranOperand op, int level) {
 		if (op == null) {
-			System.err.format("[%d] null\n", level);
+			System.err.format("[%d] NULL\n", level);
 			return;
 		}
 		if (op instanceof FortranOperation) {
@@ -175,7 +208,8 @@ dump(this.expr, 0);
 			dump(fo.getRight(), level + 1);
 			return;
 		}
-		System.err.format("[%d] %s: %d %d %d\n",
-			level, op.name(), op.type(), op.kind(), op.precision());
+		System.err.format("[%d] %s: %d %d %d (%s)\n",
+			level, op.name(), op.type(), op.kind(), op.precision(),
+			op.getClass().getName());
 	}
 }

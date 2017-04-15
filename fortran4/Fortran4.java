@@ -323,7 +323,8 @@ public class Fortran4 implements FortranParser {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
-		if (inProg && line.charAt(0) == 'C') {
+		// TODO: only in program code?
+		if (line.charAt(0) == 'C') {
 			return 0;
 		}
 		// TODO: some of these must be before any FORTRAN cards...
@@ -354,13 +355,8 @@ public class Fortran4 implements FortranParser {
 			labl = Integer.valueOf(lab);
 		}
 		FortranItem itm = null;
-		DoStatement du;
 		// TODO: enforce inProg for these...
-		if ((du = (DoStatement)DoStatement.parse(stmt, this)) != null) {
-			itm = du;
-			doLoops.push(du);
-			doStmts.put(du.getTerm(), du);
-		}
+		itm = DoStatement.parse(stmt, this);
 		if (itm == null) { itm = StmtFunction.parse(stmt, this); }
 		if (itm == null) { itm = IfStatement.parse(stmt, this); }
 		if (itm == null) { itm = FormatStatement.parse(stmt, this); }
@@ -466,9 +462,11 @@ public class Fortran4 implements FortranParser {
 			// error... how to recover...
 			return;
 		}
-		doLoops.pop();
 		// Need to allow duplicates, and enforce order...
 		do {
+			if (doLoops.peek() == du) { // should always be true
+				doLoops.pop();
+			}
 			du.genLoop(out, this);
 			du = du.getNext();
 		} while (du != null);
@@ -487,6 +485,14 @@ public class Fortran4 implements FortranParser {
 		for (FortranItem itm : program) {
 			if (itm.label > 0) {
 				emit(String.format("  $%05d RESV  0", itm.label));
+			}
+			if (itm instanceof DoStatement) {
+				DoStatement du = (DoStatement)itm;
+				doLoops.push(du);
+				if (doStmts.containsKey(du.getTerm())) {
+					du.setNext(doStmts.get(du.getTerm()));
+				}
+				doStmts.put(du.getTerm(), du);
 			}
 			itm.genCode(out, this);
 			checkDo(itm);
@@ -573,21 +579,47 @@ public class Fortran4 implements FortranParser {
 	}
 
 	public FortranOperand parseVariable(String id, int type) {
+		String dims = null;
 		int p = intPrec;
 		if (type == FortranOperand.ADDRESS) {
 			p = adrMode;
+		}
+		int x = id.indexOf('(');
+		if (x >= 0) {
+			int y = id.indexOf(')', x); // should be last char...
+			if (y < 0) {
+				errsAdd("Malformed array reference");
+				//return null; // will this break things?
+			}
+			dims = id.substring(x + 1, y);
+			id = id.substring(0, x);
 		}
 		String sym = id;
 		if (inSubr) {
 			sym = uniqueName();
 			id = curSubr.name() + "." + id;
 		}
+		FortranOperand fo = null;
 		if (symTab.containsKey(id)) {
-			return symTab.get(id);
+			fo = symTab.get(id);
+			if (dims == null) {
+				return fo;
+			}
+			p = fo.precision();
+			type = fo.type();
+		}
+		if (fo == null && dims != null) {
+			errsAdd("Undefined array");
+			//return null; // will this break things?
 		}
 		// only INTEGER has variable precision, at this level
-		FortranOperand fo = new FortranVariable(sym, type, p);
-		addSym(id, fo);
+		if (dims == null) {
+			fo = new FortranVariable(sym, type, p);
+			addSym(id, fo);
+		} else {
+			fo = parseArrayRef((FortranArray)fo, dims);
+			((FortranArrayRef)fo).setTemp(this, 0);
+		}
 		return fo;
 	}
 
@@ -655,6 +687,22 @@ public class Fortran4 implements FortranParser {
 		addSym(id, fa);
 		arrays.put(id, fa);
 		return fa;
+	}
+
+	public FortranArrayRef parseArrayRef(FortranArray ary, String dims) {
+		String[] ds = dims.split(",");
+		int p = 1;
+		String ex = String.format("%d*(%s", ary.sizeof(), ds[0]);
+		for (int x = 1; x < ds.length; ++x) {
+			ex += String.format("+%d*(%s", ary.getDim(x - 1), ds[x]);
+			++p;
+		}
+		while (p > 0) {
+			ex += ')';
+			--p;
+		}
+		FortranExpr xpr = new FortranExpr(ex, this);
+		return new FortranArrayRef(ary, xpr);
 	}
 
 	// TODO: array-ref and function-call?

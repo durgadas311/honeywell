@@ -76,6 +76,7 @@ public class DoStatement extends FortranItem {
 	// Methods specific to DoStatement...
 	public int getTerm() { return term; }
 	public DoStatement getNext() { return next; }
+	public void setNext(DoStatement du) { next = du; }
 
 	public void genLoop(OutputStream out, FortranParser pars) {
 		pars.emit(String.format("         BA    %s,%s", step.name(), var.name()));

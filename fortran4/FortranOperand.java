@@ -18,6 +18,7 @@ public abstract class FortranOperand {
 	static final int OPERATOR = 4;
 	static final int PARAMETER = 5;
 	static final int ARRAY = 6;
+	static final int ARRAYREF = 7;
 
 	protected int type = 0;
 	protected int prec = 0; // "0" means not yet known
