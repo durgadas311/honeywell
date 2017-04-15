@@ -4,6 +4,7 @@ import java.io.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
+import java.lang.reflect.Constructor;
 
 public class HW2000FrontPanel extends JFrame
 		implements FrontPanel, ActionListener, ChangeListener, Runnable {
@@ -73,6 +74,7 @@ public class HW2000FrontPanel extends JFrame
 	boolean listing = false;
 	boolean tape = false;
 	boolean monitor = false;
+	boolean fortran = false;
 	int currLow = 0;
 	int currHi = 0;
 
@@ -534,7 +536,18 @@ public class HW2000FrontPanel extends JFrame
 		//---------------------------------------------------------
 		JMenuBar mb = new JMenuBar();
 		JMenu mu = new JMenu("File");
-		JMenuItem mi = new JMenuItem("Assemble", KeyEvent.VK_A);
+		JMenuItem mi;
+		fortran = false;
+		try {
+			Class.forName("Fortran4");
+			fortran = true;
+		} catch (Exception ee) { }
+		if (fortran) {
+			mi = new JMenuItem("FORTRAN", KeyEvent.VK_F);
+			mi.addActionListener(this);
+			mu.add(mi);
+		}
+		mi = new JMenuItem("Assemble", KeyEvent.VK_A);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Monitor", KeyEvent.VK_M);
@@ -1560,6 +1573,57 @@ public class HW2000FrontPanel extends JFrame
 		}
 	}
 
+	private boolean fortranFile() {
+		File lst = null;
+		File ezc = null;
+		String op = "FORTRAN IV";
+		File src = pickFile(op + " Program",
+				"f4", "FORTRAN", _last);
+		if (src == null) {
+			return false;
+		}
+		_last = src;
+		if (listing) {
+			String l = src.getAbsolutePath();
+			if (l.endsWith(".f4")) {
+				l = l.substring(0, l.length() - 3);
+			}
+			lst = new File(l + ".lst");
+			ezc = new File(l + ".ezc");
+			FileOutputStream lstf;
+			try {
+				lstf = new FileOutputStream(lst);
+			} catch (Exception ee) {
+				warning(this, op, ee.toString());
+				return false;
+			}
+			getPrinter().setOutput(lstf);
+		}
+		Compiler cmp;
+		try {
+			Class<?> clazz = Class.forName("Fortran4");
+			Constructor<?> ctor = clazz.getConstructor(File.class);
+			cmp = (Compiler)ctor.newInstance(src);
+		} catch (Exception ee) {
+ee.printStackTrace();
+			return false;
+		}
+		int e = cmp.compile(sys, listing);
+		if (e >= 0) {
+			e = cmp.generate(ezc, null);
+		}
+		if (e < 0) {
+			warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");
+			return false;
+		}
+		boolean ret = assemble(ezc, op);
+		if (ret) {
+			inform(this, op, String.format("Compile complete. %07o %07o %07o",
+				currLow, currHi, sys.SR));
+		}
+		return ret;
+	}
+
 	private boolean asmFile(String op) {
 		OutputStream lst = null;
 		File src = pickFile(op + " Program",
@@ -1568,13 +1632,6 @@ public class HW2000FrontPanel extends JFrame
 			return false;
 		}
 		_last = src;
-		Assembler asm = new Assembler(src);
-		int e = asm.passOne();
-		if (e < 0) {
-			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
-			return false;
-		}
-		Peripheral p = null;
 		if (listing) {
 			String l = src.getAbsolutePath();
 			if (l.endsWith(".ezc")) {
@@ -1589,6 +1646,26 @@ public class HW2000FrontPanel extends JFrame
 			}
 			getPrinter().setOutput(lst);
 		}
+		boolean ret = assemble(src, op);
+		getPrinter().setOutput(null);
+		if (lst != null) {
+			try { lst.close(); } catch (Exception ee) {}
+		}
+		if (ret) {
+			inform(this, op, String.format("Assembly complete. %07o %07o %07o",
+				currLow, currHi, sys.SR));
+		}
+		return ret;
+	}
+
+	private boolean assemble(File src, String op) {
+		Assembler asm = new Assembler(src);
+		int e = asm.passOne();
+		if (e < 0) {
+			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
+			return false;
+		}
+		Peripheral p = null;
 		int low = asm.getMin();
 		int hi = asm.getMax();
 		int start = asm.getStart();
@@ -1638,6 +1715,9 @@ public class HW2000FrontPanel extends JFrame
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return false;
 		}
+		if (listing) {
+			asm.listSymTab();
+		}
 		if (monitor) {
 			sys.setField(0007, ibr);
 			sys.setField(0005, brr);
@@ -1659,12 +1739,6 @@ public class HW2000FrontPanel extends JFrame
 		setContents(sys.rawReadMem(addressReg));
 		currLow = reloc + low;
 		currHi = reloc + hi;
-		getPrinter().setOutput(null);
-		if (lst != null) {
-			try { lst.close(); } catch (Exception ee) {}
-		}
-		inform(this, op, String.format("Assembly complete. %07o %07o %07o",
-			reloc + low, reloc + hi, reloc + start));
 		return true;
 	}
 
@@ -1704,6 +1778,8 @@ public class HW2000FrontPanel extends JFrame
 	private void performMenu(JMenuItem mi) {
 		if (mi.getMnemonic() == KeyEvent.VK_A) {
 			asmFile("Assemble");
+		} else if (mi.getMnemonic() == KeyEvent.VK_F) {
+			fortranFile();
 		} else if (mi.getMnemonic() == KeyEvent.VK_M) {
 			// run automatically?
 			// set 'true' only after running?

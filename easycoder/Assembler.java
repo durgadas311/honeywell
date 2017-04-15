@@ -198,13 +198,11 @@ public class Assembler {
 				for (String l : errs) {
 					listOut("*** " + l + "\n");
 				}
+				listOut(String.format("END OF ASSEMBLY%s\n",
+					ret < 0 ? " (ERRORS)" : ""));
 			}
 		}
-		if (listing) {
-			listSymTab();
-		}
 		try { in.close(); } catch (Exception ee) {}
-		try { if (lst != null) lst.close(); } catch (Exception ee) {}
 		return ret;
 	}
 

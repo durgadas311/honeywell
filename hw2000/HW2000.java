@@ -771,7 +771,7 @@ public class HW2000 implements CoreMemory
 	public void dumpHW(int beg, int end) {
 		String marks = " WIR";
 		int m = beg & ~0177;	// 128 locations per row...
-		listOut(String.format("Memory Dump: %07o - %07o\n", beg, end));
+		listOut(String.format("\nMemory Dump: %07o - %07o\n", beg, end));
 		while (m <= end) {
 			String l = String.format("%07o 1       2       3       4       5       6       7"
 				+ "       %07o 1       2       3       4       5       6       7\n", m, m + 64);

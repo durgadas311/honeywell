@@ -10,7 +10,7 @@ EZCLASSES =	Assembler.class \
 		CardLoader.class \
 		TapeLoader.class
 
-EXTCLASSES = $(CPCLASSES) $(EZCLASSES) $(F4CLASSES)
+EXTCLASSES = $(CPCLASSES) $(EZCLASSES)
 
 FONTS = $(wildcard fonts/*.ttf)
 
@@ -54,7 +54,7 @@ h2000.tgz:
 		$(addprefix hw2000/,$(EXTCLASSES))
 
 H2000.jar: all docs/About.html
-	echo "Main-Class: System2000" >Manifest.txt
+	/bin/echo -e "Main-Class: System2000\nClass-Path: Fortran4Embedded.jar" >Manifest.txt
 	jar cfm $@ Manifest.txt *.class icons/*.png fonts/*.ttf \
 		docs/* $(JARES)
 

@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
 
-public class Fortran4 implements FortranParser {
+public class Fortran4 implements Compiler, FortranParser {
 	File inFile;
 	BufferedReader in;
 	String next = null;
@@ -116,19 +116,34 @@ public class Fortran4 implements FortranParser {
 		return bb;
 	}
 
+	public int compile(CoreMemory sys, boolean lst) {
+		this.sys = sys;
+		listing = lst;
+		int e = compile();
+		this.sys = null;
+		return e;
+	}
+
 	public int compile(File list) {
 		try {
-			// Not needed for single-pass compile
-			// in = new BufferedReader(new FileReader(inFile));
 			if (list != null) {
 				lst = new PrintStream(list);
 				listing = true;
 			}
 		} catch (Exception ee) {
-			// 'in' should never fail - already validated in ctor.
-			ee.printStackTrace();
+			//ee.printStackTrace();
 			return -1;
 		}
+		int e = compile();
+		if (listing) {
+			listing = false;
+			try { lst.close(); } catch (Exception ee) {}
+			lst = null;
+		}
+		return e;
+	}
+
+	private int compile() {
 		int ret = 0;
 		lineNo = 0;
 		end = false;
