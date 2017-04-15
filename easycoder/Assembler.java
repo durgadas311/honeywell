@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Vector;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Assembler {
 	File inFile;
@@ -107,8 +108,10 @@ public class Assembler {
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");
-		for (Map.Entry<String, Integer> entry : symTab.entrySet()) {
-			String l = String.format("  %6s %07o", entry.getKey(), entry.getValue());
+		Map<String, Integer> sorted = new TreeMap<String, Integer>(symTab);
+		for (Map.Entry<String, Integer> entry : sorted.entrySet()) {
+			String l = String.format("  %7s %07o",
+					entry.getKey(), entry.getValue());
 			++x;
 			if (x >= 7) {
 				x = 0;
