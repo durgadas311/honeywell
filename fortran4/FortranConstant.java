@@ -73,7 +73,7 @@ public class FortranConstant extends FortranOperand {
 	public String name() { return name; } // no names for constants...???
 
 	// Will only be called once, no matter how many references
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		switch (type) {
 		case INTEGER:
 			pars.emit(String.format("  %-7sDCW   #%dB%d", name, prec, vi));

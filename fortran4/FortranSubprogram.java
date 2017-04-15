@@ -11,6 +11,6 @@ public class FortranSubprogram extends FortranVariable {
 	public int kind() { return FUNCTION; }
 
 	@Override
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 }

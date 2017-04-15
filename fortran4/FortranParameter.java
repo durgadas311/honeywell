@@ -13,7 +13,7 @@ public class FortranParameter extends FortranVariable {
 	public String name() { return '(' + name + ')'; }
 
 	@Override
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 
 	// Specific to FortranParameter

@@ -33,14 +33,14 @@ public class AGotoStatement extends FortranItem {
 		return new AGotoStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// TODO: validate existence of statement labels...
 		for (int t : targs) {
 			pars.emit(String.format("  $I%05dDSA   $%05d", t, t));
 		}
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.emit(String.format("         B     (%s-%d)",
 				var.name(), pars.addrMode() - 1));
 	}

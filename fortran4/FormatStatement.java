@@ -34,12 +34,12 @@ public class FormatStatement extends FortranItem {
 		return new FormatStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		pars.emit(String.format(" R $%05dDCW   @%s@", label, fmtStr));
 		label = -1;
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 	}
 
 	public boolean error() {

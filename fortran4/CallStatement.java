@@ -41,10 +41,10 @@ public class CallStatement extends FortranItem {
 		return new CallStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		// TODO: confirm number of calling parameters...
 		pars.emit(String.format("         B     %s", subr.name()));
 		if (args == null) {

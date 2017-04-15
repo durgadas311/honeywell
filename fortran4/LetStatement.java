@@ -31,14 +31,14 @@ public class LetStatement extends FortranItem {
 		return new LetStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
-		expr.genDefs(out, pars);
+	public void genDefs(FortranParser pars) {
+		expr.genDefs(pars);
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.setExpr(expr);
 		if (var instanceof FortranArrayRef) {
-			((FortranArrayRef)var).genCode(out, pars);
+			((FortranArrayRef)var).genCode(pars);
 		}
 		switch (var.type()) {
 		case FortranOperand.INTEGER:

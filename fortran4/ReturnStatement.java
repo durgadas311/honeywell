@@ -22,10 +22,10 @@ public class ReturnStatement extends FortranItem {
 		return new ReturnStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.emit(String.format("         B     %s+9", subr.name()));
 	}
 

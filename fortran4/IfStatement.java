@@ -62,19 +62,19 @@ public class IfStatement extends FortranItem {
 		return new IfStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Anything for us?
 		if (stmt != null) {
-			stmt.genDefs(out, pars);
+			stmt.genDefs(pars);
 		}
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.setExpr(expr); // TODO: where to put result
 		if (stmt != null) {
 			// LOGICAL expression, result is Zero-balance for .FALSE.
 			pars.emit(String.format("         BCT   /%05d,60", src));
-			stmt.genCode(out, pars);
+			stmt.genCode(pars);
 			pars.emit(String.format("  /%05d RESV  0", src));
 		} else if (arith != null) {
 			// Arith expression, result is where???

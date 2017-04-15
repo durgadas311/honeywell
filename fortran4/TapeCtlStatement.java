@@ -46,12 +46,12 @@ public class TapeCtlStatement extends FortranItem {
 		return null;
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Anything for us?
 		// TODO: validate existence of statement label...
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		int perph = pars.getDev(dev);
 		// TODO: what if 'dev' comes from variable?
 		pars.emit(String.format("         B     %s", func));

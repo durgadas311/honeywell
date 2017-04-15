@@ -32,10 +32,10 @@ public class StopStatement extends FortranItem {
 		return null;
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		if (!pause) {
 			pars.emit("         B     $EXIT"); // end runtime
 		}

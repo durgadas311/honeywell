@@ -43,7 +43,7 @@ public class SubrStatement extends FortranItem {
 		return new SubrStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		if (args == null) {
 			return;
 		}
@@ -52,7 +52,7 @@ public class SubrStatement extends FortranItem {
 		}
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		int ret = pars.addrMode() * 2 + 3;
 		int retscr = ret + pars.addrMode();
 		pars.emit(String.format("  %-7sRESV  0", subr.name()));

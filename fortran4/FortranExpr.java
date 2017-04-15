@@ -33,17 +33,17 @@ dump(this.expr, 0);
 		}
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Variables and temps already defined...
 		// anything else?
 		if (expr instanceof FortranOperation || expr instanceof FortranArrayRef) {
-			expr.genDefs(out, pars);
+			expr.genDefs(pars);
 		}
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		if (expr instanceof FortranOperation) {
-			((FortranOperation)expr).genCode(out, pars);
+			((FortranOperation)expr).genCode(pars);
 		} else {
 			// no code?
 		}

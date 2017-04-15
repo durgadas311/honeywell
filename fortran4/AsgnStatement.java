@@ -28,12 +28,12 @@ public class AsgnStatement extends FortranItem {
 		return new AsgnStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Variables already done...
 		// TODO: validate existence of statement label...
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.emit(String.format("         LCA   $I%05d,%s", targ, var.name()));
 	}
 

@@ -43,5 +43,5 @@ public abstract class FortranOperand {
 	}
 	abstract int kind();
 	abstract String name();
-	abstract void genDefs(PrintStream out, FortranParser pars);
+	abstract void genDefs(FortranParser pars);
 }

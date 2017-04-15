@@ -20,12 +20,12 @@ public class GotoStatement extends FortranItem {
 		return new GotoStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Anything for us?
 		// TODO: validate existence of statement label...
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.emit(String.format("         B     $%05d", targ));
 	}
 

@@ -45,12 +45,12 @@ public class WriteStatement extends FortranItem {
 		return new WriteStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Anything for us?
 		// TODO: validate existence of statement label...
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		int perph = pars.getDev(dev);
 		pars.emit("         B     $ACBOIO");
 		if (fmt > 0) {
@@ -61,7 +61,7 @@ public class WriteStatement extends FortranItem {
 		pars.emit(String.format(" R       DCW   #1C%02o", perph & 077));
 		for (int z = 0; z < list.length; ++z) {
 			if (list[z] instanceof FortranArrayRef) {
-				((FortranArrayRef)list[z]).genCode(out, pars);
+				((FortranArrayRef)list[z]).genCode(pars);
 			}
 			pars.emit("         CSM");
 			pars.emit(String.format(" R       DSA   %s", list[z].name()));

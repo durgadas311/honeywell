@@ -32,7 +32,7 @@ public class StmtFunction extends FortranItem {
 		return new StmtFunction(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// TODO: variables (args) are dummy/by reference...
 		// only need to setup space to copy addresses into...
 		// plus need space for result...
@@ -41,7 +41,7 @@ public class StmtFunction extends FortranItem {
 
 	// since these statements appear before executable stmts,
 	// this code will be before main program code.
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.setFuncSubr(fnc, args);
 		pars.setExpr(expr); // TODO: specify location for result
 		pars.setFuncRet(fnc, expr.getResult()); // normally done by RETURN?

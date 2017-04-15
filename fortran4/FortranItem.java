@@ -5,8 +5,8 @@ import java.io.*;
 public abstract class FortranItem {
 	public int label = -1;
 	public int src = -1;
-	public abstract void genDefs(PrintStream out, FortranParser pars);
-	public abstract void genCode(PrintStream out, FortranParser pars);
+	public abstract void genDefs(FortranParser pars);
+	public abstract void genCode(FortranParser pars);
 	public abstract boolean error();
 	public abstract String errorMessages(); // return "" if !error()
 	// All implementers should also have:

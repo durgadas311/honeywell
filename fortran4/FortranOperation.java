@@ -48,14 +48,14 @@ public class FortranOperation extends FortranOperand {
 	public String name() { return tmp == null ? "null" : tmp.name(); }
 	public int preced() { return precedence[op]; }
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// TODO: need to get temp var type and num...
 		// TODO: might reference an external function
 		if (left instanceof FortranOperation || left instanceof FortranArrayRef) {
-			left.genDefs(out, pars);
+			left.genDefs(pars);
 		}
 		if (right instanceof FortranOperation || left instanceof FortranArrayRef) {
-			right.genDefs(out, pars);
+			right.genDefs(pars);
 		}
 	}
 
@@ -151,36 +151,36 @@ public class FortranOperation extends FortranOperand {
 		}
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		// TODO: how does this work... or is it done externally?
 		if (left instanceof FortranOperation) {
-			((FortranOperation)left).genCode(out, pars);
+			((FortranOperation)left).genCode(pars);
 		} else if (left instanceof FortranArrayRef) {
-			((FortranArrayRef)left).genCode(out, pars);
+			((FortranArrayRef)left).genCode(pars);
 		}
 		// TODO: unary op handling...
 		if (right instanceof FortranOperation) {
-			((FortranOperation)right).genCode(out, pars);
+			((FortranOperation)right).genCode(pars);
 		} else if (right instanceof FortranArrayRef) {
-			((FortranArrayRef)right).genCode(out, pars);
+			((FortranArrayRef)right).genCode(pars);
 		}
 		switch (type) {
 		case INTEGER:
-			genCodeInt(out, pars);
+			genCodeInt(pars);
 			break;
 		case LOGICAL:
-			genCodeLog(out, pars);
+			genCodeLog(pars);
 			break;
 		case REAL:
-			genCodeReal(out, pars);
+			genCodeReal(pars);
 			break;
 		case COMPLEX:
-			genCodeCplx(out, pars);
+			genCodeCplx(pars);
 			break;
 		}
 	}
 
-	private void genCodeInt(PrintStream out, FortranParser pars) {
+	private void genCodeInt(FortranParser pars) {
 		int acbfxp = 0;
 		if (!left.name().equals(tmp.name())) {
 			pars.emit(String.format("         BS    %s", tmp.name()));
@@ -212,7 +212,7 @@ public class FortranOperation extends FortranOperand {
 		pars.emit(String.format(" R       DC    #1C%02o", acbfxp));
 	}
 
-	private void genCodeLog(PrintStream out, FortranParser pars) {
+	private void genCodeLog(FortranParser pars) {
 		switch (op) {
 		case AND:
 			// This assumes A and B are not more than "1"...
@@ -236,12 +236,12 @@ public class FortranOperation extends FortranOperand {
 			pars.emit(String.format("         HA    :1,%s", tmp.name()));
 			break;
 		default:
-			genCodeRel(out, pars);
+			genCodeRel(pars);
 			break;
 		}
 	}
 
-	private void genCodeRel(PrintStream out, FortranParser pars) {
+	private void genCodeRel(FortranParser pars) {
 		String sym = pars.uniqueName();
 		pars.emit(String.format("         C     %s,%s",
 						right.name(), left.name()));
@@ -272,7 +272,7 @@ public class FortranOperation extends FortranOperand {
 		pars.emit(String.format("  %-7sRESV  0", sym));
 	}
 
-	private void genCodeReal(PrintStream out, FortranParser pars) {
+	private void genCodeReal(FortranParser pars) {
 		int acbfph = 0;
 		if (!left.name().equals(tmp.name())) {
 			// All REAL are same size, LCA is safe...
@@ -303,6 +303,6 @@ public class FortranOperation extends FortranOperand {
 		pars.emit(String.format(" R       DC    #1C%02o", acbfph));
 	}
 
-	private void genCodeCplx(PrintStream out, FortranParser pars) {
+	private void genCodeCplx(FortranParser pars) {
 	}
 }

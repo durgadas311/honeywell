@@ -19,7 +19,7 @@ public class FortranVariable extends FortranOperand {
 	public int kind() { return VARIABLE; }
 	public String name() { return name; }
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		switch (type) {
 		case INTEGER:
 			pars.emit(String.format("  %-7sDCW   #%dB0", name, prec));

@@ -19,7 +19,7 @@ public class FortranArrayRef extends FortranOperand {
 	public int kind() { return ARRAYREF; }
 
 	@Override
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		pars.emit(String.format("  %-7sDSA   0", tmp.name()));
 	}
 
@@ -27,7 +27,7 @@ public class FortranArrayRef extends FortranOperand {
 	public String name() { return name; }
 
 	// FortranArrayRef specific
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.setExpr(adr);
 		pars.emit(String.format("         LCA   %s,%s", ary.ref(), tmp.name()));
 		pars.emit(String.format("         BA    %s,%s", adr.getResult(), tmp.name()));

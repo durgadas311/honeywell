@@ -55,11 +55,11 @@ public class DoStatement extends FortranItem {
 		return new DoStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// variables and constants already gen'ed...
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.emit(String.format("         BS    %s", var.name()));
 		pars.emit(String.format("         BA    %s,%s", start.name(), var.name()));
 		pars.emit(String.format("  /%05d RESV  0", src));
@@ -78,7 +78,7 @@ public class DoStatement extends FortranItem {
 	public DoStatement getNext() { return next; }
 	public void setNext(DoStatement du) { next = du; }
 
-	public void genLoop(OutputStream out, FortranParser pars) {
+	public void genLoop(FortranParser pars) {
 		pars.emit(String.format("         BA    %s,%s", step.name(), var.name()));
 		pars.emit(String.format("         C     %s,%s", end.name(), var.name()));
 		pars.emit(String.format("         BCT   /%05d,43", src));

@@ -16,11 +16,11 @@ public class ContStatement extends FortranItem {
 		return new ContStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// Anything for us?
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		// Anything for us?
 	}
 

@@ -38,7 +38,7 @@ public class CGotoStatement extends FortranItem {
 		return new CGotoStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 		// TODO: validate existence of statement label...
 		// This works since index is 1-based
 		pars.emit(String.format("  /T%05dDSA   *", src));
@@ -47,7 +47,7 @@ public class CGotoStatement extends FortranItem {
 		}
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 		pars.emit(String.format("         C     %s,%s", var.name(), max.name()));
 		pars.emit(String.format("         BCT   /%05d,41", src));
 		pars.emit(String.format("         C     %s,%s", var.name(), one.name()));

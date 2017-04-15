@@ -82,10 +82,10 @@ public class DefStatement extends FortranItem {
 		return null;
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 	}
 
 	public boolean error() {

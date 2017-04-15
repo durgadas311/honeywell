@@ -20,10 +20,10 @@ public class ProgramStatement extends FortranItem {
 		return new ProgramStatement(pot, pars);
 	}
 
-	public void genDefs(PrintStream out, FortranParser pars) {
+	public void genDefs(FortranParser pars) {
 	}
 
-	public void genCode(PrintStream out, FortranParser pars) {
+	public void genCode(FortranParser pars) {
 	}
 
 	public boolean error() {

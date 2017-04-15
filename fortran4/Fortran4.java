@@ -467,17 +467,17 @@ public class Fortran4 implements FortranParser {
 			if (doLoops.peek() == du) { // should always be true
 				doLoops.pop();
 			}
-			du.genLoop(out, this);
+			du.genLoop(this);
 			du = du.getNext();
 		} while (du != null);
 	}
 
 	private void setDefs() {
 		for (FortranOperand fo : allSyms.values()) {
-			fo.genDefs(out, this);
+			fo.genDefs(this);
 		}
 		for (FortranItem itm : program) {
-			itm.genDefs(out, this);
+			itm.genDefs(this);
 		}
 	}
 
@@ -494,14 +494,14 @@ public class Fortran4 implements FortranParser {
 				}
 				doStmts.put(du.getTerm(), du);
 			}
-			itm.genCode(out, this);
+			itm.genCode(this);
 			checkDo(itm);
 		}
 	}
 
 	private void setData() {
 		for (FortranArray ary : arrays.values()) {
-			ary.genData(out, this);
+			ary.genData(this);
 		}
 	}
 
@@ -753,7 +753,7 @@ public class Fortran4 implements FortranParser {
 	}
 
 	public void setExpr(FortranExpr expr) {
-		expr.genCode(out, this);
+		expr.genCode(this);
 	}
 
 	public void emit(String ezc) {
