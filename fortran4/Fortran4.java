@@ -191,6 +191,8 @@ public class Fortran4 implements FortranParser {
 		emit("  IOR    DC    #1B14");
 		emit("  ICOMPL DC    #1B15");
 		emit("  IEXCLR DC    #1B16");
+		emit("  FLOAT  DC    #1B17");
+		emit("  IFIX   DC    #1B18");
 		// TODO: enter templates for library functions...
 		// new FortranSubprogram(...) ?
 		//

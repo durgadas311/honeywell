@@ -6,7 +6,7 @@ import java.util.Vector;
 
 public class FortranRunTime implements HW2000Trap {
 	static final int base = 1340;
-	static final int numOps = 17;
+	static final int numOps = 19;
 
 	private String buf;
 	private int idx;
@@ -49,6 +49,8 @@ public class FortranRunTime implements HW2000Trap {
 		case 14: ior(); break;
 		case 15: icompl(); break;
 		case 16: iexclr(); break;
+		case 17: rfloat(); break;
+		case 18: ifix(); break;
 		default:
 			// our best guess...
 			sys.SR = sys.BAR;
@@ -173,6 +175,18 @@ public class FortranRunTime implements HW2000Trap {
 		double l = getReal(a);
 		int i = (int)Math.floor(l);
 		putInt(r, i);
+	}
+
+	private void ifix() {
+		iint();
+	}
+
+	private void rfloat() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getInt(a);
+		putReal(r, l);
 	}
 
 	private void sqrt() {
