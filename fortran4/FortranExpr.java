@@ -28,8 +28,8 @@ dump(this.expr, 0);
 	}
 
 	public void setTemp(FortranParser pars, int level) {
-		if (expr instanceof FortranOperator) {
-			((FortranOperator)expr).setTemp(pars, level);
+		if (expr instanceof FortranOperation) {
+			((FortranOperation)expr).setTemp(pars, level);
 		}
 	}
 

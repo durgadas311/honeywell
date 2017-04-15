@@ -617,8 +617,9 @@ public class Fortran4 implements FortranParser {
 			fo = new FortranVariable(sym, type, p);
 			addSym(id, fo);
 		} else {
-			fo = parseArrayRef((FortranArray)fo, dims);
-			((FortranArrayRef)fo).setTemp(this, 0);
+			FortranArrayRef fa = parseArrayRef((FortranArray)fo, dims);
+			fa.setTemp(this, 0);
+			fo = fa;
 		}
 		return fo;
 	}

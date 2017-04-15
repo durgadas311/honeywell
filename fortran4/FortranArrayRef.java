@@ -2,7 +2,7 @@
 
 import java.io.*;
 
-public class FortranArrayRef extends FortranOperand {
+public class FortranArrayRef extends FortranOperation {
 	private FortranExpr adr;
 	private FortranArray ary;
 	private String name;
@@ -33,6 +33,7 @@ public class FortranArrayRef extends FortranOperand {
 		pars.emit(String.format("         BA    %s,%s", adr.getResult(), tmp.name()));
 	}
 
+	@Override
 	public void setTemp(FortranParser pars, int level) {
 		tmp = pars.getAdrTemp(level);
 		name = String.format("(%s-%d)", tmp.name(), pars.addrMode() - 1);

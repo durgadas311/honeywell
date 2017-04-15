@@ -2,7 +2,7 @@
 
 import java.io.*;
 
-public class FortranOperator extends FortranOperand {
+public class FortranOperator extends FortranOperation {
 	static final int PWR = 1;
 	static final int MULT = 2;
 	static final int DIV = 3;
@@ -59,9 +59,6 @@ public class FortranOperator extends FortranOperand {
 		}
 	}
 
-	// ----- Only for FortranOperator -----
-	public int oper() { return op; }
-
 	public void setTemp(FortranParser pars, int level) {
 		switch (type) {
 		case INTEGER:
@@ -78,17 +75,16 @@ public class FortranOperator extends FortranOperand {
 			break;
 		default:
 		}
-		if (left instanceof FortranOperator) {
-			((FortranOperator)left).setTemp(pars, level + 1);
-		} else if (left instanceof FortranArrayRef) {
-			((FortranArrayRef)left).setTemp(pars, level + 1);
+		if (left instanceof FortranOperation) {
+			((FortranOperation)left).setTemp(pars, level + 1);
 		}
-		if (right instanceof FortranOperator) {
-			((FortranOperator)right).setTemp(pars, level + 1);
-		} else if (right instanceof FortranArrayRef) {
-			((FortranArrayRef)right).setTemp(pars, level + 1);
+		if (right instanceof FortranOperation) {
+			((FortranOperation)right).setTemp(pars, level + 1);
 		}
 	}
+
+	// ----- Only for FortranOperator -----
+	public int oper() { return op; }
 
 	public int parseLen() { return parse[op].length(); }
 
