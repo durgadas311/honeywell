@@ -26,7 +26,7 @@ public class FortranArrayRef extends FortranOperand {
 	@Override
 	public String name() { return name; }
 
-	// FortranArrayRef specific
+	@Override
 	public void genCode(FortranParser pars) {
 		pars.setExpr(adr);
 		pars.emit(String.format("         LCA   %s,%s", ary.ref(), tmp.name()));

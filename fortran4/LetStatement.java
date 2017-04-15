@@ -37,9 +37,7 @@ public class LetStatement extends FortranItem {
 
 	public void genCode(FortranParser pars) {
 		pars.setExpr(expr);
-		if (var instanceof FortranArrayRef) {
-			((FortranArrayRef)var).genCode(pars);
-		}
+		var.genCode(pars);
 		switch (var.type()) {
 		case FortranOperand.INTEGER:
 		case FortranOperand.LOGICAL:

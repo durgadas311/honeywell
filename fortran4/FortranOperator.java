@@ -153,16 +153,12 @@ public class FortranOperator extends FortranOperand {
 
 	public void genCode(FortranParser pars) {
 		// TODO: how does this work... or is it done externally?
-		if (left instanceof FortranOperator) {
-			((FortranOperator)left).genCode(pars);
-		} else if (left instanceof FortranArrayRef) {
-			((FortranArrayRef)left).genCode(pars);
+		if (left != null) {
+			left.genCode(pars);
 		}
 		// TODO: unary op handling...
-		if (right instanceof FortranOperator) {
-			((FortranOperator)right).genCode(pars);
-		} else if (right instanceof FortranArrayRef) {
-			((FortranArrayRef)right).genCode(pars);
+		if (right != null) {
+			right.genCode(pars);
 		}
 		switch (type) {
 		case INTEGER:

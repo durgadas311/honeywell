@@ -44,4 +44,5 @@ public abstract class FortranOperand {
 	abstract int kind();
 	abstract String name();
 	abstract void genDefs(FortranParser pars);
+	abstract void genCode(FortranParser pars); // mostly unused
 }

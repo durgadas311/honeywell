@@ -42,11 +42,8 @@ dump(this.expr, 0);
 	}
 
 	public void genCode(FortranParser pars) {
-		if (expr instanceof FortranOperator) {
-			((FortranOperator)expr).genCode(pars);
-		} else {
-			// no code?
-		}
+		expr.genCode(pars);
+		// No code of our own?
 	}
 
 	private FortranOperand parse(FortranOperator parent) {

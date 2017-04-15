@@ -38,4 +38,6 @@ public class FortranVariable extends FortranOperand {
 			break;
 		}
 	}
+
+	public void genCode(FortranParser pars) {}
 }

@@ -90,4 +90,6 @@ public class FortranConstant extends FortranOperand {
 			break;
 		}
 	}
+
+	public void genCode(FortranParser pars) {}
 }
