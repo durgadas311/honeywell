@@ -450,10 +450,11 @@ public class FortranRunTime implements HW2000Trap {
 		case 'O':
 			b = 8;
 		case 'I':
+			val = 0;
 			try {
-				val = Integer.valueOf(buf.substring(ip, ip + n), b); 
-				putInt(a, val);
+				val = Integer.valueOf(buf.substring(ip, ip + n).trim(), b);
 			} catch (Exception ee) { }
+			putInt(a, val);
 			break;
 		case 'L':
 			boolean l = (buf.charAt(n - 1) == 'T');
@@ -462,10 +463,11 @@ public class FortranRunTime implements HW2000Trap {
 		case 'E':
 		case 'F':
 		case 'G':
+			dd = 0.0;
 			try {
-				dd = Double.valueOf(buf.substring(ip, ip + n)); 
-				putReal(a, dd);
+				dd = Double.valueOf(buf.substring(ip, ip + n));
 			} catch (Exception ee) { }
+			putReal(a, dd);
 			break;
 		case 'H': // done in nextParam()... TODO: move here?
 		default:
