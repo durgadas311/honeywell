@@ -45,6 +45,8 @@ public class f4 {
 		}
 		if (e < 0) {
 			System.err.println(asm.getErrors());
+		} else {
+			asm.listSymTab();
 		}
 		try { fo.close(); } catch (Exception ee) {}
 		try { lo.close(); } catch (Exception ee) {}

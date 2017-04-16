@@ -112,10 +112,18 @@ dump(this.expr, 0);
 				}
 			}
 			fo = parseNum();
+			if (fo == null && c == '-') {
+				// unary minus...
+				// TODO: implement something
+			}
 		}
 		if (idx < len && exprStr.charAt(idx) != ')') {
 			// TODO: error if level != 0
-			op = FortranOperator.get(exprStr, idx);
+			if (fo == null && c == '-') {
+				op = new FortranOperator(FortranOperator.NEG);
+			} else {
+				op = FortranOperator.get(exprStr, idx);
+			}
 			if (op == null) {
 				// This is where most errors end up,
 				// regardless of whether this was intended
@@ -151,6 +159,8 @@ dump(this.expr, 0);
 		boolean decimal = false;
 		boolean exp = false;
 		boolean sign = true;
+		boolean mant = false; // digits
+		boolean expo = false; // digits
 		int y = idx;
 		char c;
 		for (; idx < len; ++idx) {
@@ -160,7 +170,14 @@ dump(this.expr, 0);
 				continue;
 			}
 			sign = false;
-			if (Character.isDigit(c)) continue;
+			if (Character.isDigit(c)) {
+				if (!exp) {
+					mant = true;
+				} else {
+					expo = true;
+				}
+				continue;
+			}
 			if (!exp && !decimal && c == '.') {
 				// must ensure this is not ".EQ."...
 				if (FortranOperator.relCheck(exprStr, idx)) {
@@ -176,7 +193,11 @@ dump(this.expr, 0);
 			}
 			break;
 		}
-		// TODO: make sure we got some digits?
+		// make sure we got some digits
+		if (!mant || (exp && !expo)) {
+			idx = y;
+			return null; // caller must make another guess
+		}
 		String num = exprStr.substring(y, idx);
 		try {
 			if (exp || decimal) {
@@ -186,9 +207,9 @@ dump(this.expr, 0);
 				int i = Integer.valueOf(num);
 				return FortranConstant.get(pars, i);
 			}
-		} catch (Exception ee) {
-		}
+		} catch (Exception ee) { }
 		pars.errsAdd(String.format("Invalid number \"%s\"", num));
+		idx = y;
 		return null;
 	}
 

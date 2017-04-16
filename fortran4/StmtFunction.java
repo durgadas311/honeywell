@@ -26,6 +26,10 @@ public class StmtFunction extends FortranItem {
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
+// TODO: Fix this to not conflict with ARRAY(SUB)=expr...
+if (true) {
+	return null;
+}
 		if (!pot.matches(_PAT)) {
 			return null;
 		}

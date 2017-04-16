@@ -9,6 +9,7 @@ public class IfStatement extends FortranItem {
 	private FortranExpr expr;
 	int[] arith = null;
 	FortranItem stmt = null;
+	FortranOperand zero;
 
 	public IfStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
@@ -32,6 +33,11 @@ public class IfStatement extends FortranItem {
 			if (expr != null && expr.type() != FortranOperand.REAL &&
 					expr.type() != FortranOperand.INTEGER) {
 				pars.errsAdd("Arith IF expression must be numeric");
+			}
+			if (expr.type() == FortranOperand.REAL) {
+				zero = FortranConstant.get(pars, 0.0);
+			} else {
+				zero = FortranConstant.get(pars, 0);
 			}
 		} else {
 			// TODO: restricted statements, must skip...
@@ -70,7 +76,8 @@ public class IfStatement extends FortranItem {
 		} else if (arith != null) {
 			// Arith expression, result is where???
 			// TODO: only INTEGER can compare this way...
-			pars.emit(String.format("         C     :0,%s", expr.getResult()));
+			pars.emit(String.format("         C     %s,%s",
+						zero.name(), expr.getResult()));
 			pars.emit(String.format("         BCT   $%05d,41", arith[0]));
 			pars.emit(String.format("         BCT   $%05d,42", arith[1]));
 			pars.emit(String.format("         B     $%05d", arith[2]));

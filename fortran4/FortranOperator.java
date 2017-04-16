@@ -3,6 +3,7 @@
 import java.io.*;
 
 public class FortranOperator extends FortranOperation {
+	static final int NEG = 0;
 	static final int PWR = 1;
 	static final int MULT = 2;
 	static final int DIV = 3;
@@ -19,7 +20,8 @@ public class FortranOperator extends FortranOperation {
 	static final int NOT = 14;
 
 	static String[] parse = new String[]{
-		null, "**", "*", "/", "+", "-",
+		"-", // skipped in searches...
+		"**", "*", "/", "+", "-",
 		".LE.", ".LT.", ".GT.", ".GE.", ".EQ.", ".NE.",
 		".AND.", ".OR.", ".NOT.",
 	};
@@ -110,7 +112,7 @@ public class FortranOperator extends FortranOperation {
 	public FortranOperand getLeft() { return left; }
 	public FortranOperand getRight() { return right; }
 	public void setLeft(FortranOperand opd) {
-		if (op == NOT) { // or NEG if supported
+		if (op == NOT || op == NEG) {
 			// internal error
 			return;
 		}
@@ -174,12 +176,17 @@ public class FortranOperator extends FortranOperation {
 
 	private void genCodeInt(FortranParser pars) {
 		int acbfxp = 0;
-		if (!left.name().equals(tmp.name())) {
+		if (left != null && !left.name().equals(tmp.name())) {
 			pars.emit(String.format("         BS    %s", tmp.name()));
 			pars.emit(String.format("         BA    %s,%s",
 						left.name(), tmp.name()));
 		}
 		switch (op) {
+		case NEG:
+			pars.emit(String.format("         BS    %s", tmp.name()));
+			pars.emit(String.format("         BS    %s,%s",
+						right.name(), tmp.name()));
+			return;
 		case ADD:
 			pars.emit(String.format("         BA    %s,%s",
 						right.name(), tmp.name()));
@@ -266,13 +273,16 @@ public class FortranOperator extends FortranOperation {
 
 	private void genCodeReal(FortranParser pars) {
 		int acbfph = 0;
-		if (!left.name().equals(tmp.name())) {
+		if (left != null && !left.name().equals(tmp.name())) {
 			// All REAL are same size, LCA is safe...
 			pars.emit(String.format("         LCA   %s,%s",
 						left.name(), tmp.name()));
 		}
 		// TODO: add conversion calls?
 		switch (op) {
+		case NEG:
+			acbfph = 015; // we're just making this up...
+			break;
 		case ADD:
 			acbfph = 016; // we're just making this up...
 			break;

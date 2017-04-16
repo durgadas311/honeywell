@@ -19,6 +19,7 @@ public class SubrStatement extends FortranItem {
 		String s = stmt.substring(x, y);
 		x = y + 1;
 		int na = 0;
+		String[] av = null;
 		if (y < n) {
 			y = stmt.indexOf(')', x); // should be last char
 			if (y <= x) {
@@ -27,16 +28,18 @@ public class SubrStatement extends FortranItem {
 			}
 			// do not "register" these, they are private, dummy, vars...
 			// they must be contiguous for EXM...
-			String[] av = stmt.substring(x, y).split(",");
-			args = new FortranParameter[av.length];
-			for (x = 0; x < av.length; ++x) {
-				args[x] = pars.parseParameter(av[x], subr);
-			}
-			na = args.length;
+			av = stmt.substring(x, y).split(",");
+			na = av.length;
 		}
 		subr = pars.parseSubprogram(s, FortranOperand.VOID, na);
 		if (subr == null || subr.type() != FortranOperand.VOID) {
 			pars.errsAdd("Subroutine name not unique");
+		}
+		if (na > 0) {
+			args = new FortranParameter[av.length];
+			for (x = 0; x < av.length; ++x) {
+				args[x] = pars.parseParameter(av[x], subr);
+			}
 		}
 	}
 

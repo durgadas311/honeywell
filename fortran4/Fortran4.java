@@ -366,7 +366,7 @@ public class Fortran4 implements Compiler, FortranParser {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
-		if (inProg && line.charAt(0) == 'C') {
+		if (line.charAt(0) == 'C') {
 			return 0;
 		}
 		// TODO: some of these must be before any FORTRAN cards...
@@ -387,7 +387,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		// Must be a FORTRAN non-comment card...
 		if (line.length() < 7) {
 			// TODO: error?
-			return -1;
+			return 0;
 		}
 		String lab = line.substring(0, 5).trim();
 		String stmt = squeeze(line, 6);
