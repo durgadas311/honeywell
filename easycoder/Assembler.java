@@ -835,7 +835,8 @@ public class Assembler {
 		} else if (opc.equals("MORG")) {
 			return processMorg(loc, opd, rev);
 		} else if (opc.equals("LITORG")) {
-			return noImpl(opc);
+			// since we don't gather literals, this can be ORG
+			return processOrg(loc, opd, rev);
 		} else if (opc.equals("ADMODE")) {
 			int m = Integer.valueOf(opd);
 			switch(m) {
@@ -859,7 +860,7 @@ public class Assembler {
 		} else if (opc.equals("CEQU")) {
 			return noImpl(opc);
 		} else if (opc.equals("SKIP")) {
-			return noImpl(opc);
+			return 0; // silently ignore
 		} else if (opc.equals("SFX")) {
 			return noImpl(opc);
 		} else if (opc.equals("REP")) {
@@ -867,7 +868,7 @@ public class Assembler {
 		} else if (opc.equals("GEN")) {
 			return noImpl(opc);
 		} else if (opc.equals("SETLIN")) {
-			return noImpl(opc);
+			return 0; // silently ignore
 		} else if (opc.equals("XBASE")) {
 			return noImpl(opc);
 		} else if (opc.equals("RANGE")) {
