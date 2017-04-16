@@ -208,6 +208,21 @@ public class Fortran4 implements Compiler, FortranParser {
 		emit("  IEXCLR DC    #1B16");
 		emit("  FLOAT  DC    #1B17");
 		emit("  IFIX   DC    #1B18");
+		emit("  ABS    DC    #1B19");
+		emit("  IABS   DC    #1B20");
+		emit("  ATAN   DC    #1B21");
+		emit("  ATAN2  DC    #1B22");
+		emit("  COS    DC    #1B23");
+		emit("  SIN    DC    #1B24");
+		emit("  TANH   DC    #1B25");
+		emit("  ALOG   DC    #1B26");
+		emit("  ALOG10 DC    #1B27");
+		emit("  AMOD   DC    #1B28");
+		emit("  MOD    DC    #1B29");
+		emit("  EXP    DC    #1B30");
+		// emit("  TANH   DC    #1B31");
+		// emit("  TANH   DC    #1B32");
+		// emit("  TANH   DC    #1B33");
 		// TODO: enter templates for library functions...
 		// new FortranSubprogram(...) ?
 		//

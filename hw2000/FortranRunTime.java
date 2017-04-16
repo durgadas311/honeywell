@@ -6,7 +6,7 @@ import java.util.Vector;
 
 public class FortranRunTime implements HW2000Trap {
 	static final int base = 1340;
-	static final int numOps = 19;
+	static final int numOps = 31;
 
 	private String buf;
 	private int idx;
@@ -51,6 +51,18 @@ public class FortranRunTime implements HW2000Trap {
 		case 16: iexclr(); break;
 		case 17: rfloat(); break;
 		case 18: ifix(); break;
+		case 19: rabs(); break;
+		case 20: iabs(); break;
+		case 21: atan(); break;
+		case 22: atan2(); break;
+		case 23: cos(); break;
+		case 24: sin(); break;
+		case 25: tanh(); break;
+		case 26: alog(); break;
+		case 27: alog10(); break;
+		case 28: amod(); break;
+		case 29: mod(); break;
+		case 30: exp(); break;
 		default:
 			// our best guess...
 			sys.SR = sys.BAR;
@@ -198,6 +210,24 @@ public class FortranRunTime implements HW2000Trap {
 		putReal(r, l);
 	}
 
+	private void rabs() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.abs(l);
+		putReal(r, l);
+	}
+
+	private void iabs() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int i = getInt(a);
+		i = Math.abs(i);
+		putInt(r, i);
+	}
+
 	private void iand() {
 		sys.SR = sys.BAR;
 		int r = getAdr();
@@ -227,6 +257,91 @@ public class FortranRunTime implements HW2000Trap {
 		int a = getAdr();
 		int b = getAdr();
 		putInt(r, getInt(a) ^ getInt(b));
+	}
+
+	private void atan() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.atan(l);
+		putReal(r, l);
+	}
+	private void atan2() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int b = getAdr();
+		double l = getReal(a);
+		double rr = getReal(b);
+		l = Math.atan2(rr, l); // what's the right order?
+		putReal(r, l);
+	}
+	private void cos() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.cos(l);
+		putReal(r, l);
+	}
+	private void sin() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.sin(l);
+		putReal(r, l);
+	}
+	private void tanh() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.tanh(l);
+		putReal(r, l);
+	}
+	private void alog() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.log(l);
+		putReal(r, l);
+	}
+	private void alog10() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.log10(l);
+		putReal(r, l);
+	}
+	private void amod() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int b = getAdr();
+		double l = getReal(a);
+		double rr = getReal(b);
+		putReal(r, l % rr);
+	}
+	private void mod() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		int b = getAdr();
+		int l = getInt(a);
+		int rr = getInt(b);
+		putInt(r, l % rr);
+	}
+	private void exp() {
+		sys.SR = sys.BAR;
+		int r = getAdr();
+		int a = getAdr();
+		double l = getReal(a);
+		l = Math.exp(l);
+		putReal(r, l);
 	}
 
 	private void eof() {
