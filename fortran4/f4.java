@@ -19,19 +19,26 @@ public class f4 {
 		String ezc = base + ".ezc";
 		String out = base + ".out";
 		Fortran4 cmp = new Fortran4(new File(args[x]));
-		int e = cmp.compile(new File(list));
+		PrintStream lst = null;
+		try {
+			lst = new PrintStream(list);
+		} catch (Exception ee) {
+			ee.printStackTrace();
+			System.exit(1);
+		}
+		int e = cmp.compile(lst);
 		if (e >= 0) {
-			e = cmp.generate(new File(ezc), null);
+			e = cmp.generate(new File(ezc));
 		}
 		if (e < 0) {
 			System.err.println(cmp.getErrors());
 			System.exit(1);
 		}
+		cmp.listSymTab();
+		lst.println("");
 		FileOutputStream fo = null;
-		FileOutputStream lo = null;
 		try {
 			fo = new FileOutputStream(new File(out));
-			lo = new FileOutputStream(new File(list), true);
 		} catch (Exception ee) {
 			ee.printStackTrace();
 			System.exit(1);
@@ -41,7 +48,7 @@ public class f4 {
 		ldr = new RawLoader(fo, System.err, null, -1);
 		e = asm.passOne();
 		if (e >= 0) {
-			e = asm.passTwo(ldr, lo);
+			e = asm.passTwo(ldr, lst);
 		}
 		if (e < 0) {
 			System.err.println(asm.getErrors());
@@ -49,6 +56,6 @@ public class f4 {
 			asm.listSymTab();
 		}
 		try { fo.close(); } catch (Exception ee) {}
-		try { lo.close(); } catch (Exception ee) {}
+		try { lst.close(); } catch (Exception ee) {}
 	}
 }

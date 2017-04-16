@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Vector;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Stack;
 
 public class Fortran4 implements Compiler, FortranParser {
@@ -90,10 +91,13 @@ public class Fortran4 implements Compiler, FortranParser {
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");
-		for (Map.Entry<String, FortranOperand> entry : allSyms.entrySet()) {
-			String l = String.format("  %6s=%7s", entry.getKey(), entry.getValue().name());
+		Map<String, FortranOperand> sorted =
+			new TreeMap<String, FortranOperand>(allSyms);
+		for (Map.Entry<String, FortranOperand> entry : sorted.entrySet()) {
+			String l = String.format("  %14.14s %8.8s",
+					entry.getKey(), entry.getValue().name());
 			++x;
-			if (x >= 7) {
+			if (x >= 5) {
 				x = 0;
 				l += '\n';
 			}
@@ -124,10 +128,10 @@ public class Fortran4 implements Compiler, FortranParser {
 		return e;
 	}
 
-	public int compile(File list) {
+	public int compile(PrintStream list) {
 		try {
 			if (list != null) {
-				lst = new PrintStream(list);
+				lst = list;
 				listing = true;
 			}
 		} catch (Exception ee) {
@@ -135,11 +139,6 @@ public class Fortran4 implements Compiler, FortranParser {
 			return -1;
 		}
 		int e = compile();
-		if (listing) {
-			listing = false;
-			try { lst.close(); } catch (Exception ee) {}
-			lst = null;
-		}
 		return e;
 	}
 
@@ -164,21 +163,14 @@ public class Fortran4 implements Compiler, FortranParser {
 		return ret;
 	}
 
-	public int generate(File output, File list) {
-		lst = null;
+	public int generate(File output) {
 		if (output == null) {
 			errsAdd("No output file");
 			return -1;
 		}
 		try {
 			out = new PrintStream(output);
-			if (list != null) {
-				// TODO: append? or not used at all?
-				//lst = new PrintStream(list);
-				//listing = true;
-			}
 		} catch (Exception ee) {
-			// 'in' should never fail - already validated in ctor.
 			ee.printStackTrace();
 			return -1;
 		}
@@ -243,7 +235,6 @@ public class Fortran4 implements Compiler, FortranParser {
 			// listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
-		try { if (lst != null) lst.close(); } catch (Exception ee) {}
 		try { if (out != null) out.close(); } catch (Exception ee) {}
 		return ret;
 	}
@@ -525,6 +516,7 @@ public class Fortran4 implements Compiler, FortranParser {
 
 	private void setCode() {
 		for (FortranItem itm : program) {
+			emit(String.format("         SETLIN%d", itm.src));
 			if (itm.label > 0) {
 				emit(String.format("  $%05d RESV  0", itm.label));
 			}
@@ -664,6 +656,7 @@ public class Fortran4 implements Compiler, FortranParser {
 	public FortranOperand parseVariable(String id, int type) {
 		String dims = null;
 		int p = intPrec;
+		boolean uniq = false;
 		if (type == FortranOperand.ADDRESS) {
 			p = adrMode;
 		}
@@ -678,8 +671,8 @@ public class Fortran4 implements Compiler, FortranParser {
 			id = id.substring(0, x);
 		}
 		String sym = id;
-		if (inSubr) {
-			sym = uniqueName();
+		if (inSubr && id.charAt(0) != '$') { // or isLetter()?
+			uniq = true;
 			id = curSubr.name() + "." + id;
 		}
 		FortranOperand fo = null;
@@ -694,6 +687,9 @@ public class Fortran4 implements Compiler, FortranParser {
 		if (fo == null && dims != null) {
 			errsAdd("Undefined array");
 			//return null; // will this break things?
+		}
+		if (uniq) {
+			sym = uniqueName();
 		}
 		// only INTEGER has variable precision, at this level
 		if (dims == null) {

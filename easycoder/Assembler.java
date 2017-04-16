@@ -181,8 +181,8 @@ public class Assembler {
 			ee.printStackTrace();
 			return -1;
 		}
-		if (list instanceof FileOutputStream) {
-			lst = (FileOutputStream)list;
+		if (list instanceof OutputStream) {
+			lst = (OutputStream)list;
 			listing = true;
 		} else if (list instanceof CoreMemory) {
 			this.sys = (CoreMemory)list;

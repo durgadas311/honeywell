@@ -1610,7 +1610,7 @@ ee.printStackTrace();
 		}
 		int e = cmp.compile(sys, listing);
 		if (e >= 0) {
-			e = cmp.generate(ezc, null);
+			e = cmp.generate(ezc);
 		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");

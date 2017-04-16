@@ -131,20 +131,23 @@ public class FortranRunTime implements HW2000Trap {
 		double l = getReal(a);
 		double r = getReal(b);
 		switch (fnc) {
+		case 015:	// negate
+			r = -l;
+			break;
 		case 016:	// add
-			r = l + r;
+			r = r + l;
 			break;
 		case 017:	// subtract
-			r = l - r;
+			r = r - l;
 			break;
 		case 020:	// multiply
-			r = l * r;
+			r = r * l;
 			break;
 		case 021:	// divide
-			r = l / r;
+			r = r / l;
 			break;
 		case 022:	// power
-			r = Math.pow(l, r);
+			r = Math.pow(r, l);
 			break;
 		}
 		putReal(b, r);

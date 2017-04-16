@@ -3,7 +3,8 @@ import java.io.*;
 
 public interface Compiler {
 	int compile(CoreMemory sys, boolean lst);
-	int compile(File lst);
-	int generate(File ezc, File lst);
+	int compile(PrintStream lst);
+	int generate(File ezc);
 	String getErrors();
+	void listSymTab();
 }
