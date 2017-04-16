@@ -15,6 +15,12 @@ public class f4 {
 		if (base.endsWith(".f4")) {
 			base = base.substring(0, base.length() - 3);
 		}
+		if (base.endsWith(".for")) {
+			base = base.substring(0, base.length() - 4);
+		}
+		if (base.endsWith(".FOR")) {
+			base = base.substring(0, base.length() - 4);
+		}
 		String list = base + ".lst";
 		String ezc = base + ".ezc";
 		String out = base + ".out";

@@ -22,6 +22,8 @@ public class LetStatement extends FortranItem {
 		if (expr != null && expr.type() != var.type()) {
 			pars.errsAdd("Assigment of mis-matched types");
 		}
+		pars.resetTemps();
+		expr.setTemp(pars, 0);
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

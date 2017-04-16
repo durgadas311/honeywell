@@ -50,6 +50,8 @@ public class IfStatement extends FortranItem {
 				pars.errsAdd("Invalid IF action statement");
 			}
 		}
+		pars.resetTemps();
+		expr.setTemp(pars, 0);
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

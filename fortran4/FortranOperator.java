@@ -23,7 +23,8 @@ public class FortranOperator extends FortranOperation {
 		"-", // skipped in searches...
 		"**", "*", "/", "+", "-",
 		".LE.", ".LT.", ".GT.", ".GE.", ".EQ.", ".NE.",
-		".AND.", ".OR.", ".NOT.",
+		".NOT.",
+		".AND.", ".OR.",
 	};
 	static int[] precedence = new int[]{
 		0, 1, 2, 2, 3, 3,
@@ -113,20 +114,19 @@ public class FortranOperator extends FortranOperation {
 	public FortranOperand getRight() { return right; }
 	public void setLeft(FortranOperand opd) {
 		if (op == NOT || op == NEG) {
-			// internal error
+			// internal error? esp. if opd != null
 			return;
 		}
-		// TODO: adjust type...
 		left = opd;
 		resetType();
 	}
 
 	public void setRight(FortranOperand opd) {
-		// TODO: adjust type...
 		right = opd;
 		resetType();
 	}
 
+	// TODO: add validate chain (all expr elements) to check types.
 	private void resetType() {
 		int ltyp = 0;
 		int rtyp = 0;
@@ -141,6 +141,11 @@ public class FortranOperator extends FortranOperation {
 		if (ltyp != rtyp) {
 			// TODO: promote...
 		}
+		// if (op <= NE) {
+		//	must be numeric opType...
+		// } else {
+		//	LOGICAL
+		// }
 		opType = rtyp;
 		if (op >= LE) {
 			type = LOGICAL;

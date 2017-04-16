@@ -37,6 +37,7 @@ public interface FortranParser {
 	boolean inSubroutine();
 	boolean inMainProg();
 	FortranOperand currSubr();
+	void resetTemps();
 	FortranOperand getIntTemp(int id);
 	FortranOperand getLogTemp(int id);
 	FortranOperand getRealTemp(int id);

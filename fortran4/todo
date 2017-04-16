@@ -5,6 +5,9 @@ TODO:
 * (re)definition of SUBROUTINE/FUNCTION args
 * FUNCTION definitions
 * COMMON
+* DATA
+* CHARACTER data type
+* auto convert - data type promotion
 
 Lesser importance:
 

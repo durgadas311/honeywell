@@ -23,6 +23,8 @@ public class StmtFunction extends FortranItem {
 		x = y + 1;
 		expr = pars.parseExpr(stmt.substring(x));
 		// TODO: must precede executable statements!
+		pars.resetTemps();
+		expr.setTemp(pars, 0);
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

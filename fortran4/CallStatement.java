@@ -38,6 +38,10 @@ public class CallStatement extends FortranItem {
 		if (subr.type != FortranOperand.VOID) {
 			pars.errsAdd("Subroutine name not unique");
 		}
+		pars.resetTemps();
+		for (x = 0; x < na; ++x) {
+			args[x].setTemp(pars, 0);
+		}
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

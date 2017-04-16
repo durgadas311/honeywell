@@ -141,14 +141,11 @@ dump(this.expr, 0);
 				if (ofo.preced() > op.preced()) {
 					op.setRight(ofo.getLeft());
 					ofo.setLeft(op);
-					op.setTemp(pars, level + 1);
-					ofo.setTemp(pars, level);
 					op = ofo;
 					return op;
 				}
 			}
 			op.setRight(fo);
-			op.setTemp(pars, level);
 			return op;
 		}
 		// Only a single operand, done

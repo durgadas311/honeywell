@@ -41,6 +41,11 @@ public class Fortran4 implements Compiler, FortranParser {
 	int[] implicits;
 	int intPrec = 3;
 	int[] devices;
+	private int itmp = 0;
+	private int ltmp = 0;
+	private int rtmp = 0;
+	private int atmp = 0;
+	private int xtmp = 0;
 
 	public Fortran4(File input) {
 		prog = null; // or default to file name?
@@ -697,7 +702,6 @@ public class Fortran4 implements Compiler, FortranParser {
 			addSym(id, fo);
 		} else {
 			FortranArrayRef fa = parseArrayRef((FortranArray)fo, dims);
-			fa.setTemp(this, 0);
 			fo = fa;
 		}
 		return fo;
@@ -816,24 +820,36 @@ public class Fortran4 implements Compiler, FortranParser {
 	public boolean inSubroutine() { return inProg && inSubr; }
 	public boolean inMainProg() { return inProg && !inSubr; }
 
+	public void resetTemps() {
+		itmp = 0;
+		ltmp = 0;
+		rtmp = 0;
+		atmp = 0;
+		xtmp = 0;
+	}
 	public FortranOperand getIntTemp(int id) {
-		return parseVariable(String.format("$ITMP%d", id), FortranOperand.INTEGER);
+		return parseVariable(String.format("$ITMP%d", itmp++),
+						FortranOperand.INTEGER);
 	}
 
 	public FortranOperand getLogTemp(int id) {
-		return parseVariable(String.format("$LTMP%d", id), FortranOperand.LOGICAL);
+		return parseVariable(String.format("$LTMP%d", ltmp++),
+						FortranOperand.LOGICAL);
 	}
 
 	public FortranOperand getRealTemp(int id) {
-		return parseVariable(String.format("$RTMP%d", id), FortranOperand.REAL);
+		return parseVariable(String.format("$RTMP%d", rtmp++),
+						FortranOperand.REAL);
 	}
 
 	public FortranOperand getCplxTemp(int id) {
-		return parseVariable(String.format("$XTMP%d", id), FortranOperand.COMPLEX);
+		return parseVariable(String.format("$XTMP%d", xtmp++),
+						FortranOperand.COMPLEX);
 	}
 
 	public FortranOperand getAdrTemp(int id) {
-		return parseVariable(String.format("$ATMP%d", id), FortranOperand.ADDRESS);
+		return parseVariable(String.format("$ATMP%d", atmp++),
+						FortranOperand.ADDRESS);
 	}
 
 	public void setFuncDefs(String fnc, String[] args) {
