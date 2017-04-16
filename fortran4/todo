@@ -6,9 +6,9 @@ TODO:
 * FUNCTION definitions
 * COMMON
 * DATA
-* CHARACTER data type
+* CHARACTER data type?
 * auto convert - data type promotion
-* implied DO loop expression
+* complex list implied DO loops
 
 Lesser importance:
 

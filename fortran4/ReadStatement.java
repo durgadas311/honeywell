@@ -1,9 +1,10 @@
 // Copyright (c) 2017 douglas Miller <durgadas311@gmail.com>
 
+import java.util.Vector;
 import java.io.*;
 
 public class ReadStatement extends FortranItem {
-	static final String _PAT = "READ\\([^)]+\\)[^=]*";
+	static final String _PAT = "READ\\([^)]+\\)[^=].*";
 	private String errors = "";
 	int dev;
 	int fmt = 0;
@@ -23,17 +24,45 @@ public class ReadStatement extends FortranItem {
 		} catch (Exception ee) {
 			pars.errsAdd("Invalid peripheral/format");
 		}
-		x = y + 1;
-		// TODO: must support complex lists...
-		// must all be variables...
-		// TODO: handle arrays
-		String [] lst = stmt.substring(x).split(",");
-		list = new FortranOperand[lst.length];
-		for (x = 0; x < lst.length; ++x) {
-			list[x] = pars.parseVariable(lst[x]);
+		x = y + 1; // past r-paren...
+		Vector<FortranOperand> lst = new Vector<FortranOperand>();
+		FortranOperand fo;
+		while (x < n) {
+			// parseVariable handles arrays...
+			// but implied DO loops require pre-processing
+			y = pars.matchingComma(stmt, x);
+			if (y < 0) {
+				pars.errsAdd("Unrecognizable list");
+				return;
+			}
+			String i = stmt.substring(x, y);
+			if (i.charAt(0) == '(') {
+				String[] du = pars.parseImpliedDo(i);
+				if (du == null) {
+					pars.errsAdd("Invalid implied DO");
+					return;
+				}
+				for (String d : du) {
+					fo = pars.parseVariable(d);
+					if (fo == null) {
+						return;
+					}
+					lst.add(fo);
+				}
+			} else {
+				fo = pars.parseVariable(i);
+				if (fo == null) {
+					return;
+				}
+				lst.add(fo);
+			}
+			x = y + 1;
+		}
+		list = lst.toArray(new FortranOperand[0]);
+		for (x = 0; x < list.length; ++x) {
 			if (list[x] == null) {
-				pars.errsAdd(String.format(
-					"Invalid list item \"%s\"", lst[x]));
+				pars.errsAdd("Invalid list item");
+				return;
 			}
 			// since list items are process independently,
 			// they could share temp variables.

@@ -632,7 +632,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		if (p != 0) {
 			return -1;
 		}
-		return y; // points to comma...
+		return y; // points to comma... or end
 	}
 	public int matchingParen(String str, int lparen) {
 		if (str.charAt(lparen) != '(') {
@@ -724,7 +724,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		}
 		int x = id.indexOf('(');
 		if (x >= 0) {
-			int y = id.indexOf(')', x); // should be last char...
+			int y = matchingParen(id, x); // should be last char...
 			if (y < 0) {
 				errsAdd("Malformed array reference");
 				//return null; // will this break things?
@@ -748,7 +748,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		}
 		if (fo == null && dims != null) {
 			errsAdd("Undefined array");
-			//return null; // will this break things?
+			return null; // will this break things?
 		}
 		if (uniq) {
 			sym = uniqueName();
@@ -857,6 +857,57 @@ public class Fortran4 implements Compiler, FortranParser {
 		// this is essentially a FortranExpr... for each arg...
 		// that recursion is handled in FortranFuncCall...
 		return new FortranFuncCall(fnc, nm, args, this);
+	}
+
+	// '(' array-ref ',' var '=' int ',' int [',' int] ')'
+	// Does NOT handle a list in 'array-ref'... TODO
+	public String[] parseImpliedDo(String du) {
+		int n = du.length();
+		if (du.charAt(n - 1) != ')') { return null; }
+		int x = 1;
+		--n;
+		int y = matchingComma(du, x);
+		if (y < 0 || y >= n) { return null; }
+		String ref = du.substring(x, y);
+		// TODO: 'ref' could be another (nested) implied DO...
+		String[] refs;
+		if (ref.matches("\\(.*\\)")) {
+			refs = parseImpliedDo(ref);
+			if (refs == null) {
+				return null;
+			}
+		} else {
+			refs = new String[]{ ref };
+		}
+		x = y + 1;
+		y = du.indexOf('=', x);
+		if (y < 0) { return null; }
+		String var = du.substring(x, y);
+		String re = "(.*[\\(,])" + var + "([\\),].*)";
+		if (!ref.matches(re)) { return null; }
+		x = y + 1;
+		y = du.indexOf(',', x);
+		if (y < 0) { return null; }
+		int s = Integer.valueOf(du.substring(x, y));
+		x = y + 1;
+		y = du.indexOf(',', x);
+		if (y < 0) {
+			y = n;
+		}
+		int e = Integer.valueOf(du.substring(x, y));
+		x = y + 1;
+		int t = 1;
+		if (x < n) {
+			t = Integer.valueOf(du.substring(x, n));
+		}
+		Vector<String> vs = new Vector<String>();
+		for (int z = s; z <= e; z += t) {
+			String rep = String.format("$1%d$2", z);
+			for (String rf : refs) {
+				vs.add(rf.replaceFirst(re, rep));
+			}
+		}
+		return vs.toArray(new String[0]);
 	}
 
 	// TODO: array-ref and function-call?

@@ -1,9 +1,10 @@
 // Copyright (c) 2017 douglas Miller <durgadas311@gmail.com>
 
+import java.util.Vector;
 import java.io.*;
 
 public class WriteStatement extends FortranItem {
-	static final String _PAT = "WRITE\\([^)]+\\)[^=]*";
+	static final String _PAT = "WRITE\\([^)]+\\)[^=].*";
 	private String errors = "";
 	int dev;
 	int fmt = 0;
@@ -24,30 +25,52 @@ public class WriteStatement extends FortranItem {
 			pars.errsAdd("Invalid peripheral/format");
 		}
 		x = y + 1;
-		// TODO: must support complex lists...
-		// must at least be variable/constant...
-		// TODO: handle arrays/functions?
-		String [] lst = stmt.substring(x).split(",");
-		list = new FortranOperand[lst.length];
-		for (x = 0; x < lst.length; ++x) {
-			list[x] = pars.parseOperand(lst[x]);
-			if (list[x] == null) {
-				pars.errsAdd(String.format(
-					"Invalid list item \"%s\"", lst[x]));
+		Vector<FortranOperand> lst = new Vector<FortranOperand>();
+		FortranOperand fo;
+		while (x < n) {
+			// parseVariable handles arrays...
+			// but implied DO loops require pre-processing
+			y = pars.matchingComma(stmt, x);
+			if (y < 0) {
+				pars.errsAdd("Unrecognizable list");
+				return;
 			}
+			String i = stmt.substring(x, y);
+			if (i.charAt(0) == '(') {
+				String[] du = pars.parseImpliedDo(i);
+				if (du == null) {
+					pars.errsAdd("Invalid implied DO");
+					return;
+				}
+				for (String d : du) {
+					fo = pars.parseVariable(d);
+					if (fo == null) {
+						return;
+					}
+					lst.add(fo);
+				}
+			} else {
+				fo = pars.parseVariable(i);
+				if (fo == null) {
+					return;
+				}
+				lst.add(fo);
+			}
+			x = y + 1;
+		}
+		list = lst.toArray(new FortranOperand[0]);
+		for (x = 0; x < list.length; ++x) {
+			if (list[x] == null) {
+				pars.errsAdd("Invalid list item");
+				return;
+			}
+			// since list items are process independently,
+			// they could share temp variables.
 			if (list[x] instanceof FortranOperation) {
 				pars.resetTemps();
 				((FortranOperation)list[x]).setTemp(pars, 0);
 			}
 		}
-		// TODO: arbitrary expressions...
-		// can't naively split on comma...
-		// use pars.matchingComma(), then pars.parseExpr()...
-		// Each list item is passed idependently, so no need
-		// for "globally" unique temps...
-		//	pars.resetTemps();
-		//	expr[x].setTemp(pars, 0);
-		//
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
