@@ -8,6 +8,7 @@ TODO:
 * DATA
 * CHARACTER data type
 * auto convert - data type promotion
+* implied DO loop expression
 
 Lesser importance:
 

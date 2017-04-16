@@ -18,6 +18,7 @@ public class FortranRunTime implements HW2000Trap {
 	private Peripheral perph;
 	private boolean input;
 	private FormatSpec[] fmt;
+	private int fmtAdr;
 	private HW2000 sys;
 
 	public FortranRunTime(HW2000 sys) {
@@ -83,7 +84,7 @@ public class FortranRunTime implements HW2000Trap {
 
 	private void acboio() {
 		sys.SR = sys.BAR;
-		int fmt = getAdr();
+		fmtAdr = getAdr();
 		// Doesn't check IM...
 		int t = sys.rawReadMem(sys.SR++) & 077;
 		sys.CSR = 1342;
@@ -107,7 +108,7 @@ public class FortranRunTime implements HW2000Trap {
 			if (perph == null) {
 				return;
 			}
-			getFormat(fmt);
+			getFormat(fmtAdr);
 			if (input) {
 				// read record...
 				dispatchInput();
@@ -565,6 +566,7 @@ public class FortranRunTime implements HW2000Trap {
 		double dd;
 		int val;
 		int b = 10;
+		String L;
 		switch (c) {
 		case 'A':
 			putStr(a, buf.substring(ip, ip + n));
@@ -579,7 +581,8 @@ public class FortranRunTime implements HW2000Trap {
 			putInt(a, val);
 			break;
 		case 'L':
-			boolean l = (buf.charAt(n - 1) == 'T');
+			L = buf.substring(ip, ip + n).trim();
+			boolean l = (L.charAt(0) == 'T');
 			putInt(a, l ? 1 : 0);
 			break;
 		case 'E':
@@ -592,6 +595,9 @@ public class FortranRunTime implements HW2000Trap {
 			putReal(a, dd);
 			break;
 		case 'H': // done in nextParam()... TODO: move here?
+			// must transfer actual input characters to FORMAT statement...
+			// TODO!
+		case 'X': // done in nextParam()... TODO: move here?
 		default:
 			++idx;
 			return;
@@ -628,6 +634,7 @@ public class FortranRunTime implements HW2000Trap {
 			dd = getReal(a);
 			v = String.format(fmt[idx].format, dd);
 			break;
+		case 'X': // done in nextParam()... TODO: move here?
 		case 'H': // done in nextParam()... TODO: move here?
 		default:
 			++idx;
@@ -643,12 +650,29 @@ public class FortranRunTime implements HW2000Trap {
 		++idx;
 	}
 
+	private void doHInput(FormatSpec fmt) {
+		if (fmt.spec != 'H' || fmt.offset < 0) {
+			ip += fmt.width;
+			return;
+		}
+		int a = fmt.offset;
+		for (int x = 0; x < fmt.width; ++x) {
+			sys.rawWriteChar(a++,
+				sys.pdc.cvt.asciiToHw((byte)buf.charAt(ip++)));
+		}
+	}
+
 	private void nextParam() {
 		// TODO: work out correct algorithm/repeat scheme
-		while (idx < fmt.length && fmt[idx].spec == 'H') {
+		while (idx < fmt.length &&
+				(fmt[idx].spec == 'H' || fmt[idx].spec == 'X')) {
 			if (input) {
-				ip += fmt[idx].width;
-			} else {
+				doHInput(fmt[idx]);
+			} else if (fmt[idx].spec == 'X') {
+				for (int x = 0; x < fmt[idx].width; ++x) {
+					buf += ' ';
+				}
+			} else {	// 'H'
 				buf += fmt[idx].format;
 			}
 			++idx;
@@ -694,14 +718,15 @@ public class FortranRunTime implements HW2000Trap {
 				break;
 			case 'H':
 				++idx;
-				fmt.add(new FormatSpec('H', r, getHollerith(f, r)));
+				int o = fmtAdr + idx; // assumes 'idx' follows mem addr
+				fmt.add(new FormatSpec('H', r, getHollerith(f, r), o));
 				break;
 			case '\'':
 				// repetition count not allowed?
 				++idx;
 				String q = getQuoted(f);
 				++idx;
-				fmt.add(new FormatSpec('H', q.length(), q));
+				fmt.add(new FormatSpec('H', q.length(), q, -1));
 				break;
 			default:
 				++idx;

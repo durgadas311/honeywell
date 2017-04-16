@@ -4,6 +4,7 @@ public class FormatSpec {
 	public int width;
 	public char spec;
 	public String format;
+	public int offset = -1;
 
 	public FormatSpec(int c, int w, int d) {
 		spec = (char)c;
@@ -38,11 +39,13 @@ public class FormatSpec {
 		}
 	}
 
-	public FormatSpec(int c, int w, String h) {
+	// For 'H' spec, or quoted string constants
+	public FormatSpec(int c, int w, String h, int off) {
 		// assert c == 'H'... and h.length() == w
 		spec = (char)c;
 		width = w;
 		format = h;
+		offset = off;
 	}
 
 	private String fpFormat(char c, int w, int d) {
