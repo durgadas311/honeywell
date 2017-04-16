@@ -3,4 +3,5 @@
 public interface HW2000Trap {
 	boolean doTrap();
 	String getName();
+	void done();
 }

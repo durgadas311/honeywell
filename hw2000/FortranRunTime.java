@@ -10,12 +10,14 @@ public class FortranRunTime implements HW2000Trap {
 
 	private String buf;
 	private int idx;
+	private int rep;
 	private int ip;
 	private int dev;
 	private int unit;
 	private int eofCode;
 	private int eotCode;
 	private Peripheral perph;
+	SequentialRecordIO sqio = null;
 	private boolean input;
 	private FormatSpec[] fmt;
 	private int fmtAdr;
@@ -75,9 +77,15 @@ public class FortranRunTime implements HW2000Trap {
 		return true;
 	}
 
+	public void done() {
+		if (sqio != null) {
+			sqio.end();
+			sqio = null;
+		}
+	}
+
 	private void exit() {
 		// System.err.format("exit %07o\n", sys.SR);
-		// TODO: remove traps...
 		sys.removeTrap(this);
 		sys.SR = sys.BAR;
 	}
@@ -91,9 +99,18 @@ public class FortranRunTime implements HW2000Trap {
 		if (t == 077) {
 			if (!input) {
 				// write record...
+				// If we got no parameters, must be "constant" format.
+				// copy to output.
+				if (idx == 0 && buf.length() == 0) {
+					nextParam();
+				}
 				dispatchOutput();
 			}
 			buf = null;
+			if (sqio != null) {
+				sqio.end();
+				sqio = null;
+			}
 		} else {
 			eofCode = 2;
 			eotCode = 2;
@@ -107,6 +124,10 @@ public class FortranRunTime implements HW2000Trap {
 			perph = sys.pdc.getPeriph((byte)dev);
 			if (perph == null) {
 				return;
+			}
+			if (perph instanceof SequentialRecordIO) {
+				sqio = (SequentialRecordIO)perph;
+				sqio.begin(unit);
 			}
 			getFormat(fmtAdr);
 			if (input) {
@@ -539,6 +560,7 @@ public class FortranRunTime implements HW2000Trap {
 			}
 		}
 		idx = 0;
+		rep = 0;
 		this.fmt = scanFormat(fmt, 0);
 		idx = 0;
 		buf = "";
@@ -651,10 +673,15 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void doHInput(FormatSpec fmt) {
+		if (fmt.spec == '/') {
+			dispatchInput();
+			return;
+		}
 		if (fmt.spec != 'H' || fmt.offset < 0) {
 			ip += fmt.width;
 			return;
 		}
+		// TODO: this may not be the right address...
 		int a = fmt.offset;
 		for (int x = 0; x < fmt.width; ++x) {
 			sys.rawWriteChar(a++,
@@ -664,10 +691,11 @@ public class FortranRunTime implements HW2000Trap {
 
 	private void nextParam() {
 		// TODO: work out correct algorithm/repeat scheme
-		while (idx < fmt.length &&
-				(fmt[idx].spec == 'H' || fmt[idx].spec == 'X')) {
+		while (idx < fmt.length && !fmt[idx].parm) {
 			if (input) {
 				doHInput(fmt[idx]);
+			} else if (fmt[idx].spec == '/') {
+				dispatchOutput();
 			} else if (fmt[idx].spec == 'X') {
 				for (int x = 0; x < fmt[idx].width; ++x) {
 					buf += ' ';
@@ -677,7 +705,7 @@ public class FortranRunTime implements HW2000Trap {
 			}
 			++idx;
 		}
-		if (idx >= fmt.length) idx = 0;
+		if (idx >= fmt.length) idx = rep;
 	}
 
 	private FormatSpec[] scanFormat(String f, int lev) {
@@ -702,6 +730,9 @@ public class FortranRunTime implements HW2000Trap {
 				// This gets tricky with global 'idx'...
 				++idx;
 				FormatSpec[] f1 = scanFormat(f, lev + 1);
+				if (lev == 0) {
+					rep = fmt.size();
+				}
 				while (r > 0) {
 					for (FormatSpec fs : f1) {
 						fmt.add(fs);
@@ -715,6 +746,10 @@ public class FortranRunTime implements HW2000Trap {
 					return fmt.toArray(new FormatSpec[0]);
 				}
 				// else error...
+				break;
+			case '/':
+				++idx;
+				fmt.add(new FormatSpec('/', 0, 0));
 				break;
 			case 'X':
 				++idx;
@@ -780,15 +815,14 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void dispatchOutput() {
-		// If we got no parameters, must be "constant" format.
-		// copy to output.
-		if (idx == 0 && buf.length() == 0) {
-			nextParam();
-		}
 		if (perph instanceof P_LinePrinter) {
 			// TODO: carriage control, etc...
 			// ...or just send through actual peripheral...
 			String cc = "\n";
+			if (buf.length() == 0) {
+				sys.listOut(cc);
+				return;
+			}
 			char cr = buf.charAt(0);
 			switch (cr) {
 			case ' ': break;
@@ -814,31 +848,29 @@ public class FortranRunTime implements HW2000Trap {
 				break;
 			}
 			sys.listOut(cc + buf.substring(1));
-		} else if (perph instanceof SequentialRecordIO) {
-			SequentialRecordIO sqio = (SequentialRecordIO)perph;
-			sqio.begin(unit);
+		} else if (sqio != null) {
 			if (!sqio.ready()) {
 				return;
+			}
+			if (buf == null) {
+				buf = "";
 			}
 			byte[] b = new byte[buf.length()];
 			for (int x = 0; x < buf.length(); ++x) {
 				b[x] = sys.pdc.cvt.asciiToHw((byte)buf.charAt(x));
 			}
 			sqio.appendRecord(b, 0, b.length);
-			sqio.end();
 		} else {
 			System.err.format("Output on unsupported device %02o %o\n", dev, unit);
 		}
 	}
 
 	private void dispatchInput() {
-		if (!(perph instanceof SequentialRecordIO)) {
+		if (sqio == null) {
 			System.err.format("Input on unsupported device %02o %o\n", dev, unit);
 			return;
 		}
 		buf = "";
-		SequentialRecordIO sqio = (SequentialRecordIO)perph;
-		sqio.begin(unit);
 		if (!sqio.ready()) {
 			// TODO: EOF? error?
 			eofCode = 1;
@@ -862,6 +894,5 @@ public class FortranRunTime implements HW2000Trap {
 		for (int x = 0; x < b.length; ++x) {
 			buf += sys.pdc.cvt.hwToLP(b[x]);
 		}
-		sqio.end();
 	}
 }

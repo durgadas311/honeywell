@@ -98,6 +98,9 @@ public class HW2000 implements CoreMemory
 		singleStep = false;
 		bootstrap = false;
 		_trace = false;
+		for (HW2000Trap trap : traps.values()) {
+			trap.done();
+		}
 		traps.clear();
 		tics = 0;
 		ATR = 0;
@@ -660,6 +663,7 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void removeTrap(HW2000Trap trap) {
+		trap.done();
 		traps.remove(trap.getName());
 	}
 

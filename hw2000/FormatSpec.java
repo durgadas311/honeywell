@@ -5,6 +5,7 @@ public class FormatSpec {
 	public char spec;
 	public String format;
 	public int offset = -1;
+	public boolean parm = true;
 
 	public FormatSpec(int c, int w, int d) {
 		spec = (char)c;
@@ -31,11 +32,16 @@ public class FormatSpec {
 		case 'G':
 			format = fpFormat('G', w, d);
 			break;
+		case '/':
+			format = "\n"; // symbolic, mostly
+			parm = false;
+			break;
 		default:
 			spec = 'H';
 		case 'X':
 			format = String.format("%%%ds", w);
 			format = String.format(format, "");
+			parm = false;
 			break;
 		}
 	}
@@ -47,6 +53,7 @@ public class FormatSpec {
 		width = w;
 		format = h;
 		offset = off;
+		parm = false;
 	}
 
 	private String fpFormat(char c, int w, int d) {
