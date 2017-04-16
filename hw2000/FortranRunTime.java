@@ -91,7 +91,7 @@ public class FortranRunTime implements HW2000Trap {
 		if (t == 077) {
 			if (!input) {
 				// write record...
-				dispatchOutput(buf);
+				dispatchOutput();
 			}
 			buf = null;
 		} else {
@@ -716,6 +716,10 @@ public class FortranRunTime implements HW2000Trap {
 				}
 				// else error...
 				break;
+			case 'X':
+				++idx;
+				fmt.add(new FormatSpec('X', r, -1));
+				break;
 			case 'H':
 				++idx;
 				int o = fmtAdr + idx; // assumes 'idx' follows mem addr
@@ -732,7 +736,7 @@ public class FortranRunTime implements HW2000Trap {
 				++idx;
 				int w = getNum(f);
 				int d = -1;
-				if (f.charAt(idx) == '.') {
+				if (idx < f.length() && f.charAt(idx) == '.') {
 					++idx;
 					d = getNum(f);
 				}
@@ -775,7 +779,12 @@ public class FortranRunTime implements HW2000Trap {
 		return s;
 	}
 
-	private void dispatchOutput(String buf) {
+	private void dispatchOutput() {
+		// If we got no parameters, must be "constant" format.
+		// copy to output.
+		if (idx == 0 && buf.length() == 0) {
+			nextParam();
+		}
 		if (perph instanceof P_LinePrinter) {
 			// TODO: carriage control, etc...
 			// ...or just send through actual peripheral...

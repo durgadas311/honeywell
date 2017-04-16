@@ -33,6 +33,7 @@ public class FormatSpec {
 			break;
 		default:
 			spec = 'H';
+		case 'X':
 			format = String.format("%%%ds", w);
 			format = String.format(format, "");
 			break;

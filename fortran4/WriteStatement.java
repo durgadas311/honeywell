@@ -5,6 +5,7 @@ import java.io.*;
 
 public class WriteStatement extends FortranItem {
 	static final String _PAT = "WRITE\\([^)]+\\)[^=].*";
+	static final String _PAT2 = "WRITE\\([^)]+\\)";
 	private String errors = "";
 	int dev;
 	int fmt = 0;
@@ -74,7 +75,7 @@ public class WriteStatement extends FortranItem {
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
-		if (!pot.matches(_PAT)) {
+		if (!pot.matches(_PAT) && !pot.matches(_PAT2)) {
 			return null;
 		}
 		return new WriteStatement(pot, pars);

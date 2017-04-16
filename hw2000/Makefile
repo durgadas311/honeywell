@@ -33,6 +33,8 @@ www: __FRC__
 
 ship: $(SHIPS)
 	rsync -Wuv $(SHIPS) ../cardpunch/CardPunch.jar \
+		../fortran4/Fortran4Embedded.jar \
+		../easycoder/EasyCoder.jar \
 		durgadas.com:/http/durgadas.com/sebhc/hw2000
 	rsync -rWuv www/downloads/. durgadas.com:/http/durgadas.com/sebhc/hw2000/.
 

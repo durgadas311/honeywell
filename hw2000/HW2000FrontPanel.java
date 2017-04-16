@@ -1588,13 +1588,13 @@ public class HW2000FrontPanel extends JFrame
 			return false;
 		}
 		_last = src;
+		String l = src.getAbsolutePath();
+		if (l.endsWith(".f4")) {
+			l = l.substring(0, l.length() - 3);
+		}
+		ezc = new File(l + ".ezc");
 		if (listing) {
-			String l = src.getAbsolutePath();
-			if (l.endsWith(".f4")) {
-				l = l.substring(0, l.length() - 3);
-			}
 			lst = new File(l + ".lst");
-			ezc = new File(l + ".ezc");
 			FileOutputStream lstf;
 			try {
 				lstf = new FileOutputStream(lst);
@@ -1621,11 +1621,11 @@ ee.printStackTrace();
 			warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");
 			return false;
 		}
-		dumpOnHalt = cmp.wantsDump();
-		if (cmp.listSymbols()) {
+		dumpOnHalt = listing && cmp.wantsDump();
+		if (listing && cmp.listSymbols()) {
 			cmp.listSymTab();
 		}
-		boolean ret = assemble(ezc, op, cmp.listEasyCoder());
+		boolean ret = assemble(ezc, op, listing && cmp.listEasyCoder());
 		if (ret) {
 			inform(this, op, String.format("Compile complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
