@@ -1,0 +1,14 @@
+TODO:
+
+* unary "-"
+* passive DOUBLE PRECISION (use REAL)
+* (re)definition of SUBROUTINE/FUNCTION args
+* FUNCTION definitions
+* COMMON
+
+Lesser importance:
+
+* COMPLEX
+* CALL CHAINx
+* EQUIVALENCE
+* EXTERNAL
