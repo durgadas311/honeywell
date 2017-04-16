@@ -46,6 +46,9 @@ public class Fortran4 implements Compiler, FortranParser {
 	private int rtmp = 0;
 	private int atmp = 0;
 	private int xtmp = 0;
+	private boolean ezcListing = false;
+	private boolean symListing = true;
+	private boolean wantDump = false;
 
 	public Fortran4(File input) {
 		prog = null; // or default to file name?
@@ -152,6 +155,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		lineNo = 0;
 		end = false;
 		inProg = false;
+		inSubr = false;
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		if (errs.size() > 0) {
@@ -167,6 +171,10 @@ public class Fortran4 implements Compiler, FortranParser {
 		try { in.close(); } catch (Exception ee) {}
 		return ret;
 	}
+
+	public boolean listEasyCoder() { return ezcListing; }
+	public boolean listSymbols() { return symListing; }
+	public boolean wantsDump() { return wantDump; }
 
 	public int generate(File output) {
 		if (output == null) {
@@ -244,7 +252,34 @@ public class Fortran4 implements Compiler, FortranParser {
 		return ret;
 	}
 
+	private void processDUMP(String ln) {
+		wantDump = true;
+	}
+
 	private void processDATA(String ln) {
+		end = true;
+		inProg = false;
+		inSubr = false;
+	}
+
+	// This doesn't really work as advertized... We don't yet
+	// support multi-job runs at this level.
+	private void processALTER(String ln) {
+		String[] args = ln.split("[ ,]+");
+		for (int x = 1; x < args.length; ++x) {
+			String s = args[x];
+			if (s.equals("SAVE")) {
+			} else if (s.equals("PUNCH")) {
+			} else if (s.equals("NOLIST")) {
+				// do NOT list symbols...
+				symListing = false;
+			} else if (s.equals("LIST")) {
+				// DO list EasyCoder output
+				ezcListing = true;
+			} else {
+				errsAdd("Invalid *ALTER option " + s);
+			}
+		}
 	}
 
 	private void processJOBID(String ln) {
@@ -277,10 +312,14 @@ public class Fortran4 implements Compiler, FortranParser {
 			} else if (s.equals("SAVE")) {
 			} else if (s.equals("PUNCH")) {
 			} else if (s.equals("NOLIST")) {
+				// do NOT list symbols...
+				symListing = false;
 			} else if (s.equals("LIST")) {
+				// DO list EasyCoder output
+				ezcListing = true;
 			} else if (s.equals("TAPEIP")) {
 			} else {
-				errsAdd("Invalid *JOBID option " +s);
+				errsAdd("Invalid *JOBID option " + s);
 			}
 		}
 	}
@@ -359,13 +398,15 @@ public class Fortran4 implements Compiler, FortranParser {
 		// first do convenience translations of special chars
 		line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
 		if (line.length() == 0) {
-			// TODO: pass-thru to listing?
+			// TODO: pass-thru to listing? (already done)
 			return 0;
 		}
 		if (line.charAt(0) == 'C') {
+			// inProg = true; ?
 			return 0;
 		}
 		// TODO: some of these must be before any FORTRAN cards...
+		// ... or must they?
 		if (!inProg) {
 			if (line.startsWith(" TITLE")) {
 				prog = line.substring(6).trim();
@@ -375,10 +416,26 @@ public class Fortran4 implements Compiler, FortranParser {
 				processJOBID(line);
 				return 0;
 			}
-			if (line.startsWith("DATA")) {
-				processDATA(line);
+			if (!inProg && line.startsWith("*ALTER")) {
+				processALTER(line);
 				return 0;
 			}
+			if (!inProg && line.startsWith("*DUMP")) {
+				processDUMP(line);
+				return 0;
+			}
+		}
+		// TODO: support in-stream data
+		// (support compiling from punch cards in general!)
+		if (line.startsWith("*DATA") ||
+				line.startsWith("*ENDDATA") ||
+				line.startsWith("1EOF ")) {
+			processDATA(line);
+			return 0;
+		}
+		if (line.startsWith("*")) {
+			// another type of comment card
+			return 0;
 		}
 		// Must be a FORTRAN non-comment card...
 		if (line.length() < 7) {

@@ -75,6 +75,7 @@ public class HW2000FrontPanel extends JFrame
 	boolean tape = false;
 	boolean monitor = false;
 	boolean fortran = false;
+	boolean dumpOnHalt = false;
 	int currLow = 0;
 	int currHi = 0;
 
@@ -1112,6 +1113,10 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void doCtrlMode() {
+		if (dumpOnHalt) {
+			dumpOnHalt = false;
+			sys.dumpHW(currLow, currHi - 1);
+		}
 		int state = 0;
 		int dc = 0;	// digit count (params)
 		int v = 0;	// value, accumulator
@@ -1616,7 +1621,11 @@ ee.printStackTrace();
 			warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");
 			return false;
 		}
-		boolean ret = assemble(ezc, op);
+		dumpOnHalt = cmp.wantsDump();
+		if (cmp.listSymbols()) {
+			cmp.listSymTab();
+		}
+		boolean ret = assemble(ezc, op, cmp.listEasyCoder());
 		if (ret) {
 			inform(this, op, String.format("Compile complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
@@ -1646,7 +1655,7 @@ ee.printStackTrace();
 			}
 			getPrinter().setOutput(lst);
 		}
-		boolean ret = assemble(src, op);
+		boolean ret = assemble(src, op, listing);
 		getPrinter().setOutput(null);
 		if (lst != null) {
 			try { lst.close(); } catch (Exception ee) {}
@@ -1658,7 +1667,7 @@ ee.printStackTrace();
 		return ret;
 	}
 
-	private boolean assemble(File src, String op) {
+	private boolean assemble(File src, String op, boolean doList) {
 		Assembler asm = new Assembler(src);
 		int e = asm.passOne();
 		if (e < 0) {
@@ -1703,19 +1712,19 @@ ee.printStackTrace();
 			}
 			// TODO: Allow cards vs. tape
 			e = asm.passTwo(new PeriphLoader(tp, asm.charCvt(), 250),
-					listing ? (CoreMemory)sys : null);
+					doList ? (CoreMemory)sys : null);
 			tp.appendRecord(_1EOF, 0, -1);
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.end();
 		} else {
-			e = asm.passTwo(sys, reloc, listing);
+			e = asm.passTwo(sys, reloc, doList);
 		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return false;
 		}
-		if (listing) {
+		if (doList) {
 			asm.listSymTab();
 		}
 		if (monitor) {

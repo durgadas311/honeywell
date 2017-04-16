@@ -24,6 +24,9 @@ public class LetStatement extends FortranItem {
 		}
 		pars.resetTemps();
 		expr.setTemp(pars, 0);
+		if (var instanceof FortranOperation) {
+			((FortranOperation)var).setTemp(pars, 0);
+		}
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

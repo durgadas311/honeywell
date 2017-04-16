@@ -6,5 +6,8 @@ public interface Compiler {
 	int compile(PrintStream lst);
 	int generate(File ezc);
 	String getErrors();
+	boolean listEasyCoder();
+	boolean listSymbols();
+	boolean wantsDump();
 	void listSymTab();
 }

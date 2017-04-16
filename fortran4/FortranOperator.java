@@ -54,10 +54,10 @@ public class FortranOperator extends FortranOperation {
 	public void genDefs(FortranParser pars) {
 		// TODO: need to get temp var type and num...
 		// TODO: might reference an external function
-		if (left instanceof FortranOperator || left instanceof FortranArrayRef) {
+		if (left instanceof FortranOperation) {
 			left.genDefs(pars);
 		}
-		if (right instanceof FortranOperator || left instanceof FortranArrayRef) {
+		if (right instanceof FortranOperation) {
 			right.genDefs(pars);
 		}
 	}

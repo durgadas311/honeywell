@@ -40,7 +40,9 @@ public class f4 {
 			System.err.println(cmp.getErrors());
 			System.exit(1);
 		}
-		cmp.listSymTab();
+		if (cmp.listSymbols()) {
+			cmp.listSymTab();
+		}
 		lst.println("");
 		FileOutputStream fo = null;
 		try {
@@ -54,7 +56,7 @@ public class f4 {
 		ldr = new RawLoader(fo, System.err, null, -1);
 		e = asm.passOne();
 		if (e >= 0) {
-			e = asm.passTwo(ldr, lst);
+			e = asm.passTwo(ldr, cmp.listEasyCoder() ? lst : null);
 		}
 		if (e < 0) {
 			System.err.println(asm.getErrors());

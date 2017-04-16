@@ -98,6 +98,7 @@ public class HW2000 implements CoreMemory
 		singleStep = false;
 		bootstrap = false;
 		_trace = false;
+		traps.clear();
 		tics = 0;
 		ATR = 0;
 		SR = 0;
@@ -648,7 +649,7 @@ public class HW2000 implements CoreMemory
 			if ((mem[a++] & 0200) != 0) break;
 		}
 		//System.err.format("Trap %07o \"%s\"\n", SR, t);
-		if (t.equals("FORTRAN")) {
+		if (t.equals(FortranRunTime.name())) {
 			if (!traps.containsKey(t)) {
 				traps.put(t, new FortranRunTime(this));
 			}
@@ -656,6 +657,10 @@ public class HW2000 implements CoreMemory
 			halt = true;
 		}
 		SR = a;
+	}
+
+	public void removeTrap(HW2000Trap trap) {
+		traps.remove(trap.getName());
 	}
 
 	private void doTraps() {

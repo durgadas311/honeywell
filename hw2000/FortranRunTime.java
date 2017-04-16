@@ -26,6 +26,9 @@ public class FortranRunTime implements HW2000Trap {
 		eotCode = 2;
 	}
 
+	public String getName() { return "FORTRAN"; }
+	static public String name() { return "FORTRAN"; }
+
 	public boolean doTrap() {
 		if (sys.SR < base || sys.SR - base >= numOps) {
 			return false;
@@ -74,6 +77,7 @@ public class FortranRunTime implements HW2000Trap {
 	private void exit() {
 		// System.err.format("exit %07o\n", sys.SR);
 		// TODO: remove traps...
+		sys.removeTrap(this);
 		sys.SR = sys.BAR;
 	}
 

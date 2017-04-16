@@ -35,6 +35,10 @@ public class WriteStatement extends FortranItem {
 				pars.errsAdd(String.format(
 					"Invalid list item \"%s\"", lst[x]));
 			}
+			if (list[x] instanceof FortranOperation) {
+				pars.resetTemps();
+				((FortranOperation)list[x]).setTemp(pars, 0);
+			}
 		}
 		// TODO: arbitrary expressions...
 		// can't naively split on comma...
@@ -43,6 +47,7 @@ public class WriteStatement extends FortranItem {
 		// for "globally" unique temps...
 		//	pars.resetTemps();
 		//	expr[x].setTemp(pars, 0);
+		//
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {

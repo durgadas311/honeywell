@@ -35,6 +35,12 @@ public class ReadStatement extends FortranItem {
 				pars.errsAdd(String.format(
 					"Invalid list item \"%s\"", lst[x]));
 			}
+			// since list items are process independently,
+			// they could share temp variables.
+			if (list[x] instanceof FortranOperation) {
+				pars.resetTemps();
+				((FortranOperation)list[x]).setTemp(pars, 0);
+			}
 		}
 	}
 
