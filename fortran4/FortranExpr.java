@@ -17,8 +17,8 @@ public class FortranExpr {
 		idx = 0;
 		level = 0;
 		this.expr = parse(null);
-System.err.format("EXPR %s:\n", exprStr);
-dump(this.expr, 0);
+//System.err.format("EXPR %s:\n", exprStr);
+//dump(this.expr, 0);
 //System.exit(0);
 	}
 
