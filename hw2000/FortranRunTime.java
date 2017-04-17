@@ -102,7 +102,7 @@ public class FortranRunTime implements HW2000Trap {
 				// If we got no parameters, must be "constant" format.
 				// copy to output.
 				if (idx == 0 && buf.length() == 0) {
-					nextParam();
+					nextParam(false);
 				}
 				dispatchOutput();
 			}
@@ -575,7 +575,7 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void doParamIn(int a) {
-		nextParam();
+		nextParam(true);
 		int c = fmt[idx].spec;
 		int n = fmt[idx].width;
 		if (ip >= buf.length()) {
@@ -629,7 +629,7 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void doParamOut(int a) {
-		nextParam();
+		nextParam(true);
 		int c = fmt[idx].spec;
 		int n = fmt[idx].width;
 		int m;
@@ -689,13 +689,23 @@ public class FortranRunTime implements HW2000Trap {
 		}
 	}
 
-	private void nextParam() {
-		// TODO: work out correct algorithm/repeat scheme
+	// We have a parameter, must find a format spec to use...
+	private void nextParam(boolean must) {
+		if (must && idx >= fmt.length) {
+			idx = rep;
+			if (input) {
+				dispatchInput();
+			} else {
+				dispatchOutput();
+				buf = "";
+			}
+		}
 		while (idx < fmt.length && !fmt[idx].parm) {
 			if (input) {
 				doHInput(fmt[idx]);
 			} else if (fmt[idx].spec == '/') {
 				dispatchOutput();
+				buf = "";
 			} else if (fmt[idx].spec == 'X') {
 				for (int x = 0; x < fmt[idx].width; ++x) {
 					buf += ' ';
@@ -705,7 +715,6 @@ public class FortranRunTime implements HW2000Trap {
 			}
 			++idx;
 		}
-		if (idx >= fmt.length) idx = rep;
 	}
 
 	private FormatSpec[] scanFormat(String f, int lev) {
