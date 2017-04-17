@@ -228,24 +228,32 @@ public class Fortran4 implements Compiler, FortranParser {
 		// emit("  TANH   DC    #1B31");
 		// emit("  TANH   DC    #1B32");
 		// emit("  TANH   DC    #1B33");
+		emit("  $COMMU RESV  0"); // start of communications area
+		emit("  $IOFLG DC    #1B0"); // I/O flags (error/eof)
+		emit("  $COMME RESV  0");
 		// TODO: enter templates for library functions...
 		// new FortranSubprogram(...) ?
 		//
-		setDefs();
+		setDefs();	// generate all variables/constants
+		//
 		emit(String.format("  $START CAM   %02o", adrMode == 4 ? 060 : 000));
 		emit("         B     0-1"); // special trap "load runtime"
-		emit(" R       DCW   @FORTRAN@"); // runtime to "load"
-		setCode();
+		emit("         DCW   @FORTRAN@"); // runtime to "load"
+		emit("         DSA   $EXIT");
+		emit("         DSA   $COMMU");
+		emit(" R       DSA   $COMME");
+		//
+		setCode();	// generate program code
+		//
 		// Termination handled by END statements...
 		// END => STOP or RETURN...
-		emit("         NOP");
-		setData();
+		emit("         NOP");	// ensure WM after last instruction
+		//
+		setData();	// arrays, common(?), un-initialized data
+		//
 		emit("         END   $START");
 		if (errs.size() > 0) {
 			ret = -1;
-		}
-		if (listing) {
-			// listSymTab();
 		}
 		try { in.close(); } catch (Exception ee) {}
 		try { if (out != null) out.close(); } catch (Exception ee) {}

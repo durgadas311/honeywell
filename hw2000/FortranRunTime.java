@@ -5,8 +5,11 @@ import java.util.HashMap;
 import java.util.Vector;
 
 public class FortranRunTime implements HW2000Trap {
-	static final int base = 1340;
-	static final int numOps = 31;
+	static final String name = "FORTRAN";
+	private int base = 0;
+	private int numOps = 0;
+	private int comm = 0;
+	private int commLen = 0;
 
 	private String buf;
 	private int idx;
@@ -14,8 +17,7 @@ public class FortranRunTime implements HW2000Trap {
 	private int ip;
 	private int dev;
 	private int unit;
-	private int eofCode;
-	private int eotCode;
+	private int ioflgs = 0;
 	private Peripheral perph;
 	SequentialRecordIO sqio = null;
 	private boolean input;
@@ -25,12 +27,27 @@ public class FortranRunTime implements HW2000Trap {
 
 	public FortranRunTime(HW2000 sys) {
 		this.sys = sys;
-		eofCode = 2;
-		eotCode = 2;
+		sys.SR += name.length();
+		base = getAdr();
+		comm = getAdr();
+		int e = getAdr();
+		numOps = comm - base;
+		commLen = e - comm;
 	}
 
-	public String getName() { return "FORTRAN"; }
-	static public String name() { return "FORTRAN"; }
+	public String getName() { return name; }
+	static public String name() { return name; }
+	static public boolean check(HW2000 sys) {
+		if ((sys.rawReadMem(sys.SR) & 0100) == 0 ||
+			(sys.rawReadMem(sys.SR + name.length()) & 0100) == 0) {
+			return false;
+		}
+		String s = "";
+		for (int a = 0; a < name.length(); ++a) {
+			s += sys.pdc.cvt.hwToLP((byte)(sys.rawReadMem(sys.SR + a) & 077));
+		}
+		return name.equals(s);
+	}
 
 	public boolean doTrap() {
 		if (sys.SR < base || sys.SR - base >= numOps) {
@@ -112,8 +129,8 @@ public class FortranRunTime implements HW2000Trap {
 				sqio = null;
 			}
 		} else {
-			eofCode = 2;
-			eotCode = 2;
+			ioflgs = 0;
+			sys.rawWriteChar(comm + 0, (byte)ioflgs);
 			// TODO: how to determine READ vs WRITE
 			input = (t & 040) != 0;
 			dev = (t >> 3) & 003; // TODO: '3' is not a std addr...
@@ -376,14 +393,14 @@ public class FortranRunTime implements HW2000Trap {
 	private void eof() {
 		sys.SR = sys.BAR;
 		int a = getAdr();
-		putInt(a, eofCode);
-		eofCode = 2;
+		int e = ((ioflgs & 001) != 0 ? 1 : 2);
+		putInt(a, e);
 	}
 	private void eot() {
 		sys.SR = sys.BAR;
 		int a = getAdr();
-		putInt(a, eotCode);
-		eotCode = 2;
+		int e = ((ioflgs & 002) != 0 ? 1 : 2);
+		putInt(a, e);
 	}
 	private void tapeCtl(char cmd) {
 		sys.SR = sys.BAR;
@@ -859,6 +876,8 @@ public class FortranRunTime implements HW2000Trap {
 			sys.listOut(cc + buf.substring(1));
 		} else if (sqio != null) {
 			if (!sqio.ready()) {
+				ioflgs |= 004;
+				sys.rawWriteChar(comm + 0, (byte)ioflgs);
 				return;
 			}
 			if (buf == null) {
@@ -882,20 +901,19 @@ public class FortranRunTime implements HW2000Trap {
 		buf = "";
 		if (!sqio.ready()) {
 			// TODO: EOF? error?
-			eofCode = 1;
-			eotCode = 1;
-			sqio.end();
+			ioflgs |= 004;
+			sys.rawWriteChar(comm + 0, (byte)ioflgs);
 			return;
 		}
 		byte[] b = sqio.nextRecord();
 		if (b == null) {
-			eotCode = 1;
-			sqio.end();
+			ioflgs |= 002;
+			sys.rawWriteChar(comm + 0, (byte)ioflgs);
 			return;
 		}
 		if (b.length == 0) {
-			eofCode = 1;
-			sqio.end();
+			ioflgs |= 001;
+			sys.rawWriteChar(comm + 0, (byte)ioflgs);
 			return;
 		}
 		// Need ASCII in order to scan numbers, but want HW for strings!

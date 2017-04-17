@@ -644,22 +644,17 @@ public class HW2000 implements CoreMemory
 	}
 
 	private void trap() {
-		String t = "";
-		int a = BAR;
-		// TODO: limit scan!
-		while (true) {
-			t += pdc.cvt.hwToLP((byte)(mem[a] & 077));
-			if ((mem[a++] & 0200) != 0) break;
-		}
-		//System.err.format("Trap %07o \"%s\"\n", SR, t);
-		if (t.equals(FortranRunTime.name())) {
-			if (!traps.containsKey(t)) {
-				traps.put(t, new FortranRunTime(this));
+		SR = BAR;
+		//System.err.format("Trap %07o \"%s\"\n", SR);
+		if (FortranRunTime.check(this)) {
+			String key = FortranRunTime.name();
+			if (!traps.containsKey(key)) {
+				// ctor must advance SR past params!
+				traps.put(key, new FortranRunTime(this));
 			}
 		} else {
 			halt = true;
 		}
-		SR = a;
 	}
 
 	public void removeTrap(HW2000Trap trap) {
@@ -780,7 +775,7 @@ public class HW2000 implements CoreMemory
 	public void dumpHW(int beg, int end) {
 		String marks = " WIR";
 		int m = beg & ~0177;	// 128 locations per row...
-		listOut(String.format("\nMemory Dump: %07o - %07o\n", beg, end));
+		listOut(String.format("\n\nMemory Dump: %07o - %07o\n", beg, end));
 		while (m <= end) {
 			String l = String.format("%07o 1       2       3       4       5       6       7"
 				+ "       %07o 1       2       3       4       5       6       7\n", m, m + 64);

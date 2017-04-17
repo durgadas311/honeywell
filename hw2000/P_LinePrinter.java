@@ -217,6 +217,7 @@ public class P_LinePrinter extends JFrame
 	}
 
 	public void output(String s) {
+		s = s.toUpperCase();
 		if (dev != null) {
 			try {
 				dev.write(s.getBytes());
