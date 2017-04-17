@@ -584,6 +584,9 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void doParam(int a) {
+		if (ioflgs != 0) {
+			return;
+		}
 		if (input) {
 			doParamIn(a);
 		} else {

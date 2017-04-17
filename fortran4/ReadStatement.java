@@ -8,6 +8,8 @@ public class ReadStatement extends FortranItem {
 	private String errors = "";
 	int dev;
 	int fmt = 0;
+	int err = 0;
+	int end = 0;
 	FortranOperand[] list;
 
 	public ReadStatement(String stmt, FortranParser pars) {
@@ -20,6 +22,14 @@ public class ReadStatement extends FortranItem {
 			dev = Integer.valueOf(v[0]);
 			if (v.length > 1) {
 				fmt = Integer.valueOf(v[1]);
+			}
+			for (int z = 2; z < v.length; ++z) {
+				if (v[z].startsWith("ERR=")) {
+					err = Integer.valueOf(v[z].substring(4));
+				}
+				if (v[z].startsWith("END=")) {
+					end = Integer.valueOf(v[z].substring(4));
+				}
 			}
 		} catch (Exception ee) {
 			pars.errsAdd("Invalid peripheral/format");
@@ -106,6 +116,12 @@ public class ReadStatement extends FortranItem {
 			pars.emit("         DSA   0");
 		}
 		pars.emit(" R       DCW   #1C77");
+		if (err > 0) {
+			pars.emit(String.format("         BBE   $%05d,$IOFLG,04", err));
+		}
+		if (end > 0) {
+			pars.emit(String.format("         BBE   $%05d,$IOFLG,03", end));
+		}
 	}
 
 	public boolean error() {

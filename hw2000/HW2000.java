@@ -681,11 +681,11 @@ public class HW2000 implements CoreMemory
 		halt = false;
 		while (!halt) {
 			if (SR == (-1 & am_mask)) {
-				trap();
+				trap(); // protect from Exceptions also?
 				continue; // needed?
 			}
-			doTraps();
 			try {
+				doTraps();
 				fetch();
 				execute();
 			} catch (HaltException he) {
