@@ -1,5 +1,9 @@
 TODO:
 
+* IMPLICIT uses parens! (A-D,P-Z), also:
+        IMPLICIT REAL (A-F,V-Z), INTEGER (Q-W)
+* ERR=n, END=n in READ/WRITE statements
+* Unformatted I/O (NAMELIST too?)
 * passive DOUBLE PRECISION (use REAL)
 * (re)definition of SUBROUTINE/FUNCTION args
 * FUNCTION definitions
