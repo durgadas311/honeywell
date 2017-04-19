@@ -42,15 +42,15 @@ if (true) {
 		// TODO: variables (args) are dummy/by reference...
 		// only need to setup space to copy addresses into...
 		// plus need space for result...
-		pars.setFuncDefs(fnc, args);
+		//pars.setFuncDefs(fnc, args);
 	}
 
 	// since these statements appear before executable stmts,
 	// this code will be before main program code.
 	public void genCode(FortranParser pars) {
-		pars.setFuncSubr(fnc, args);
+		//pars.setFuncSubr(fnc, args);
 		pars.setExpr(expr); // TODO: specify location for result
-		pars.setFuncRet(fnc, expr.getResult()); // normally done by RETURN?
+		//pars.setFuncRet(fnc, expr.getResult()); // normally done by RETURN?
 	}
 
 	public boolean error() {

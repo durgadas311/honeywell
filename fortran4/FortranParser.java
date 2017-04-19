@@ -4,10 +4,7 @@
 public interface FortranParser {
 	int getLine();	// Source file line number for current code
 	void setName(String var);
-	void setFuncSubr(String name, String[] args);
 	void setExpr(FortranExpr expr);
-	void setFuncDefs(String fnc, String[] args);
-	void setFuncRet(String fnc, String res);
 	void emit(String code);
 	FortranExpr parseExpr(String expr);
 	FortranItem recurse(String stmt);
@@ -39,6 +36,7 @@ public interface FortranParser {
 	boolean inSubroutine();
 	boolean inMainProg();
 	FortranOperand currSubr();
+	void setScope(ImpliedDoLoop ido);
 	void resetTemps();
 	FortranOperand getIntTemp(int id);
 	FortranOperand getLogTemp(int id);

@@ -33,38 +33,22 @@ public class WriteStatement extends FortranItem {
 			// but implied DO loops require pre-processing
 			y = pars.matchingComma(stmt, x);
 			if (y < 0) {
-				pars.errsAdd("Unrecognizable list");
-				return;
+				y = n;
 			}
 			String i = stmt.substring(x, y);
 			if (i.charAt(0) == '(') {
-				String[] du = pars.parseImpliedDo(i);
-				if (du == null) {
-					pars.errsAdd("Invalid implied DO");
-					return;
-				}
-				for (String d : du) {
-					fo = pars.parseVariable(d);
-					if (fo == null) {
-						return;
-					}
-					lst.add(fo);
-				}
+				fo = new ImpliedDoLoop(i, null, pars);
 			} else {
 				fo = pars.parseVariable(i);
 				if (fo == null) {
 					return;
 				}
-				lst.add(fo);
 			}
+			lst.add(fo);
 			x = y + 1;
 		}
 		list = lst.toArray(new FortranOperand[0]);
 		for (x = 0; x < list.length; ++x) {
-			if (list[x] == null) {
-				pars.errsAdd("Invalid list item");
-				return;
-			}
 			// since list items are process independently,
 			// they could share temp variables.
 			if (list[x] instanceof FortranOperation) {
@@ -96,9 +80,7 @@ public class WriteStatement extends FortranItem {
 		}
 		pars.emit(String.format(" R       DCW   #1C%02o", perph & 077));
 		for (int z = 0; z < list.length; ++z) {
-			list[z].genCode(pars);
-			pars.emit("         CSM");
-			pars.emit(String.format(" R       DSA   %s", list[z].name()));
+			doItem(list[z], pars);
 		}
 		pars.emit("         B     $ACBOIO");
 		if (fmt > 0) {
@@ -107,6 +89,28 @@ public class WriteStatement extends FortranItem {
 			pars.emit("         DSA   0");
 		}
 		pars.emit(" R       DCW   #1C77");
+	}
+
+	private void doItem(FortranOperand itm, FortranParser pars) {
+		if (itm instanceof ImpliedDoLoop) {
+			doDo((ImpliedDoLoop)itm, pars);
+		} else {
+			doSimple(itm, pars);
+		}
+	}
+
+	private void doDo(ImpliedDoLoop idu, FortranParser pars) {
+		idu.genCode(pars);
+		for (FortranOperand itm : idu.getItems()) {
+			doItem(itm, pars);
+		}
+		idu.genLoop(pars);
+	}
+
+	private void doSimple(FortranOperand itm, FortranParser pars) {
+		itm.genCode(pars);
+		pars.emit("         CSM");
+		pars.emit(String.format(" R       DSA   %s", itm.name()));
 	}
 
 	public boolean error() {

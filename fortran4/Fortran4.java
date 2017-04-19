@@ -28,6 +28,7 @@ public class Fortran4 implements Compiler, FortranParser {
 	boolean inProg;
 	boolean inSubr; // SUBR or FUNC, also inProg...
 	FortranOperand curSubr;
+	ImpliedDoLoop doScope = null;
 	boolean end;
 	String prog;
 	int endAdr;
@@ -189,7 +190,6 @@ public class Fortran4 implements Compiler, FortranParser {
 					ret < 0 ? " (ERRORS)" : ""));
 		}
 		if (!data) {
-System.err.format("Closing input\n");
 			try { in.close(); } catch (Exception ee) {}
 		}
 		return ret;
@@ -761,12 +761,18 @@ System.err.format("Closing input\n");
 			dims = id.substring(x + 1, y);
 			id = id.substring(0, x);
 		}
+		FortranOperand fo = null;
+		if (dims == null && doScope != null) { // && INTEGER?
+			fo = doScope.getVariable(id);
+			if (fo != null) {
+				return fo;
+			}
+		}
 		String sym = id;
-		if (inSubr && let != '$') { // or isLetter()?
+		if (inSubr && Character.isLetter(let)) {
 			uniq = true;
 			id = curSubr.name() + "." + id;
 		}
-		FortranOperand fo = null;
 		if (symTab.containsKey(id)) {
 			fo = symTab.get(id);
 			if (dims == null) {
@@ -815,7 +821,9 @@ System.err.format("Closing input\n");
 		if (type < 0) {
 			type = implicits[id.charAt(0) - 'A'];
 		}
-		id = scope.name() + "." + id;
+		if (scope != null) {
+			id = scope.name() + "." + id;
+		}
 		if (symTab.containsKey(id)) {
 			// should not happen - except return values
 			FortranOperand fo = symTab.get(id);
@@ -1052,13 +1060,8 @@ System.err.format("Closing input\n");
 		return null;	// serves 'em right
 	}
 
-	public void setFuncDefs(String fnc, String[] args) {
-	}
-
-	public void setFuncSubr(String name, String[] args) {
-	}
-
-	public void setFuncRet(String fnc, String res) {
+	public void setScope(ImpliedDoLoop ido) {
+		doScope = ido;
 	}
 
 	public void setExpr(FortranExpr expr) {

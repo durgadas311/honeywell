@@ -33,6 +33,7 @@ public class FortranOperator extends FortranOperation {
 	};
 
 	private int op;
+	private int lev;
 	private int opType;
 	private FortranOperand left;
 	private FortranOperand right;
@@ -41,9 +42,10 @@ public class FortranOperator extends FortranOperation {
 	FortranOperand tru = null;
 
 	// TODO: need to ensure constant "1" exists...
-	public FortranOperator(int op, FortranParser pars) {
+	public FortranOperator(int op, int lev, FortranParser pars) {
 		super(0, 0);
 		this.op = op;
+		this.lev = lev;
 		left = null;
 		right = null;
 		if (op >= LE) {
@@ -55,6 +57,7 @@ public class FortranOperator extends FortranOperation {
 	public int kind() { return OPERATOR; }
 	public String name() { return tmp == null ? "null" : tmp.name(); }
 	public int preced() { return precedence[op]; }
+	public int level() { return lev; }
 
 	public void genDefs(FortranParser pars) {
 		// TODO: need to get temp var type and num...
@@ -106,10 +109,10 @@ public class FortranOperator extends FortranOperation {
 	}
 
 	// TODO: unary "-" ?
-	static public FortranOperator get(String op, int idx, FortranParser pars) {
+	static public FortranOperator get(String op, int idx, int lev, FortranParser pars) {
 		for (int x = 1; x < parse.length; ++x) {
 			if (op.startsWith(parse[x], idx)) {
-				return new FortranOperator(x, pars);
+				return new FortranOperator(x, lev, pars);
 			}
 		}
 		return null;

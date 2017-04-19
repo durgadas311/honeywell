@@ -16,7 +16,7 @@ public class FortranExpr {
 		len = expr.length();
 		idx = 0;
 		level = 0;
-		this.expr = parse(null);
+		this.expr = parse(null, 0);
 //System.err.format("EXPR %s:\n", exprStr);
 //dump(this.expr, 0);
 //System.exit(0);
@@ -47,7 +47,7 @@ public class FortranExpr {
 		// No code of our own?
 	}
 
-	private FortranOperand parse(FortranOperator parent) {
+	private FortranOperand parse(FortranOperator parent, int level) {
 		int y = idx;
 		FortranOperand fo = null;
 		FortranOperator op = null;
@@ -91,7 +91,7 @@ public class FortranExpr {
 			// TODO: could be COMPLEX, also...
 			++idx;
 			++level;
-			fo = parse(parent); // pass parent or null?
+			fo = parse(parent, level + 1); // pass parent or null?
 			--level;
 			// Can we assume/insist we have ')'?
 			if (idx < len && exprStr.charAt(idx) == ')') {
@@ -121,9 +121,9 @@ public class FortranExpr {
 		if (idx < len && exprStr.charAt(idx) != ')') {
 			// TODO: error if level != 0
 			if (fo == null && c == '-') {
-				op = new FortranOperator(FortranOperator.NEG, pars);
+				op = new FortranOperator(FortranOperator.NEG, level, pars);
 			} else {
-				op = FortranOperator.get(exprStr, idx, pars);
+				op = FortranOperator.get(exprStr, idx, level, pars);
 			}
 			if (op == null) {
 				// This is where most errors end up,
@@ -135,7 +135,7 @@ public class FortranExpr {
 			idx += op.parseLen();
 			// there must be more...
 			op.setLeft(fo);
-			fo = parse(op);
+			fo = parse(op, level);
 			op = balance(op, fo);
 			return op;
 		}
@@ -148,7 +148,8 @@ public class FortranExpr {
 		// might need to re-balance based on precedence...
 		if (two instanceof FortranOperator) {
 			FortranOperator ofo = (FortranOperator)two;
-			if (ofo.preced() >= one.preced()) {
+			if (ofo.level() == one.level() &&
+					ofo.preced() >= one.preced()) {
 				two = ofo.getLeft();
 				one = balance(one, two);
 				ofo.setLeft(one);
