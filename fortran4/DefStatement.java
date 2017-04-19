@@ -8,25 +8,13 @@ public class DefStatement extends FortranItem {
 	static final String _RPAT = "REAL[^=]*";
 	static final String _LPAT = "LOGICAL[^=]*";
 	static final String _XPAT = "COMPLEX[^=]*";
+	static final String _DPAT = "DOUBLEPRECISION[^=]*";
 	private String errors = "";
 
-	public DefStatement(String stmt, FortranParser pars, int type) {
+	public DefStatement(String stmt, FortranParser pars, int type, int skip) {
 		int n = stmt.length();
 		int x = 0;
-		switch (type) {
-		case FortranOperand.INTEGER:
-			x += 7; // skip INTEGER
-			break;
-		case FortranOperand.REAL:
-			x += 4; // skip REAL
-			break;
-		case FortranOperand.LOGICAL:
-			x += 7; // skip LOGICAL
-			break;
-		case FortranOperand.COMPLEX:
-			x += 7; // skip COMPLEX
-			break;
-		}
+		x += skip;
 		// Might contain array declarations... can't split on comma
 		int y;
 		while (x < n) {
@@ -68,16 +56,19 @@ public class DefStatement extends FortranItem {
 
 	public static FortranItem parse(String pot, FortranParser pars) {
 		if (pot.matches(_IPAT)) {
-			return new DefStatement(pot, pars, FortranOperand.INTEGER);
+			return new DefStatement(pot, pars, FortranOperand.INTEGER, 7);
 		}
 		if (pot.matches(_RPAT)) {
-			return new DefStatement(pot, pars, FortranOperand.REAL);
+			return new DefStatement(pot, pars, FortranOperand.REAL, 4);
+		}
+		if (pot.matches(_DPAT)) {
+			return new DefStatement(pot, pars, FortranOperand.REAL, 15);
 		}
 		if (pot.matches(_LPAT)) {
-			return new DefStatement(pot, pars, FortranOperand.LOGICAL);
+			return new DefStatement(pot, pars, FortranOperand.LOGICAL, 7);
 		}
 		if (pot.matches(_XPAT)) {
-			return new DefStatement(pot, pars, FortranOperand.COMPLEX);
+			return new DefStatement(pot, pars, FortranOperand.COMPLEX, 7);
 		}
 		return null;
 	}
