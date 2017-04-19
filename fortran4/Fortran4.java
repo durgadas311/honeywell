@@ -24,6 +24,7 @@ public class Fortran4 implements Compiler, FortranParser {
 	private Map<String, FortranOperand> symTab;
 	private Map<String, FortranOperand> allSyms;
 	private Map<String, FortranArray> arrays;
+	private Vector<RunTimeLibrary> libs;
 	boolean inProg;
 	boolean inSubr; // SUBR or FUNC, also inProg...
 	FortranOperand curSubr;
@@ -58,6 +59,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		for (int x = 'I'; x <= 'N'; ++x) {
 			implicits[x - 'A'] = FortranOperand.INTEGER;
 		}
+		libs = new Vector<RunTimeLibrary>();
 		symTab = new HashMap<String, FortranOperand>();
 		allSyms = new HashMap<String, FortranOperand>();
 		arrays = new HashMap<String, FortranArray>();
@@ -83,6 +85,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		sys = null;
 		reloc = 0;
 		listing = false;
+		libs.add(new FortranLibCalls(this));
 	}
 
 	public String getErrors() {
@@ -102,7 +105,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		Map<String, FortranOperand> sorted =
 			new TreeMap<String, FortranOperand>(allSyms);
 		for (Map.Entry<String, FortranOperand> entry : sorted.entrySet()) {
-			String l = String.format("  %14.14s %8.8s",
+			String l = String.format("  %14.14s %-8.8s",
 					entry.getKey(), entry.getValue().name());
 			++x;
 			if (x >= 5) {
@@ -193,60 +196,26 @@ public class Fortran4 implements Compiler, FortranParser {
 		emit(String.format("         PROG  %s", prog));
 		emit(String.format("         ADMODE%d", adrMode));
 		emit("         ORG   1340");
-		// TODO: get these from FortranRunTime?
-		emit("  $EXIT  DC    #1B0");
-		emit("  $ACBOIODC    #1B1");
-		emit("         DC    #1B2");
-		emit("  $ACBFPHDC    #1B3");
-		emit("  $ACBFXPDC    #1B4");
-		emit("  EOF    DC    #1B5");
-		emit("  EOT    DC    #1B6");
-		emit("  $ENDFILDC    #1B7");
-		emit("  $REWINDDC    #1B8");
-		emit("  $BKSPACDC    #1B9");
-		emit("  AINT   DC    #1B10");
-		emit("  INT    DC    #1B11");
-		emit("  SQRT   DC    #1B12");
-		emit("  IAND   DC    #1B13");
-		emit("  IOR    DC    #1B14");
-		emit("  ICOMPL DC    #1B15");
-		emit("  IEXCLR DC    #1B16");
-		emit("  FLOAT  DC    #1B17");
-		emit("  IFIX   DC    #1B18");
-		emit("  ABS    DC    #1B19");
-		emit("  IABS   DC    #1B20");
-		emit("  ATAN   DC    #1B21");
-		emit("  ATAN2  DC    #1B22");
-		emit("  COS    DC    #1B23");
-		emit("  SIN    DC    #1B24");
-		emit("  TANH   DC    #1B25");
-		emit("  ALOG   DC    #1B26");
-		emit("  ALOG10 DC    #1B27");
-		emit("  AMOD   DC    #1B28");
-		emit("  MOD    DC    #1B29");
-		emit("  EXP    DC    #1B30");
-		// emit("  TANH   DC    #1B31");
-		// emit("  TANH   DC    #1B32");
-		// emit("  TANH   DC    #1B33");
-		emit("  $COMMU RESV  0"); // start of communications area
-		emit("  $IOFLG DC    #1B0"); // I/O flags (error/eof)
-		emit("  $COMME RESV  0");
-		// TODO: enter templates for library functions...
-		// new FortranSubprogram(...) ?
+		for (RunTimeLibrary rtl : libs) {
+			rtl.genLib(this);
+		}
 		//
 		setDefs();	// generate all variables/constants
 		//
 		emit(String.format("  $START CAM   %02o", adrMode == 4 ? 060 : 000));
-		emit("         B     0-1"); // special trap "load runtime"
-		emit("         DCW   @FORTRAN@"); // runtime to "load"
-		emit("         DSA   $EXIT");
-		emit("         DSA   $COMMU");
-		emit(" R       DSA   $COMME");
+		for (RunTimeLibrary rtl : libs) {
+			rtl.genCode(this);
+		}
 		//
 		setCode();	// generate program code
 		//
 		// Termination handled by END statements...
 		// END => STOP or RETURN...
+		emit("  $ENDAA SCR   $ENDZZ,70");
+		for (RunTimeLibrary rtl : libs) {
+			rtl.genExit(this);
+		}
+		emit("   $ENDZZB     0");
 		emit("         NOP");	// ensure WM after last instruction
 		//
 		setData();	// arrays, common(?), un-initialized data
@@ -860,10 +829,25 @@ public class Fortran4 implements Compiler, FortranParser {
 		return new FortranArrayRef(ary, xpr);
 	}
 
+	public FortranSubprogram refLibFunc(String fnc) {
+		FortranSubprogram ff = null;
+		for (RunTimeLibrary rtl : libs) {
+			ff = rtl.refLibFunc(fnc);
+			if (ff != null) {
+				break;
+			}
+		}
+		return ff;
+	}
+
 	public FortranFuncCall parseFuncCall(FortranSubprogram fnc, String nm, String args) {
 		// could include parenthesised expressions... including function calls...
 		// this is essentially a FortranExpr... for each arg...
 		// that recursion is handled in FortranFuncCall...
+		if (fnc == null) {
+			fnc = refLibFunc(nm);
+			// might still be null, so make fwd-decl
+		}
 		return new FortranFuncCall(fnc, nm, args, this);
 	}
 

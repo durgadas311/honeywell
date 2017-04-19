@@ -34,6 +34,7 @@ public interface FortranParser {
 	FortranArrayRef parseArrayRef(FortranArray ary, String dims);
 	String[] parseImpliedDo(String du);
 	FortranFuncCall parseFuncCall(FortranSubprogram fnc, String nm, String args);
+	FortranSubprogram refLibFunc(String fnc);
 	FortranOperand parseOperand(String id);
 	boolean inSubroutine();
 	boolean inMainProg();

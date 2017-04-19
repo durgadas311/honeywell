@@ -4,8 +4,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Vector;
 
-public class FortranRunTime implements HW2000Trap {
-	static final String name = "FORTRAN";
+public class FortranRunTime extends FortranLibrary implements HW2000Trap {
 	private int base = 0;
 	private int numOps = 0;
 	private int comm = 0;
@@ -55,37 +54,37 @@ public class FortranRunTime implements HW2000Trap {
 		}
 		int op = sys.rawReadMem(sys.SR);
 		switch (op) {
-		case 0: exit(); break;
-		case 1: acboio(); break;	// start/end I/O
-		case 2: acboio_x(); break;	// each parameter in I/O list...
-		case 3: acbfph(); break;	// floating point assist, h/w
-		case 4: acbfxp(); break;	// fixed-point assist
-		case 5: eof(); break;
-		case 6: eot(); break;
-		case 7: endfile(); break;
-		case 8: rewind(); break;
-		case 9: backspace(); break;
-		case 10: aint(); break;
-		case 11: iint(); break;
-		case 12: sqrt(); break;
-		case 13: iand(); break;
-		case 14: ior(); break;
-		case 15: icompl(); break;
-		case 16: iexclr(); break;
-		case 17: rfloat(); break;
-		case 18: ifix(); break;
-		case 19: rabs(); break;
-		case 20: iabs(); break;
-		case 21: atan(); break;
-		case 22: atan2(); break;
-		case 23: cos(); break;
-		case 24: sin(); break;
-		case 25: tanh(); break;
-		case 26: alog(); break;
-		case 27: alog10(); break;
-		case 28: amod(); break;
-		case 29: mod(); break;
-		case 30: exp(); break;
+		case _EXIT: exit(); break;
+		case _ACBOIO: acboio(); break;	// start/end I/O
+		case _ACBOIO_: acboio_x(); break;	// each parameter in I/O list...
+		case _ACBFPH: acbfph(); break;	// floating point assist, h/w
+		case _ACBFXP: acbfxp(); break;	// fixed-point assist
+		case EOF: eof(); break;
+		case EOT: eot(); break;
+		case _ENDFIL: endfile(); break;
+		case _REWIND: rewind(); break;
+		case _BKSPAC: backspace(); break;
+		case AINT: aint(); break;
+		case INT: iint(); break;
+		case SQRT: sqrt(); break;
+		case IAND: iand(); break;
+		case IOR: ior(); break;
+		case ICOMPL: icompl(); break;
+		case IEXCLR: iexclr(); break;
+		case FLOAT: rfloat(); break;
+		case IFIX: ifix(); break;
+		case ABS: rabs(); break;
+		case IABS: iabs(); break;
+		case ATAN: atan(); break;
+		case ATAN2: atan2(); break;
+		case COS: cos(); break;
+		case SIN: sin(); break;
+		case TANH: tanh(); break;
+		case ALOG: alog(); break;
+		case ALOG10: alog10(); break;
+		case AMOD: amod(); break;
+		case MOD: mod(); break;
+		case EXP: exp(); break;
 		default:
 			// our best guess...
 			sys.SR = sys.BAR;
@@ -108,11 +107,11 @@ public class FortranRunTime implements HW2000Trap {
 	}
 
 	private void acboio() {
+		sys.CSR = sys.SR + 1;
 		sys.SR = sys.BAR;
 		fmtAdr = getAdr();
 		// Doesn't check IM...
 		int t = sys.rawReadMem(sys.SR++) & 077;
-		sys.CSR = 1342;
 		if (t == 077) {
 			if (!input) {
 				// write record...
@@ -157,8 +156,9 @@ public class FortranRunTime implements HW2000Trap {
 
 	// Called by CSM!
 	private void acboio_x() {
+		int csr = sys.SR;
 		sys.SR = sys.CSR;
-		sys.CSR = 1342;
+		sys.CSR = csr;
 		int var = getAdr();
 		if (perph == null) {
 			return;

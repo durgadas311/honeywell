@@ -3,6 +3,8 @@ CLASSES = $(subst .java,.class,$(JAVAS))
 
 CPCLASSES =	CharConverter.class
 
+F4CLASSES =	FortranLibrary.class
+
 EZCLASSES =	Assembler.class \
 		Loader.class \
 		BRTLoader.class \
@@ -10,7 +12,7 @@ EZCLASSES =	Assembler.class \
 		CardLoader.class \
 		TapeLoader.class
 
-EXTCLASSES = $(CPCLASSES) $(EZCLASSES)
+EXTCLASSES = $(CPCLASSES) $(EZCLASSES) $(F4CLASSES)
 
 FONTS = $(wildcard fonts/*.ttf)
 
@@ -74,6 +76,9 @@ hwprogs.zip: $(addprefix bringup/,$(PROGS))
 
 $(CPCLASSES):
 	ln -s ../cardpunch/$@ .
+
+$(F4CLASSES):
+	ln -s ../fortran4/$@ .
 
 $(EZCLASSES):
 	ln -s ../easycoder/$@ .

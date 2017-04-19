@@ -26,6 +26,7 @@ public class FortranFuncCall extends FortranOperation {
 		} while (x < n);
 		args = vx.toArray(new FortranExpr[0]);
 		if (f == null) {
+			// Foward declaration...
 			f = pars.parseSubprogram(s, -1, args.length);
 		}
 		fnc = f;

@@ -25,6 +25,7 @@ public class TapeCtlStatement extends FortranItem {
 			func = "$BKSPAC";
 			break;
 		}
+		pars.refLibFunc(func);
 		// TODO: support all forms...
 		try {
 			dev = Integer.valueOf(stmt.substring(x));

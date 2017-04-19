@@ -10,6 +10,7 @@ public class StopStatement extends FortranItem {
 	private int parm = -1;
 	private boolean pause;
 
+	// Also use by END in the case of PROGRAM
 	public StopStatement(String stmt, FortranParser pars, int skip) {
 		int n = stmt.length();
 		pause = stmt.startsWith("PAUSE");
@@ -37,7 +38,7 @@ public class StopStatement extends FortranItem {
 
 	public void genCode(FortranParser pars) {
 		if (!pause) {
-			pars.emit("         B     $EXIT"); // end runtime
+			pars.emit("         B     $ENDAA"); // end runtime
 		}
 		if (parm >= 0) {
 			pars.emit(String.format("         H     %d,%d", parm, parm));
