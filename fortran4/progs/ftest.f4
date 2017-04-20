@@ -1,0 +1,18 @@
+*JOBID
+*DUMP
+       PROGRAM FTEST
+C      SIMPLE FORTRAN IV TEST
+       WRITE(3,200)
+       WRITE(3,201)
+       DO 100 IA=1,5
+       DO 100 IB=1,5
+       A=FLOAT(IA)
+       B=FLOAT(IB)
+       AREA=A*B
+       DIAG=SQRT(A**2.0+B**2.0)
+       WRITE(3,202) A,B,AREA,DIAG
+100    CONTINUE
+200    FORMAT (14H HELLO WORLD!  ,' RECTANGLE AREA AND DIAGONAL:'  )
+201    FORMAT (1X,2X,8H       A,2X,8H       B,2X,8H    AREA,2X,8H    DIAG)
+202    FORMAT (1X,4(2X,F8.4))
+       END

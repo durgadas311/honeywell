@@ -1,0 +1,45 @@
+      PROGRAM CALNDR
+      IMPLICIT INTEGER (A-Z)
+C     PRINT WEEK HEADER
+      CALL HDR
+      DO 100 I=1,5
+C     PRINT ONE BAR
+      CALL BAR
+C     PRINT NINE GAPS
+      DO 103 K=1,9
+      CALL CELL
+103   CONTINUE
+100   CONTINUE
+      CALL BAR
+      END
+C
+C
+C
+      SUBROUTINE HDR
+      WRITE (3,500)
+500   FORMAT (' ]    SUNDAY     ]',
+     1          '    MONDAY     ]',
+     2          '    TUESDAY    ]',
+     3          '   WEDNESDAY   ]',
+     4          '    THURSDAY   ]',
+     5          '    FRIDAY     ]',
+     6          '   SATURDAY    ]')
+      END
+C
+      SUBROUTINE BAR
+      WRITE (3,501)
+      DO 101 J=1,6
+      WRITE (3,502)
+101   CONTINUE
+501   FORMAT (' ]]]]]]]]]]]]]]]]]')
+502   FORMAT ( '+]]]]]]]]]]]]]]]]')
+      END
+C
+      SUBROUTINE CELL
+      WRITE (3,503)
+      DO 102 J=1,6
+      WRITE (3,504)
+102   CONTINUE
+503   FORMAT (' ]               ]')
+504   FORMAT ( '+               ]')
+      END

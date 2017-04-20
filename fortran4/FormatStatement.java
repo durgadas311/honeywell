@@ -14,6 +14,7 @@ public class FormatStatement extends FortranItem {
 		// [x,y] include parens...
 		if (y < n) { // includes y < 0 error case
 			pars.errsAdd("Malformed FORMAT string");
+			return;
 		}
 		fmtStr = stmt.substring(x + 1, y - 1); // strip parens
 	}

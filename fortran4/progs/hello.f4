@@ -1,0 +1,22 @@
+*JOBID
+*DUMP
+       PROGRAM HELLO
+       IMPLICIT LOGICAL (M,N)
+C******GENERATES SOME DATA ON PUNCH CARDS
+       DIMENSION D(10)
+       A = 1.2
+       B = 3.5
+       DO 100 II=1,10
+       A = A * B
+100    D(II)=A
+       DO 110 II=1,10
+       CALL SHOW(II,B,D(II))
+110    CONTINUE
+       END
+
+       SUBROUTINE SHOW(N,Y,Z)
+       INTEGER N
+C CHANGE 2 TO 3 TO PRINT ON PRINTER
+       WRITE(2,200) N,Y,Z
+200    FORMAT (14H HELLO WORLD!    ,I2,2(1H , F8.2)  )
+       END

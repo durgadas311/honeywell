@@ -389,7 +389,8 @@ public class Fortran4 implements Compiler, FortranParser {
 			break;
 		}
 		// first do convenience translations of special chars
-		line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
+		//line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
+		line = line.toUpperCase();
 		if (line.length() == 0) {
 			// TODO: pass-thru to listing? (already done)
 			return 0;
@@ -833,7 +834,6 @@ public class Fortran4 implements Compiler, FortranParser {
 		}
 		// TODO: track dummy argument types...
 		// complicated by possible subsequent (re)defines...
-System.err.format("creating %s\n", id);
 		fs = new FortranSubprogram(id, type, argc, this);
 		addSym(id, fs);
 		return fs;

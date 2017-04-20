@@ -1,0 +1,12 @@
+       PROGRAM OLLEH
+       DIMENSION D(10)
+101    CONTINUE
+       READ(2,200,END=100) K,A,B
+       D(K)=A
+       GOTO 101
+100    CONTINUE
+       DO 110 II=1,10
+       WRITE(3,200) II,B,D(II)
+110    CONTINUE
+200    FORMAT (14H HELLO WORLD!    ,I2,2(1H , F8.2)  )
+       END

@@ -40,9 +40,11 @@ public class CallStatement extends FortranItem {
 		if (subr.type != FortranOperand.VOID) {
 			pars.errsAdd("Subroutine name not unique");
 		}
-		pars.resetTemps();
-		for (x = 0; x < na; ++x) {
-			args[x].setTemp(pars, 0);
+		if (args != null) {
+			pars.resetTemps();
+			for (x = 0; x < na; ++x) {
+				args[x].setTemp(pars, 0);
+			}
 		}
 	}
 
@@ -59,8 +61,10 @@ public class CallStatement extends FortranItem {
 	public void genCode(FortranParser pars) {
 		// TODO: confirm number of calling parameters...
 		int x;
-		for (x = 0; x < args.length; ++x) {
-			args[x].genCode(pars);
+		if (args != null) {
+			for (x = 0; x < args.length; ++x) {
+				args[x].genCode(pars);
+			}
 		}
 		pars.emit(String.format("         B     %s", subr.name()));
 		if (args == null) {
