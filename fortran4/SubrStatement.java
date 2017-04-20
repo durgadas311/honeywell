@@ -38,7 +38,7 @@ public class SubrStatement extends FortranItem {
 		if (na > 0) {
 			args = new FortranParameter[av.length];
 			for (x = 0; x < av.length; ++x) {
-				args[x] = pars.parseParameter(av[x], subr);
+				args[x] = pars.parseParameter(av[x], subr, -1);
 			}
 		}
 	}
