@@ -42,6 +42,17 @@ public abstract class FortranOperand {
 		default: return 0;
 		}
 	}
+	public String getType() {
+		switch (type) {
+		case VOID: return "VOID";
+		case INTEGER: return "INTEGER";
+		case REAL: return "REAL";
+		case LOGICAL: return "LOGICAL";
+		case COMPLEX: return "COMPLEX";
+		case ADDRESS: return "ADDRESS";
+		default: return "?";
+		}
+	}
 	abstract int kind();
 	abstract String name();
 	abstract void genDefs(FortranParser pars);

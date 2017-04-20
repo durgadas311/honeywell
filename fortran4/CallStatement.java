@@ -4,7 +4,7 @@ import java.util.Vector;
 import java.io.*;
 
 public class CallStatement extends FortranItem {
-	static final String _PAT = "CALL[A-Z][A-Z0-9]*\\([A-Z0-9,]*\\)";
+	static final String _PAT = "CALL[A-Z][A-Z0-9]*\\(.*\\)";
 	static final String _APAT = "CALL[A-Z][A-Z0-9]*";
 	private String errors = "";
 	FortranOperand subr;
@@ -16,9 +16,11 @@ public class CallStatement extends FortranItem {
 		int y = stmt.indexOf('(', x);
 		if (y < 0) {
 			y = n;
+		} else {
+			--n;
 		}
 		String f = stmt.substring(x, y);
-		x = y;
+		x = y + 1;
 		int na = 0;
 		if (x < n) {
 			Vector<FortranExpr> vx = new Vector<FortranExpr>();

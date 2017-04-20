@@ -2,7 +2,10 @@
 
 import java.io.*;
 
+// Parameters might change type (immediately) after declaration.
+// Need to allow this, but not if parameter has already been referenced(?)
 public class FortranParameter extends FortranVariable {
+	private boolean referenced = false;
 	public FortranParameter(String name, int type) {
 		super(name, type);
 	}
@@ -18,4 +21,15 @@ public class FortranParameter extends FortranVariable {
 
 	// Specific to FortranParameter
 	public String ref() { return name; }
+	public boolean setType(int type) {
+		if (this.type == type) {
+			return true;
+		}
+		if (referenced) {
+			return false;
+		}
+		this.type = type;
+		return true;
+	}
+	public void reference() { referenced = true; }
 }

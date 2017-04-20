@@ -113,10 +113,18 @@ public class Fortran4 implements Compiler, FortranParser {
 		Map<String, FortranOperand> sorted =
 			new TreeMap<String, FortranOperand>(allSyms);
 		for (Map.Entry<String, FortranOperand> entry : sorted.entrySet()) {
-			String l = String.format("  %14.14s %-8.8s",
-					entry.getKey(), entry.getValue().name());
+			String e;
+			String s1 = entry.getKey();
+			FortranOperand fo = entry.getValue();
+			if (s1.equals(fo.name())) {
+				e = String.format("%s %s", s1, fo.getType());
+			} else {
+				e = String.format("%s=%s %s",
+					s1, fo.name(), fo.getType());
+			}
+			String l = String.format("  %-25s", e);
 			++x;
-			if (x >= 5) {
+			if (x >= 4) {
 				x = 0;
 				l += '\n';
 			}
@@ -696,12 +704,12 @@ public class Fortran4 implements Compiler, FortranParser {
 	}
 
 	public FortranOperand parseVariable(String id) {
-		int type = implicits[id.charAt(0) - 'A'];
-		return parseVariable(id, type);
+		return parseVariable(id, -1);
 	}
 
 	public FortranOperand parseVariable(String id, int type) {
 		String dims = null;
+		char let = id.charAt(0);
 		int p = intPrec;
 		boolean uniq = false;
 		if (type == FortranOperand.ADDRESS) {
@@ -718,7 +726,7 @@ public class Fortran4 implements Compiler, FortranParser {
 			id = id.substring(0, x);
 		}
 		String sym = id;
-		if (inSubr && id.charAt(0) != '$') { // or isLetter()?
+		if (inSubr && let != '$') { // or isLetter()?
 			uniq = true;
 			id = curSubr.name() + "." + id;
 		}
@@ -726,10 +734,23 @@ public class Fortran4 implements Compiler, FortranParser {
 		if (symTab.containsKey(id)) {
 			fo = symTab.get(id);
 			if (dims == null) {
+				if (type >= 0 && fo instanceof FortranParameter) {
+					FortranParameter fp = (FortranParameter)fo;
+					if (!fp.setType(type)) {
+						errsAdd("Redefinition of parameter after use");
+					}
+				}
+				if (fo instanceof FortranParameter) {
+					FortranParameter fp = (FortranParameter)fo;
+					fp.reference();
+				}
 				return fo;
 			}
+			// references to arrays... confirm fo.type() == ARRAY?
 			p = fo.precision();
 			type = fo.type();
+		} else if (let != '$') {
+			type = implicits[let - 'A'];
 		}
 		if (fo == null && dims != null) {
 			errsAdd("Undefined array");
@@ -792,6 +813,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		return fs;
 	}
 
+	// Only called for DIMENSION, <type> <array-def>, or COMMON (tbd)
 	public FortranArray parseArray(String id, int type, int[] dims) {
 		String sym = id;
 		if (type < 0) {
@@ -803,6 +825,8 @@ public class Fortran4 implements Compiler, FortranParser {
 		}
 		if (symTab.containsKey(id)) {
 			// TODO: compare dimensions, names, ...
+			// TODO: support subprogram parameter as array?
+			// requires promoting FortranParameter to FortranArray...
 			FortranOperand fo = symTab.get(id);
 			if (fo.kind() != FortranOperand.ARRAY) {
 				return null;
@@ -824,6 +848,7 @@ public class Fortran4 implements Compiler, FortranParser {
 	public FortranArrayRef parseArrayRef(FortranArray ary, String dims) {
 		String[] ds = dims.split(",");
 		int p = 1;
+		// TODO: if FortranParameter, call reference()...
 		String ex = String.format("%d*(%s", ary.sizeof(), ds[0]);
 		for (int x = 1; x < ds.length; ++x) {
 			ex += String.format("+%d*(%s", ary.getDim(x - 1), ds[x]);
