@@ -10,6 +10,9 @@ program, except for the routines normally included in the "run time" library.
 The run-time library is implemented in the virtual computer, so that is a
 bit of a "cheat".
 
+<P>The compiler recognizes some of the job control cards, to customize
+the results.
+
 <P>Here is a <A HREF="fortran1.html">sample program listing and output</A>.
 
 <P>Currently, only basic features are implemented,
@@ -39,7 +42,11 @@ a 48-bit (8 character) memory word.
 <P>Address mode may be changed through the *JOBID option "M", but
 setting the amount of memory to something higher that 32768.
 
-<P>"LIST" and "NOLIST" options do something reasonable.
+<P>"LIST" enables output of the Easycoder assembler listing option.
+Note, unlike the original compiler, this is the actual code that will run.
+
+<P>"NOLIST" disables the memory map listing, which would display
+variables, their Easycode names if different, and memory address (from Easycoder).
 
 <P>"*DUMP" may be used to trigger a memory dump of the program
 memory after the job terminates (see example output).
