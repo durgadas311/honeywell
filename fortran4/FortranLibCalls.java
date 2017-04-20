@@ -11,6 +11,9 @@ public class FortranLibCalls extends FortranLibrary implements RunTimeLibrary {
 		libs = new HashMap<String, FortranLibFunc>();
 		calls = new HashMap<String, FortranLibFunc>();
 
+		// Don't pass 'pars' to any of these, to avoid creating
+		// any variables, etc, until they are actually used.
+
 		// System runtime calls - not callable from FORTRAN statements
 		libs.put("$FEXIT", new FortranLibFunc(null, _EXIT,
 					FortranOperand.VOID, 0, null));
@@ -74,14 +77,14 @@ public class FortranLibCalls extends FortranLibrary implements RunTimeLibrary {
 		libs.put("EXP", new FortranLibFunc("EXP", EXP,
 					FortranOperand.REAL, 2, null));
 
-		refLibFunc("$FEXIT");
+		refLibFunc("$FEXIT", pars);
 		// TODO: include these only if needed...?
-		refLibFunc("$ACBOIO");
-		refLibFunc("$ACBFXP");
-		refLibFunc("$ACBFPH");
+		refLibFunc("$ACBOIO", pars);
+		refLibFunc("$ACBFXP", pars);
+		refLibFunc("$ACBFPH", pars);
 	}
 
-	public FortranSubprogram refLibFunc(String fnc) {
+	public FortranSubprogram refLibFunc(String fnc, FortranParser pars) {
 		if (calls.containsKey(fnc)) {
 			return calls.get(fnc);
 		}
@@ -90,6 +93,8 @@ public class FortranLibCalls extends FortranLibrary implements RunTimeLibrary {
 		}
 		FortranLibFunc ff = libs.get(fnc);
 		calls.put(fnc, ff);
+		// must make return value
+		ff.setRetVal(pars); // skips VOID functions
 		return ff;
 	}
 
@@ -108,7 +113,6 @@ public class FortranLibCalls extends FortranLibrary implements RunTimeLibrary {
 				pars.emit(String.format("         DC    #1B%d", f & 077));
 				f >>= 8;
 			}
-			ff.setRetVal(pars); // last-minute registration of variable
 		}
 		pars.emit("  $FLIB1 RESV  0");
 		pars.emit("  $IOFLG DCW   #1B0");

@@ -1,11 +1,8 @@
 TODO:
 
 * Unformatted (binary) READ/WRITE (NAMELIST too?)
-* passive DOUBLE PRECISION (use REAL)
-* (re)definition of SUBROUTINE/FUNCTION args
-* FUNCTION definitions
 * COMMON
-* DATA
+* DATA (need to make into pre-run code...)
 * CHARACTER data type?
 * auto convert - data type promotion
 * complex list implied DO loops
@@ -14,5 +11,5 @@ Lesser importance:
 
 * COMPLEX (parsed, need to implement)
 * CALL CHAINx
-* EQUIVALENCE
-* EXTERNAL
+* EQUIVALENCE (variable aliasing)
+* EXTERNAL (function pointers)

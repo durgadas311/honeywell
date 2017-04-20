@@ -19,9 +19,11 @@ public class LetStatement extends FortranItem {
 		var = pars.parseVariable(stmt.substring(x, y));
 		x = y + 1;
 		expr = pars.parseExpr(stmt.substring(x));
-		if (expr != null && expr.type() != var.type()) {
-			pars.errsAdd("Assigment of mis-matched types");
-		}
+		// Can't make this check now, if a function is used...
+		// Need a 'validate' method to call at end of compile.
+//		if (expr != null && expr.type() != var.type()) {
+//			pars.errsAdd("Assigment of mis-matched types");
+//		}
 		pars.resetTemps();
 		expr.setTemp(pars, 0);
 		if (var instanceof FortranOperation) {

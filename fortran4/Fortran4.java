@@ -465,6 +465,16 @@ public class Fortran4 implements Compiler, FortranParser {
 			}
 		}
 		if (itm == null) {
+			FuncStatement sub = FuncStatement.parse(stmt, this);
+			// TODO: error-check state?
+			if (sub != null) {
+				itm = sub;
+				inProg = true;
+				inSubr = true;
+				curSubr = sub.getFunc();
+			}
+		}
+		if (itm == null) {
 			itm = EndStatement.parse(stmt, this);
 			if (itm != null) {
 				inProg = false;
@@ -773,13 +783,15 @@ public class Fortran4 implements Compiler, FortranParser {
 	// For "early" parsing of function/subroutine parameters... before inSubr
 	// These variables are not defined in the normal sequence, as they
 	// must be contiguous.
-	public FortranParameter parseParameter(String id, FortranOperand scope) {
+	public FortranParameter parseParameter(String id, FortranOperand scope, int type) {
 		String sym = uniqueName();
 		// TODO: can parameter types be overridden?
-		int type = implicits[id.charAt(0) - 'A'];
+		if (type < 0) {
+			type = implicits[id.charAt(0) - 'A'];
+		}
 		id = scope.name() + "." + id;
 		if (symTab.containsKey(id)) {
-			// should not happen
+			// should not happen - except return values
 			FortranOperand fo = symTab.get(id);
 			if (fo.kind() != FortranOperand.PARAMETER) {
 				return null;
@@ -792,22 +804,36 @@ public class Fortran4 implements Compiler, FortranParser {
 	}
 
 	public FortranSubprogram parseSubprogram(String id, int type, int argc) {
-		if (type < 0) {
+		if (type == -1) {
 			type = implicits[id.charAt(0) - 'A'];
 		}
 		FortranSubprogram fs;
-		if (symTab.containsKey(id)) {
-			FortranOperand fo = symTab.get(id);
-			if (fo.kind() != FortranOperand.FUNCTION ||
-					fo.type() != type ||
-					((FortranSubprogram)fo).numArgs() != argc) {
+		// might not be in this current program unit...
+		if (symTab.containsKey(id) || allSyms.containsKey(id)) {
+			FortranOperand fo;
+			if (symTab.containsKey(id)) {
+				fo = symTab.get(id);
+			} else {
+				fo = allSyms.get(id);
+			}
+			if (fo.kind() != FortranOperand.FUNCTION) {
 				errsAdd("Subprogram name conflict");
 				return null;
 			}
-			return (FortranSubprogram)fo;
+			fs = (FortranSubprogram)fo;
+			if (fs.type() < 0 && type >= 0) {
+				fs.setType(type, this);
+			}
+			// TODO: check types?
+			if (((FortranSubprogram)fo).numArgs() != argc) {
+				errsAdd("Subprogram parameter conflict");
+				return null;
+			}
+			return fs;
 		}
 		// TODO: track dummy argument types...
 		// complicated by possible subsequent (re)defines...
+System.err.format("creating %s\n", id);
 		fs = new FortranSubprogram(id, type, argc, this);
 		addSym(id, fs);
 		return fs;
@@ -865,7 +891,7 @@ public class Fortran4 implements Compiler, FortranParser {
 	public FortranSubprogram refLibFunc(String fnc) {
 		FortranSubprogram ff = null;
 		for (RunTimeLibrary rtl : libs) {
-			ff = rtl.refLibFunc(fnc);
+			ff = rtl.refLibFunc(fnc, this);
 			if (ff != null) {
 				break;
 			}

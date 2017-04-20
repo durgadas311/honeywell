@@ -26,8 +26,10 @@ public class FortranFuncCall extends FortranOperation {
 		} while (x < n);
 		args = vx.toArray(new FortranExpr[0]);
 		if (f == null) {
-			// Foward declaration...
-			f = pars.parseSubprogram(s, -1, args.length);
+			// Foward declaration... '-2' means don't set type
+			// TODO: could guess at type from context, but
+			// can't do that here (caller must).
+			f = pars.parseSubprogram(s, -2, args.length);
 		}
 		fnc = f;
 		name = f.name();

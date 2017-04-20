@@ -8,7 +8,12 @@ public class FortranLibFunc extends FortranSubprogram {
 	}
 
 	@Override
-	public void genDefs(FortranParser pars) {}
+	public void genDefs(FortranParser pars) {
+		// No one else does this for us...
+		if (ret != null) {
+			pars.emit(String.format("   %-6sDSA   0", ret.name()));
+		}
+	}
 	@Override
 	public void genCode(FortranParser pars) {}
 

@@ -4,12 +4,12 @@ import java.io.*;
 
 public class FortranSubprogram extends FortranVariable {
 	protected int nargs;
-	protected FortranOperand ret = null;
+	protected FortranVariable ret = null;
 
 	public FortranSubprogram(String name, int type, int argc, FortranParser pars) {
 		super(name, type);
 		nargs = argc;
-		if (type != VOID && pars != null) {
+		if (type >= 0 && type != VOID && pars != null) {
 			setRetVal(pars);
 		}
 	}
@@ -18,17 +18,25 @@ public class FortranSubprogram extends FortranVariable {
 	public int kind() { return FUNCTION; }
 
 	@Override
-	public void genDefs(FortranParser pars) {
-	}
+	public void genDefs(FortranParser pars) { }
 
+	public void setType(int type, FortranParser pars) {
+		if (this.type == type && ret != null) {
+			return;
+		}
+		this.type = type;
+		setRetVal(pars);
+	}
 	public void setRetVal(FortranParser pars) {
 		if (type == VOID || name == null) {
 			return;
 		}
 		// Create return value
+		// TODO: how to cleanup if old one existed.
+		// at least, could re-use uniqueName.
 		String sym = pars.uniqueName();
 		ret = new FortranVariable(sym, type, pars.intPrecision());
-		pars.addSym(name + "." + name, ret);
+		pars.addSym(name + ".$RET", ret);
 	}
 
 	public String getResult() { return ret.name(); }
