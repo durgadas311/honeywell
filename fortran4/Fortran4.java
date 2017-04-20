@@ -99,6 +99,14 @@ public class Fortran4 implements Compiler, FortranParser {
 		return s;
 	}
 
+	public Map<String, String> getSymTab() {
+		Map<String, String> ret = new HashMap<String, String>();
+		for (Map.Entry<String, FortranOperand> entry : allSyms.entrySet()) {
+			ret.put(entry.getKey(), entry.getValue().name());
+		}
+		return ret;
+	}
+
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");

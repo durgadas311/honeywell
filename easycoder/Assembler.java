@@ -105,6 +105,10 @@ public class Assembler {
 		return ret;
 	}
 
+	public Map<String, Integer> getSymTab() {
+		return symTab;
+	}
+
 	public void listSymTab() {
 		int x = 0;
 		listOut("Symbol Table:\n");

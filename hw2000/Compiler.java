@@ -1,4 +1,5 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
+import java.util.Map;
 import java.io.*;
 
 public interface Compiler {
@@ -10,4 +11,5 @@ public interface Compiler {
 	boolean listSymbols();
 	boolean wantsDump();
 	void listSymTab();
+	Map<String, String> getSymTab();
 }

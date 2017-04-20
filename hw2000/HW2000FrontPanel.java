@@ -1,4 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
+import java.util.Map;
+import java.util.TreeMap;
 import java.awt.*;
 import java.io.*;
 import java.awt.event.*;
@@ -1622,15 +1624,15 @@ ee.printStackTrace();
 			return false;
 		}
 		dumpOnHalt = listing && cmp.wantsDump();
-		if (listing && cmp.listSymbols()) {
-			cmp.listSymTab();
-		}
-		boolean ret = assemble(ezc, op, listing && cmp.listEasyCoder());
-		if (ret) {
+		Assembler ret = assemble(ezc, op, listing && cmp.listEasyCoder());
+		if (ret != null) {
+			if (listing && cmp.listSymbols()) {
+				genMemoryMap(cmp.getSymTab(), ret.getSymTab());
+			}
 			inform(this, op, String.format("Compile complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
 		}
-		return ret;
+		return (ret != null);
 	}
 
 	private boolean asmFile(String op) {
@@ -1655,24 +1657,41 @@ ee.printStackTrace();
 			}
 			getPrinter().setOutput(lst);
 		}
-		boolean ret = assemble(src, op, listing);
+		Assembler ret = assemble(src, op, listing);
 		getPrinter().setOutput(null);
 		if (lst != null) {
 			try { lst.close(); } catch (Exception ee) {}
 		}
-		if (ret) {
+		if (ret != null) {
 			inform(this, op, String.format("Assembly complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
 		}
-		return ret;
+		return (ret != null);
 	}
 
-	private boolean assemble(File src, String op, boolean doList) {
+	private void genMemoryMap(Map<String, String> cmpMap,
+				Map<String, Integer> asmMap) {
+		Map<Integer, String> out = new TreeMap<Integer, String>();
+		for (Map.Entry<String, String> entry : cmpMap.entrySet()) {
+			String s1 = entry.getKey();
+			String s2 = entry.getValue();
+			int k = asmMap.get(entry.getValue());
+			String s3 = String.format("%15s  %07o  %-15s",
+					s2, k, s1.equals(s2) ? "" : s1);
+			out.put(k, s3);
+		}
+		listOut("\nMemory Map\n         Symbol  Address  Alternate\n");
+		for (Map.Entry<Integer, String> entry : out.entrySet()) {
+			listOut(String.format("%s\n", entry.getValue()));
+		}
+	}
+
+	private Assembler assemble(File src, String op, boolean doList) {
 		Assembler asm = new Assembler(src);
 		int e = asm.passOne();
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
-			return false;
+			return null;
 		}
 		Peripheral p = null;
 		int low = asm.getMin();
@@ -1699,7 +1718,7 @@ ee.printStackTrace();
 			boolean copy = !tp.begin(unit); // always 'true' (!copy)?
 			if (!tp.rewind()) {
 				warning(this, op, "No tape mounted");
-				return false;
+				return null;
 			}
 			// TODO: need option to overwrite tape
 			if (tp.empty()) {
@@ -1722,7 +1741,7 @@ ee.printStackTrace();
 		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
-			return false;
+			return null;
 		}
 		if (doList) {
 			asm.listSymTab();
@@ -1748,7 +1767,7 @@ ee.printStackTrace();
 		setContents(sys.rawReadMem(addressReg));
 		currLow = reloc + low;
 		currHi = reloc + hi;
-		return true;
+		return asm;
 	}
 
 	public void listOut(String str) {
