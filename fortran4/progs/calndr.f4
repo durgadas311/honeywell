@@ -32,14 +32,8 @@ C     ZELLER
       MM=MM+12.0
       YY=YY-1.0
 921   CONTINUE
-      MM=MM+1.0
-      MM=MM*13.0
-      MM=AINT(MM/5.0)
-      MM=MM+YY
-      MM=MM+AINT(YY/4.0)
-      MM=MM-AINT(YY/100.0)
-      MM=MM+AINT(YY/400.0)
-      MM=MM+1.0
+      MM=AINT(((MM+1.0)*13.0)/5.0)+YY+AINT(YY/4.0)-
+     1       AINT(YY/100.0)+AINT(YY/400.0)+1.0
       MM=AMOD(MM,7.0)
       EE=INT(MM)
       WRITE(3,999) Y,EE,MM,MO(2)

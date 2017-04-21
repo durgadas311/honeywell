@@ -45,4 +45,5 @@ public interface FortranParser {
 	FortranOperand getRealTemp(int id);
 	FortranOperand getCplxTemp(int id);
 	FortranOperand getAdrTemp(int id);
+	FortranOperand getTemp(int id, int type);
 }

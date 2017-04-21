@@ -136,21 +136,27 @@ public class FortranExpr {
 			// there must be more...
 			op.setLeft(fo);
 			fo = parse(op);
-			// might need to re-balance based on precedence...
-			if (fo instanceof FortranOperator) {
-				FortranOperator ofo = (FortranOperator)fo;
-				if (ofo.preced() > op.preced()) {
-					op.setRight(ofo.getLeft());
-					ofo.setLeft(op);
-					op = ofo;
-					return op;
-				}
-			}
-			op.setRight(fo);
+			op = balance(op, fo);
 			return op;
 		}
 		// Only a single operand, done
 		return fo;
+	}
+
+	// Default is one.setRight(two)...
+	private FortranOperator balance(FortranOperator one, FortranOperand two) {
+		// might need to re-balance based on precedence...
+		if (two instanceof FortranOperator) {
+			FortranOperator ofo = (FortranOperator)two;
+			if (ofo.preced() >= one.preced()) {
+				two = ofo.getLeft();
+				one = balance(one, two);
+				ofo.setLeft(one);
+				return ofo;
+			}
+		}
+		one.setRight(two);
+		return one;
 	}
 
 	private FortranOperand parseNum() {

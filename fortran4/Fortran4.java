@@ -1011,6 +1011,22 @@ public class Fortran4 implements Compiler, FortranParser {
 						FortranOperand.ADDRESS);
 	}
 
+	public FortranOperand getTemp(int id, int type) {
+		switch (type) {
+		case FortranOperand.INTEGER:
+			return getIntTemp(id);
+		case FortranOperand.REAL:
+			return getRealTemp(id);
+		case FortranOperand.LOGICAL:
+			return getLogTemp(id);
+		case FortranOperand.COMPLEX:
+			return getCplxTemp(id);
+		case FortranOperand.ADDRESS:
+			return getAdrTemp(id);
+		}
+		return null;	// serves 'em right
+	}
+
 	public void setFuncDefs(String fnc, String[] args) {
 	}
 

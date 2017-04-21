@@ -8,6 +8,7 @@ public class FortranFuncCall extends FortranOperation {
 	private FortranSubprogram fnc;
 	private String name;
 	private FortranOperand tmp;
+	private FortranOperand tmpv;
 
 	public FortranFuncCall(FortranSubprogram f, String s, String a, FortranParser pars) {
 		super(0, 0); // 'f' could be null, need to validate first.
@@ -49,7 +50,7 @@ public class FortranFuncCall extends FortranOperation {
 	}
 
 	@Override
-	public String name() { return fnc.getResult(); }
+	public String name() { return tmpv.name(); } //fnc.getResult(); }
 
 	@Override
 	public void genCode(FortranParser pars) {
@@ -64,10 +65,13 @@ public class FortranFuncCall extends FortranOperation {
 			pars.emit(String.format("         DSA   %s", args[x].getResult()));
 		}
 		pars.emit(String.format(" R       DSA   %s", args[x].getResult()));
+		pars.emit(String.format("         LCA   %s,%s",
+					fnc.getResult(), tmpv.name()));
 	}
 
 	@Override
 	public void setTemp(FortranParser pars, int level) {
+		tmpv = pars.getTemp(level, type);
 		tmp = pars.getAdrTemp(level);
 		name = String.format("(%s-%d)", tmp.name(), pars.addrMode() - 1);
 		// Each must have their own temp var???
