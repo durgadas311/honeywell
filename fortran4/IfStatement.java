@@ -72,23 +72,44 @@ public class IfStatement extends FortranItem {
 	}
 
 	public void genCode(FortranParser pars) {
-		pars.setExpr(expr); // TODO: where to put result
+		pars.setExpr(expr);
 		if (stmt != null) {
-			// LOGICAL expression, result is Zero-balance for .FALSE.
-			pars.emit(String.format("         BCT   /%05d,60", src));
+			// FortranOperand.LOGICAL:
+			pars.emit(String.format("         BCE   /%05d,%s,00",
+						src, expr.getResult()));
 			stmt.genCode(pars);
 			pars.emit(String.format("  /%05d RESV  0", src));
 		} else if (arith != null) {
-			// Arith expression, result is where???
-			// TODO: only INTEGER can compare this way...
-			pars.emit(String.format("         C     %s,%s",
+			switch (expr.type()) {
+			case FortranOperand.INTEGER:
+			case FortranOperand.LOGICAL: // should not happen
+			case FortranOperand.ADDRESS: // should not happen
+				pars.emit(String.format("         C     %s,%s",
 						zero.name(), expr.getResult()));
-			pars.emit(String.format("         BCT   $%05d,41", arith[0]));
-			pars.emit(String.format("         BCT   $%05d,42", arith[1]));
-			pars.emit(String.format("         B     $%05d", arith[2]));
+				pars.emit(String.format("         BCT   $%05d,41",
+								arith[0]));
+				pars.emit(String.format("         BCT   $%05d,42",
+								arith[1]));
+				pars.emit(String.format("         B     $%05d",
+								arith[2]));
+				break;
+			case FortranOperand.REAL:
+				pars.emit(String.format("         FMA   %s,00,02",
+								expr.getResult()));
+				pars.emit(String.format("         FMA   $%05d,02,04",
+								arith[0])); // X<0
+				pars.emit(String.format("         FMA   $%05d,01,04",
+								arith[1])); // X=0
+				pars.emit(String.format("         B     $%05d",
+								arith[2])); // X>0
+				break;
+			case FortranOperand.COMPLEX:
+				// TODO: implement this?
+				break;
+			}
 		} else {
 			// error!
-			pars.emit("         B     *");
+			pars.emit("         H     *");
 		}
 	}
 

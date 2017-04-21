@@ -341,12 +341,18 @@ public class Assembler {
 		// first, preserve "quotes"...
 		// Punchcards ambiguity: '@' or '\'' (card) is ':' (listing)
 		// TODO: IBM029 has different '\''
-		if (opd.length() > 0 &&
-				(opd.charAt(0) == '@' || opd.charAt(0) == '\'' ||
+		if (opd.length() > 0) {
+			if ((opd.charAt(0) == '@' || opd.charAt(0) == '\'' ||
 					opd.charAt(0) == ':')) {
-			e = opd.indexOf(opd.charAt(0), 1);
-			if (e < 0) {
-				e = 0;
+				e = opd.indexOf(opd.charAt(0), 1);
+				if (e < 0) {
+					e = 0;
+				}
+			} else if (opd.matches("#[0-9]+A.*")) {
+				e = opd.indexOf('A');
+				int n = Integer.valueOf(opd.substring(1, e));
+				e += n + 1;
+				// TODO: if e > len will throw exception?
 			}
 		}
 		e = opd.indexOf(' ', e);

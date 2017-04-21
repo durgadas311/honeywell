@@ -38,13 +38,18 @@ public class FortranOperator extends FortranOperation {
 	private FortranOperand right;
 
 	FortranOperand tmp = null;
+	FortranOperand tru = null;
 
 	// TODO: need to ensure constant "1" exists...
-	public FortranOperator(int op) {
+	public FortranOperator(int op, FortranParser pars) {
 		super(0, 0);
 		this.op = op;
 		left = null;
 		right = null;
+		if (op >= LE) {
+			// .FALSE. is 0 but we only use BS
+			tru = pars.parseConstant(".TRUE.");
+		}
 	}
 
 	public int kind() { return OPERATOR; }
@@ -101,10 +106,10 @@ public class FortranOperator extends FortranOperation {
 	}
 
 	// TODO: unary "-" ?
-	static public FortranOperator get(String op, int idx) {
+	static public FortranOperator get(String op, int idx, FortranParser pars) {
 		for (int x = 1; x < parse.length; ++x) {
 			if (op.startsWith(parse[x], idx)) {
-				return new FortranOperator(x);
+				return new FortranOperator(x, pars);
 			}
 		}
 		return null;
@@ -217,27 +222,37 @@ public class FortranOperator extends FortranOperation {
 	}
 
 	private void genCodeLog(FortranParser pars) {
+		// Logical ops only guarantee one character is valid
+		int sst = pars.addrMode() * 2 + 2;	// length of SST (as used here)
+		int bce = pars.addrMode() * 2 + 2;	// length of BCE (as used here)
 		switch (op) {
 		case AND:
-			// This assumes A and B are not more than "1"...
+			if (left != null && !left.name().equals(tmp.name())) {
+				pars.emit(String.format("         SST   %s,%s,77",
+						left.name(), tmp.name()));
+			}
 			pars.emit(String.format("         EXT   %s,%s",
 						right.name(), tmp.name()));
 			break;
 		case OR:
-			// Ugh, there must be a better way... no "OR" op at all?!
-			// This works if A and B are not more than "1"...
-			// but must "normalize" result...
-			String sym = pars.uniqueName();
+			if (left != null && !left.name().equals(tmp.name())) {
+				pars.emit(String.format("         SST   %s,%s,77",
+						left.name(), tmp.name()));
+			}
 			pars.emit(String.format("         BA    %s,%s",
 						right.name(), tmp.name()));
-			pars.emit(String.format("         BCT   %s,60", sym));
-			pars.emit(String.format("         BS    %s", tmp.name()));
-			pars.emit(String.format("         BA    :1,%s", tmp.name()));
-			pars.emit(String.format("  %-7sRESV  0", sym));
+			pars.emit(String.format("         BCE   *+%d,%s,00",
+						sst + bce, tmp.name()));
+			pars.emit(String.format("         SST   %s,%s,77",
+						tru.name(), tmp.name()));
 			break;
 		case NOT:
-			// This assumes B is not more than "1"...
-			pars.emit(String.format("         HA    :1,%s", tmp.name()));
+			if (right != null && !right.name().equals(tmp.name())) {
+				pars.emit(String.format("         SST   %s,%s,77",
+						right.name(), tmp.name()));
+			}
+			pars.emit(String.format("         HA    %s,%s",
+							tru.name(), tmp.name()));
 			break;
 		default:
 			genCodeRel(pars);
@@ -246,34 +261,36 @@ public class FortranOperator extends FortranOperation {
 	}
 
 	private void genCodeRel(FortranParser pars) {
-		String sym = pars.uniqueName();
+		int ba = pars.addrMode() * 2 + 1;	// length of BA (as used here)
+		int bct = pars.addrMode() + 2;		// length of BCT (as used here)
 		pars.emit(String.format("         C     %s,%s",
 						right.name(), left.name()));
 		pars.emit(String.format("         BS    %s", tmp.name()));
 		// Note reversal of relation, since we assume FALSE above
+		int var = 047; // Unconditional; what is a good default?
 		switch (op) {
 		case LE:
-			pars.emit(String.format("         BCT   %s,44", sym));
+			var = 044;	// B>A
 			break;
 		case LT:
-			pars.emit(String.format("         BCT   %s,46", sym));
+			var = 046;	// B>=A
 			break;
 		case GE:
-			pars.emit(String.format("         BCT   %s,41", sym));
+			var = 041;	// B<A
 			break;
 		case GT:
-			pars.emit(String.format("         BCT   %s,43", sym));
+			var = 043;	// B<=A
 			break;
 		case EQ:
-			pars.emit(String.format("         BCT   %s,45", sym));
+			var = 045;	// B!=A
 			break;
 		case NE:
-			pars.emit(String.format("         BCT   %s,42", sym));
+			var = 042;	// B=A
 			break;
 		}
-		// TODO: need to ensure constant "1" exists...
-		pars.emit(String.format("         BA    :1,%s", tmp.name()));
-		pars.emit(String.format("  %-7sRESV  0", sym));
+		pars.emit(String.format("         BCT   *+%d,%02o", ba + bct, var));
+		pars.emit(String.format("         BA    %s,%s",
+					tru.name(), tmp.name()));
 	}
 
 	private void genCodeReal(FortranParser pars) {

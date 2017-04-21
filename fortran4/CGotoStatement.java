@@ -59,7 +59,7 @@ public class CGotoStatement extends FortranItem {
 		}
 		pars.emit(String.format("         B     (%s-%d)",
 					tmp.name(), pars.addrMode() - 1));
-		pars.emit(String.format("  /%05d RESV  0"));
+		pars.emit(String.format("  /%05d RESV  0", src));
 	}
 
 	public boolean error() {

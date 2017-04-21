@@ -33,7 +33,7 @@ public class FortranConstant extends FortranOperand {
 		return fc;
 	}
 	public static FortranOperand get(FortranParser pars, boolean val) {
-		String id = String.format(":%d", val ? 1 : 0);
+		String id = String.format(":%d", val ? 077 : 0);
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
 			return fo;
@@ -81,7 +81,7 @@ public class FortranConstant extends FortranOperand {
 			break;
 		default:
 		case LOGICAL:
-			pars.emit(String.format("  %-7sDCW   #1B%d", name, vl ? 1 : 0));
+			pars.emit(String.format("  %-7sDCW   #1B%d", name, vl ? 077 : 0));
 			break;
 		case COMPLEX:
 			pars.emit(String.format("         DCW   F%.11E", vx));

@@ -27,8 +27,18 @@ public class FormatStatement extends FortranItem {
 	}
 
 	public void genDefs(FortranParser pars) {
-		pars.emit(String.format(" R $%05dDCW   @%s@", label, fmtStr));
-		label = -1;
+		String f = fmtStr;
+		boolean lbl = false;
+		String l = String.format("$%05d", label);
+		while (f.length() > 40) {
+			pars.emit(String.format("   %-6sDCW   #40A%s",
+					lbl ? "" : l, f.substring(0, 40)));
+			lbl = true;
+			f = f.substring(40);
+		}
+		pars.emit(String.format(" R %-6sDCW   #%dA%s",
+					lbl ? "" : l, f.length(), f));
+		label = -1; // ensure we don't label the statement
 	}
 
 	public void genCode(FortranParser pars) {

@@ -121,9 +121,9 @@ public class FortranExpr {
 		if (idx < len && exprStr.charAt(idx) != ')') {
 			// TODO: error if level != 0
 			if (fo == null && c == '-') {
-				op = new FortranOperator(FortranOperator.NEG);
+				op = new FortranOperator(FortranOperator.NEG, pars);
 			} else {
-				op = FortranOperator.get(exprStr, idx);
+				op = FortranOperator.get(exprStr, idx, pars);
 			}
 			if (op == null) {
 				// This is where most errors end up,
