@@ -41,7 +41,7 @@ public class CGotoStatement extends FortranItem {
 	public void genDefs(FortranParser pars) {
 		// TODO: validate existence of statement label...
 		// This works since index is 1-based
-		pars.emit(String.format("  /T%05dDSA   *", src));
+		pars.emit(String.format("  /T%05dDSA   (*)", src));
 		for (int t : targs) {
 			pars.emit(String.format("         DSA   $%05d", t));
 		}

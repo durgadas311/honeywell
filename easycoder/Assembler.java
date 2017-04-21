@@ -607,15 +607,18 @@ public class Assembler {
 		} else if (c == '#' || c == '=') {
 			// Punchcards ambiguity: '#' or '=' (card) is '=' (listing)
 			// TODO: IBM029 has different '=' ('>')
-			int e = opd.indexOf('B', 1);
+			int e = -1;
 			int base = 10;
-			if (e < 0) {
+			if (opd.matches("#[0-9]+B[-+0-9]+")) {
+				e = opd.indexOf('B', 1);
+			} else if (opd.matches("#[0-9]+C[0-7]+")) {
 				e = opd.indexOf('C', 1);
 				base = 8;
-			}
-			if (e < 0) {
+			} else if (opd.matches("#[0-9]+A.*")) {
 				e = opd.indexOf('A', 1);
 				base = 0; // characters
+			} else {
+				return null;
 			}
 			int n;
 			if (e < 0) {

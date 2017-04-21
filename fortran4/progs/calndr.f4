@@ -1,19 +1,25 @@
 *JOBID,LIST
       PROGRAM CALNDR
       IMPLICIT INTEGER (A-Z)
+      M=1
+      DO 902 I=1,5
+      CALL MON(I,M)
+902   CONTINUE
+      WRITE(3,130)
       D=-4
 C     PRINT WEEK HEADER
       CALL HDR
-      DO 100 I=1,5
+      DO 900 I=1,5
 C     PRINT ONE BAR
       CALL BAR
 C     PRINT NINE GAPS
-      DO 103 K=1,9
+      DO 903 K=1,9
       CALL CELL(K,D)
-103   CONTINUE
+903   CONTINUE
       D=D+7
-100   CONTINUE
+900   CONTINUE
       CALL BAR
+130   FORMAT(' ')
       END
 C
 C
@@ -31,9 +37,9 @@ C
 C
       SUBROUTINE BAR
       WRITE (3,501)
-      DO 101 J=1,6
+      DO 901 J=1,6
       WRITE (3,502)
-101   CONTINUE
+901   CONTINUE
 501   FORMAT (' ]]]]]]]]]]]]]]]]]]]')
 502   FORMAT ( '+]]]]]]]]]]]]]]]]]]')
       END
@@ -56,4 +62,152 @@ C
 505   FORMAT ( '+ ',I2,' ]            ]')
 506   FORMAT ( '+    ]            ]')
 507   FORMAT ( '+]]]]]            ]')
+      END
+C
+      SUBROUTINE MON(L,M)
+      GOTO (801,802,803,804,805,806,807,808,809,810,811,812),M
+      RETURN
+801   IF (L .EQ. 1) WRITE(3,011)
+      IF (L .EQ. 2) WRITE(3,012)
+      IF (L .EQ. 3) WRITE(3,013)
+      IF (L .EQ. 4) WRITE(3,014)
+      IF (L .EQ. 5) WRITE(3,015)
+      RETURN
+802   IF (L .EQ. 1) WRITE(3,021)
+      IF (L .EQ. 2) WRITE(3,022)
+      IF (L .EQ. 3) WRITE(3,023)
+      IF (L .EQ. 4) WRITE(3,024)
+      IF (L .EQ. 5) WRITE(3,025)
+      RETURN
+803   IF (L .EQ. 1) WRITE(3,031)
+      IF (L .EQ. 2) WRITE(3,032)
+      IF (L .EQ. 3) WRITE(3,033)
+      IF (L .EQ. 4) WRITE(3,034)
+      IF (L .EQ. 5) WRITE(3,035)
+      RETURN
+804   IF (L .EQ. 1) WRITE(3,041)
+      IF (L .EQ. 2) WRITE(3,042)
+      IF (L .EQ. 3) WRITE(3,043)
+      IF (L .EQ. 4) WRITE(3,044)
+      IF (L .EQ. 5) WRITE(3,045)
+      RETURN
+805   IF (L .EQ. 1) WRITE(3,051)
+      IF (L .EQ. 2) WRITE(3,052)
+      IF (L .EQ. 3) WRITE(3,053)
+      IF (L .EQ. 4) WRITE(3,054)
+      IF (L .EQ. 5) WRITE(3,055)
+      RETURN
+806   IF (L .EQ. 1) WRITE(3,061)
+      IF (L .EQ. 2) WRITE(3,062)
+      IF (L .EQ. 3) WRITE(3,063)
+      IF (L .EQ. 4) WRITE(3,064)
+      IF (L .EQ. 5) WRITE(3,065)
+      RETURN
+807   IF (L .EQ. 1) WRITE(3,071)
+      IF (L .EQ. 2) WRITE(3,072)
+      IF (L .EQ. 3) WRITE(3,073)
+      IF (L .EQ. 4) WRITE(3,074)
+      IF (L .EQ. 5) WRITE(3,075)
+      RETURN
+808   IF (L .EQ. 1) WRITE(3,081)
+      IF (L .EQ. 2) WRITE(3,082)
+      IF (L .EQ. 3) WRITE(3,083)
+      IF (L .EQ. 4) WRITE(3,084)
+      IF (L .EQ. 5) WRITE(3,085)
+      RETURN
+809   IF (L .EQ. 1) WRITE(3,091)
+      IF (L .EQ. 2) WRITE(3,092)
+      IF (L .EQ. 3) WRITE(3,093)
+      IF (L .EQ. 4) WRITE(3,094)
+      IF (L .EQ. 5) WRITE(3,095)
+      RETURN
+810   IF (L .EQ. 1) WRITE(3,101)
+      IF (L .EQ. 2) WRITE(3,102)
+      IF (L .EQ. 3) WRITE(3,103)
+      IF (L .EQ. 4) WRITE(3,104)
+      IF (L .EQ. 5) WRITE(3,105)
+      RETURN
+811   IF (L .EQ. 1) WRITE(3,111)
+      IF (L .EQ. 2) WRITE(3,112)
+      IF (L .EQ. 3) WRITE(3,113)
+      IF (L .EQ. 4) WRITE(3,114)
+      IF (L .EQ. 5) WRITE(3,115)
+      RETURN
+812   IF (L .EQ. 1) WRITE(3,121)
+      IF (L .EQ. 2) WRITE(3,122)
+      IF (L .EQ. 3) WRITE(3,123)
+      IF (L .EQ. 4) WRITE(3,124)
+      IF (L .EQ. 5) WRITE(3,125)
+      RETURN
+011   FORMAT ('     J   A   N   N U   U   A   RRRR  Y   Y            ')
+012   FORMAT ('     J  A A  NN  N U   U  A A  R   R  Y Y             ')
+013   FORMAT ('     J A   A N N N U   U A   A RRRR    Y              ')
+014   FORMAT (' J   J AAAAA N  NN U   U AAAAA R  R    Y              ')
+015   FORMAT ('  JJJ  A   A N   N  UUU  A   A R   R   Y              ')
+C
+021   FORMAT (' FFFFF EEEEE BBBB  RRRR  U   U   A   RRRR  Y   Y      ')
+022   FORMAT (' F     E     B   B R   R U   U  A A  R   R  Y Y       ')
+023   FORMAT (' FFFF  EEEE  BBBB  RRRR  U   U A   A RRRR    Y        ')
+024   FORMAT (' F     E     B   B R  R  U   U AAAAA R  R    Y        ')
+025   FORMAT (' F     EEEEE BBBB  R   R  UUU  A   A R   R   Y        ')
+C
+031   FORMAT (' M   M   A   RRRR   CCCC H   H                        ')
+032   FORMAT (' MM MM  A A  R   R C     H   H                        ')
+033   FORMAT (' M M M A   A RRRR  C     HHHHH                        ')
+034   FORMAT (' M   M AAAAA R  R  C     H   H                        ')
+035   FORMAT (' M   M A   A R   R  CCCC H   H                        ')
+C
+041   FORMAT ('   A   PPPP  RRRR   III  L                            ')
+042   FORMAT ('  A A  P   P R   R   I   L                            ')
+043   FORMAT (' A   A PPPP  RRRR    I   L                            ')
+044   FORMAT (' AAAAA P     R  R    I   L                            ')
+045   FORMAT (' A   A P     R   R  III  LLLLL                        ')
+C
+051   FORMAT (' M   M   A   Y   Y                                    ')
+052   FORMAT (' MM MM  A A   Y Y                                     ')
+053   FORMAT (' M M M A   A   Y                                      ')
+054   FORMAT (' M   M AAAAA   Y                                      ')
+055   FORMAT (' M   M A   A   Y                                      ')
+C
+061   FORMAT ('     J U   U N   N EEEEE                              ')
+062   FORMAT ('     J U   U NN  N E                                  ')
+063   FORMAT ('     J U   U N N N EEEE                               ')
+064   FORMAT (' J   J U   U N  NN E                                  ')
+065   FORMAT ('  JJJ   UUU  N   N EEEEE                              ')
+C
+071   FORMAT ('     J U   U L     Y   Y                              ')
+072   FORMAT ('     J U   U L      Y Y                               ')
+073   FORMAT ('     J U   U L       Y                                ')
+074   FORMAT (' J   J U   U L       Y                                ')
+075   FORMAT ('  JJJ   UUU  LLLLL   Y                                ')
+C
+081   FORMAT ('   A   U   U  GGGG U   U  SSSS TTTTT                  ')
+082   FORMAT ('  A A  U   U G     U   U S       T                    ')
+083   FORMAT (' A   A U   U G GGG U   U  SSS    T                    ')
+084   FORMAT (' AAAAA U   U G   G U   U     S   T                    ')
+085   FORMAT (' A   A  UUU   GGGG  UUU  SSSS    T                    ')
+C
+091   FORMAT ('  SSSS EEEEE PPPP  TTTTT EEEEE M   M BBBB  EEEEE RRRR ')
+092   FORMAT (' S     E     P   P   T   E     MM MM B   B E     R   R')
+093   FORMAT ('  SSS  EEEE  PPPP    T   EEEE  M M M BBBB  EEEE  RRRR ')
+094   FORMAT ('     S E     P       T   E     M   M B   B E     R  R ')
+095   FORMAT (' SSSS  EEEEE P       T   EEEEE M   M BBBB  EEEEE R   R')
+C
+101   FORMAT ('  OOO   CCCC TTTTT  OOO  BBBB  EEEEE RRRR             ')
+102   FORMAT (' O   O C       T   O   O B   B E     R   R            ')
+103   FORMAT (' O   O C       T   O   O BBBB  EEEE  RRRR             ')
+104   FORMAT (' O   O C       T   O   O B   B E     R  R             ')
+105   FORMAT ('  OOO   CCCC   T    OOO  BBBB  EEEEE R   R            ')
+C
+111   FORMAT (' N   N  OOO  V   V EEEEE M   M BBBB  EEEEE RRRR       ')
+112   FORMAT (' NN  N O   O V   V E     MM MM B   B E     R   R      ')
+113   FORMAT (' N N N O   O V   V EEEE  M M M BBBB  EEEE  RRRR       ')
+114   FORMAT (' N  NN O   O  V V  E     M   M B   B E     R  R       ')
+115   FORMAT (' N   N  OOO    V   EEEEE M   M BBBB  EEEEE R   R      ')
+C
+121   FORMAT (' DDDD  EEEEE  CCCC EEEEE M   M BBBB  EEEEE RRRR       ')
+122   FORMAT (' D   D E     C     E     MM MM B   B E     R   R      ')
+123   FORMAT (' D   D EEEE  C     EEEE  M M M BBBB  EEEE  RRRR       ')
+124   FORMAT (' D   D E     C     E     M   M B   B E     R  R       ')
+125   FORMAT (' DDDD  EEEEE  CCCC EEEEE M   M BBBB  EEEEE R   R      ')
       END
