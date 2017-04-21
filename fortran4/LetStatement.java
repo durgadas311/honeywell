@@ -45,13 +45,14 @@ public class LetStatement extends FortranItem {
 	public void genCode(FortranParser pars) {
 		pars.setExpr(expr);
 		var.genCode(pars);
+		// TODO: work out src+dst types...
 		switch (var.type()) {
-		case FortranOperand.INTEGER:
 		case FortranOperand.LOGICAL:
 			pars.emit(String.format("         BS    %s", var.name()));
 			pars.emit(String.format("         BA    %s,%s",
 					expr.getResult(), var.name()));
 			break;
+		case FortranOperand.INTEGER:
 		default:
 			pars.emit(String.format("         LCA   %s,%s",
 					expr.getResult(), var.name()));

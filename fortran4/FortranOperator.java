@@ -186,6 +186,7 @@ public class FortranOperator extends FortranOperation {
 
 	private void genCodeInt(FortranParser pars) {
 		int acbfxp = 0;
+		// TODO: work out type differences...
 		if (left != null && !left.name().equals(tmp.name())) {
 			pars.emit(String.format("         BS    %s", tmp.name()));
 			pars.emit(String.format("         BA    %s,%s",

@@ -14,10 +14,13 @@ public class FortranConstant extends FortranOperand {
 	}
 		// TODO: also save true value?
 	public static FortranOperand get(FortranParser pars, int val) {
-		String id = String.format(":%d", val);
-		int p = 32 - Integer.numberOfLeadingZeros(val);
-		p = (p + 5) / 6;
-		if (p <= 0) p = 1;
+		String id;
+		if (val >= 0) {
+			id = String.format(":%d", val);
+		} else {
+			id = String.format(":N%d", -val);
+		}
+		int p = pars.intPrecision();
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
 			return fo;

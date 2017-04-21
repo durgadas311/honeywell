@@ -760,7 +760,7 @@ public class Fortran4 implements Compiler, FortranParser {
 			// references to arrays... confirm fo.type() == ARRAY?
 			p = fo.precision();
 			type = fo.type();
-		} else if (let != '$') {
+		} else if (let != '$' && type < 0) {
 			type = implicits[let - 'A'];
 		}
 		if (fo == null && dims != null) {

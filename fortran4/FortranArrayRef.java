@@ -20,7 +20,8 @@ public class FortranArrayRef extends FortranOperation {
 
 	@Override
 	public void genDefs(FortranParser pars) {
-		pars.emit(String.format("  %-7sDSA   0", tmp.name()));
+		// 'tmp' already allocated by normal variable process...
+		// pars.emit(String.format("  %-7sDSA   0", tmp.name()));
 	}
 
 	@Override

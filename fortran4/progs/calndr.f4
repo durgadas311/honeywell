@@ -1,12 +1,68 @@
 *JOBID,LIST
       PROGRAM CALNDR
       IMPLICIT INTEGER (A-Z)
+      DIMENSION YD(4),MO(12)
+      REAL MM,YY
+C     TODO: BETTER INITIALIZATION
+      MO(1)=31
+      MO(2)=28
+      MO(3)=31
+      MO(4)=30
+      MO(5)=31
+      MO(6)=30
+      MO(7)=31
+      MO(8)=31
+      MO(9)=30
+      MO(10)=31
+      MO(11)=30
+      MO(12)=31
+C     TEST DATA FOR JAN 1975
+      Y=1975
+C
+C     START EVALUATING YEAR
+C
+      MO(2)=28
+      IF (MOD(Y,100) .EQ. 0 .AND. MOD(Y,400) .EQ. 0 .OR.
+     1     MOD(Y,100) .NE. 0 .AND. MOD(Y,4) .EQ. 0) MO(2)=29
       M=1
+C     ZELLER
+      MM=FLOAT(M)
+      YY=FLOAT(Y)
+      IF (M .GE. 3) GOTO 921
+      MM=MM+12.0
+      YY=YY-1.0
+921   CONTINUE
+      MM=MM+1.0
+      MM=MM*13.0
+      MM=AINT(MM/5.0)
+      MM=MM+YY
+      MM=MM+AINT(YY/4.0)
+      MM=MM-AINT(YY/100.0)
+      MM=MM+AINT(YY/400.0)
+      MM=MM+1.0
+      MM=AMOD(MM,7.0)
+      EE=INT(MM)
+      WRITE(3,999) Y,EE,MM,MO(2)
+999   FORMAT (' YEAR ',I4,' IS ',I5,' ',F10.4,' FEB=',I2)
+      DO 904 M=1,12
+      IF (EE .EQ. 0) EE=7
+      D=2-EE
+      EE=EE+MO(M)
+      EE=MOD(EE,7)
+      YD(1)=Y/1000
+      YD(2)=MOD(Y/100,10)
+      YD(3)=MOD(Y/10,10)
+      YD(4)=MOD(Y,10)
+C     START PRINTING ONE MONTH
       DO 902 I=1,5
       CALL MON(I,M)
+      WRITE(3,531)
+      CALL DIG(I,YD(1))
+      CALL DIG(I,YD(2))
+      CALL DIG(I,YD(3))
+      CALL DIG(I,YD(4))
 902   CONTINUE
-      WRITE(3,130)
-      D=-4
+      WRITE(3,530)
 C     PRINT WEEK HEADER
       CALL HDR
       DO 900 I=1,5
@@ -14,12 +70,15 @@ C     PRINT ONE BAR
       CALL BAR
 C     PRINT NINE GAPS
       DO 903 K=1,9
-      CALL CELL(K,D)
+      CALL CELL(K,D,MO(M))
 903   CONTINUE
       D=D+7
 900   CONTINUE
       CALL BAR
-130   FORMAT(' ')
+      WRITE(3,530)
+904   CONTINUE
+530   FORMAT(' ')
+531   FORMAT('+',50X)
       END
 C
 C
@@ -44,12 +103,12 @@ C
 502   FORMAT ( '+]]]]]]]]]]]]]]]]]]')
       END
 C
-      SUBROUTINE CELL(L,M)
+      SUBROUTINE CELL(L,M,XM)
       INTEGER MM
       WRITE (3,503)
       MM=M
       DO 202 J=1,7
-      IF (MM .LE. 0 .OR. MM .GT. 31) GOTO 201
+      IF (MM .LE. 0 .OR. MM .GT. XM) GOTO 201
       IF (L .EQ. 1) WRITE (3,505) MM
       IF (L .EQ. 2) WRITE (3,507)
       GOTO 203
@@ -210,4 +269,130 @@ C
 123   FORMAT (' D   D EEEE  C     EEEE  M M M BBBB  EEEE  RRRR       ')
 124   FORMAT (' D   D E     C     E     M   M B   B E     R  R       ')
 125   FORMAT (' DDDD  EEEEE  CCCC EEEEE M   M BBBB  EEEEE R   R      ')
+      END
+C
+      SUBROUTINE DIG(L,D)
+      DD=D+1
+      GOTO (700,701,702,703,704,705,706,707,708,709),DD
+      RETURN
+700   IF (L .EQ. 1) WRITE(3,140)
+      IF (L .EQ. 2) WRITE(3,150)
+      IF (L .EQ. 3) WRITE(3,160)
+      IF (L .EQ. 4) WRITE(3,170)
+      IF (L .EQ. 5) WRITE(3,180)
+      RETURN
+701   IF (L .EQ. 1) WRITE(3,141)
+      IF (L .EQ. 2) WRITE(3,151)
+      IF (L .EQ. 3) WRITE(3,161)
+      IF (L .EQ. 4) WRITE(3,171)
+      IF (L .EQ. 5) WRITE(3,181)
+      RETURN
+702   IF (L .EQ. 1) WRITE(3,142)
+      IF (L .EQ. 2) WRITE(3,152)
+      IF (L .EQ. 3) WRITE(3,162)
+      IF (L .EQ. 4) WRITE(3,172)
+      IF (L .EQ. 5) WRITE(3,182)
+      RETURN
+703   IF (L .EQ. 1) WRITE(3,143)
+      IF (L .EQ. 2) WRITE(3,153)
+      IF (L .EQ. 3) WRITE(3,163)
+      IF (L .EQ. 4) WRITE(3,173)
+      IF (L .EQ. 5) WRITE(3,183)
+      RETURN
+704   IF (L .EQ. 1) WRITE(3,144)
+      IF (L .EQ. 2) WRITE(3,154)
+      IF (L .EQ. 3) WRITE(3,164)
+      IF (L .EQ. 4) WRITE(3,174)
+      IF (L .EQ. 5) WRITE(3,184)
+      RETURN
+705   IF (L .EQ. 1) WRITE(3,145)
+      IF (L .EQ. 2) WRITE(3,155)
+      IF (L .EQ. 3) WRITE(3,165)
+      IF (L .EQ. 4) WRITE(3,175)
+      IF (L .EQ. 5) WRITE(3,185)
+      RETURN
+706   IF (L .EQ. 1) WRITE(3,146)
+      IF (L .EQ. 2) WRITE(3,156)
+      IF (L .EQ. 3) WRITE(3,166)
+      IF (L .EQ. 4) WRITE(3,176)
+      IF (L .EQ. 5) WRITE(3,186)
+      RETURN
+707   IF (L .EQ. 1) WRITE(3,147)
+      IF (L .EQ. 2) WRITE(3,157)
+      IF (L .EQ. 3) WRITE(3,167)
+      IF (L .EQ. 4) WRITE(3,177)
+      IF (L .EQ. 5) WRITE(3,187)
+      RETURN
+708   IF (L .EQ. 1) WRITE(3,148)
+      IF (L .EQ. 2) WRITE(3,158)
+      IF (L .EQ. 3) WRITE(3,168)
+      IF (L .EQ. 4) WRITE(3,178)
+      IF (L .EQ. 5) WRITE(3,188)
+      RETURN
+709   IF (L .EQ. 1) WRITE(3,149)
+      IF (L .EQ. 2) WRITE(3,159)
+      IF (L .EQ. 3) WRITE(3,169)
+      IF (L .EQ. 4) WRITE(3,179)
+      IF (L .EQ. 5) WRITE(3,189)
+      RETURN
+C
+140   FORMAT ('+  000 ')
+150   FORMAT ('+ 0  00')
+160   FORMAT ('+ 0 0 0')
+170   FORMAT ('+ 00  0')
+180   FORMAT ('+  000 ')
+C
+141   FORMAT ('+   1  ')
+151   FORMAT ('+  11  ')
+161   FORMAT ('+   1  ')
+171   FORMAT ('+   1  ')
+181   FORMAT ('+  111 ')
+C
+142   FORMAT ('+  222 ')
+152   FORMAT ('+     2')
+162   FORMAT ('+  222 ')
+172   FORMAT ('+ 2    ')
+182   FORMAT ('+ 22222')
+C
+143   FORMAT ('+ 3333 ')
+153   FORMAT ('+     3')
+163   FORMAT ('+  333 ')
+173   FORMAT ('+     3')
+183   FORMAT ('+ 3333 ')
+C
+144   FORMAT ('+    4 ')
+154   FORMAT ('+   44 ')
+164   FORMAT ('+  4 4 ')
+174   FORMAT ('+ 44444')
+184   FORMAT ('+    4 ')
+C
+145   FORMAT ('+ 55555')
+155   FORMAT ('+ 5    ')
+165   FORMAT ('+ 5555 ')
+175   FORMAT ('+     5')
+185   FORMAT ('+ 5555 ')
+C
+146   FORMAT ('+  666 ')
+156   FORMAT ('+ 6    ')
+166   FORMAT ('+ 6666 ')
+176   FORMAT ('+ 6   6')
+186   FORMAT ('+  666 ')
+C
+147   FORMAT ('+ 77777')
+157   FORMAT ('+     7')
+167   FORMAT ('+    7 ')
+177   FORMAT ('+   7  ')
+187   FORMAT ('+   7  ')
+C
+148   FORMAT ('+  888 ')
+158   FORMAT ('+ 8   8')
+168   FORMAT ('+  888 ')
+178   FORMAT ('+ 8   8')
+188   FORMAT ('+  888 ')
+C
+149   FORMAT ('+  999 ')
+159   FORMAT ('+ 9   9')
+169   FORMAT ('+  9999')
+179   FORMAT ('+     9')
+189   FORMAT ('+  999 ')
       END

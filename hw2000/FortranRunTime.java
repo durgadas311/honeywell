@@ -203,13 +203,13 @@ public class FortranRunTime extends FortranLibrary implements HW2000Trap {
 		int r = getInt(b);
 		switch (fnc) {
 		case 020:	// multiply
-			r = l * r;
+			r = r * l;
 			break;
 		case 021:	// divide
-			r = l / r;
+			r = r / l;
 			break;
 		case 022:	// power
-			r = pow(l, r);
+			r = pow(r, l);
 			break;
 		}
 		putInt(b, r);

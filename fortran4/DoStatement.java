@@ -60,8 +60,7 @@ public class DoStatement extends FortranItem {
 	}
 
 	public void genCode(FortranParser pars) {
-		pars.emit(String.format("         BS    %s", var.name()));
-		pars.emit(String.format("         BA    %s,%s", start.name(), var.name()));
+		pars.emit(String.format("         LCA   %s,%s", start.name(), var.name()));
 		pars.emit(String.format("  /%05d RESV  0", src));
 	}
 
