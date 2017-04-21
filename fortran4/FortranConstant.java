@@ -17,6 +17,7 @@ public class FortranConstant extends FortranOperand {
 		String id = String.format(":%d", val);
 		int p = 32 - Integer.numberOfLeadingZeros(val);
 		p = (p + 5) / 6;
+		if (p <= 0) p = 1;
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
 			return fo;

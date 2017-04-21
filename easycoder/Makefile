@@ -1,7 +1,13 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
-all: $(CLASSES)
+CPCLASSES =     CharConverter.class
+HWCLASSES =     CoreMemory.class \
+		InstrDecode.class
+
+EXTCLASSES = $(CPCLASSES) $(HWCLASSES)
+
+all: $(EXTCLASSES) $(CLASSES)
 
 jar: EasyCoder.jar
 
@@ -23,5 +29,11 @@ EasyCoder.jar: all bootmt.mti
 
 bootmt.mti:
 	ln -s ../hw2000/bringup/bootmt.mti .
+
+$(CPCLASSES):
+	ln -s ../cardpunch/$@ .
+
+$(HWCLASSES):
+	ln -s ../hw2000/$@ .
 
 __FRC__:

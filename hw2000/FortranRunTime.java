@@ -117,9 +117,7 @@ public class FortranRunTime extends FortranLibrary implements HW2000Trap {
 				// write record...
 				// If we got no parameters, must be "constant" format.
 				// copy to output.
-				if (idx == 0 && buf.length() == 0) {
-					nextParam(false);
-				}
+				nextParam(false);
 				dispatchOutput();
 			}
 			buf = null;

@@ -15,9 +15,9 @@ public class FortranOperator extends FortranOperation {
 	static final int GE = 9;
 	static final int EQ = 10;
 	static final int NE = 11;
-	static final int AND = 12;
-	static final int OR = 13;
-	static final int NOT = 14;
+	static final int NOT = 12;
+	static final int AND = 13;
+	static final int OR = 14;
 
 	static String[] parse = new String[]{
 		"-", // skipped in searches...
@@ -92,7 +92,7 @@ public class FortranOperator extends FortranOperation {
 	public int parseLen() { return parse[op].length(); }
 
 	static public boolean relCheck(String op, int idx) {
-		for (int x = LE; x <= NE; ++x) {
+		for (int x = LE; x <= OR; ++x) {
 			if (op.startsWith(parse[x], idx)) {
 				return true;
 			}

@@ -22,6 +22,7 @@ public class FortranExpr {
 //System.exit(0);
 	}
 
+	public boolean error() { return (expr == null); }
 	public int type() { return expr.type(); }
 	public String getResult() {
 		return expr.name();
@@ -128,7 +129,7 @@ public class FortranExpr {
 				// This is where most errors end up,
 				// regardless of whether this was intended
 				// as an operator...
-				pars.errsAdd("Invalid operator");
+				pars.errsAdd("Invalid operator " + exprStr.substring(idx));
 				return null;
 			}
 			idx += op.parseLen();

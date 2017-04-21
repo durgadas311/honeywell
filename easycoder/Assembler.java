@@ -378,7 +378,7 @@ public class Assembler {
 		}
 		if (listing) {
 			String l = "";
-			if (code != null) {
+			if (code != null && code.length > 0) {
 				char mk = charMark(code[0]);
 				char mk2 = ' ';
 				if (code.length > 1) {

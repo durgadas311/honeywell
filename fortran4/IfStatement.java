@@ -20,6 +20,9 @@ public class IfStatement extends FortranItem {
 			pars.errsAdd("Malformed IF expression");
 		}
 		expr = pars.parseExpr(stmt.substring(x, y)); // strip parens?
+		if (expr.error()) {
+			return;
+		}
 		x = y; // 'y' already points past end paren
 		String rest = stmt.substring(x);
 		if (rest.matches("[0-9]+,[0-9]+,[0-9]+")) {

@@ -1675,7 +1675,14 @@ ee.printStackTrace();
 		for (Map.Entry<String, String> entry : cmpMap.entrySet()) {
 			String s1 = entry.getKey();
 			String s2 = entry.getValue();
-			int k = asmMap.get(entry.getValue());
+			// TODO: find out where these come from...
+			if (s2.matches("\\(.*\\)")) {
+				s2 = s2.replaceAll("[\\(\\)]", "");
+			}
+			int k = 07777777;
+			if (asmMap.containsKey(s2)) {
+				k = asmMap.get(s2);
+			}
 			String s3 = String.format("%15s  %07o  %-15s",
 					s2, k, s1.equals(s2) ? "" : s1);
 			out.put(k, s3);
