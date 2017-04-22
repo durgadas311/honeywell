@@ -38,15 +38,15 @@ Here is the TODO list:
 
 <P>REAL data types are implemented according to the specifications
 of the H200/H2000 Scientific Units, even though currently no native
-floating point instructions are used. REALs are then stored in
+floating point instructions are currently used. REALs are then stored in
 a 48-bit (8 character) memory word.
 
 <P>INTEGER data types default to 3-character precision, however the
 *JOBID option "I" may be used to change that. Minimum is the address mode
 (3 or 4).
 
-<P>Address mode may be changed through the *JOBID option "M", but
-setting the amount of memory to something higher that 32768.
+<P>Address mode may be changed through the *JOBID option "M", by
+setting the amount of memory to something higher than 32768.
 
 <P>"LIST" enables output of the Easycoder assembler listing option.
 Note, unlike the original compiler, this is the actual code that will run.
