@@ -1,0 +1,100 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 BRT (Binary Run Tape) Format</TITLE>
+</HEAD>
+<BODY>
+<H3>Series 2000 BRT (Binary Run Tape) Format</H3>
+
+<P>BRT records are organized with a header followed by load data which is formated
+as a control character followed by zero or more data characters, defined as follows:
+<TABLE BORDER>
+<TR><TH>Control Codes</TH><TH>Series 200/2000 Meaning</TH><TH>Virtual Extensions</TH></TR>
+<TR><TD>00</TD><TD>undefined</TD><TD></TD></TR>
+<TR><TD>01-17</TD><TD>Load 1-15 characters at DIST, clear punctuation</TD><TD></TD></TR>
+<TR><TD>20</TD><TD>undefined</TD><TD></TD></TR>
+<TR><TD>21-37</TD><TD>Load 1-15 characters at DIST, set Word Mark</TD><TD></TD></TR>
+<TR><TD>40</TD><TD>undefined</TD><TD></TD></TR>
+<TR><TD>41-57</TD><TD>Load 1-15 characters at DIST, set Item Mark</TD><TD></TD></TR>
+<TR><TD>60</TD><TD>set DIST with next 3 characters</TD><TD></TD></TR>
+<TR><TD>61</TD><TD>End Load, next 3 characters are START</TD><TD></TD></TR>
+<TR><TD>62</TD><TD>Clear memory using next 7 characters</TD><TD></TD></TR>
+<TR><TD>63</TD><TD>set WM at DIST-1</TD><TD></TD></TR>
+<TR><TD>64</TD><TD>set IM at DIST-1</TD><TD></TD></TR>
+<TR><TD>65-76</TD><TD>undefined</TD><TD>T.B.D.</TD></TR>
+<TR><TD>77</TD><TD>End record, read next</TD><TD></TD></TR>
+</TABLE>
+
+<P>Record headers have a common format in the first 7 characters:
+<TABLE BORDER>
+<TR><TH>Char</TH><TH>Series 200/2000 Meaning</TH><TH>Virtual Extensions</TH></TR>
+<TR><TD>1</TD><TD>Banner (controls rest of record)</TD><TD></TD></TR>
+<TR><TD>2-4</TD><TD>Record length (incl. header?)</TD><TD>Length includes header</TD></TR>
+<TR><TD>5-6</TD><TD>Sequence number</TD><TD></TD></TR>
+<TR><TD>7</TD><TD>Length of header (7 or 24)</TD><TD></TD></TR>
+</TABLE>
+
+<P>In addition, Segment records (Banner char 50 or 54) contain:
+<TABLE BORDER>
+<TR><TH>Char</TH><TH>Series 200/2000 Meaning</TH><TH>Virtual Extensions</TH></TR>
+<TR><TD>8-10</TD><TD>Revision number</TD><TD></TD></TR>
+<TR><TD>11-16</TD><TD>Program name</TD><TD></TD></TR>
+<TR><TD>17-18</TD><TD>Segment name</TD><TD></TD></TR>
+<TR><TD>19-24</TD><TD>Visibility key</TD><TD></TD></TR>
+</TABLE>
+
+<P>Banner characters are defined as follows:
+<TABLE BORDER>
+<TR><TH>Banner</TH><TH>Series 200/2000 Meaning</TH><TH>Virtual Extensions</TH></TR>
+<TR><TD>50</TD><TD>First record of multi-record segment</TD><TD></TD></TR>
+<TR><TD>54</TD><TD>Only record of single-record segment</TD><TD></TD></TR>
+<TR><TD>41</TD><TD>Second record of multi-record segment</TD><TD></TD></TR>
+<TR><TD>44</TD><TD>Last record of multi-record segment</TD><TD></TD></TR>
+<TR><TD>22</TD><TD>Unformatted (no header) bootstrap record</TD><TD>Record may be >250</TD></TR>
+<TR><TD>42</TD><TD>Unformatted (no header?) boot image</TD><TD>See notes</TD></TR>
+<TR><TD>46</TD><TD>Undefined</TD><TD>T.B.D.</TD></TR>
+</TABLE>
+
+<P>A valid program segment may be comprised of: A) A single 54 record,
+B) A 50 record followed by a 44 record, or C) a 50 record followed by
+onr or more 41 records followed by a 44 record.
+
+<P>Records are said to have a maximum size of 250 characters. Unclear whether
+short records are padded to 250 or not. For the Punch Card version of BRT,
+record size is fixed at 80. Punch Card BRT records do not use (ignore)
+characters 2-6.
+
+<P>The Sequence number is meant to facilitate backwards searching through
+the tape. It indicates the number of Tape BACKSPACE operations required
+to locate the *previous* Segment header record (Banner 50 or 54).
+Since backpsaces are performed *after* loading the given record, the
+sequence number includes an extra backspace to account for the tape position.
+The first segment header on the tape has a sequence number of 0.
+The minimum value for all other records is 2.
+
+<P>Note, the bootstrap record banner character (22) is the same as the opcode for the
+SW instruction, and this is no coincidence. The contents of this record must
+be directly loaded into memory and executed (via the BOOTSTRAP function).
+Such code must establish punctuation on at least instructions and so must
+begin with a series of SW (and possibly SI) instructions.
+This code must be sufficient to load the subsequent
+"banner 42" records and possibly setup their
+punctuation. TODO: Find a definition of "banner 42" records.
+
+<P>NOTE: SW and SI instructions, when coded for both addresses,
+are the only ones that do not require punctuation.
+
+<P>A complete BRT image (self-loading, possibly containing multiple programs)
+begins with a "1HDR " record (unknown length) and terminates with a
+"1EOF " record and two "1ERI " records. It is not clear whether these records,
+on Magnetic Tape, are 5 characters long or padded to some other length.
+
+<P>In addition, a tape may be a "card image" tape in which case, presumably,
+all records are 80 characters.
+
+<H4>Banner 42 Records</H4>
+<P>Characters 2-EOR are loaded, w/o punctuation, to successive regions or memory.
+The bootstrap program is hard-coded for load/run address and number of records.
+Loading aborts (fatal) if a non-42 record is encountered.
+
+</BODY>
+</HTML>
