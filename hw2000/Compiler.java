@@ -10,6 +10,9 @@ public interface Compiler {
 	boolean listEasyCoder();
 	boolean listSymbols();
 	boolean wantsDump();
+	boolean hasData();
+	int lineCount();
+	BufferedReader getData();
 	void listSymTab();
 	Map<String, String> getSymTab();
 }

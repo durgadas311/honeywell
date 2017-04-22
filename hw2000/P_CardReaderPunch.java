@@ -113,6 +113,14 @@ public class P_CardReaderPunch extends JFrame
 		}
 	}
 
+	public void addInput(InputStream deck, String src, int count) {
+		// TODO: reject if idev != null? close it? stack after?
+		idev = deck;
+		sts[1].deck_pn.setText(src == null ? "Program" : src);
+		sts[1].cards = count > 0 ? count : 0;
+		sts[1].count_pn.setText(String.format("%d", sts[1].cards));
+	}
+
 	private int getCol(PunchCardStatus pcs, int ix) {
 		int p = pcs.card[ix * 2] & 0x0ff;
 		p |= (pcs.card[ix * 2 + 1] & 0x0ff) << 8;

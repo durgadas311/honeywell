@@ -12,6 +12,7 @@ public class CardInputStream extends InputStream {
 	// the punch card reader peripheral, before executing the
 	// program.
 	public CardInputStream(BufferedReader in, CharConverter cvt) {
+		input = in;
 		this.cvt = cvt;
 	}
 

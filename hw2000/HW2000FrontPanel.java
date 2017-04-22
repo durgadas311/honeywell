@@ -1631,6 +1631,12 @@ ee.printStackTrace();
 			}
 			inform(this, op, String.format("Compile complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
+			if (cmp.hasData()) {
+				P_CardReaderPunch cp = (P_CardReaderPunch)sys.pdc.getPeriph(PeriphDecode.P_PP);
+				cp.addInput(new CardInputStream(cmp.getData(), sys.pdc.cvt),
+						src.getName(), cmp.lineCount());
+				cp.visible(true);
+			}
 		}
 		return (ret != null);
 	}

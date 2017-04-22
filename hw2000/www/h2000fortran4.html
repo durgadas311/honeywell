@@ -1,16 +1,22 @@
 <HTML>
 <HEAD>
-<TITLE>Series 2000 Easycoder</TITLE>
+<TITLE>Series 2000 FORTRAN IV</TITLE>
 </HEAD>
 <BODY>
+<H3>Series 2000 FORTRAN IV</H3>
 
 <P>The FORTRAN IV Compiler here runs in Java, but produces EasyCoder
 assembly language source. The code generated runs the bulk of the FORTRAN
 program, except for the routines normally included in the "run time" library.
 The run-time library is implemented in the virtual computer, so that is a
-bit of a "cheat".
+bit of a "cheat". However, the generated code is still very authentic,
+and closely mimics what the FORTRAN program machine code might have looked like.
 
 <P>Here is a <A HREF="fortran1.html">sample program listing and output</A>.
+And another interesting <A HREF="fortran2.html">sample program listing and output</A>
+showing use of the "*DATA" job card to allow data in a FORTRAN source file
+to be used as a deck of punch cards. This second example also shows the compile option
+to list Easycoder output, and shows what the generated code looks like.
 
 <P>Currently, only basic features are implemented,
 and many of those only in their simpler forms.

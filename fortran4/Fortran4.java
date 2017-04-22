@@ -50,6 +50,7 @@ public class Fortran4 implements Compiler, FortranParser {
 	private boolean ezcListing = false;
 	private boolean symListing = true;
 	private boolean wantDump = false;
+	private boolean data = false;
 
 	public Fortran4(File input) {
 		prog = null; // or default to file name?
@@ -187,13 +188,19 @@ public class Fortran4 implements Compiler, FortranParser {
 			listOut(String.format("END OF COMPILE%s\n",
 					ret < 0 ? " (ERRORS)" : ""));
 		}
-		try { in.close(); } catch (Exception ee) {}
+		if (!data) {
+System.err.format("Closing input\n");
+			try { in.close(); } catch (Exception ee) {}
+		}
 		return ret;
 	}
 
 	public boolean listEasyCoder() { return ezcListing; }
 	public boolean listSymbols() { return symListing; }
 	public boolean wantsDump() { return wantDump; }
+	public boolean hasData() { return data; }
+	public BufferedReader getData() { return in; }
+	public int lineCount() { return lineNo; }
 
 	public int generate(File output) {
 		if (output == null) {
@@ -240,7 +247,6 @@ public class Fortran4 implements Compiler, FortranParser {
 		if (errs.size() > 0) {
 			ret = -1;
 		}
-		try { in.close(); } catch (Exception ee) {}
 		try { if (out != null) out.close(); } catch (Exception ee) {}
 		return ret;
 	}
@@ -253,6 +259,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		end = true;
 		inProg = false;
 		inSubr = false;
+		data = true;
 	}
 
 	// This doesn't really work as advertized... We don't yet
@@ -351,8 +358,16 @@ public class Fortran4 implements Compiler, FortranParser {
 		// TODO: tolerate "illegal" TAB characters
 		// TODO: track source line number with statements
 		String line = next;
+		next = null;
 		curLine = lineNo;
+		// Do not read-ahead for "*XXX" Job Ctl Cards...
 		while (true) {
+			if (line != null && line.length() > 0 &&
+					line.charAt(0) == '*') {
+				// Process JCL before doing read-ahead.
+				// JCL does not support continuation.
+				break;
+			}
 			try {
 				next = in.readLine();
 				if (next == null && line == null) {
@@ -368,6 +383,11 @@ public class Fortran4 implements Compiler, FortranParser {
 				if (listing) {
 					listSrc(next);
 				}
+				if (next.length() > 0 && next.charAt(0) == '*' &&
+							line != null) {
+					// process FORTRAN card before JCL
+					break;
+				}
 				int e = next.length();
 				if (e > 72) {
 					e = 72;
@@ -375,6 +395,7 @@ public class Fortran4 implements Compiler, FortranParser {
 				if (line == null) {
 					curLine = lineNo;
 					line = next.substring(0, e);;
+					next = null;
 					continue;
 				}
 				if (inProg && next.length() >= 6 &&
@@ -382,6 +403,7 @@ public class Fortran4 implements Compiler, FortranParser {
 						next.charAt(5) != ' ' &&
 						next.charAt(5) != '0') {
 					line += next.substring(6, e);
+					next = null;
 					continue;
 				}
 			}
@@ -421,10 +443,13 @@ public class Fortran4 implements Compiler, FortranParser {
 		}
 		// TODO: support in-stream data
 		// (support compiling from punch cards in general!)
-		if (line.startsWith("*DATA") ||
-				line.startsWith("*ENDDATA") ||
-				line.startsWith("1EOF ")) {
+		if (line.startsWith("*DATA")) {
 			processDATA(line);
+			return 0;
+		}
+		// These should not appear to us.
+		if (line.startsWith("*ENDDATA") ||
+				line.startsWith("1EOF ")) {
 			return 0;
 		}
 		if (line.startsWith("*")) {
