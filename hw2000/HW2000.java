@@ -33,6 +33,8 @@ public class HW2000 implements CoreMemory
 	public boolean[] denorm;
 
 	public int oSR;
+	public int oAAR;
+	public int oBAR;
 	public byte opSR; // op-code at oSR (physical)
 	int op_flags;
 	int op_xflags;
@@ -583,12 +585,9 @@ public class HW2000 implements CoreMemory
 		// sort it out...
 		fetchXtra(isr);
 		SR = isr;
-		// NOTE: this does not cover the case of exceptions above
-		if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
-			traceInstr();
-		}
 	}
 
+	// TODO: trace AAR/BAR (etc) after execute?
 	private void traceInstr() {
 		String op;
 		if (op_exec == null) {
@@ -596,7 +595,8 @@ public class HW2000 implements CoreMemory
 		} else {
 			op = op_exec.getClass().getName();
 		}
-		String s = String.format("%07o: %s [%07o %07o] ", oSR, op, AAR, BAR);
+		String s = String.format("%07o: %s %07o %07o [%07o %07o] ",
+				oSR, op, oAAR, oBAR, AAR, BAR);
 		for (int x = 0; x < op_xtra_num; ++x) {
 			s += String.format(" %02o", op_xtra[x]);
 		}
@@ -611,9 +611,10 @@ public class HW2000 implements CoreMemory
 		updClock();
 	}
 
-	private boolean _trace = false;
+	private boolean _trace = false; // enable/disable
 	private int _trace_low = 0;
 	private int _trace_hi = 02000000;
+	private boolean tracing = false; // curr instr is traced
 
 	// Set a value into a word-marked field
 	public void setField(int adr, int val) {
@@ -674,12 +675,13 @@ public class HW2000 implements CoreMemory
 		traps.remove(trap.getName());
 	}
 
-	private void doTraps() {
+	private boolean doTraps() {
 		for (HW2000Trap trap : traps.values()) {
 			if (trap.doTrap()) {
-				return;
+				return true;
 			}
 		}
+		return false;
 	}
 
 	public void run() {
@@ -694,12 +696,28 @@ public class HW2000 implements CoreMemory
 		while (!halt) {
 			if (SR == (-1 & am_mask)) {
 				trap(); // protect from Exceptions also?
-				continue; // needed?
+				continue; // might set 'halt', change SR, ...
 			}
 			try {
-				doTraps();
+				if (doTraps()) { // might set 'halt',...
+					continue;
+				}
+				tracing = (_trace && SR >= _trace_low && SR < _trace_hi);
 				fetch();
+				if (tracing) {
+					oAAR = AAR;
+					oBAR = BAR;
+				}
 				execute();
+				// NOTE: this does not cover the case of exceptions above
+				if (tracing) {
+					if (fp != null) {
+						fp.setAddress(oSR);
+						fp.setContents(opSR);
+					}
+					traceInstr();
+					try { Thread.sleep(1); } catch (Exception ee) {}
+				}
 			} catch (HaltException he) {
 				// Not fatal, but must cleanup CPU state...
 				halt = true; // in case not already set.
@@ -707,7 +725,7 @@ public class HW2000 implements CoreMemory
 				// TODO: more cleanup required?
 			} catch (IIException ie) {
 				// TODO: need to handle II within II...
-				if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
+				if (tracing) {
 					traceInstr();
 				}
 				if (IIR != 0 && setIntr(HW2000CCR.EIR_II, ie.type)) {
@@ -724,7 +742,7 @@ public class HW2000 implements CoreMemory
 					halt = true;
 				}
 			} catch (EIException ee) {
-				if (_trace && oSR >= _trace_low && oSR < _trace_hi) {
+				if (tracing) {
 					traceInstr();
 				}
 				if (EIR != 0 && setIntr(HW2000CCR.EIR_EI, ee.type)) {
@@ -769,8 +787,10 @@ public class HW2000 implements CoreMemory
 		}
 		if (fp != null) {
 			fp.setRunStop(false);
-			fp.setAddress(oSR);
-			fp.setContents(opSR);
+			fp.setAddress(SR);
+			try {
+				fp.setContents(rawReadMem(SR));
+			} catch (Exception ee) {}
 		}
 	}
 
