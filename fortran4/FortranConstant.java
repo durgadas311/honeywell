@@ -3,30 +3,33 @@
 import java.io.*;
 
 public class FortranConstant extends FortranOperand {
-	private String name;
-	private int vi;
-	private boolean vl;
-	private double vr;
-	private double vx;
+	protected String name;
+	protected int vi = 0;
+	protected boolean vl = false;
+	protected double vr = 0.0;
+	protected double vx = 0.0;
 
 	public FortranConstant(int type, int prec) {
 		super(type, prec);
 	}
-		// TODO: also save true value?
-	public static FortranOperand get(FortranParser pars, int val) {
+	public static FortranConstant get(int val, int prec) {
+		FortranConstant fc = new FortranConstant(INTEGER, prec);
+		fc.vi = val;
+		return fc;
+	}
+	public static FortranConstant get(FortranParser pars, int val) {
 		String id;
 		if (val >= 0) {
 			id = String.format(":%d", val);
 		} else {
 			id = String.format(":N%d", -val);
 		}
-		int p = pars.intPrecision();
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
-			return fo;
+			return (FortranConstant)fo;
 		}
-		FortranConstant fc = new FortranConstant(INTEGER, p);
-		fc.vi = val;
+		int p = pars.intPrecision();
+		FortranConstant fc = get(val, p);
 		if (p > 3) {
 			fc.name = pars.uniqueName();
 		} else {
@@ -35,11 +38,12 @@ public class FortranConstant extends FortranOperand {
 		pars.addSym(id, fc);
 		return fc;
 	}
-	public static FortranOperand get(FortranParser pars, boolean val) {
+	public static FortranConstant get(FortranParser pars, boolean val) {
+		// TODO: also save true value?
 		String id = String.format(":%d", val ? 077 : 0);
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
-			return fo;
+			return (FortranConstant)fo;
 		}
 		FortranConstant fc = new FortranConstant(LOGICAL, 1);
 		fc.vl = val;
@@ -47,11 +51,11 @@ public class FortranConstant extends FortranOperand {
 		pars.addSym(id, fc);
 		return fc;
 	}
-	public static FortranOperand get(FortranParser pars, double val) {
+	public static FortranConstant get(FortranParser pars, double val) {
 		String id = String.format(":R%g", val);
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
-			return fo;
+			return (FortranConstant)fo;
 		}
 		FortranConstant fc = new FortranConstant(REAL, 0);
 		fc.vr = val;
@@ -59,11 +63,11 @@ public class FortranConstant extends FortranOperand {
 		pars.addSym(id, fc);
 		return fc;
 	}
-	public static FortranOperand get(FortranParser pars, double[] val) {
+	public static FortranConstant get(FortranParser pars, double[] val) {
 		String id = String.format(":R%gI%g", val[0], val[1]);
 		FortranOperand fo = pars.getSym(id);
 		if (fo != null) {
-			return fo;
+			return (FortranConstant)fo;
 		}
 		FortranConstant fc = new FortranConstant(COMPLEX, 0);
 		fc.vr = val[0];
@@ -73,8 +77,11 @@ public class FortranConstant extends FortranOperand {
 		return fc;
 	}
 
-	public int kind() { return VARIABLE; }
+	public int kind() { return CONSTANT; }
 	public String name() { return name; } // no names for constants...???
+
+	// Used by DATA statement (FortranExpr.computeInt())
+	public int getIntVal() { return vi; }
 
 	// Will only be called once, no matter how many references
 	public void genDefs(FortranParser pars) {

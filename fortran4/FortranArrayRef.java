@@ -4,6 +4,7 @@ import java.io.*;
 
 public class FortranArrayRef extends FortranOperation {
 	private FortranExpr adr;
+	private int iadr;
 	private FortranArray ary;
 	private String name;
 	private FortranOperand tmp;
@@ -12,11 +13,28 @@ public class FortranArrayRef extends FortranOperation {
 		super(a.type(), a.precision());
 		adr = x;
 		ary = a;
-		name = "XXX";
+		name = "XXX"; // TODO: fix this - if needed
+	}
+
+	public FortranArrayRef(FortranArray a, int x) {
+		super(a.type(), a.precision());
+		adr = null;
+		ary = a;
+		iadr = x;
+		name = "XXX"; // TODO: fix this - if needed
 	}
 
 	@Override
 	public int kind() { return ARRAYREF; }
+
+	public void setValue(String val) {
+		if (adr != null) {
+			int idx = adr.computeInt();
+			ary.setValue(idx, val);
+		} else {
+			ary.setValue(iadr, val);
+		}
+	}
 
 	@Override
 	public void genDefs(FortranParser pars) {

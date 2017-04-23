@@ -36,7 +36,8 @@ public interface FortranParser {
 	boolean inSubroutine();
 	boolean inMainProg();
 	FortranOperand currSubr();
-	void setScope(ImpliedDoLoop ido);
+	void setScope(CodeImpliedDo ido);
+	void setLive(boolean live);
 	void resetTemps();
 	FortranOperand getIntTemp(int id);
 	FortranOperand getLogTemp(int id);

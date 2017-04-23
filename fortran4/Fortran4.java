@@ -27,8 +27,9 @@ public class Fortran4 implements Compiler, FortranParser {
 	private Vector<RunTimeLibrary> libs;
 	boolean inProg;
 	boolean inSubr; // SUBR or FUNC, also inProg...
+	boolean liveExpr;
 	FortranOperand curSubr;
-	ImpliedDoLoop doScope = null;
+	CodeImpliedDo doScope = null;
 	boolean end;
 	String prog;
 	int endAdr;
@@ -469,6 +470,7 @@ public class Fortran4 implements Compiler, FortranParser {
 			labl = Integer.valueOf(lab);
 		}
 		FortranItem itm = null;
+		liveExpr = false;
 		// TODO: enforce inProg for these...
 		itm = DoStatement.parse(stmt, this);
 		if (itm == null) { itm = StmtFunction.parse(stmt, this); }
@@ -511,6 +513,7 @@ public class Fortran4 implements Compiler, FortranParser {
 		}
 		if (itm == null) { itm = DefStatement.parse(stmt, this); }
 		if (itm == null) { itm = ImplStatement.parse(stmt, this); }
+		if (itm == null) { itm = DataStatement.parse(stmt, this); }
 		// The above statements CANNOT be target of IF, parseAction() CAN.
 		if (itm == null) { itm = parseAction(stmt); }
 		if (itm == null) {
@@ -755,10 +758,11 @@ public class Fortran4 implements Compiler, FortranParser {
 		if (x >= 0) {
 			int y = matchingParen(id, x); // should be last char...
 			if (y < 0) {
+				// TODO: need better error handling here
 				errsAdd("Malformed array reference");
 				//return null; // will this break things?
 			}
-			dims = id.substring(x + 1, y);
+			dims = id.substring(x + 1, y - 1);
 			id = id.substring(0, x);
 		}
 		FortranOperand fo = null;
@@ -906,19 +910,19 @@ public class Fortran4 implements Compiler, FortranParser {
 
 	public FortranArrayRef parseArrayRef(FortranArray ary, String dims) {
 		String[] ds = dims.split(",");
-		int p = 1;
-		// TODO: if FortranParameter, call reference()...
-		String ex = String.format("%d*(%s", ary.sizeof(), ds[0]);
-		for (int x = 1; x < ds.length; ++x) {
-			ex += String.format("+%d*(%s", ary.getDim(x - 1), ds[x]);
-			++p;
+		if (liveExpr) {
+			int ex = 0;
+			if (!dims.matches("[0-9,]+")) {
+				errsAdd("Array subscript not a constant");
+			} else {
+				ex = ary.subscriptValue(ds);
+			}
+			return new FortranArrayRef(ary, ex);
+		} else {
+			String ex = ary.subscriptExpr(ds);
+			FortranExpr xpr = new FortranExpr(ex, this);
+			return new FortranArrayRef(ary, xpr);
 		}
-		while (p > 0) {
-			ex += ')';
-			--p;
-		}
-		FortranExpr xpr = new FortranExpr(ex, this);
-		return new FortranArrayRef(ary, xpr);
 	}
 
 	public FortranSubprogram refLibFunc(String fnc) {
@@ -1060,8 +1064,11 @@ public class Fortran4 implements Compiler, FortranParser {
 		return null;	// serves 'em right
 	}
 
-	public void setScope(ImpliedDoLoop ido) {
+	public void setScope(CodeImpliedDo ido) {
 		doScope = ido;
+	}
+	public void setLive(boolean live) {
+		liveExpr = live;
 	}
 
 	public void setExpr(FortranExpr expr) {

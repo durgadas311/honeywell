@@ -28,6 +28,43 @@ public class FortranExpr {
 		return expr.name();
 	}
 
+	public int computeInt() {
+		return computeInt(expr);
+	}
+
+	private int computeInt(FortranOperand fo) {
+		if (fo == null) {
+			return 0;
+		}
+		if (fo instanceof FortranOperation) {
+			if (fo instanceof FortranOperator) {
+				FortranOperator op = (FortranOperator)fo;
+				int l = computeInt(op.getLeft());
+				int r = computeInt(op.getRight());
+				switch (op.oper()) {
+				case FortranOperator.NEG:
+					return -r;
+				case FortranOperator.PWR:
+					break;
+				case FortranOperator.MULT:
+					return l * r;
+				case FortranOperator.DIV:
+					return l / r;
+				case FortranOperator.ADD:
+					return l + r;
+				case FortranOperator.SUB:
+					return l - r;
+				}
+			}
+			// error...
+			return 0;
+		} else {
+			// FortranConstant covers FortranVariable
+			FortranConstant fc = (FortranConstant)fo;
+			return fc.getIntVal();
+		}
+	}
+
 	public void setTemp(FortranParser pars, int level) {
 		if (expr instanceof FortranOperation) {
 			((FortranOperation)expr).setTemp(pars, level);

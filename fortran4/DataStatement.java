@@ -6,18 +6,18 @@ import java.io.*;
 public class DataStatement extends FortranItem {
 	static final String _PAT = "DATA.*/";
 	private String errors = "";
-	Vector<FortranOperand> list;
-	Vector<FortranOperand> data;
-	Vector<Integer> mult;
 
+	// TODO: don't generate code to generate data, generate data!
 	public DataStatement(String stmt, FortranParser pars) {
 		int n = stmt.length();
 		int x = 4; // skip DATA
-		list = new Vector<FortranOperand>();
-		data = new Vector<FortranOperand>();
-		mult = new Vector<Integer>();
-		FortranOperand fo;
+		Vector<String> list = new Vector<String>();
+		Vector<String> data = new Vector<String>();
+		Vector<String> vs;
+		pars.setLive(true); // compiler must reset!
 		while (x < n) {
+			list.clear();
+			data.clear();
 			// This does not allow for "/" in array subscripts...
 			int y = stmt.indexOf('/', x);
 			if (y < 0) {
@@ -30,18 +30,24 @@ public class DataStatement extends FortranItem {
 				if (z < 0 || z > y) {
 					z = y;
 				}
-				String i = stmt.substring(x, y);
+				String i = stmt.substring(x, z);
 				if (i.charAt(0) == '(') {
-					fo = new ImpliedDoLoop(i, null, pars);
-				} else {
-					fo = pars.parseVariable(i);
-					if (fo == null) {
+					// These DO loops are never coded,
+					// must not create loop control vars, etc.
+					// These are expanded now, added to 'list'
+					vs = new DataImpliedDo(i, pars).getTargets();
+					if (vs == null) {
 						return;
 					}
+					list.addAll(vs);
+				} else {
+					list.add(i);
 				}
-				list.add(fo);
 				x = z + 1;
 			}
+			// Now we have a flattened list of all vars (could be big),
+			// each is a string of the variable reference
+			// (scalar var or array element reference).
 			x = y + 1;
 			y = stmt.indexOf('/', x);
 			if (y < 0) {
@@ -49,33 +55,43 @@ public class DataStatement extends FortranItem {
 				pars.errsAdd("Malformed DATA statement");
 				return;
 			}
-			while (x < y) {
-				int z = pars.matchingComma(stmt, x);
-				if (z < 0 || z > y) {
-					z = y;
+			int idx = 0;
+			String fc = "0";
+			int m = 0;
+			while (x < y || (m > 0 && idx < list.size())) {
+				FortranOperand fo = pars.parseVariable(list.get(idx++));
+				if (m <= 0) {
+					int z = pars.matchingComma(stmt, x);
+					if (z < 0 || z > y) {
+						z = y;
+					}
+					fc = stmt.substring(x, z);
+					x = z + 1;
+					m = 1;
+					if (fc.matches("[0-9]+\\*.*")) {
+						int w = fc.indexOf('*');
+						m = Integer.valueOf(fc.substring(0, w));
+						fc = fc.substring(w + 1);
+					}
 				}
-				String i = stmt.substring(x, y);
-				int m = 1;
-				if (i.matches("[0-9]+\\*")) {
-					int w = i.indexOf('*');
-					m = Integer.valueOf(i.substring(0, w));
-					i = i.substring(w + 1);
+				// TODO: fix this ugliness
+				if (fo instanceof FortranArrayRef) {
+					((FortranArrayRef)fo).setValue(fc);
+				} else {
+					((FortranVariable)fo).setValue(fc);
 				}
-				// TODO: handle multiplier
-				data.add(pars.parseConstant(i));
-				mult.add(m);
-				x = z + 1;
+				if (m > 0) {
+					--m;
+				}
 			}
-		}
-		for (x = 0; x < list.size(); ++x) {
-			// since list items are process independently,
-			// they could share temp variables.
-			fo = list.get(x);
-			if (fo instanceof FortranOperation) {
-				pars.resetTemps();
-				((FortranOperation)fo).setTemp(pars, 0);
+			if (idx < list.size() || x < y) {
+				pars.errsAdd("Mismatched DATA parameters");
 			}
+			x = y + 2;	// skip slash and comma
 		}
+		// No need to keep anything (?)
+		// All variables now have values set, so code-gen phase
+		// should use those values to generate Easycoder DCW lines.
 	}
 
 	public static FortranItem parse(String pot, FortranParser pars) {
@@ -92,27 +108,6 @@ public class DataStatement extends FortranItem {
 
 	public void genCode(FortranParser pars) {
 		// TODO: 
-	}
-
-	private void doItem(FortranOperand itm, FortranParser pars) {
-		if (itm instanceof ImpliedDoLoop) {
-			doDo((ImpliedDoLoop)itm, pars);
-		} else {
-			doSimple(itm, pars);
-		}
-	}
-
-	private void doDo(ImpliedDoLoop idu, FortranParser pars) {
-		idu.genCode(pars);
-		for (FortranOperand itm : idu.getItems()) {
-			doItem(itm, pars);
-		}
-		idu.genLoop(pars);
-	}
-
-	private void doSimple(FortranOperand itm, FortranParser pars) {
-		itm.genCode(pars);
-		pars.emit(String.format(" R       DSA   %s", itm.name()));
 	}
 
 	public boolean error() {

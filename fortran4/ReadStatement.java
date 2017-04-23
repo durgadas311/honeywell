@@ -46,7 +46,7 @@ public class ReadStatement extends FortranItem {
 			}
 			String i = stmt.substring(x, y);
 			if (i.charAt(0) == '(') {
-				fo = new ImpliedDoLoop(i, null, pars);
+				fo = new CodeImpliedDo(i, null, pars);
 			} else {
 				fo = pars.parseVariable(i);
 				if (fo == null) {
@@ -107,14 +107,14 @@ public class ReadStatement extends FortranItem {
 	}
 
 	private void doItem(FortranOperand itm, FortranParser pars) {
-		if (itm instanceof ImpliedDoLoop) {
-			doDo((ImpliedDoLoop)itm, pars);
+		if (itm instanceof CodeImpliedDo) {
+			doDo((CodeImpliedDo)itm, pars);
 		} else {
 			doSimple(itm, pars);
 		}
 	}
 
-	private void doDo(ImpliedDoLoop idu, FortranParser pars) {
+	private void doDo(CodeImpliedDo idu, FortranParser pars) {
 		idu.genCode(pars);
 		for (FortranOperand itm : idu.getItems()) {
 			doItem(itm, pars);

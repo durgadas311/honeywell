@@ -2,8 +2,7 @@
 
 import java.io.*;
 
-public class FortranVariable extends FortranOperand {
-	protected String name;
+public class FortranVariable extends FortranConstant {
 
 	public FortranVariable(String name, int type, int prec) {
 		super(type, prec);
@@ -16,25 +15,42 @@ public class FortranVariable extends FortranOperand {
 		this.name = name;
 	}
 
+	@Override
 	public int kind() { return VARIABLE; }
-	public String name() { return name; }
+
+	private void setValue(int val) { vi = val; }
+	private void setValue(boolean val) { vl = val; }
+	private void setValue(double val) { vr = val; }
+	private void setValue(double val, double img) { vr = val; vx = img; }
+	public void setValue(String val) {
+		// Parse 'val' according to type...
+		switch (type) {
+		case INTEGER:
+			setValue(Integer.valueOf(val));
+			break;
+		case LOGICAL:
+			// TODO: be more selective?
+			setValue(val.equals(".TRUE."));
+			break;
+		case REAL:
+			setValue(Double.valueOf(val));
+			break;
+		case COMPLEX:
+			// TODO: parse "(%f,%f)"...
+			//setValue(Double.valueOf(val));
+			break;
+		// No ADDRESS possible? VOID is no-op
+		}
+	}
 
 	public void genDefs(FortranParser pars) {
 		switch (type) {
-		case INTEGER:
-			pars.emit(String.format("  %-7sDCW   #%dB0", name, prec));
-			break;
-		case LOGICAL:
-			pars.emit(String.format("  %-7sDCW   #1B0", name));
-			break;
-		case COMPLEX:
-			pars.emit("         DCW   F0");
-			// FALLTHROUGH
-		case REAL:
-			pars.emit(String.format("  %-7sDCW   F0", name));
-			break;
 		case ADDRESS:
+			// TODO: is this used? does it need a value?
 			pars.emit(String.format("  %-7sDSA   0", name));
+			break;
+		default:
+			super.genDefs(pars);
 			break;
 		}
 	}
