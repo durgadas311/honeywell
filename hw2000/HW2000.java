@@ -802,6 +802,10 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	public CharConverter cvt() {
+		return pdc.cvt;
+	}
+
 	// Honeywell-style memory dump.
 	// Range is inclusive, both ends
 	public void dumpHW(int beg, int end) {

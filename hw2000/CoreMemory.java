@@ -14,4 +14,5 @@ public interface CoreMemory {
 	public void listOut(String str);
 	void addTrap(HW2000Trap trap);
 	void removeTrap(HW2000Trap trap);
+	CharConverter cvt();
 }

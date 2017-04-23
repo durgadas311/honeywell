@@ -1,14 +1,25 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 public class CoreLoader implements Loader {
-	CoreMemory sys;
-	FrontPanel fp;
+	private HW2000 sys;
+	private FrontPanel fp;
+	private String program;
+	private String segment;
+	private String revision;
+	private int visibility;
+	private LoaderMonitorC mon;
+
 	public CoreLoader(CoreMemory sys, FrontPanel fp) {
-		this.sys = sys;
+		// TODO: fix this cast
+		this.sys = (HW2000)sys;
 		this.fp = fp;
 	}
 
 	public void begin(int adr, String prg, String seg, String rev, int vis) {
+		program = prg;
+		segment = seg;
+		revision = rev;
+		visibility = vis;
 	}
 
 	public void setCode(int adr, byte[] code) {
@@ -23,11 +34,22 @@ public class CoreLoader implements Loader {
 		}
 	}
 
-	// TODO: run? or just pause? Must setup "monitor" traps...
+	// TODO: run? or just pause?
 	public void exec(int start) {
+		mon = new LoaderMonitorC(sys, program, segment, revision, visibility);
+		sys.addTrap(mon);
+		sys.SR = start;
+		fp.doRun();
+		mon.waitReturn(0); // TODO: choose a timeout
+		fp.doStop(); // 'mon' should have already done this
+		sys.removeTrap(mon);
 	}
 
 	public void segment(String prg, String seg, String rev, int vis) {
+		program = prg;
+		segment = seg;
+		revision = rev;
+		visibility = vis;
 	}
 
 	public void end(int start) {
@@ -35,6 +57,6 @@ public class CoreLoader implements Loader {
 
 	// A public service...
 	public void listOut(String str) {
-		sys.listOut(str);
+		fp.listOut(str);
 	}
 }

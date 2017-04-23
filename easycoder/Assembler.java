@@ -413,6 +413,16 @@ public class Assembler {
 			}
 			listOut(l + line + "\n");
 		}
+		if (e >= 0x200000) { // special case for EX/XFR directives
+			// TODO: further annotate listing?
+			loader.exec(e & 0x0fffff);
+			// generate default segment...
+			if (segno > 0) {
+				++segno;
+				segm = String.format("%02d", segno);
+				loader.segment(prog, segm, this.rev, vis);
+			}
+		}
 		return e;
 	}
 
@@ -921,13 +931,9 @@ public class Assembler {
 		case 1:
 		case 2:
 			if (asmPass) {
-				loader.exec(adr);
-				// generate default segment...
-				if (segno > 0) {
-					++segno;
-					segm = String.format("%02d", segno);
-					loader.segment(prog, segm, this.rev, vis);
-				}
+				// Need to delay actual run until
+				// we complete scanOne().
+				ret = adr | 0x200000;
 			}
 			break;
 		}
