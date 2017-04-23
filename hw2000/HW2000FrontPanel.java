@@ -78,6 +78,8 @@ public class HW2000FrontPanel extends JFrame
 	boolean monitor = false;
 	boolean fortran = false;
 	boolean dumpOnHalt = false;
+	CompileFortran ftn = null;
+	AssembleEZC asm = null;
 	int currLow = 0;
 	int currHi = 0;
 
@@ -1580,16 +1582,80 @@ public class HW2000FrontPanel extends JFrame
 		}
 	}
 
-	private boolean fortranFile() {
-		File lst = null;
-		File ezc = null;
+	private void fortranFile() {
+		if (ftn != null) {
+			ftn.kill();
+			ftn = null;
+		}
 		String op = "FORTRAN IV";
 		File src = pickFile(op + " Program",
 				"f4", "FORTRAN", _last);
 		if (src == null) {
-			return false;
+			return;
 		}
 		// The rest of this should be executed from a separate thread!
+		ftn = new CompileFortran(src);
+	}
+
+	class AssembleEZC implements Runnable {
+		File src;
+		String op;
+		Thread t;
+		public AssembleEZC(File src, String op) {
+			this.src = src;
+			this.op = op;
+			t = new Thread(this);
+			t.start();
+		}
+		public void run() {
+			try {
+				boolean ok = doAsm(src, op);
+				if (op.equals("Monitor")) {
+					// run automatically?
+					// set only after running?
+					mi_mon.setEnabled(!ok);
+				}
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				warning(HW2000FrontPanel.this, op, ee.toString());
+			}
+			asm = null;
+		}
+		public void kill() {
+			try {
+				t.interrupt();
+			} catch (Exception ee) {}
+		}
+	}
+
+	class CompileFortran implements Runnable {
+		File src;
+		Thread t;
+		public CompileFortran(File src) {
+			this.src = src;
+			t = new Thread(this);
+			t.start();
+		}
+		public void run() {
+			try {
+				doFortran(src);
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				warning(HW2000FrontPanel.this, "FORTRAN", ee.toString());
+			}
+			ftn = null;
+		}
+		public void kill() {
+			try {
+				t.interrupt();
+			} catch (Exception ee) {}
+		}
+	}
+
+	private void doFortran(File src) {
+		String op = "FORTRAN IV";
+		File lst = null;
+		File ezc = null;
 		_last = src;
 		String l = src.getAbsolutePath();
 		if (l.endsWith(".f4")) {
@@ -1603,7 +1669,7 @@ public class HW2000FrontPanel extends JFrame
 				lstf = new FileOutputStream(lst);
 			} catch (Exception ee) {
 				warning(this, op, ee.toString());
-				return false;
+				return;
 			}
 			getPrinter().setOutput(lstf);
 		}
@@ -1614,7 +1680,7 @@ public class HW2000FrontPanel extends JFrame
 			cmp = (Compiler)ctor.newInstance(src);
 		} catch (Exception ee) {
 ee.printStackTrace();
-			return false;
+			return;
 		}
 		int e = cmp.compile(sys, listing);
 		if (e >= 0) {
@@ -1622,7 +1688,7 @@ ee.printStackTrace();
 		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");
-			return false;
+			return;
 		}
 		dumpOnHalt = listing && cmp.wantsDump();
 		Assembler ret = assemble(ezc, op, listing && cmp.listEasyCoder());
@@ -1639,17 +1705,24 @@ ee.printStackTrace();
 				cp.visible(true);
 			}
 		}
-		return (ret != null);
 	}
 
-	private boolean asmFile(String op) {
-		OutputStream lst = null;
+	private void asmFile(String op) {
+		if (asm != null) {
+			asm.kill();
+			asm = null;
+		}
 		File src = pickFile(op + " Program",
 				"ezc", "EasyCoder", _last);
 		if (src == null) {
-			return false;
+			return;
 		}
 		// The rest of this should be executed from a separate thread!
+		asm = new AssembleEZC(src, op);
+	}
+
+	private boolean doAsm(File src, String op) {
+		OutputStream lst = null;
 		_last = src;
 		if (listing) {
 			String l = src.getAbsolutePath();
@@ -1822,28 +1895,15 @@ ee.printStackTrace();
 
 	private void performMenu(JMenuItem mi) {
 		if (mi.getMnemonic() == KeyEvent.VK_A) {
-			// I'm tired of bugs being fatal...
 			// This should NOT be run in the event thread!
-			try {
-				asmFile("Assemble");
-			} catch (Exception ee) {
-				ee.printStackTrace();
-				warning(this, "Assemble", ee.toString());
-			}
+			asmFile("Assemble");
 		} else if (mi.getMnemonic() == KeyEvent.VK_F) {
-			// I'm tired of bugs being fatal...
 			// This should NOT be run in the event thread!
-			try {
-				fortranFile();
-			} catch (Exception ee) {
-				ee.printStackTrace();
-				warning(this, "FORTRAN", ee.toString());
-			}
+			fortranFile();
 		} else if (mi.getMnemonic() == KeyEvent.VK_M) {
 			// run automatically?
 			// set 'true' only after running?
-			monitor = asmFile("Monitor");
-			mi_mon.setEnabled(!monitor);
+			asmFile("Monitor");
 		} else if (mi.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (mi.getMnemonic() == KeyEvent.VK_C) {
