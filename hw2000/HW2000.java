@@ -643,6 +643,8 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	// This is for programs that load their own traps...
+	// right now, we have to know what those might be...
 	private void trap() {
 		SR = BAR;
 		//System.err.format("Trap %07o \"%s\"\n", SR);
@@ -650,10 +652,20 @@ public class HW2000 implements CoreMemory
 			String key = FortranRunTime.name();
 			if (!traps.containsKey(key)) {
 				// ctor must advance SR past params!
-				traps.put(key, new FortranRunTime(this));
+				addTrap(new FortranRunTime(this));
 			}
 		} else {
 			halt = true;
+		}
+	}
+
+	// May be used by other classes (e.g. CoreLoader) to
+	// enable traps (e.g. LoaderMonitorC).
+	public void addTrap(HW2000Trap trap) {
+		// Assume ctor did all necessary init...
+		String key = trap.getName();
+		if (!traps.containsKey(key)) {
+			traps.put(key, trap);
 		}
 	}
 

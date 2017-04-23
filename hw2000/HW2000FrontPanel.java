@@ -1589,6 +1589,7 @@ public class HW2000FrontPanel extends JFrame
 		if (src == null) {
 			return false;
 		}
+		// The rest of this should be executed from a separate thread!
 		_last = src;
 		String l = src.getAbsolutePath();
 		if (l.endsWith(".f4")) {
@@ -1648,6 +1649,7 @@ ee.printStackTrace();
 		if (src == null) {
 			return false;
 		}
+		// The rest of this should be executed from a separate thread!
 		_last = src;
 		if (listing) {
 			String l = src.getAbsolutePath();
@@ -1750,6 +1752,8 @@ ee.printStackTrace();
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.end();
 		} else {
+			// TODO: might try to execute from here...
+			// Need hooks back to this class...
 			e = asm.passTwo(sys, reloc, doList);
 		}
 		if (e < 0) {
@@ -1818,9 +1822,23 @@ ee.printStackTrace();
 
 	private void performMenu(JMenuItem mi) {
 		if (mi.getMnemonic() == KeyEvent.VK_A) {
-			asmFile("Assemble");
+			// I'm tired of bugs being fatal...
+			// This should NOT be run in the event thread!
+			try {
+				asmFile("Assemble");
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				warning(this, "Assemble", ee.toString());
+			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_F) {
-			fortranFile();
+			// I'm tired of bugs being fatal...
+			// This should NOT be run in the event thread!
+			try {
+				fortranFile();
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				warning(this, "FORTRAN", ee.toString());
+			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_M) {
 			// run automatically?
 			// set 'true' only after running?

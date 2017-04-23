@@ -12,4 +12,6 @@ public interface CoreMemory {
 	public void clrWord(int adr);
 	public void clrItem(int adr);
 	public void listOut(String str);
+	void addTrap(HW2000Trap trap);
+	void removeTrap(HW2000Trap trap);
 }
