@@ -2,8 +2,10 @@
 
 public class CoreLoader implements Loader {
 	CoreMemory sys;
-	public CoreLoader(CoreMemory sys) {
+	FrontPanel fp;
+	public CoreLoader(CoreMemory sys, FrontPanel fp) {
 		this.sys = sys;
+		this.fp = fp;
 	}
 
 	public void begin(int adr, String prg, String seg, String rev, int vis) {
@@ -29,5 +31,10 @@ public class CoreLoader implements Loader {
 	}
 
 	public void end(int start) {
+	}
+
+	// A public service...
+	public void listOut(String str) {
+		sys.listOut(str);
 	}
 }

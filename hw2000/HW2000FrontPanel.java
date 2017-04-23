@@ -1272,6 +1272,18 @@ public class HW2000FrontPanel extends JFrame
 		help.setVisible(true);
 	}
 
+	public void doStop() {
+		sys.bootstrap = false;
+		sys.halt = true;
+		sys.endWait();
+	}
+
+	public void doRun() {
+		// TODO: need to restore program (interrupt) state?
+		sys.halt = false;
+		endCtrlMode();
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			performMenu((JMenuItem)e.getSource());
@@ -1328,9 +1340,7 @@ public class HW2000FrontPanel extends JFrame
 				return;
 			}
 			if (a.equals("stop")) {
-				sys.bootstrap = false;
-				sys.halt = true;
-				sys.endWait();
+				doStop();
 			} else if (a.equals("inter")) {
 				getConsole().setInterrupt(sys);
 				sys.endWait();
@@ -1344,8 +1354,7 @@ public class HW2000FrontPanel extends JFrame
 						eir = HW2000CCR.EIR_EI;
 					}
 					setInterrupt(eir);
-					sys.halt = false;
-					endCtrlMode();
+					doRun();
 				} else if (a.equals("instr")) {
 					sys.singleStep = true;
 					sys.halt = false;
@@ -1827,7 +1836,7 @@ ee.printStackTrace();
 		} else {
 			// TODO: might try to execute from here...
 			// Need hooks back to this class...
-			e = asm.passTwo(sys, reloc, doList);
+			e = asm.passTwo(new CoreLoader(sys, this), reloc, doList);
 		}
 		if (e < 0) {
 			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");

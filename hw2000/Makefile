@@ -8,7 +8,6 @@ F4CLASSES =	FortranLibrary.class
 EZCLASSES =	Assembler.class \
 		Loader.class \
 		BRTLoader.class \
-		CoreLoader.class \
 		CardLoader.class \
 		TapeLoader.class
 

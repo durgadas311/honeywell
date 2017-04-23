@@ -3,6 +3,7 @@ CLASSES = $(subst .java,.class,$(JAVAS))
 
 CPCLASSES =     CharConverter.class
 HWCLASSES =     CoreMemory.class \
+		CoreLoader.class \
 		InstrDecode.class
 
 EXTCLASSES = $(CPCLASSES) $(HWCLASSES)

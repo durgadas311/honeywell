@@ -143,7 +143,7 @@ public class Assembler {
 	}
 
 	// 'sys' provides printer output, 'loader' provides destination for code.
-	public int passTwo(CoreMemory sys, int reloc, boolean list) {
+	public int passTwo(CoreLoader ldr, int reloc, boolean list) {
 		this.reloc = reloc;
 		try {
 			in = new BufferedReader(new FileReader(inFile));
@@ -152,8 +152,7 @@ public class Assembler {
 			ee.printStackTrace();
 			return -1;
 		}
-		this.sys = sys;
-		loader = new CoreLoader(sys);
+		loader = ldr;
 		listing = list;
 		asmPass = true;
 		int ret = 0;
@@ -189,6 +188,7 @@ public class Assembler {
 			ee.printStackTrace();
 			return -1;
 		}
+		// TODO: clean this up
 		if (list instanceof OutputStream) {
 			lst = (OutputStream)list;
 			listing = true;
@@ -247,6 +247,8 @@ public class Assembler {
 			}
 		} else if (sys != null) {
 			sys.listOut(str);
+		} else if (loader instanceof CoreLoader) {
+			((CoreLoader)loader).listOut(str);
 		}
 	}
 

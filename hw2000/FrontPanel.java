@@ -35,4 +35,6 @@ public interface FrontPanel {
 	public Container getContentPane();
 
 	public void listOut(String str);
+	public void doRun(); // Same as user clicking RUN
+	public void doStop(); // Same as user clicking STOP
 }
