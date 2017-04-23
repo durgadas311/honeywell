@@ -623,7 +623,7 @@ public class Assembler {
 			} else if (opd.matches("#[0-9]+A.*")) {
 				e = opd.indexOf('A', 1);
 				base = 0; // characters
-			} else {
+			} else if (!opd.matches("#[0-9]+")) {
 				return null;
 			}
 			int n;
