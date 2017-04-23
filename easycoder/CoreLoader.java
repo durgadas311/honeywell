@@ -21,6 +21,13 @@ public class CoreLoader implements Loader {
 		}
 	}
 
+	// TODO: run? or just pause? Must setup "monitor" traps...
+	public void exec(int start) {
+	}
+
+	public void segment(String prg, String seg, String rev, int vis) {
+	}
+
 	public void end(int start) {
 	}
 }

@@ -9,6 +9,7 @@ public abstract class BRTLoader implements Loader {
 	private int seq;
 	private byte[] record;
 	protected CharConverter cvt;
+	private boolean dirty = false;
 
 	public BRTLoader(CharConverter cvt, int reclen) {
 		this.cvt = cvt;
@@ -37,10 +38,12 @@ public abstract class BRTLoader implements Loader {
 			record[0] |= (byte)04;
 		}
 		writeRec(record, reccnt);
+		dirty = false;
 	}
 
 	// Data always follows...
 	private void mkSpace(int len) {
+		dirty = true;
 		if (reccnt + len >= reclen) {
 			finRec(false);
 			initRec();
@@ -103,7 +106,9 @@ public abstract class BRTLoader implements Loader {
 
 	public void begin(int adr, String prg, String seg, String rev, int vis) {
 		initSeg(rev, prg, seg, vis);
-		setAdr(adr);
+		// setAdr(adr); // let first setCode do this...
+		dist = -1;
+		dirty = false;
 	}
 
 	private void kludge(int adr, byte[] code) {
@@ -171,6 +176,18 @@ public abstract class BRTLoader implements Loader {
 		putAdr(start);
 		putAdr(end);
 		record[reccnt++] = fill;
+	}
+
+	public void exec(int start) {
+		end(start);
+	}
+
+	public void segment(String prg, String seg, String rev, int vis) {
+		if (dirty) {
+			System.err.format("WARNING: SEG after code\n");
+		}
+		// only 'seg' should be different...
+		initSeg(rev, prg, seg, vis);
 	}
 
 	public void end(int start) {

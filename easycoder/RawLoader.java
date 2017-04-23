@@ -101,10 +101,21 @@ public class RawLoader implements Loader {
 		curadr += code.length;
 	}
 
+	// TODO: is this correct?
 	public void clear(int start, int end, byte fill) {
 		for (int y = start; y <= end; ++y) {
 			oneChar(fill);
 		}
+	}
+
+	public void exec(int start) {
+		// really doesn't apply. should be error.
+		System.err.format("WARNING: EX/XFR with RawLoader ignored\n");
+	}
+
+	public void segment(String prg, String seg, String rev, int vis) {
+		// really doesn't apply. should be error.
+		System.err.format("WARNING: SEG with RawLoader ignored\n");
 	}
 
 	public void end(int start) {

@@ -24,6 +24,7 @@ public class Assembler {
 	boolean asmPass;
 	String prog;
 	String segm;
+	int segno;
 	String rev;
 	int vis;
 	int endAdr;
@@ -54,6 +55,7 @@ public class Assembler {
 	public Assembler(File input) {
 		prog = null; // or default to file name?
 		segm = "01";
+		segno = 1;
 		rev = "000";
 		vis = 0;	// TODO: needs to be non-zero?
 		inFile = input;
@@ -158,6 +160,8 @@ public class Assembler {
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
+		segm = "01"; // reset from pass one...
+		segno = 1;
 		loader.begin(minAdr, prog, segm, rev, vis);
 		while (!end && (ret = scanOne()) >= 0) {
 		}
@@ -198,6 +202,8 @@ public class Assembler {
 		currLoc = 0;
 		lineNo = 0;
 		end = false;
+		segm = "01"; // reset from pass one...
+		segno = 1;
 		loader.begin(minAdr, prog, segm, rev, vis);
 		while (!end && (ret = scanOne()) >= 0) {
 		}
@@ -838,11 +844,15 @@ public class Assembler {
 			return 0;
 		} else if (opc.equals("SEG")) {
 			segm = String.format("%-2.2s", opd);
+			segno = -1;
+			if (asmPass) {
+				loader.segment(prog, segm, this.rev, vis);
+			}
 			return 0;
 		} else if (opc.equals("EX")) {
-			return noImpl(opc);
+			return processEnd(opd, 1);
 		} else if (opc.equals("XFR")) {
-			return noImpl(opc);
+			return processEnd(opd, 2);
 		} else if (opc.equals("ORG")) {
 			return processOrg(loc, opd, rev);
 		} else if (opc.equals("MORG")) {
@@ -889,15 +899,37 @@ public class Assembler {
 		} else if (opc.equals("CLEAR")) {
 			return processClear(opd);
 		} else if (opc.equals("END")) {
-			int ret = 0;
-			if (opd.length() > 0) {
-				endAdr = parseAdr(opd, true);
-				ret = endAdr | 0x100000;
-			}
-			end = true;
-			return ret;
+			return processEnd(opd, 0);
 		}
 		return noImpl(opc);
+	}
+
+	private int processEnd(String opd, int type) {
+		int ret = 0;
+		int adr = 0;
+		if (opd.length() > 0) {
+			adr = parseAdr(opd, true);
+			ret = adr | 0x100000;
+		}
+		switch (type) {
+		case 0:
+			endAdr = adr;
+			end = true;
+			break;
+		case 1:
+		case 2:
+			if (asmPass) {
+				loader.exec(adr);
+				// generate default segment...
+				if (segno > 0) {
+					++segno;
+					segm = String.format("%02d", segno);
+					loader.segment(prog, segm, this.rev, vis);
+				}
+			}
+			break;
+		}
+		return ret;
 	}
 
 	private void setMarks(byte[] bb, char mk, boolean defWM) {

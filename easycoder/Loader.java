@@ -4,5 +4,7 @@ public interface Loader {
 	void begin(int adr, String prg, String seg, String rev, int vis);
 	void setCode(int adr, byte[] code);
 	void clear(int start, int end, byte fill);
-	void end(int start);
+	void exec(int start);	// for EX, XFR directives
+	void segment(String prg, String seg, String rev, int vis);
+	void end(int start);	// for END directive
 }
