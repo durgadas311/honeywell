@@ -17,6 +17,7 @@ public class Assembler {
 	int lineNo;
 	int adrMode;
 	int adrMask;
+	int rep = 0;
 	private Vector<String> errs;
 	private Map<String,Integer> symTab;
 	byte[] code;
@@ -371,6 +372,7 @@ public class Assembler {
 		}
 		byte op = idc.getOp(opc);
 		if (op != InstrDecode.OP_ILL) {
+			rep = 0;
 			e = processMachCode(op, mrk, loc, rev, opd);
 		} else {
 			e = processAsmDir(opc, mrk, loc, rev, opd);
@@ -385,7 +387,13 @@ public class Assembler {
 			return e;
 		}
 		if (code != null) {
-			loader.setCode(reloc + orgLoc, code);
+			// TODO: disallow any number of interviening statements?
+			int repadd = 0;
+			do {
+				loader.setCode(reloc + orgLoc + repadd, code);
+				repadd += code.length;
+			} while (rep > 0 && --rep > 0);
+			rep = 0;
 		} else if (clear != null) {
 			loader.clear(clear.start, clear.end, (byte)clear.fill);
 			clear = null;
@@ -630,6 +638,7 @@ public class Assembler {
 			if (opd.matches("#[0-9]+B[-+0-9]+")) {
 				e = opd.indexOf('B', 1);
 			} else if (opd.matches("#[0-9]+C[0-7]+")) {
+				// Must left-justify digits in final value
 				e = opd.indexOf('C', 1);
 				base = 8;
 			} else if (opd.matches("#[0-9]+A.*")) {
@@ -664,6 +673,18 @@ public class Assembler {
 			}
 			// assume it will fit in a long...
 			long l = Long.valueOf(opd.substring(e), base);
+			if (base == 8 && l != 0) {
+				// Must left-justify digits in final value
+				int nn = opd.substring(e).length();
+				if ((nn & 1) != 0) {
+					l <<= 3;
+					++nn;
+				}
+				while (nn < n * 2) {
+					l <<= 6;
+					nn += 2;
+				}
+			}
 			for (int y = n - 1; y >= 0; --y) {
 				bb[y] = (byte)(l & 077);
 				l >>= 6;
@@ -838,6 +859,7 @@ public class Assembler {
 		} else if (opc.equals("DC")) {
 			return processDefCon(mrk, loc, rev, opd, false);
 		} else if (opc.startsWith("RESV")) {
+			rep = 0;
 			int fill = -1;
 			if (opc.indexOf(',') == 4) {
 				if (opc.length() < 6) {
@@ -852,9 +874,11 @@ public class Assembler {
 		} else if (opc.equals("DA")) {
 			return noImpl(opc);
 		} else if (opc.equals("PROG")) {
+			rep = 0;
 			prog = String.format("%-6.6s", opd);
 			return 0;
 		} else if (opc.equals("SEG")) {
+			rep = 0;
 			segm = String.format("%-2.2s", opd);
 			segno = -1;
 			if (asmPass) {
@@ -873,6 +897,7 @@ public class Assembler {
 			// since we don't gather literals, this can be ORG
 			return processOrg(loc, opd, rev);
 		} else if (opc.equals("ADMODE")) {
+			rep = 0;
 			int m = Integer.valueOf(opd);
 			switch(m) {
 			case 2:
@@ -899,7 +924,7 @@ public class Assembler {
 		} else if (opc.equals("SFX")) {
 			return noImpl(opc);
 		} else if (opc.equals("REP")) {
-			return noImpl(opc);
+			return processRep(opd);
 		} else if (opc.equals("GEN")) {
 			return noImpl(opc);
 		} else if (opc.equals("SETLIN")) {
@@ -917,6 +942,7 @@ public class Assembler {
 	}
 
 	private int processEnd(String opd, int type) {
+		rep = 0;
 		int ret = 0;
 		int adr = 0;
 		if (opd.length() > 0) {
@@ -1043,10 +1069,14 @@ public class Assembler {
 		setMarks(code, mrk, mark);
 		currLoc += len;
 		setLabel(loc, !rev, len);
+		if (rep > 0) {
+			currLoc += (rep - 1) * len;
+		}
 		return len;
 	}
 
 	private int processResv(char mrk, String loc, boolean rev, String opd, int fill) {
+		rep = 0;
 		setLabel(loc, rev, 0);
 		int len = Integer.valueOf(opd);
 		int ret = currLoc | 0x100000;
@@ -1062,6 +1092,7 @@ public class Assembler {
 
 	private int processOrg(String loc, String opd, boolean rev) {
 		int adr;
+		rep = 0;
 		if (Character.isDigit(opd.charAt(0))) {
 			adr = Integer.valueOf(opd);
 		} else if (symTab.containsKey(opd)) {
@@ -1076,8 +1107,21 @@ public class Assembler {
 		return 0x100000 | adr;
 	}
 
+	private int processRep(String opd) {
+		rep = -1;
+		try {
+			rep = Integer.valueOf(opd);
+		} catch (Exception ee) {}
+		if (rep <= 0) {
+			errsAdd("Invalid REP count " + opd);
+			return -1;
+		}
+		return 0;
+	}
+
 	private int processMorg(String loc, String opd, boolean rev) {
 		int adr;
+		rep = 0;
 		adr = Integer.valueOf(opd);
 		if (((adr - 1) & adr) != 0) {
 			errsAdd("MORG not power-of-two");
@@ -1091,6 +1135,7 @@ public class Assembler {
 	}
 
 	private int processEqu(String loc, String opd) {
+		rep = 0;
 		int adr = parseAdr(opd, true);
 		symTab.put(loc, adr);
 		int ret = adr | 0x100000;
@@ -1113,10 +1158,15 @@ public class Assembler {
 		}
 		currLoc += len;
 		setLabel(loc, !rev, len);
+		// TODO: does REP apply?
+		if (rep > 0) {
+			currLoc += (rep - 1) * len;
+		}
 		return adrMode;
 	}
 
 	private int processRange(String opd) {
+		rep = 0;
 		String[] opds = opd.split(",");
 		if (opds.length != 2 || opds[0].length() == 0 || opds[1].length() == 0) {
 			errsAdd("RANGE requires 2 parameters");
@@ -1134,6 +1184,7 @@ public class Assembler {
 	}
 
 	private int processClear(String opd) {
+		rep = 0;
 		String[] opds = opd.split(",");
 		if (opds.length < 2 || opds[0].length() == 0 || opds[1].length() == 0) {
 			errsAdd("CLEAR requires 2 or 3 parameters");
@@ -1163,6 +1214,7 @@ public class Assembler {
 	}
 
 	private int noImpl(String op) {
+		rep = 0;
 		errsAdd(op + " not supported");
 		return -1;
 	}
