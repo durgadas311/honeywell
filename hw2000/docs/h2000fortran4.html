@@ -27,9 +27,7 @@ Here is the TODO list:
 <P><UL>
 <LI>Statement functions
 <LI>COMMON
-<LI>DATA
 <LI>Auto conversion of data types (promote INTEGER to REAL)
-<LI>More complex/efficient implied DO loops
 <LI>COMPLEX (parsed but not implemented)
 <LI>EQUIVALENCE
 <LI>EXTERNAL
@@ -38,8 +36,10 @@ Here is the TODO list:
 
 <P>REAL data types are implemented according to the specifications
 of the H200/H2000 Scientific Units, even though currently no native
-floating point instructions are currently used. REALs are then stored in
-a 48-bit (8 character) memory word.
+floating point instructions are used (except for comparisons).
+REALs are then stored in a 48-bit (8 character) memory word.
+Changing precision of REAL is not allowed,
+and DOUBLE PRECISION is actually the same as REAL.
 
 <P>INTEGER data types default to 3-character precision, however the
 *JOBID option "I" may be used to change that. Minimum is the address mode
