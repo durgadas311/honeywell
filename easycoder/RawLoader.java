@@ -108,6 +108,10 @@ public class RawLoader implements Loader {
 		}
 	}
 
+	public void range(int start, int end) {
+		// TODO: nothing for us?
+	}
+
 	public void exec(int start) {
 		// really doesn't apply. should be error.
 		System.err.format("WARNING: EX/XFR with RawLoader ignored\n");

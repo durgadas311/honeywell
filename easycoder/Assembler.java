@@ -163,6 +163,7 @@ public class Assembler {
 		segm = "01"; // reset from pass one...
 		segno = 1;
 		loader.begin(minAdr, prog, segm, rev, vis);
+		loader.range(minAdr, maxAdr); // passOne set these...
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		loader.end(endAdr);
@@ -206,6 +207,7 @@ public class Assembler {
 		segm = "01"; // reset from pass one...
 		segno = 1;
 		loader.begin(minAdr, prog, segm, rev, vis);
+		loader.range(minAdr, maxAdr); // passOne set these...
 		while (!end && (ret = scanOne()) >= 0) {
 		}
 		loader.end(endAdr);

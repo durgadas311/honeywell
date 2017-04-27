@@ -178,6 +178,11 @@ public abstract class BRTLoader implements Loader {
 		record[reccnt++] = fill;
 	}
 
+	public void range(int start, int end) {
+		setAdr(start);
+		setAdr(end);
+	}
+
 	public void exec(int start) {
 		end(start);
 	}

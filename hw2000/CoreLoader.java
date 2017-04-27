@@ -34,6 +34,10 @@ public class CoreLoader implements Loader {
 		}
 	}
 
+	public void range(int start, int end) {
+		// Nothing for us. Assembler already tracks.
+	}
+
 	// TODO: run? or just pause?
 	public void exec(int start) {
 		mon = new LoaderMonitorC(sys, program, segment, revision, visibility);
