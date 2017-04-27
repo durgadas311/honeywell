@@ -26,9 +26,10 @@ does not support use as general instruction operands</TD></TR>
 <TR><TD>SKIP</TD><TD>(ignored)</TD></TR>
 <TR><TD>SETLIN</TD><TD>(ignored)</TD></TR>
 <TR><TD>END</TD><TD></TD></TR>
-<TR><TD>EX</TD><TD></TD></TR>
-<TR><TD>XFR</TD><TD></TD></TR>
-<TR><TD>RANGE</TD><TD>Unclear exactly how to store this in output</TD></TR>
+<TR><TD>EX</TD><TD>Code must "B 130" to resume assembly</TD></TR>
+<TR><TD>XFR</TD><TD>Code must "B 130" to resume assembly</TD></TR>
+<TR><TD>RANGE</TD><TD>Unclear exactly how to store this in output,
+perhaps a pair of "set address" control codes in BRT.</TD></TR>
 <TR><TD>CLEAR</TD><TD>Only in BRT format output or immediate execution</TD></TR>
 </TABLE></UL>
 
