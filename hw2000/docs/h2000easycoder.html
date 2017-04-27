@@ -18,7 +18,7 @@ but not all, of the features described for OS/2000.
 <TR><TD>LITORG</TD><TD>Same as ORG. Literals not supported.</TD></TR>
 <TR><TD>DCW</TD><TD></TD></TR>
 <TR><TD>DC</TD><TD></TD></TR>
-<TR><TD>RESV</TD><TD>also supports RESV,fill form</TD></TR>
+<TR><TD>RESV</TD><TD>also supports RESV,fill form using CLEAR</TD></TR>
 <TR><TD>DSA</TD><TD>supports only a single address,
 does not support use as general instruction operands</TD></TR>
 <TR><TD>EQU</TD><TD></TD></TR>
@@ -26,8 +26,8 @@ does not support use as general instruction operands</TD></TR>
 <TR><TD>SKIP</TD><TD>(ignored)</TD></TR>
 <TR><TD>SETLIN</TD><TD>(ignored)</TD></TR>
 <TR><TD>END</TD><TD></TD></TR>
-<TR><TD>EX</TD><TD>Code must "B 130" to resume assembly</TD></TR>
-<TR><TD>XFR</TD><TD>Code must "B 130" to resume assembly</TD></TR>
+<TR><TD>EX</TD><TD>Code must "B 130" to resume assembly/loading</TD></TR>
+<TR><TD>XFR</TD><TD>Code must "B 130" to resume assembly/loading</TD></TR>
 <TR><TD>RANGE</TD><TD>Unclear exactly how to store this in output,
 perhaps a pair of "set address" control codes in BRT.</TD></TR>
 <TR><TD>CLEAR</TD><TD>Only in BRT format output or immediate execution</TD></TR>

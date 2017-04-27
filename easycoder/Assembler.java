@@ -370,6 +370,7 @@ public class Assembler {
 			// CAUTION: trim() removes more than blanks!
 			opd = opd.substring(0, e);
 		}
+		clear = null;
 		byte op = idc.getOp(opc);
 		if (op != InstrDecode.OP_ILL) {
 			rep = 0;
@@ -1080,10 +1081,11 @@ public class Assembler {
 		setLabel(loc, rev, 0);
 		int len = Integer.valueOf(opd);
 		int ret = currLoc | 0x100000;
-		if (asmPass && fill >= 0) {
-			// could this be excessively large?
-			code = new byte[len];
-			Arrays.fill(code, (byte)fill);
+		if (fill >= 0) {
+			clear = new Clear();
+			clear.start = currLoc;
+			clear.end = currLoc + len - 1;
+			clear.fill = fill;
 		}
 		currLoc += len;
 		setLabel(loc, !rev, len);
@@ -1203,7 +1205,7 @@ public class Assembler {
 			c = cvt.asciiToHw(ch);
 		}
 		if (a < 0 || b < 0) {
-			errsAdd("RANGE bad address");
+			errsAdd("CLEAR bad address");
 			return -1;
 		}
 		clear = new Clear();
