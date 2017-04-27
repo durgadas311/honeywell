@@ -18,6 +18,7 @@ public class Assembler {
 	int adrMode;
 	int adrMask;
 	int rep = 0;
+	int repSet = 0;
 	private Vector<String> errs;
 	private Map<String,Integer> symTab;
 	byte[] code;
@@ -374,8 +375,8 @@ public class Assembler {
 		}
 		clear = null;
 		byte op = idc.getOp(opc);
+		repSet = 0;
 		if (op != InstrDecode.OP_ILL) {
-			rep = 0;
 			e = processMachCode(op, mrk, loc, rev, opd);
 		} else {
 			e = processAsmDir(opc, mrk, loc, rev, opd);
@@ -387,6 +388,7 @@ public class Assembler {
 			if (currLoc > maxAdr) {
 				maxAdr = currLoc;
 			}
+			rep = repSet;
 			return e;
 		}
 		if (code != null) {
@@ -396,11 +398,11 @@ public class Assembler {
 				loader.setCode(reloc + orgLoc + repadd, code);
 				repadd += code.length;
 			} while (rep > 0 && --rep > 0);
-			rep = 0;
 		} else if (clear != null) {
 			loader.clear(clear.start, clear.end, (byte)clear.fill);
 			clear = null;
 		}
+		rep = repSet;
 		if (listing) {
 			String l = "";
 			if (code != null && code.length > 0) {
@@ -1112,11 +1114,11 @@ public class Assembler {
 	}
 
 	private int processRep(String opd) {
-		rep = -1;
+		repSet = -1;
 		try {
-			rep = Integer.valueOf(opd);
+			repSet = Integer.valueOf(opd);
 		} catch (Exception ee) {}
-		if (rep <= 0) {
+		if (repSet <= 0) {
 			errsAdd("Invalid REP count " + opd);
 			return -1;
 		}

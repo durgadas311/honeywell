@@ -58,8 +58,19 @@ public class DataStatement extends FortranItem {
 			int idx = 0;
 			String fc = "0";
 			int m = 0;
-			while (x < y || (m > 0 && idx < list.size())) {
-				FortranOperand fo = pars.parseVariable(list.get(idx++));
+			FortranArray fa = null;
+			int ix = 0;
+			while ((x < y || m > 0) && (idx < list.size() || fa != null)) {
+				FortranOperand fo;
+				if (fa != null) {
+					fo = fa;
+				} else {
+					fo = pars.parseVariable(list.get(idx++));
+					if (fo instanceof FortranArray) {
+						fa = (FortranArray)fo;
+						ix = 0;
+					}
+				}
 				if (m <= 0) {
 					int z = pars.matchingComma(stmt, x);
 					if (z < 0 || z > y) {
@@ -75,7 +86,12 @@ public class DataStatement extends FortranItem {
 					}
 				}
 				// TODO: fix this ugliness
-				if (fo instanceof FortranArrayRef) {
+				if (fo instanceof FortranArray) {
+					fa.setValue(ix++, fc);
+					if (ix >= fa.size()) {
+						fa = null;
+					}
+				} else if (fo instanceof FortranArrayRef) {
 					((FortranArrayRef)fo).setValue(fc);
 				} else {
 					((FortranVariable)fo).setValue(fc);

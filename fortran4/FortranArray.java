@@ -40,6 +40,7 @@ public class FortranArray extends FortranVariable {
 	}
 
 	// For Arrays only:
+	public int size() { return size; }
 	public String ref() { return ind; }
 	public int numDims() { return dims.length; }
 	public int[] getDims() { return dims; }
@@ -74,15 +75,9 @@ public class FortranArray extends FortranVariable {
 		xvr[idx] = val;
 		xvx[idx] = img;
 	}
-	public void setValue(int adr, String val) {
-		// compute address of element (1,1,1,...)
-		int i = sizeof();
-		int off = i;
-		for (int x = dims.length - 2; x >= 0; --x) {
-			off = (off * dims[x]) + i;
-		}
-		off -= i - 1;
-		int idx = (adr - off) / i;
+
+	// 'idx' is zero-based INDEX to array
+	public void setValue(int idx, String val) {
 		// Parse 'val' according to type...
 		switch (type) {
 		case INTEGER:
@@ -153,15 +148,17 @@ public class FortranArray extends FortranVariable {
 		}
 	}
 
+	// Returns zero-based INDEX of element - passed to setValue()...
 	public int subscriptValue(String[] dims) {
 		int ex = 0;
 		for (int x = dims.length - 1; x > 0; --x) {
-			ex = getDim(x - 1) * (ex + Integer.valueOf(dims[x]));
+			ex = getDim(x - 1) * (ex + Integer.valueOf(dims[x]) - 1);
 		}
-		ex = sizeof() * (ex + Integer.valueOf(dims[0]));
+		ex = (ex + Integer.valueOf(dims[0]) - 1);
 		return ex;
 	}
 
+	// Returns one-based ADDRESS of element - used by genCode in other classes
 	public String subscriptExpr(String[] dims) {
 		// TODO: if FortranParameter, call reference()...
 		// TODO: optimize constants? may not be efficient if

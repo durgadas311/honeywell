@@ -4,11 +4,12 @@ import java.io.*;
 
 public class FortranArrayRef extends FortranOperation {
 	private FortranExpr adr;
-	private int iadr;
+	private int idx;
 	private FortranArray ary;
 	private String name;
 	private FortranOperand tmp;
 
+	// For use by code-generating statements
 	public FortranArrayRef(FortranArray a, FortranExpr x) {
 		super(a.type(), a.precision());
 		adr = x;
@@ -16,11 +17,12 @@ public class FortranArrayRef extends FortranOperation {
 		name = "XXX"; // TODO: fix this - if needed
 	}
 
+	// For use by non-code-generating statements (DATA)
 	public FortranArrayRef(FortranArray a, int x) {
 		super(a.type(), a.precision());
 		adr = null;
 		ary = a;
-		iadr = x;
+		idx = x;
 		name = "XXX"; // TODO: fix this - if needed
 	}
 
@@ -28,11 +30,11 @@ public class FortranArrayRef extends FortranOperation {
 	public int kind() { return ARRAYREF; }
 
 	public void setValue(String val) {
-		if (adr != null) {
-			int idx = adr.computeInt();
+		if (adr == null) {
 			ary.setValue(idx, val);
 		} else {
-			ary.setValue(iadr, val);
+			System.err.format("FortranArrayRef.setValue() only supported " +
+					"for constant subscripts\n");
 		}
 	}
 
