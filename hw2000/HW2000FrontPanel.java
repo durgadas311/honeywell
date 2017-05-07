@@ -13,6 +13,7 @@ public class HW2000FrontPanel extends JFrame
 	HW2000 sys;
 
 	Font bigFont;
+	Font medFont;
 	Font smallFont;
 
 	public static final Color btnWhiteOff = new Color(190, 190, 180);
@@ -51,6 +52,7 @@ public class HW2000FrontPanel extends JFrame
 	LightedButton am2;
 	LightedButton am3;
 	LightedButton am4;
+	LightedButton type;
 	JLabel eintr;
 	JLabel iintr;
 	JLabel pgm;
@@ -104,9 +106,154 @@ public class HW2000FrontPanel extends JFrame
 
 		getContentPane().setBackground(Color.black);
 		bigFont = new Font("Sans-Serif", Font.PLAIN, 40);
+		medFont = new Font("Sans-Serif", Font.PLAIN, 20);
 		smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
+
+		// TODO: different for 220-3 console...
+		if (true) {
+			fullControlPanel();
+		} else {
+			partControlPanel();
+		}
+
+		//---------------------------------------------------------
+		JMenuBar mb = new JMenuBar();
+		JMenu mu = new JMenu("File");
+		JMenuItem mi;
+		fortran = false;
+		try {
+			Class.forName("Fortran4");
+			fortran = true;
+		} catch (Exception ee) { }
+		if (fortran) {
+			mi = new JMenuItem("FORTRAN", KeyEvent.VK_F);
+			mi.addActionListener(this);
+			mu.add(mi);
+		}
+		mi = new JMenuItem("Assemble", KeyEvent.VK_A);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Monitor", KeyEvent.VK_M);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi_mon = mi;
+		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		mu = new JMenu("I/O");
+		mi = new JMenuItem("Console", KeyEvent.VK_C);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("LinePrinter", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("MagTape", KeyEvent.VK_G);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("PunchCard", KeyEvent.VK_H);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Disks", KeyEvent.VK_K);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		mu = new JMenu("Debug");
+		mi = new JMenuItem("Trace", KeyEvent.VK_T);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Trace Full", KeyEvent.VK_L);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Trace Off", KeyEvent.VK_O);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Dump", KeyEvent.VK_D);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Dump Full", KeyEvent.VK_N);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		mu = new JMenu("Help");
+		mi = new JMenuItem("About", KeyEvent.VK_I);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Show Help", KeyEvent.VK_E);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		setJMenuBar(mb);
+
+		java.net.URL url = this.getClass().getResource("docs/hw2000.html");
+		help = new GenericHelp(getTitle() + " Help", url);
+
+		// These always exist...
+		run.setToolTipText("Run");
+		stop.setToolTipText("Stop");
+		central.setToolTipText("System Clear");
+		init.setToolTipText("Initialize");
+		inter.setToolTipText("Interrupt");
+		// Until someone else asks for it, we are the listener...
+		run.addActionListener(this);
+		stop.addActionListener(this);
+		central.addActionListener(this);
+		init.addActionListener(this);
+		init.addChangeListener(this);
+		inter.addActionListener(this);
+		am2.addActionListener(this);
+		am3.addActionListener(this);
+		am4.addActionListener(this);
+
+		if (boot != null) {
+			boot.setToolTipText("Bootstrap");
+			boot.addActionListener(this);
+		}
+		if (instr != null) {
+			instr.setToolTipText("Instruct");
+			instr.addActionListener(this);
+		}
+		if (type != null) {
+			type.setToolTipText("Type");
+			// TODO: need hold/release not click...
+			type.addActionListener(this);
+		}
+
+		// Dialog for Dump Full / Trace Full
+		// for some reason, TAB doesn't traverse fields, even if setFocusTraversalKeysEnabled
+		dump_pn = new JPanel();
+		dump_pn.setLayout(new BoxLayout(dump_pn, BoxLayout.Y_AXIS));
+		dump_btns = new Object[2];
+		dump_btns[OPTION_YES] = "Dump";
+		dump_btns[OPTION_CANCEL] = "Cancel";
+		dump_lo = new JTextArea();
+		dump_lo.setPreferredSize(new Dimension(200, 20));
+		dump_lo_pn = new JPanel();
+		dump_lo_pn.add(new JLabel("Low Adr:"));
+		dump_lo_pn.add(dump_lo);
+		dump_hi = new JTextArea();
+		dump_hi.setPreferredSize(new Dimension(200, 20));
+		dump_hi_pn = new JPanel();
+		dump_hi_pn.add(new JLabel("High Adr:"));
+		dump_hi_pn.add(dump_hi);
+		dump_pn.add(dump_lo_pn);
+		dump_pn.add(dump_hi_pn);
+
+		setContents(0);
+		setAddress(0);
+		setControl(0);
+		setSense(0);
+
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		pack();
+		setVisible(true);
+		Thread thrd = new Thread(this);
+		thrd.start();
+	}
+
+	private void fullControlPanel() {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.fill = GridBagConstraints.NONE;
 		gc.gridx = 0;
@@ -537,130 +684,540 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		add(rpn);
+	}
 
-		//---------------------------------------------------------
-		JMenuBar mb = new JMenuBar();
-		JMenu mu = new JMenu("File");
-		JMenuItem mi;
-		fortran = false;
-		try {
-			Class.forName("Fortran4");
-			fortran = true;
-		} catch (Exception ee) { }
-		if (fortran) {
-			mi = new JMenuItem("FORTRAN", KeyEvent.VK_F);
-			mi.addActionListener(this);
-			mu.add(mi);
-		}
-		mi = new JMenuItem("Assemble", KeyEvent.VK_A);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Monitor", KeyEvent.VK_M);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi_mon = mi;
-		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mb.add(mu);
-		mu = new JMenu("I/O");
-		mi = new JMenuItem("Console", KeyEvent.VK_C);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("LinePrinter", KeyEvent.VK_P);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("MagTape", KeyEvent.VK_G);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("PunchCard", KeyEvent.VK_H);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Disks", KeyEvent.VK_K);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mb.add(mu);
-		mu = new JMenu("Debug");
-		mi = new JMenuItem("Trace", KeyEvent.VK_T);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Trace Full", KeyEvent.VK_L);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Trace Off", KeyEvent.VK_O);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Dump", KeyEvent.VK_D);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Dump Full", KeyEvent.VK_N);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mb.add(mu);
-		mu = new JMenu("Help");
-		mi = new JMenuItem("About", KeyEvent.VK_I);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = new JMenuItem("Show Help", KeyEvent.VK_E);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mb.add(mu);
-		setJMenuBar(mb);
+	private void partControlPanel() {
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.NORTH;
 
-		java.net.URL url = this.getClass().getResource("docs/hw2000.html");
-		help = new GenericHelp(getTitle() + " Help", url);
+		gbx = 7; // full-width of left panel, in GridBag cells/units
+		JPanel lpn = new JPanel();
+		lpn.setOpaque(false);
+		GridBagLayout gb = new GridBagLayout();
+		lpn.setLayout(gb);
 
-		run.setToolTipText("Run");
-		stop.setToolTipText("Stop");
-		instr.setToolTipText("Instruct");
-		central.setToolTipText("System Clear");
-		init.setToolTipText("Initialize");
-		boot.setToolTipText("Bootstrap");
-		inter.setToolTipText("Interrupt");
+		sense = new LightedButton[8];
 
-		// Until someone else asks for it...
-		run.addActionListener(this);
-		stop.addActionListener(this);
-		instr.addActionListener(this);
-		central.addActionListener(this);
-		init.addActionListener(this);
-		init.addChangeListener(this);
-		boot.addActionListener(this);
-		inter.addActionListener(this);
-		am2.addActionListener(this);
-		am3.addActionListener(this);
-		am4.addActionListener(this);
+		JPanel pn = new JPanel();
+		pn.setPreferredSize(new Dimension(40,80));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.gridwidth = gbx;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
 
-		// Dialog for Dump Full / Trace Full
-		// for some reason, TAB doesn't traverse fields, even if setFocusTraversalKeysEnabled
-		dump_pn = new JPanel();
-		dump_pn.setLayout(new BoxLayout(dump_pn, BoxLayout.Y_AXIS));
-		dump_btns = new Object[2];
-		dump_btns[OPTION_YES] = "Dump";
-		dump_btns[OPTION_CANCEL] = "Cancel";
-		dump_lo = new JTextArea();
-		dump_lo.setPreferredSize(new Dimension(200, 20));
-		dump_lo_pn = new JPanel();
-		dump_lo_pn.add(new JLabel("Low Adr:"));
-		dump_lo_pn.add(dump_lo);
-		dump_hi = new JTextArea();
-		dump_hi.setPreferredSize(new Dimension(200, 20));
-		dump_hi_pn = new JPanel();
-		dump_hi_pn.add(new JLabel("High Adr:"));
-		dump_hi_pn.add(dump_hi);
-		dump_pn.add(dump_lo_pn);
-		dump_pn.add(dump_hi_pn);
+		LightedButton btn;
+		ImageIcon icn;
 
-		setContents(0);
-		setAddress(0);
-		setControl(0);
-		setSense(0);
+		gc.gridwidth = 1;
+		gc.gridy = 1;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
 
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		pack();
-		setVisible(true);
-		Thread thrd = new Thread(this);
-		thrd.start();
+		icn = new ImageIcon(getClass().getResource("icons/fp_type.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 1;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		type = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 2;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_central.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 3;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		central = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 4;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_inter.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 5;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		inter = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 6;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		gc.gridy = 2;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 20));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridwidth = gbx;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+		gc.gridwidth = 1;
+
+		gc.gridy = 3;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_am2.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 1;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		am2 = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 2;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_am3.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 3;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		am3 = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 4;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_am4.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 5;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		am4 = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 6;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		gc.gridy = 4;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 20));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridwidth = gbx;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+		gc.gridwidth = 1;
+
+		gc.gridy = 5;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		btn = new LightedButton(btnRedOn, btnRedOff, null, 0);
+		btn.setOn(true);
+		gc.gridx = 1;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		stop = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 2;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_init.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 3;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		init = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 4;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		icn = new ImageIcon(getClass().getResource("icons/fp_run.png"));
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		gc.gridx = 5;
+		gb.setConstraints(btn, gc);
+		lpn.add(btn);
+		run = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 40));
+		pn.setOpaque(false);
+		gc.gridx = 6;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+
+		gc.gridy = 6;
+		gc.gridwidth = gbx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 20));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gb.setConstraints(pn, gc);
+		lpn.add(pn);
+		gc.gridwidth = 1;
+
+		add(lpn);
+
+		//---------------------------------------------------------------
+
+		JPanel rpn = new JPanel();
+		rpn.setOpaque(false);
+		gb = new GridBagLayout();
+		rpn.setLayout(gb);
+		gbx = 13;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(310,20));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.gridwidth = gbx;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		gc.gridwidth = 1;
+		gc.gridy = 1;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(220,40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridwidth = gbx - 4;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		gc.gridwidth = 1;
+		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // A/C ON
+		btn.addActionListener(this);
+		btn.setOn(true);
+		gc.gridx = 9;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 10;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		LightedButton btn2 = btn;
+		btn = new LightedButton(btnRedOn, btnRedOff, null, -1);	// A/C OFF
+		btn.addActionListener(this);
+		btn2.setNext(btn);
+		btn.setNext(btn2);
+		gc.gridx = 11;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(false);
+		gc.gridx = 12;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(310,20));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 2;
+		gc.gridwidth = gbx;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		gc.gridy = 3;
+		gc.gridwidth = 1;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 7);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 8");
+		gc.gridx = 1;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[7] = btn;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 2;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 6);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 7");
+		gc.gridx = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[6] = btn;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 4;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 5);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 6");
+		gc.gridx = 5;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[5] = btn;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 6;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 4);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 5");
+		gc.gridx = 7;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[4] = btn;
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50,40));
+		pn.setOpaque(false);
+		gc.gridx = 8;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // DC ON
+		btn.setOn(true);
+		btn.addActionListener(this);
+		gc.gridx = 9;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 10;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn2 = btn;
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, -1); // DC OFF
+		btn.addActionListener(this);
+		btn2.setNext(btn);
+		btn.setNext(btn2);
+		gc.gridx = 11;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(false);
+		gc.gridx = 12;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(310,20));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 4;
+		gc.gridwidth = gbx;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		gc.gridwidth = 1;
+		gc.gridy = 5;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 3);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 4");
+		gc.gridx = 1;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[3] = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 2;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 2);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 3");
+		gc.gridx = 3;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[2] = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 4;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 1);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 2");
+		gc.gridx = 5;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[1] = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 6;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 0);
+		btn.addActionListener(this);
+		btn.setToolTipText("SENSE 1");
+		gc.gridx = 7;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		sense[0] = btn;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(140,40));
+		pn.setOpaque(false);
+		gc.gridx = 8;
+		gc.gridwidth = 5;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		gc.gridwidth = 1;
+
+		gc.gridy = 6;
+		gc.gridwidth = 3;
+		gc.gridx = 1;
+		eintr = new JLabel("EXTERNAL");
+		eintr.setFont(smallFont);
+		eintr.setForeground(indDark);
+		eintr.setOpaque(false);
+		eintr.setPreferredSize(new Dimension(50, 20));
+		gc.anchor = GridBagConstraints.NORTH;
+		gb.setConstraints(eintr, gc);
+		rpn.add(eintr);
+		iintr = new JLabel("INTERNAL");
+		iintr.setFont(smallFont);
+		iintr.setForeground(indDark);
+		iintr.setOpaque(false);
+		iintr.setPreferredSize(new Dimension(50, 20));
+		gc.gridy = 7;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gb.setConstraints(iintr, gc);
+		rpn.add(iintr);
+
+		gc.gridy = 6;
+		gc.gridx = 4;
+		pgm = new JLabel("PROGRAM");
+		pgm.setFont(smallFont);
+		pgm.setForeground(indDark);
+		pgm.setOpaque(false);
+		pgm.setPreferredSize(new Dimension(50, 20));
+		gc.anchor = GridBagConstraints.NORTH;
+		gb.setConstraints(pgm, gc);
+		rpn.add(pgm);
+		prot = new JLabel("PROTECT");
+		prot.setFont(smallFont);
+		prot.setForeground(indDark);
+		prot.setOpaque(false);
+		prot.setPreferredSize(new Dimension(50, 20));
+		gc.gridy = 7;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gb.setConstraints(prot, gc);
+		rpn.add(prot);
+
+		gc.gridy = 6;
+		gc.gridx = 7;
+		gc.gridwidth = 2;
+		voltage = new JLabel("VOLTAGE");
+		voltage.setFont(smallFont);
+		voltage.setForeground(indDark);
+		voltage.setOpaque(false);
+		voltage.setPreferredSize(new Dimension(80, 20));
+		gc.anchor = GridBagConstraints.NORTH;
+		gb.setConstraints(voltage, gc);
+		rpn.add(voltage);
+		parity = new JLabel("PARITY");
+		parity.setFont(smallFont);
+		parity.setForeground(indDark);
+		parity.setOpaque(false);
+		parity.setPreferredSize(new Dimension(80, 20));
+		gc.gridy = 7;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gb.setConstraints(parity, gc);
+		rpn.add(parity);
+
+		gc.gridy = 6;
+		gc.gridx = 9;
+		gc.gridwidth = 2;
+		fan = new JLabel("FAN");
+		fan.setFont(smallFont);
+		fan.setForeground(indDark);
+		fan.setOpaque(false);
+		fan.setPreferredSize(new Dimension(40, 20));
+		gc.anchor = GridBagConstraints.NORTH;
+		gb.setConstraints(fan, gc);
+		rpn.add(fan);
+		cb = new JLabel("CB");
+		cb.setFont(smallFont);
+		cb.setForeground(indDark);
+		cb.setOpaque(false);
+		cb.setPreferredSize(new Dimension(40, 20));
+		gc.gridy = 7;
+		gc.anchor = GridBagConstraints.SOUTH;
+		gb.setConstraints(cb, gc);
+		rpn.add(cb);
+
+		gc.gridy = 8;
+		// fudge spacing, instead of more-complex paneling
+		JLabel lb = new JLabel("HONEYWELL 2000");
+		lb.setFont(medFont);
+		lb.setOpaque(false);
+		lb.setForeground(Color.white);
+		lb.setPreferredSize(new Dimension(310,40));
+		gc.gridx = 0;
+		gc.gridwidth = gbx;
+		gb.setConstraints(lb, gc);
+		rpn.add(lb);
+
+		add(rpn);
 	}
 
 	private P_Console getConsole() {
@@ -680,22 +1237,18 @@ public class HW2000FrontPanel extends JFrame
 	public void setContents(int v) {
 		contentsReg = v & 0377;
 		setBits(contents, v);
-		repaint();
 	}
 	public void setAddress(int v) {
 		addressReg = v & 01777777;
 		setBits(address, v);
-		repaint();
 	}
 	public void setControl(int v) {
 		controlReg = v & 077;
 		setBits(control, v);
-		repaint();
 	}
 	private void setSense(int v) {
 		senseReg = v & 0377;
 		setBits(sense, v);
-		repaint();
 	}
 	public int getSense() {
 		return senseReg;
@@ -736,18 +1289,23 @@ public class HW2000FrontPanel extends JFrame
 	public void setPanelListener(ActionListener lstr) {
 		run.removeActionListener(this);
 		stop.removeActionListener(this);
-		instr.removeActionListener(this);
 		central.removeActionListener(this);
 		init.removeActionListener(this);
-		boot.removeActionListener(this);
 
 		// TODO: some of these should always remain ours...
 		run.addActionListener(lstr);
 		stop.addActionListener(lstr);
-		instr.addActionListener(lstr);
 		central.addActionListener(lstr);
 		init.addActionListener(lstr);
-		boot.addActionListener(lstr);
+
+		if (boot != null) {
+			boot.removeActionListener(this);
+			boot.addActionListener(lstr);
+		}
+		if (instr != null) {
+			instr.removeActionListener(this);
+			instr.addActionListener(lstr);
+		}
 	}
 
 	// Are these ever queried?
@@ -758,10 +1316,14 @@ public class HW2000FrontPanel extends JFrame
 	public int getAdrMode() { return 0; }
 
 	private void setBits(LightedButton[] btns, int val) {
+		if (btns == null) {
+			return;
+		}
 		for (int x = 0; x < btns.length; ++x) {
 			btns[x].setOn((val & 1) != 0);
 			val >>= 1;
 		}
+		repaint();
 	}
 
 	private void addControls(Container top, int row, GridBagLayout gb, GridBagConstraints gc) {
