@@ -42,16 +42,19 @@ are made:
 </TABLE>
 
 <P>The "console typewriter" also functions as an extension to the control panel.
-The real H2000-series systems had a limited control panel and relied on the
+The real H2000-series systems (220-3 consoles) had a limited control panel
+and relied on the
 typewriter for some operations. The following is supported on the typewriter,
 when the system is in the STOP mode:
 
 <TABLE BORDER>
 <TR><TH>Command</TH><TH>Purpose</TH></TR>
-<TR><TD>A <I>adr chr</I>...</TD><TD>Place <I>chr</I>(s) in memory starting at <I>adr</I>. Values may include punctuation (8-bit octal).</TD></TR>
-<TR><TD>P <I>ctl</I></TD><TD>Print contents of Control Register <I>ctl</I></TD></TR>
+<TR><TD>A <I>ctl</I> <I>adr</I></TD><TD>Place <I>adr</I> in control register <I>ctl</I> and Address Register.</TD></TR>
+<TR><TD>P <I>ctl</I></TD><TD>Print contents of Control Register <I>ctl</I> and set Address Register.</TD></TR>
+<TR><TD>R</TD><TD>Print contents of Control register and memory at that address.</TD></TR>
+<TR><TD><I>octal-triplets</I>...</TD><TD>Insert data into memory at Address Register.</TD></TR>
+<TR><TD><I>TYPE-button</I></TD><TD>Display data from memory at Address Register.</TD></TR>
 <TR><TD>B <I>per adr</I></TD><TD>Bootstrap from peripheral address <I>per</I> into memory at <I>adr</I></TD></TR>
-<TR><TD>R</TD><TD>Print contents of AAR and BAR</TD></TR>
 <TR><TD>S</TD><TD>Single-step (same as INSTRUCT button)</TD></TR>
 <TR><TD>L <I>text</I></TD><TD>Log </I>text</I> (used to put information on paper but not input to computer)</TD></TR>
 </TABLE>

@@ -3,21 +3,11 @@
       IMPLICIT INTEGER (A-Z)
       DIMENSION YD(4),MO(12)
       REAL MM,YY
-C     TODO: BETTER INITIALIZATION
-      MO(1)=31
-      MO(2)=28
-      MO(3)=31
-      MO(4)=30
-      MO(5)=31
-      MO(6)=30
-      MO(7)=31
-      MO(8)=31
-      MO(9)=30
-      MO(10)=31
-      MO(11)=30
-      MO(12)=31
-C     TEST DATA FOR JAN 1975
+      DATA MO/31,28,31,30,31,30,31,31,30,31,30,31
+C     TEST DATA FOR 1975 (JAN 1 = WED, DEC 31 = WED)
       Y=1975
+C     TEST DATA FOR 1976 (JAN 1 = THU, DEC 31 = FRI, LEAP YEAR)
+C     Y=1976
 C
 C     START EVALUATING YEAR
 C

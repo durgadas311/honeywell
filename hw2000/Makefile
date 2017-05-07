@@ -25,7 +25,7 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	dsktest1.ezc dsktest2.ezc itvtest.ezc \
 	barberpole.mti prog3.pcd
 
-SHIPS = H2000.jar hwprogs.tgz hwprogs.zip h2000.tgz
+SHIPS = H2000.jar hwprogs.tgz h2000.tgz
 
 all: $(EXTCLASSES) $(CLASSES)
 
@@ -41,20 +41,23 @@ ship: $(SHIPS)
 
 jar: H2000.jar
 
-tgz: hwprogs.tgz hwprogs.zip
+tgz: hwprogs.tgz
 
 src: h2000.tgz
 
 h2000.tgz:
 	cd ..; tar -czhf hw2000/h2000.tgz \
-		hw2000/Makefile \
-		hw2000/mkAbout \
-		hw2000/*.java \
+		*/Makefile \
+		*/mkAbout \
+		*/*.java \
 		hw2000/fonts/*.ttf \
 		hw2000/icons/*.png \
-		hw2000/docs/* \
+		*/docs \
+		*/www \
 		hw2000/bringup/bootmt.mti \
-		$(addprefix hw2000/,$(EXTCLASSES))
+		fortran4/progs \
+		cardpunch/PunchCard.png \
+		cardpunch/*.ttf
 
 H2000.jar: all docs/About.html
 	/bin/echo -e "Main-Class: System2000\nClass-Path: Fortran4Embedded.jar" >Manifest.txt

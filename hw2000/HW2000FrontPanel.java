@@ -1139,109 +1139,170 @@ public class HW2000FrontPanel extends JFrame
 				switch (c) {
 				case 'A':
 					p.output(" ");
+					state = c;
+					dc = 0;
+					v = 0;
 					break;
 				case 'P':
 					p.output(" ");
+					state = c;
+					dc = 0;
+					v = 0;
 					break;
 				case 'B':
 					p.output(" ");
+					state = c;
+					dc = 0;
+					v = 0;
 					break;
 				case 'L':
+					state = c;
+					dc = 0;
+					v = 0;
 					break;
 				case 'R':
 					p.output("\n");
-	p.output(String.format("AAR = %08o BAR = %08o\n", sys.AAR, sys.BAR));
+					setAddress(getCtrlReg((byte)controlReg, 0));
+					setContents(sys.rawReadMem(addressReg));
+					p.output(String.format("%07o %03o\n",
+							addressReg, contentsReg));
 					return;
 				case 'S':
 					p.output("\n");
 					sys.singleStep = true;
 					sys.halt = false;
 					return;
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+					// TODO: only accept 0-3...
+					v = (c & 007);
+					dc = 1;
+					state = 'I';
+					break;
+				// TODO: implement this (TYPE button depressed)
+				// should not have a keyboard equivalent...
+				case 't':
+					v = sys.rawReadMem(addressReg);
+					setAddress(addressReg + 1);
+					setContents(v);
+					p.output(String.format("%03o", v));
+					dc += 4;
+					if (dc >= 64) {
+						p.output("\n");
+						dc = 0;
+					} else {
+						p.output(" ");
+					}
+					// TODO: best method to slow-down output.
+					// Simulate 10 chars/sec...
+					try {
+						Thread.sleep(250);
+					} catch (Exception ee) {}
+					// TODO: need to determine "holding button down".
+					return;
 				default:
+					// TODO: silently ignore?
 					p.output("?\n");
 					return;
 				}
-				state = c;
-				dc = 0;
-				v = 0;
 				break;
-			case 'A':
-			case 'P':
-			case 'B':
-				if (c == ' ' || c == '\n') {
-					if (state == 'A') {
-						if (dc < 7) {
-							setAddress(v);
-							v = 0;
-							dc = 7;
-						} else if ((dc - 7) % 3 != 0) {
-							setContents(v);
-							v = 0;
-							sys.rawWriteMem(addressReg, (byte)contentsReg);
-							setAddress(addressReg + 1);
-							dc = 7;
-						}
-					} else if (dc < 2) {
-						if (state == 'P') {
-							setControl(v);
-						} else {
-							setContents(v);
-						}
-						v = 0;
-						dc = 2;
-					} else if (state == 'B') {
-						setAddress(v);
-						v = 0;
-						dc = 9;
-					}
-					if (c == '\n') {
-						if (state == 'P') {
-	p.output(String.format("CR%02o = %08o\n",
-		controlReg, getCtrlReg((byte)controlReg, 0)));
-						} else if (state == 'B') {
-							doBootStrap();
-						}
-						return;
-					}
-					break;
+			case 'I':	// ccc ccc ...
+				if (c == '\n') {
+					// discard partial data
+					return;
 				}
+				// TODO: only accept 0-3 if dc == 0
 				if (c < '0' || c > '7') {
+					// TODO: suppress echo - ignore
 					p.output("?\n");
 					return;
 				}
 				++dc;
 				v = (v << 3) | (c & 07);
-				if (state == 'A') {
-					if (dc == 7) {
-						p.output(" ");
-						setAddress(v);
-						v = 0;
-					} else if (dc > 7) {
-						if ((dc - 7) % 3 == 0) {
-							p.output(" ");
-							setContents(v);
-							sys.rawWriteMem(addressReg, (byte)contentsReg);
-							setAddress(addressReg + 1);
-							v = 0;
-							dc = 7;
-						}
+				if ((dc % 4) == 3) {
+					setContents(v);
+					sys.rawWriteMem(addressReg, (byte)contentsReg);
+					setAddress(addressReg + 1);
+					++dc;
+					if (dc >= 64) {
+						p.output("\n");
+						return;
 					}
-				} else if (dc == 2) {
 					p.output(" ");
-					if (state == 'P') {
-						setControl(v);
-					} else {
-						setContents(v);
-					}
-					v = 0;
-				} else if (state == 'B') {
-					if (dc == 9) {
-						p.output(" ");
-						setAddress(v);
-						v = 0;
-					}
 				}
-
+				break;
+			case 'A':	// A rr aaaaaaa
+				if (c == '\n') {
+					// discard partial data
+					return;
+				}
+				if (c < '0' || c > '7') {
+					// TODO: suppress echo - ignore
+					p.output("?\n");
+					return;
+				}
+				++dc;
+				v = (v << 3) | (c & 07);
+				if (dc == 2) {
+					p.output(" ");
+					setControl(v);
+					v = 0;
+				} else if (dc == 9) {
+					setAddress(v);
+					setCtrlReg((byte)controlReg, addressReg);
+					p.output("\n");
+					return;
+				}
+				break;
+			case 'P':	// P rr / aaaaaaa
+				if (c == '\n') {
+					// discard partial data
+					return;
+				}
+				if (c < '0' || c > '7') {
+					// TODO: suppress echo - ignore
+					p.output("?\n");
+					return;
+				}
+				++dc;
+				v = (v << 3) | (c & 07);
+				if (dc == 2) {
+					setControl(v);
+					v = getCtrlReg((byte)controlReg, 0);
+					setAddress(v);
+					p.output("\n");
+					p.output(String.format("%07o\n", v));
+					return;
+				}
+				break;
+			case 'B':	// B pp aaaaaaa
+				if (c == '\n') {
+					// discard partial data
+					return;
+				}
+				if (c < '0' || c > '7') {
+					// TODO: suppress echo - ignore
+					p.output("?\n");
+					return;
+				}
+				++dc;
+				v = (v << 3) | (c & 07);
+				if (dc == 2) {
+					p.output(" ");
+					setContents(v);
+					v = 0;
+				} else if (dc == 9) {
+					setAddress(v);
+					p.output("\n");
+					doBootStrap();
+					return;
+				}
 				break;
 			case 'L':
 				if (c == '\n') {
@@ -1249,7 +1310,6 @@ public class HW2000FrontPanel extends JFrame
 				}
 				break;
 			default:
-				state = 0;
 				p.output("?\n");
 				return;
 			}
