@@ -75,6 +75,7 @@ public class HW2000FrontPanel extends JFrame
 
 	int gbx;
 	File _last = null;
+	boolean typePressed = false;
 	boolean listing = false;
 	boolean tape = false;
 	boolean monitor = false;
@@ -98,7 +99,7 @@ public class HW2000FrontPanel extends JFrame
 	private P_Console cons;
 	private P_LinePrinter lpt;
 
-	public HW2000FrontPanel(HW2000 sys) {
+	public HW2000FrontPanel(HW2000 sys, boolean cons220_3) {
 		super("Honeywell Series 2000");
 		LightedButton.init(64);
 		this.sys = sys; // may be null
@@ -112,10 +113,12 @@ public class HW2000FrontPanel extends JFrame
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
 		// TODO: different for 220-3 console...
-		if (true) {
+		if (!cons220_3) {
 			fullControlPanel();
 		} else {
 			partControlPanel();
+			getConsole().setType(type);
+			getConsole().visible(true);
 		}
 
 		//---------------------------------------------------------
@@ -190,6 +193,15 @@ public class HW2000FrontPanel extends JFrame
 		java.net.URL url = this.getClass().getResource("docs/hw2000.html");
 		help = new GenericHelp(getTitle() + " Help", url);
 
+		run.setActionCommand("run");
+		stop.setActionCommand("stop");
+		central.setActionCommand("clear");
+		init.setActionCommand("init");
+		inter.setActionCommand("inter");
+		am2.setActionCommand("am2");
+		am3.setActionCommand("am3");
+		am4.setActionCommand("am4");
+
 		// These always exist...
 		run.setToolTipText("Run");
 		stop.setToolTipText("Stop");
@@ -208,17 +220,21 @@ public class HW2000FrontPanel extends JFrame
 		am4.addActionListener(this);
 
 		if (boot != null) {
+			boot.setActionCommand("boot");
 			boot.setToolTipText("Bootstrap");
 			boot.addActionListener(this);
 		}
 		if (instr != null) {
+			instr.setActionCommand("instr");
 			instr.setToolTipText("Instruct");
 			instr.addActionListener(this);
 		}
 		if (type != null) {
+			type.setActionCommand("type");
 			type.setToolTipText("Type");
 			// TODO: need hold/release not click...
 			type.addActionListener(this);
+			type.addChangeListener(this);
 		}
 
 		// Dialog for Dump Full / Trace Full
@@ -710,8 +726,8 @@ public class HW2000FrontPanel extends JFrame
 		sense = new LightedButton[8];
 
 		JPanel pn = new JPanel();
-		pn.setPreferredSize(new Dimension(40,80));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(150,80));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridy = 0;
 		gc.gridwidth = gbx;
@@ -724,8 +740,8 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridwidth = 1;
 		gc.gridy = 1;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -738,7 +754,7 @@ public class HW2000FrontPanel extends JFrame
 		type = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 2;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -751,7 +767,7 @@ public class HW2000FrontPanel extends JFrame
 		central = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 4;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -763,16 +779,16 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(btn);
 		inter = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setOpaque(true);
 		gc.gridx = 6;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
 
 		gc.gridy = 2;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 20));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(150, 20));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
@@ -781,8 +797,8 @@ public class HW2000FrontPanel extends JFrame
 
 		gc.gridy = 3;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -795,20 +811,21 @@ public class HW2000FrontPanel extends JFrame
 		am2 = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 2;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am3.png"));
 		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn.setOn(true);
 		gc.gridx = 3;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
 		am3 = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 4;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -820,16 +837,16 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(btn);
 		am4 = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setOpaque(true);
 		gc.gridx = 6;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
 
 		gc.gridy = 4;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 20));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(150, 20));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
@@ -838,8 +855,8 @@ public class HW2000FrontPanel extends JFrame
 
 		gc.gridy = 5;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -852,7 +869,7 @@ public class HW2000FrontPanel extends JFrame
 		stop = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 2;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -865,7 +882,7 @@ public class HW2000FrontPanel extends JFrame
 		init = btn;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setOpaque(true);
 		gc.gridx = 4;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -877,8 +894,8 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(btn);
 		run = btn;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 40));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(20, 40));
+		pn.setOpaque(true);
 		gc.gridx = 6;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -886,8 +903,8 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridy = 6;
 		gc.gridwidth = gbx;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 20));
-		pn.setOpaque(false);
+		pn.setPreferredSize(new Dimension(150, 20));
+		pn.setOpaque(true);
 		gc.gridx = 0;
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
@@ -1211,11 +1228,15 @@ public class HW2000FrontPanel extends JFrame
 		lb.setFont(medFont);
 		lb.setOpaque(false);
 		lb.setForeground(Color.white);
-		lb.setPreferredSize(new Dimension(310,40));
+		lb.setPreferredSize(new Dimension(200,40));
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(310, 40));
+		pn.setOpaque(false);
+		pn.add(lb);
 		gc.gridx = 0;
 		gc.gridwidth = gbx;
-		gb.setConstraints(lb, gc);
-		rpn.add(lb);
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
 
 		add(rpn);
 	}
@@ -1598,17 +1619,6 @@ public class HW2000FrontPanel extends JFrame
 		gc.anchor = GridBagConstraints.SOUTH;
 		gbl.setConstraints(cb, gc);
 		npn.add(cb);
-
-		run.setActionCommand("run");
-		stop.setActionCommand("stop");
-		instr.setActionCommand("instr");
-		central.setActionCommand("clear");
-		init.setActionCommand("init");
-		boot.setActionCommand("boot");
-		inter.setActionCommand("inter");
-		am2.setActionCommand("am2");
-		am3.setActionCommand("am3");
-		am4.setActionCommand("am4");
 	}
 
 	private void addButtons(LightedButton[] btns, Container top, int row, int id, GridBagLayout gb, GridBagConstraints gc) {
@@ -1689,7 +1699,12 @@ public class HW2000FrontPanel extends JFrame
 		P_Console p = getConsole();
 		// must be careful to avoid getting stuck here
 		while (true) {
-			int c = p.inChar(sys);
+			int c;
+			if (typePressed) {
+				c = 't';
+			} else {
+				c = p.inChar(sys);
+			}
 			if (c < 0) {
 				if (state != 0) {
 					p.output("!\n");
@@ -1767,6 +1782,8 @@ public class HW2000FrontPanel extends JFrame
 						Thread.sleep(250);
 					} catch (Exception ee) {}
 					// TODO: need to determine "holding button down".
+					return;
+				case '\n':
 					return;
 				default:
 					// TODO: silently ignore?
@@ -2583,12 +2600,20 @@ ee.printStackTrace();
 	}
 
 	public void stateChanged(ChangeEvent evt) {
-		if (evt.getSource() instanceof JButton) {
-			JButton btn = (JButton)evt.getSource();
+		if (!(evt.getSource() instanceof JButton)) {
+			return;
+		}
+		JButton btn = (JButton)evt.getSource();
+		if (btn == init) {
 			if (btn.getModel().isPressed()) {
 				lampTest(true);
 			} else {
 				lampTest(false);
+			}
+		} else if (btn == type) {
+			typePressed = btn.getModel().isPressed();
+			if (typePressed) {
+				endCtrlMode();
 			}
 		}
 	}

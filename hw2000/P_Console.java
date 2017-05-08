@@ -28,6 +28,7 @@ public class P_Console extends JFrame
 	boolean dataTerm = false;
 	int io; // only valid between io() and run()
 	JLabel type;
+	LightedButton typeBtn;
 
 	public P_Console() {
 		super("H220 Console");
@@ -73,17 +74,17 @@ public class P_Console extends JFrame
 		mu.add(mi);
 		mb.add(mu);
 
-		JPanel pn = new JPanel();
-		pn.setPreferredSize(new Dimension(50, 30));
-		pn.setOpaque(true);
-		pn.setBackground(Color.black);
+//		JPanel pn = new JPanel();
+//		pn.setPreferredSize(new Dimension(50, 30));
+//		pn.setOpaque(true);
+//		pn.setBackground(Color.black);
 		type = new JLabel("TYPE");
 		type.setForeground(HW2000FrontPanel.indDark);
-		pn.add(type);
-		mb.add(pn);
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(400, 30));
-		mb.add(pn);
+//		pn.add(type);
+//		mb.add(pn);
+//		pn = new JPanel();
+//		pn.setPreferredSize(new Dimension(400, 30));
+//		mb.add(pn);
 
 		setJMenuBar(mb);
 
@@ -97,6 +98,12 @@ public class P_Console extends JFrame
 		text.setText("\u2588");
 		carr = 0;
 		col = 0;
+	}
+
+	public void setType(LightedButton btn) {
+		typeBtn = btn;
+		type.setOpaque(false);
+		type.setText("");
 	}
 
 	public void setOutput(OutputStream dev) {
@@ -164,7 +171,11 @@ public class P_Console extends JFrame
 	}
 
 	private void doIn(RWChannel rwc, ConsoleStatus unit) {
-		type.setForeground(HW2000FrontPanel.indLit);
+		if (typeBtn != null) {
+			typeBtn.setOn(true);
+		} else {
+			type.setForeground(HW2000FrontPanel.indLit);
+		}
 		rwc.startCLC();
 		int a = -1;
 		byte b;
@@ -187,7 +198,11 @@ public class P_Console extends JFrame
 			// TODO: pass along EI/II exceptions
 		}
 		unit.busy = false;
-		type.setForeground(HW2000FrontPanel.indDark);
+		if (typeBtn != null) {
+			typeBtn.setOn(false);
+		} else {
+			type.setForeground(HW2000FrontPanel.indDark);
+		}
 	}
 
 	public void doOut(RWChannel rwc, ConsoleStatus unit) {
