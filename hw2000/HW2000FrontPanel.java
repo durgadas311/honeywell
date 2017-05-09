@@ -108,7 +108,7 @@ public class HW2000FrontPanel extends JFrame
 
 		getContentPane().setBackground(Color.black);
 		bigFont = new Font("Sans-Serif", Font.PLAIN, 40);
-		medFont = new Font("Sans-Serif", Font.PLAIN, 20);
+		medFont = new Font("Sans-Serif", Font.PLAIN, 28);
 		smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
@@ -932,53 +932,8 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		gc.gridwidth = 1;
+		// ---- SENSE 8-5
 		gc.gridy = 1;
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(220,40));
-		pn.setOpaque(false);
-		gc.gridx = 0;
-		gc.gridwidth = gbx - 4;
-		gb.setConstraints(pn, gc);
-		rpn.add(pn);
-		gc.gridwidth = 1;
-		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // A/C ON
-		btn.addActionListener(this);
-		btn.setOn(true);
-		gc.gridx = 9;
-		gb.setConstraints(btn, gc);
-		rpn.add(btn);
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10,40));
-		pn.setOpaque(false);
-		gc.gridx = 10;
-		gb.setConstraints(pn, gc);
-		rpn.add(pn);
-		LightedButton btn2 = btn;
-		btn = new LightedButton(btnRedOn, btnRedOff, null, -1);	// A/C OFF
-		btn.addActionListener(this);
-		btn2.setNext(btn);
-		btn.setNext(btn2);
-		gc.gridx = 11;
-		gb.setConstraints(btn, gc);
-		rpn.add(btn);
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(20,40));
-		pn.setOpaque(false);
-		gc.gridx = 12;
-		gb.setConstraints(pn, gc);
-		rpn.add(pn);
-
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(310,20));
-		pn.setOpaque(false);
-		gc.gridx = 0;
-		gc.gridy = 2;
-		gc.gridwidth = gbx;
-		gb.setConstraints(pn, gc);
-		rpn.add(pn);
-
-		gc.gridy = 3;
-		gc.gridwidth = 1;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20,40));
 		pn.setOpaque(false);
@@ -1042,9 +997,9 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 
-		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // DC ON
-		btn.setOn(true);
+		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // A/C ON
 		btn.addActionListener(this);
+		btn.setOn(true);
 		gc.gridx = 9;
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
@@ -1054,8 +1009,8 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 10;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn2 = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, -1); // DC OFF
+		LightedButton btn2 = btn;
+		btn = new LightedButton(btnRedOn, btnRedOff, null, -1);	// A/C OFF
 		btn.addActionListener(this);
 		btn2.setNext(btn);
 		btn.setNext(btn2);
@@ -1073,13 +1028,14 @@ public class HW2000FrontPanel extends JFrame
 		pn.setPreferredSize(new Dimension(310,20));
 		pn.setOpaque(false);
 		gc.gridx = 0;
-		gc.gridy = 4;
+		gc.gridy = 2;
 		gc.gridwidth = gbx;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 
+		// ---- SENSE 4-1
 		gc.gridwidth = 1;
-		gc.gridy = 5;
+		gc.gridy = 3;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(20,40));
 		pn.setOpaque(false);
@@ -1132,15 +1088,52 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[0] = btn;
+
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(140,40));
+		pn.setPreferredSize(new Dimension(50,40));
 		pn.setOpaque(false);
 		gc.gridx = 8;
-		gc.gridwidth = 5;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		gc.gridwidth = 1;
 
+		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // DC ON
+		btn.setOn(true);
+		btn.addActionListener(this);
+		gc.gridx = 9;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10,40));
+		pn.setOpaque(false);
+		gc.gridx = 10;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+		btn2 = btn;
+		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, -1); // DC OFF
+		btn.addActionListener(this);
+		btn2.setNext(btn);
+		btn.setNext(btn2);
+		gc.gridx = 11;
+		gb.setConstraints(btn, gc);
+		rpn.add(btn);
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(20,40));
+		pn.setOpaque(false);
+		gc.gridx = 12;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(310,40));
+		pn.setOpaque(false);
+		gc.gridx = 0;
+		gc.gridy = 4;
+		gc.gridwidth = gbx;
+		gc.gridheight = 2;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		gc.gridheight = 1;
 		gc.gridy = 6;
 		gc.gridwidth = 3;
 		gc.gridx = 1;
@@ -1230,9 +1223,9 @@ public class HW2000FrontPanel extends JFrame
 		lb.setFont(medFont);
 		lb.setOpaque(false);
 		lb.setForeground(Color.white);
-		lb.setPreferredSize(new Dimension(200,40));
+		lb.setPreferredSize(new Dimension(260,60));
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(310, 40));
+		pn.setPreferredSize(new Dimension(310, 60));
 		pn.setOpaque(false);
 		pn.add(lb);
 		gc.gridx = 0;
