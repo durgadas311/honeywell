@@ -2,6 +2,7 @@
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Properties;
 import java.io.*;
 import java.util.concurrent.Semaphore;
 
@@ -61,7 +62,7 @@ public class HW2000 implements CoreMemory
 	PeriphDecode pdc;
 	FrontPanel fp;
 
-	public HW2000() {
+	public HW2000(Properties props) {
 		waitLock = new Semaphore(1);
 		fp = null;
 		CTL = new HW2000CCR();
@@ -74,7 +75,7 @@ public class HW2000 implements CoreMemory
 		cr = new int[64];
 		Arrays.fill(cr, 0);
 		idc = new InstrDecode(false);
-		pdc = new PeriphDecode();
+		pdc = new PeriphDecode(props);
 		op_xtra_siz = 8;
 		op_xtra = new byte[op_xtra_siz];
 

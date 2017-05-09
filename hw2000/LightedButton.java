@@ -23,6 +23,19 @@ public class LightedButton extends JButton {
 		LightedButton.add(this);
 	}
 
+	public LightedButton(Color on, Color off, ImageIcon icon) {
+		super();
+		setIcon(icon);
+		next = null;
+		id = -1;
+		setPreferredSize(new Dimension(40, 30));
+		setBackground(off);
+		setOpaque(true);
+		_on = on;
+		_off = off;
+		isOn = false;
+	}
+
 	public boolean isOn() { return isOn; }
 
 	public void lampTest(boolean test) {

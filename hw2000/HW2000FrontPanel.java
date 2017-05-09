@@ -1,6 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Properties;
 import java.awt.*;
 import java.io.*;
 import java.awt.event.*;
@@ -99,7 +100,7 @@ public class HW2000FrontPanel extends JFrame
 	private P_Console cons;
 	private P_LinePrinter lpt;
 
-	public HW2000FrontPanel(HW2000 sys, boolean cons220_3) {
+	public HW2000FrontPanel(Properties props, HW2000 sys) {
 		super("Honeywell Series 2000");
 		LightedButton.init(64);
 		this.sys = sys; // may be null
@@ -113,12 +114,13 @@ public class HW2000FrontPanel extends JFrame
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
 		// TODO: different for 220-3 console...
-		if (!cons220_3) {
-			fullControlPanel();
-		} else {
+		String s = props.getProperty("console");
+		if (s != null && s.equals("220-3")) {
 			partControlPanel();
-			getConsole().setType(type);
+			getConsole().setTypeBtn(type);
 			getConsole().visible(true);
+		} else {
+			fullControlPanel();
 		}
 
 		//---------------------------------------------------------
@@ -1711,41 +1713,40 @@ public class HW2000FrontPanel extends JFrame
 				}
 				return;
 			}
+			String cEcho = "" + (char)c;
 			switch (state) {
 			case 0:
 				switch (c) {
 				case 'A':
-					p.output(" ");
 					state = c;
 					dc = 0;
 					v = 0;
 					break;
 				case 'P':
-					p.output(" ");
 					state = c;
 					dc = 0;
 					v = 0;
 					break;
 				case 'B':
-					p.output(" ");
 					state = c;
 					dc = 0;
 					v = 0;
 					break;
 				case 'L':
+					getConsole().setOffline(true);
 					state = c;
 					dc = 0;
 					v = 0;
 					break;
 				case 'R':
-					p.output("\n");
+					p.output("R\n");
 					setAddress(getCtrlReg((byte)controlReg, 0));
 					setContents(sys.rawReadMem(addressReg));
 					p.output(String.format("%07o %03o\n",
 							addressReg, contentsReg));
 					return;
 				case 'S':
-					p.output("\n");
+					p.output("S\n");
 					sys.singleStep = true;
 					sys.halt = false;
 					return;
@@ -1767,6 +1768,7 @@ public class HW2000FrontPanel extends JFrame
 				case 't':
 					v = sys.rawReadMem(addressReg);
 					setAddress(addressReg + 1);
+					setCtrlReg((byte)controlReg, addressReg);
 					setContents(v);
 					p.output(String.format("%03o", v));
 					dc += 4;
@@ -1781,33 +1783,41 @@ public class HW2000FrontPanel extends JFrame
 					try {
 						Thread.sleep(250);
 					} catch (Exception ee) {}
-					// TODO: need to determine "holding button down".
 					return;
 				case '\n':
+					p.output("\n");
 					return;
 				default:
 					// TODO: silently ignore?
-					p.output("?\n");
+					//p.output("?\n");
 					return;
+				}
+				// Echo char if OK
+				p.output(cEcho);
+				if (state != 'I') {
+					p.output(" ");
 				}
 				break;
 			case 'I':	// ccc ccc ...
 				if (c == '\n') {
 					// discard partial data
+					p.output("\n");
 					return;
 				}
 				// TODO: only accept 0-3 if dc == 0
 				if (c < '0' || c > '7') {
-					// TODO: suppress echo - ignore
-					p.output("?\n");
-					return;
+					// suppress echo - ignore
+					//p.output("?\n");
+					break;
 				}
+				p.output(cEcho);
 				++dc;
 				v = (v << 3) | (c & 07);
 				if ((dc % 4) == 3) {
 					setContents(v);
 					sys.rawWriteMem(addressReg, (byte)contentsReg);
 					setAddress(addressReg + 1);
+					setCtrlReg((byte)controlReg, addressReg);
 					++dc;
 					if (dc >= 64) {
 						p.output("\n");
@@ -1819,13 +1829,15 @@ public class HW2000FrontPanel extends JFrame
 			case 'A':	// A rr aaaaaaa
 				if (c == '\n') {
 					// discard partial data
+					p.output("\n");
 					return;
 				}
 				if (c < '0' || c > '7') {
-					// TODO: suppress echo - ignore
-					p.output("?\n");
-					return;
+					// suppress echo - ignore
+					//p.output("?\n");
+					break;
 				}
+				p.output(cEcho);
 				++dc;
 				v = (v << 3) | (c & 07);
 				if (dc == 2) {
@@ -1842,13 +1854,15 @@ public class HW2000FrontPanel extends JFrame
 			case 'P':	// P rr / aaaaaaa
 				if (c == '\n') {
 					// discard partial data
+					p.output("\n");
 					return;
 				}
 				if (c < '0' || c > '7') {
-					// TODO: suppress echo - ignore
-					p.output("?\n");
-					return;
+					// suppress echo - ignore
+					// p.output("?\n");
+					break;
 				}
+				p.output(cEcho);
 				++dc;
 				v = (v << 3) | (c & 07);
 				if (dc == 2) {
@@ -1863,13 +1877,15 @@ public class HW2000FrontPanel extends JFrame
 			case 'B':	// B pp aaaaaaa
 				if (c == '\n') {
 					// discard partial data
+					p.output("\n");
 					return;
 				}
 				if (c < '0' || c > '7') {
-					// TODO: suppress echo - ignore
-					p.output("?\n");
-					return;
+					// suppress echo - ignore
+					// p.output("?\n");
+					break;
 				}
+				p.output(cEcho);
 				++dc;
 				v = (v << 3) | (c & 07);
 				if (dc == 2) {
@@ -1884,12 +1900,15 @@ public class HW2000FrontPanel extends JFrame
 				}
 				break;
 			case 'L':
+				p.output(cEcho);
 				if (c == '\n') {
+					getConsole().setOffline(false);
 					return;
 				}
 				break;
 			default:
-				p.output("?\n");
+				// Probably never get here
+				// p.output("?\n");
 				return;
 			}
 		}

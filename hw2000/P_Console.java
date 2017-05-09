@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.io.*;
+import java.util.Properties;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -24,13 +25,14 @@ public class P_Console extends JFrame
 	int col;
 	File _last = null;
 	boolean isOn = false;
+	boolean offline = false;
 	boolean interrupt = false;
 	boolean dataTerm = false;
 	int io; // only valid between io() and run()
-	JLabel type;
-	LightedButton typeBtn;
+	LightedButton log;
+	LightedButton type;
 
-	public P_Console() {
+	public P_Console(Properties props) {
 		super("H220 Console");
 		kq = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 		_last = new File(System.getProperty("user.dir"));
@@ -74,18 +76,33 @@ public class P_Console extends JFrame
 		mu.add(mi);
 		mb.add(mu);
 
-//		JPanel pn = new JPanel();
-//		pn.setPreferredSize(new Dimension(50, 30));
-//		pn.setOpaque(true);
-//		pn.setBackground(Color.black);
-		type = new JLabel("TYPE");
-		type.setForeground(HW2000FrontPanel.indDark);
-//		pn.add(type);
-//		mb.add(pn);
-//		pn = new JPanel();
-//		pn.setPreferredSize(new Dimension(400, 30));
-//		mb.add(pn);
-
+		String s = props.getProperty("console");
+		if (s != null && s.equals("220-3")) {
+			// TODO: create TYPE button here?
+			// but needs to plug-in on front panel...
+		} else {
+			JPanel pn = new JPanel();
+			pn.setPreferredSize(new Dimension(10, 30));
+			mb.add(pn);
+			ImageIcon icn;
+			icn = new ImageIcon(getClass().getResource("icons/fp_type2.png"));
+			LightedButton btn = new LightedButton(HW2000FrontPanel.btnWhiteOn,
+					HW2000FrontPanel.btnWhiteOff, icn);
+			mb.add(btn);
+			type = btn;
+			pn = new JPanel();
+			pn.setPreferredSize(new Dimension(10, 30));
+			mb.add(pn);
+			icn = new ImageIcon(getClass().getResource("icons/fp_log.png"));
+			btn = new LightedButton(HW2000FrontPanel.btnWhiteOn,
+					HW2000FrontPanel.btnWhiteOff, icn);
+			mb.add(btn);
+			log = btn;
+			log.addActionListener(this);
+			pn = new JPanel();
+			pn.setPreferredSize(new Dimension(360, 30));
+			mb.add(pn);
+		}
 		setJMenuBar(mb);
 
 		addWindowListener(this);
@@ -100,10 +117,24 @@ public class P_Console extends JFrame
 		col = 0;
 	}
 
-	public void setType(LightedButton btn) {
-		typeBtn = btn;
-		type.setOpaque(false);
-		type.setText("");
+	public void setOffline(boolean off) {
+		// TODO: reject if busy?
+		offline = off;
+		if (log != null) {
+			log.setOn(off);
+		}
+	}
+
+	public LightedButton getLogBtn() {
+		return log;
+	}
+
+	public LightedButton getTypeBtn() {
+		return type;
+	}
+
+	public void setTypeBtn(LightedButton btn) {
+		type = btn;
 	}
 
 	public void setOutput(OutputStream dev) {
@@ -163,6 +194,7 @@ public class P_Console extends JFrame
 		if (!sts[io].busy) {
 			return;
 		}
+		// TODO: wait for !offline?
 		if (io == 0) {
 			doOut(rwc, sts[io]);
 		} else {
@@ -171,10 +203,8 @@ public class P_Console extends JFrame
 	}
 
 	private void doIn(RWChannel rwc, ConsoleStatus unit) {
-		if (typeBtn != null) {
-			typeBtn.setOn(true);
-		} else {
-			type.setForeground(HW2000FrontPanel.indLit);
+		if (type != null) {
+			type.setOn(true);
 		}
 		rwc.startCLC();
 		int a = -1;
@@ -183,7 +213,7 @@ public class P_Console extends JFrame
 			// TODO: what effect does c3 have? Print CR/LF before input?
 			// Or... use CR as termination of input?
 			while ((rwc.readMem() & 0300) != 0300) {
-				byte c = getChar(rwc.sys);
+				byte c = getChar(rwc.sys, true);
 				if (c < 0) {
 					// caller must check CLC (CLC - SLC)
 					break;
@@ -198,10 +228,8 @@ public class P_Console extends JFrame
 			// TODO: pass along EI/II exceptions
 		}
 		unit.busy = false;
-		if (typeBtn != null) {
-			typeBtn.setOn(false);
-		} else {
-			type.setForeground(HW2000FrontPanel.indDark);
+		if (type != null) {
+			type.setOn(false);
 		}
 	}
 
@@ -245,7 +273,7 @@ public class P_Console extends JFrame
 	}
 
 	// return -1 on CR
-	private byte getChar(HW2000 sys) throws Exception {
+	private byte getChar(HW2000 sys, boolean echo) throws Exception {
 		int a;
 		if (idev != null) {
 			a = idev.read();
@@ -257,8 +285,10 @@ public class P_Console extends JFrame
 		}
 		a = Character.toUpperCase((char)a);
 		if (a == '\n') {
-			text.insert("\n", carr++);
-			text.setCaretPosition(carr);
+			if (echo) {
+				text.insert("\n", carr++);
+				text.setCaretPosition(carr);
+			}
 			return -1;
 		}
 		if (col >= 64) {
@@ -270,17 +300,20 @@ public class P_Console extends JFrame
 			a = CharConverter.hwAsciiRep.charAt(ix);
 		}
 		byte c = sys.pdc.cvt.asciiToHw((byte)a);
-		text.insert(sys.pdc.cvt.hwToLP(c), carr++);
-		text.setCaretPosition(carr);
+		if (echo) {
+			text.insert(sys.pdc.cvt.hwToLP(c), carr++);
+			text.setCaretPosition(carr);
+		}
 		return c;
 	}
 
 	// Note: may return special chars (unicode).
 	// Called by Control Mode, and Logging Mode (which discards)
+	// Does not echo!
 	public int inChar(HW2000 sys) {
 		byte c = -2;
 		try {
-			c = getChar(sys);
+			c = getChar(sys, false);
 		} catch (Exception ee) {}
 		if (c < -1) {
 			return -1;
@@ -297,7 +330,7 @@ public class P_Console extends JFrame
 		byte c = -1;
 		try {
 			while (true) {
-				c = getChar(sys);
+				c = getChar(sys, true);
 				if (c < 0) {
 					break;
 				}
@@ -391,6 +424,14 @@ public class P_Console extends JFrame
 	public void keyReleased(KeyEvent e) { }
 
 	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof LightedButton) {
+			LightedButton b = (LightedButton)e.getSource();
+			if (b != log) {
+				return;
+			}
+			setOffline(!offline);
+			return;
+		}
 		if (!(e.getSource() instanceof JMenuItem)) {
 			return;
 		}

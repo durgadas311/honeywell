@@ -1,6 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.io.*;
 import java.util.Arrays;
+import java.util.Properties;
 
 public class PeriphDecode {
 
@@ -26,13 +27,13 @@ public class PeriphDecode {
 	public CharConverter cvt;
 	private RWChannel[] p_chans;
 
-	public PeriphDecode() {
+	public PeriphDecode(Properties props) {
 		cvt = new CharConverter();
 		p_odevs = new Peripheral[8];
 		p_idevs = new Peripheral[8];
 		p_chans = new RWChannel[16];
 		p_odevs[P_LP] = new P_LinePrinter();
-		p_odevs[P_CO] = new P_Console();
+		p_odevs[P_CO] = new P_Console(props);
 		p_idevs[P_CO] = p_odevs[P_CO];
 		p_odevs[P_MT] = new P_MagneticTape();
 		p_idevs[P_MT] = p_odevs[P_MT];
