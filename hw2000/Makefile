@@ -45,7 +45,7 @@ tgz: hwprogs.tgz
 
 src: h2000.tgz
 
-h2000.tgz:
+h2000.tgz: $(JAVAS) Makefile
 	cd ..; tar -czhf hw2000/h2000.tgz \
 		*/Makefile \
 		*/mkAbout \
