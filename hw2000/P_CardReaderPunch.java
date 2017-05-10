@@ -1,15 +1,33 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.io.*;
+import java.util.Arrays;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
+
+// True single-path Reader-Punch:
+//
+// INPUT HOPPER -> [WAIT] -> READ STATION -> PUNCH STATION -> OUTPUT STACKER
+//
+// For punching "new" cards, INPUT HOPPER must be set to "BLANK" (i.e. no file).
+// For reading cards only, OUTPUT STACKER should be set to "DISCARD" (i.e. no file).
+//
+// The 214-2 "Reader/Punch" is not a dual-path device. I.e. it cannot be used to
+// make a copy of a card deck in a single pass. To do this one must:
+//	1. Load cards to copy into INPUT HOPPER
+//	2. Read cards (optionally modify data) and write to tape (or other media)
+//	3. Load BLANK cards into INPUT HOPPER
+//	4. Read tape (optionally modify data) and punch new cards
+//
+// It does, however, permit punching additional data on existing cards.
 
 public class P_CardReaderPunch extends JFrame
 		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
 
 	private class PunchCardStatus {
 		boolean busy = false;
+		boolean empty = true;
 		boolean error = false;
 		boolean illegal = false;
 		boolean busy_if_ill = false;
@@ -46,35 +64,6 @@ public class P_CardReaderPunch extends JFrame
 		sts[0].card = new byte[160]; // 80 columns, 16 bits each
 		sts[1] = new PunchCardStatus(); // input - reader
 		sts[1].card = new byte[160]; // 80 columns, 16 bits each
-		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		Font font = new Font("Monospaced", Font.PLAIN, 12);
-		setFont(font);
-		JPanel pn = new JPanel();
-		pn.setLayout(new FlowLayout());
-		JButton bt = new JButton("Read Hopper");
-		bt.setPreferredSize(new Dimension(150, 20));
-		bt.setActionCommand("reader");
-		bt.addActionListener(this);
-		sts[1].count_pn = new JLabel();
-		sts[1].count_pn.setPreferredSize(new Dimension(75, 20));
-		sts[1].count_pn.setOpaque(true);
-		sts[1].count_pn.setBackground(Color.white);
-		sts[1].deck_pn = new JLabel();
-		sts[1].deck_pn.setPreferredSize(new Dimension(400, 20));
-		sts[1].deck_pn.setBackground(Color.white);
-		sts[1].deck_pn.setOpaque(true);
-		sts[1].deck_pn.setText("Empty");
-		pn.add(bt);
-		pn.add(sts[1].count_pn);
-		pn.add(sts[1].deck_pn);
-		add(pn);
-		// TODO: support non-BLANK cards in punch?
-		pn = new JPanel();
-		pn.setLayout(new FlowLayout());
-		bt = new JButton("Punch Stacker");
-		bt.setPreferredSize(new Dimension(150, 20));
-		bt.setActionCommand("punch");
-		bt.addActionListener(this);
 		sts[0].count_pn = new JLabel();
 		sts[0].count_pn.setPreferredSize(new Dimension(75, 20));
 		sts[0].count_pn.setOpaque(true);
@@ -84,8 +73,51 @@ public class P_CardReaderPunch extends JFrame
 		sts[0].deck_pn.setBackground(Color.white);
 		sts[0].deck_pn.setOpaque(true);
 		sts[0].deck_pn.setText("Discard");
+		sts[1].count_pn = new JLabel();
+		sts[1].count_pn.setPreferredSize(new Dimension(75, 20));
+		sts[1].count_pn.setOpaque(true);
+		sts[1].count_pn.setBackground(Color.white);
+		sts[1].deck_pn = new JLabel();
+		sts[1].deck_pn.setPreferredSize(new Dimension(400, 20));
+		sts[1].deck_pn.setBackground(Color.white);
+		sts[1].deck_pn.setOpaque(true);
+		sts[1].deck_pn.setText("Blank");
+		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+		Font font = new Font("Monospaced", Font.PLAIN, 12);
+		setFont(font);
+		JPanel pn = new JPanel();
+		pn.setLayout(new FlowLayout());
+		JButton bt = new JButton("Read Hopper");
+		bt.setPreferredSize(new Dimension(150, 20));
+		bt.setActionCommand("reader");
+		bt.addActionListener(this);
+		JPanel pn2 = new JPanel();
+		pn2.setPreferredSize(new Dimension(150, 20));
+		pn2.setOpaque(false);
+		pn.add(bt);
+		pn.add(sts[1].deck_pn);
+		add(pn);
+
+		pn = new JPanel();
+		pn.setLayout(new FlowLayout());
+		bt = new JButton("Runout");
+		bt.setPreferredSize(new Dimension(150, 20));
+		bt.setActionCommand("runout");
+		bt.addActionListener(this);
+		pn.add(new JLabel("Read"));
+		pn.add(sts[1].count_pn);
 		pn.add(bt);
 		pn.add(sts[0].count_pn);
+		pn.add(new JLabel("Punch"));
+		add(pn);
+
+		pn = new JPanel();
+		pn.setLayout(new FlowLayout());
+		bt = new JButton("Punch Stacker");
+		bt.setPreferredSize(new Dimension(150, 20));
+		bt.setActionCommand("punch");
+		bt.addActionListener(this);
+		pn.add(bt);
 		pn.add(sts[0].deck_pn);
 		add(pn);
 
@@ -161,7 +193,27 @@ public class P_CardReaderPunch extends JFrame
 		}
 	}
 
+	private void putCard(PunchCardStatus pcs) {
+		if (odev != null) {
+			try {
+				odev.write(pcs.card);
+			} catch (Exception ee) {
+				// TODO: handle exceptions? pass along?
+			}
+		}
+		pcs.empty = true;
+		++pcs.cards;
+		pcs.count_pn.setText(String.format("%d", pcs.cards));
+	}
+
+	private void passCard() {
+		System.arraycopy(sts[1].card, 0, sts[0].card, 0, sts[1].card.length);
+		sts[1].empty = true;
+		sts[0].empty = false;
+	}
+
 	private boolean getCard(PunchCardStatus pcs) {
+		// 'pcs' must be sts[1]...
 		int a = -1;
 		if (idev != null) {
 			try {
@@ -170,33 +222,85 @@ public class P_CardReaderPunch extends JFrame
 			} catch (Exception ee) {
 				// TODO: pass along EI/II exceptions
 			}
+		} else {
+			// assume a stack of BLANK cards...
+			Arrays.fill(pcs.card, (byte)0);
+			a = pcs.card.length;
 		}
 		if (a < 0) {
+			pcs.empty = true;
 			// what status to set?
 			pcs.count_pn.setText(String.format("%d END", pcs.cards));
 			pcs.error = true;
 			return false;
 		}
+		pcs.empty = false;
 		++pcs.cards;
 		pcs.count_pn.setText(String.format("%d", pcs.cards));
 		return true;
 	}
 
+	private void runout() {
+		while (!sts[0].empty) {
+			putCard(sts[0]);
+			if (!sts[1].empty) {
+				passCard();
+			}
+		}
+	}
+
+	private void vacatePunch() {
+		if (sts[0].empty) {
+			return;
+		}
+		// eject card from punch station...
+		putCard(sts[0]);
+	}
+
+	private void vacateReader() {
+		if (sts[1].empty) {
+			return;
+		}
+		// must pass along current card...
+		vacatePunch();
+		// move card from read to punch...
+		passCard();
+	}
+
+	private void fillPunch() {
+		if (!sts[0].empty) {
+			return;
+		}
+		// need a card to punch...
+		if (sts[1].empty) {
+			// load card into read station...
+			getCard(sts[1]);
+		}
+		// move card from read to punch...
+		passCard();
+	}
+
 	private void doIn(RWChannel rwc, PunchCardStatus pcs) {
 		rwc.startCLC();
+		// 'pcs' must be sts[1]...
+		vacateReader();
 		if (!getCard(pcs)) {
 			return;
 		}
 		for (int x = 0; x < 80; ++x) {
+			boolean stop = false;
 			// Must not disturb punctuation...
 			int p = getCol(pcs, x);
 			if (pcs.code == 2) {
-				// TODO: proper order...
+				// TODO: what is proper order...
 				rwc.writeChar((byte)((p >> 6) & 077));
-				if (rwc.incrCLC()) {
+				// this would probably be an error...
+				stop = ((rwc.readMem() & 0300) == 0300);
+				if (stop || rwc.incrCLC()) {
 					break;
 				}
 				rwc.writeChar((byte)p);
+				stop = ((rwc.readMem() & 0300) == 0300);
 			} else {
 				int c = cvt.punToHW(p, (pcs.code == 1));
 				if (c < 0) {
@@ -204,15 +308,18 @@ public class P_CardReaderPunch extends JFrame
 					c = 0; // TODO: error code?
 				}
 				rwc.writeChar((byte)c);
+				stop = ((rwc.readMem() & 0300) == 0300);
 			}
-			if (rwc.incrCLC()) {
+			if (stop || rwc.incrCLC()) {
 				break;
 			}
 		}
+		vacateReader();
 	}
 
 	public void doOut(RWChannel rwc, PunchCardStatus pcs) {
 		rwc.startCLC();
+		fillPunch();
 		for (int x = 0; x < 80; ++x) {
 			int p = 0;
 			if (pcs.code == 2) {
@@ -230,19 +337,7 @@ public class P_CardReaderPunch extends JFrame
 				return;
 			}
 		}
-		putCard(pcs);
-	}
-
-	private void putCard(PunchCardStatus pcs) {
-		if (odev != null) {
-			try {
-				odev.write(pcs.card);
-			} catch (Exception ee) {
-				// TODO: handle exceptions? pass along?
-			}
-		}
-		++pcs.cards;
-		pcs.count_pn.setText(String.format("%d", pcs.cards));
+		vacatePunch();
 	}
 
 	public boolean busy(byte c2) {
@@ -364,7 +459,11 @@ public class P_CardReaderPunch extends JFrame
 		}
 		JButton b = (JButton)e.getSource();
 		String c = b.getActionCommand();
-		String s;
+		if (c.equals("runout")) {
+			runout();
+			return;
+		}
+		String s = "";
 		if (c.equals("reader")) {
 			s = "Read Hopper";
 			if (idev != null) {
@@ -372,21 +471,21 @@ public class P_CardReaderPunch extends JFrame
 					idev.close();
 				} catch (Exception ee) {}
 				idev = null;
-				sts[1].deck_pn.setText("Empty");
-				sts[1].cards = 0;
-				sts[1].count_pn.setText("");
 			}
-		} else {
+			sts[1].deck_pn.setText("Blank");
+			sts[1].cards = 0;
+			sts[1].count_pn.setText("");
+		} else if (c.equals("punch")) {
 			s = "Punch Stacker";
 			if (odev != null) {
 				try {
 					odev.close();
 				} catch (Exception ee) {}
 				odev = null;
-				sts[0].deck_pn.setText("Discard");
-				sts[0].cards = 0;
-				sts[0].count_pn.setText(String.format("%d", sts[0].cards));
 			}
+			sts[0].deck_pn.setText("Discard");
+			sts[0].cards = 0;
+			sts[0].count_pn.setText(String.format("%d", sts[0].cards));
 		}
 		File f = pickFile(s);
 		if (f == null) {
@@ -401,7 +500,7 @@ public class P_CardReaderPunch extends JFrame
 			}
 			sts[1].deck_pn.setText(f.getName());
 			sts[1].count_pn.setText("0");
-		} else {
+		} else if (c.equals("punch")) {
 			try {
 				odev = new FileOutputStream(f);
 			} catch (Exception ee) {

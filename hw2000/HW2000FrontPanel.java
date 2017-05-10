@@ -54,6 +54,7 @@ public class HW2000FrontPanel extends JFrame
 	LightedButton am3;
 	LightedButton am4;
 	LightedButton type;
+	JLabel active;
 	JLabel eintr;
 	JLabel iintr;
 	JLabel pgm;
@@ -991,11 +992,36 @@ public class HW2000FrontPanel extends JFrame
 		sense[4] = btn;
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(50,40));
+		pn.setPreferredSize(new Dimension(50,100));
 		pn.setOpaque(false);
+		active = new JLabel("<HTML><CENTER>SYSTEM<BR>ACTIVE</CENTER></HTML>");
+		active.setFont(smallFont);
+		active.setForeground(indDark);
+		active.setOpaque(false);
+		// { All this effort just to get the JLabel centered V & H...
+		GridBagLayout gb2 = new GridBagLayout();
+		pn.setLayout(gb2);
+		GridBagConstraints gc2 = new GridBagConstraints();
+		gc2.fill = GridBagConstraints.NONE;
+		gc2.gridx = 0;
+		gc2.gridy = 0;
+		gc2.weightx = 0;
+		gc2.weighty = 0;
+		gc2.gridwidth = 1;
+		gc2.gridheight = 1;
+		gc2.insets.bottom = 0;
+		gc2.insets.top = 0;
+		gc2.insets.left = 0;
+		gc2.insets.right = 0;
+		gc2.anchor = GridBagConstraints.CENTER;
+		gb2.setConstraints(active, gc2);
+		pn.add(active);
+		// } ...
 		gc.gridx = 8;
+		gc.gridheight = 3;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
+		gc.gridheight = 1;
 
 		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // A/C ON
 		btn.addActionListener(this);
@@ -1025,11 +1051,21 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(310,20));
+		pn.setPreferredSize(new Dimension(120,20));
 		pn.setOpaque(false);
 		gc.gridx = 0;
 		gc.gridy = 2;
-		gc.gridwidth = gbx;
+		gc.gridwidth = 8;
+		gb.setConstraints(pn, gc);
+		rpn.add(pn);
+
+		// spacer panel done on gridy 1
+
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(90,20));
+		pn.setOpaque(false);
+		gc.gridx = 9;
+		gc.gridwidth = 4;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 
@@ -1089,12 +1125,7 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(btn);
 		sense[0] = btn;
 
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(50,40));
-		pn.setOpaque(false);
-		gc.gridx = 8;
-		gb.setConstraints(pn, gc);
-		rpn.add(pn);
+		// spacer panel done on gridy 1
 
 		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // DC ON
 		btn.setOn(true);
@@ -1283,12 +1314,19 @@ public class HW2000FrontPanel extends JFrame
 	public void setInterrupt(int type) {	// Indicator only
 		eintr.setForeground(type == HW2000CCR.EIR_EI ? indLit : indDark);
 		iintr.setForeground(type == HW2000CCR.EIR_II ? indLit : indDark);
-		// TODO: how to detect "program exception"?
-		pgm.setForeground(type == HW2000CCR.EIR_PC ? indLit : indDark);
 		repaint();
 	}
 	public void setProtect(int type) {	// Indicator only
 		prot.setForeground(type != 0 ? indLit : indDark);
+	}
+	public void setActive(boolean on) {	// Indicator only
+		if (active != null) {
+			active.setForeground(on ? indLit : indDark);
+		}
+	}
+	public void setProgram(boolean on) {	// Indicator only
+		// TODO: how to detect "program exception"?
+		pgm.setForeground(on ? indLit : indDark);
 	}
 
 	// Actions are:
@@ -2012,14 +2050,17 @@ public class HW2000FrontPanel extends JFrame
 					endCtrlMode();
 				} else if (a.equals("clear")) {
 					// nothing of interest to do?
+					setProgram(false); // yes?
 				} else if (a.equals("init")) {
-					// TODO: simulate "lamp test" function?
 					monitor = false;
 					mi_mon.setEnabled(true);
 					sys.reset();
 					setAddress(sys.SR);
 					setContents(sys.rawReadMem(addressReg));
 					setInterrupt(-1);
+					setProtect(0);
+					setProgram(false);
+					setActive(false);
 					currLow = 0;
 					currHi = 0;
 				} else if (a.equals("boot")) {
@@ -2274,6 +2315,7 @@ public class HW2000FrontPanel extends JFrame
 					// run automatically?
 					// set only after running?
 					mi_mon.setEnabled(!ok);
+					monitor = ok;
 				}
 			} catch (Exception ee) {
 				ee.printStackTrace();
@@ -2665,6 +2707,9 @@ ee.printStackTrace();
 		voltage.setForeground(ind);
 		fan.setForeground(ind);
 		cb.setForeground(ind);
+		if (active != null) {
+			active.setForeground(ind);
+		}
 	}
 
 	public void run() {

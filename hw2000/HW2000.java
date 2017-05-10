@@ -608,6 +608,10 @@ public class HW2000 implements CoreMemory
 	int count = 0;
 
 	public void execute() {
+		if (fp != null) {
+			// TODO: clean this up (?)
+			fp.setActive(op_exec instanceof I_PDT || op_exec instanceof I_PCB);
+		}
 		op_exec.execute(this);
 		updClock();
 	}
@@ -733,6 +737,7 @@ public class HW2000 implements CoreMemory
 					// nothing else
 				} else {
 					if (fp != null) {
+						fp.setProgram(true);
 						HW2000FrontPanel.warning(fp.getContentPane(), "Run II",
 							String.format("%07o: %s",
 								oSR,
@@ -750,6 +755,7 @@ public class HW2000 implements CoreMemory
 					// nothing else
 				} else {
 					if (fp != null) {
+						fp.setProgram(true);
 						HW2000FrontPanel.warning(fp.getContentPane(), "Run EI",
 							String.format("%07o: %s",
 								oSR,
@@ -761,6 +767,7 @@ public class HW2000 implements CoreMemory
 				}
 			} catch (FaultException fe) {
 				if (fp != null) {
+					fp.setProgram(true);
 					HW2000FrontPanel.warning(fp.getContentPane(), "Run Fault",
 						String.format("%07o: %s",
 								oSR,
@@ -771,7 +778,8 @@ public class HW2000 implements CoreMemory
 				halt = true;
 			} catch (Exception e) {
 				if (fp != null) {
-					e.printStackTrace();
+					fp.setProgram(true);
+					//e.printStackTrace();
 					HW2000FrontPanel.warning(fp.getContentPane(), "Run",
 						String.format("<HTML><PRE>%07o: %s</PRE></HTML>",
 							oSR,

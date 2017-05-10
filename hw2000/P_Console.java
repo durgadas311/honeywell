@@ -212,17 +212,26 @@ public class P_Console extends JFrame
 		try {
 			// TODO: what effect does c3 have? Print CR/LF before input?
 			// Or... use CR as termination of input?
-			while ((rwc.readMem() & 0300) != 0300) {
-				byte c = getChar(rwc.sys, true);
+			byte c = 0;
+			while (true) {
+				c = getChar(rwc.sys, true);
 				if (c < 0) {
 					// caller must check CLC (CLC - SLC)
 					break;
 				}
 				// Must not disturb punctuation
 				rwc.writeChar(c);
+				if ((rwc.readMem() & 0300) == 0300) {
+					break;
+				}
 				if (rwc.incrCLC()) {
 					break;
 				}
+			}
+			// user did not press carriage-return and
+			// carriage-return is NOT suppressed...
+			if (c >= 0 && rwc.c3 != 0) {
+				putChar("\n");
 			}
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
@@ -245,12 +254,7 @@ public class P_Console extends JFrame
 					break;
 				}
 				a &= 077;
-				if (col >= 64) {
-					s += "\n";
-					col = 0;
-				}
 				s += rwc.sys.pdc.cvt.hwToLP(a);
-				++col;
 				if (rwc.incrCLC()) {
 					break;
 				}
@@ -259,17 +263,36 @@ public class P_Console extends JFrame
 				s += "\n";
 				col = 0;
 			}
+			putChar(s);
 			if (odev != null) {
 				odev.write(s.getBytes());
 			}
-			text.insert(s, carr);
-			carr += s.length();
-			text.setCaretPosition(carr);
 			autoVisible(true);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
 		unit.busy = false;
+	}
+
+	// Can only have '\n' at end...
+	private void putChar(String s) {
+		int n = s.length();
+		if (col + n > 64) {
+			putChar(s.substring(0, 64 - col));
+			s = s.substring(64 - col);
+			n = s.length();
+		}
+		text.insert(s, carr);
+		carr += n;
+		col += n;
+		if (s.endsWith("\n")) {
+			col = 0;
+		} else if (col >= 64) {
+			// should only ever be "col == 64"...
+			text.insert("\n", carr++);
+			col = 0;
+		}
+		text.setCaretPosition(carr);
 	}
 
 	// return -1 on CR
@@ -285,15 +308,12 @@ public class P_Console extends JFrame
 		}
 		a = Character.toUpperCase((char)a);
 		if (a == '\n') {
+			// TODO: is <CR> always echoed?
+			col = 0;
 			if (echo) {
-				text.insert("\n", carr++);
-				text.setCaretPosition(carr);
+				putChar("\n");
 			}
 			return -1;
-		}
-		if (col >= 64) {
-			text.insert("\n", carr++);
-			col = 0;
 		}
 		int ix = CharConverter.hwAsciiSup.indexOf((char)a);
 		if (ix >= 0) {
@@ -301,8 +321,7 @@ public class P_Console extends JFrame
 		}
 		byte c = sys.pdc.cvt.asciiToHw((byte)a);
 		if (echo) {
-			text.insert(sys.pdc.cvt.hwToLP(c), carr++);
-			text.setCaretPosition(carr);
+			putChar(sys.pdc.cvt.hwToLP(c));
 		}
 		return c;
 	}
@@ -349,9 +368,7 @@ public class P_Console extends JFrame
 				odev.write(s.getBytes());
 			} catch (Exception ee) {}
 		}
-		text.insert(s, carr);
-		carr += s.length();
-		text.setCaretPosition(carr);
+		putChar(s);
 		autoVisible(true);
 	}
 

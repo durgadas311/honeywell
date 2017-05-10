@@ -10,6 +10,8 @@ public interface FrontPanel {
 	public void setAdrMode(int v);
 	public void setInterrupt(int type);	// Indicator only
 	public void setProtect(int type);	// Indicator only
+	public void setActive(boolean on);	// Indicator only
+	public void setProgram(boolean on);	// Indicator only
 	public int getSense();
 
 	// ActionCommands are:
