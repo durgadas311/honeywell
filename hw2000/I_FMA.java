@@ -95,7 +95,7 @@ public class I_FMA implements Instruction {
 		if (sys.numXtra() != 2) {
 			throw new FaultException("FMA malformed");
 		}
-		byte x = (byte)(sys.getXtra(0) & 070);
+		byte x = (byte)((sys.getXtra(0) & 070) >> 3);
 		byte y = (byte)(sys.getXtra(0) & 007);
 		byte op = (byte)(sys.getXtra(1) & 077);
 		boolean taken = false;
@@ -248,6 +248,9 @@ public class I_FMA implements Instruction {
 			sys.addTics(1);
 			break;
 		}
+		// If the operation overwrote AC[7], restore 0.0
+		sys.AC[7] = 0.0;
+		sys.denorm[7] = false;
 		if (taken) {
 			sys.BAR = sys.SR;
 			sys.SR = sys.AAR;

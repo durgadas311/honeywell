@@ -14,7 +14,7 @@ public class HW2000 implements CoreMemory
 	public static final byte M_DIGIT = 0x0f;
 	public static final byte M_CHAR = 0x3f;
 
-	public static final byte LOR = 007;
+	public static final byte LOR = 010;
 
 	byte[] mem;
 	public int[] cr;
@@ -66,8 +66,8 @@ public class HW2000 implements CoreMemory
 		waitLock = new Semaphore(1);
 		fp = null;
 		CTL = new HW2000CCR();
-		AC = new double[8];
-		denorm = new boolean[8];
+		AC = new double[9];
+		denorm = new boolean[9];
 		Arrays.fill(denorm, false);
 		mem = new byte[524288]; // TODO: mmap file
 		Arrays.fill(mem, (byte)0);

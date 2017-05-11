@@ -6,7 +6,7 @@ public class I_FAA implements Instruction {
 		if (sys.numXtra() != 2) {
 			throw new FaultException("FAA malformed");
 		}
-		byte x = (byte)(sys.getXtra(0) & 070);
+		byte x = (byte)((sys.getXtra(0) & 070) >> 3);
 		byte y = (byte)(sys.getXtra(0) & 007);
 		byte op = (byte)(sys.getXtra(1) & 077);
 
@@ -75,5 +75,8 @@ public class I_FAA implements Instruction {
 			sys.addTics(12); // + Nn/6
 			break;
 		}
+		// If the operation overwrote AC[7], restore 0.0
+		sys.AC[7] = 0.0;
+		sys.denorm[7] = false;
 	}
 }

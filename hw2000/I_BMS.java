@@ -6,7 +6,7 @@ public class I_BMS implements Instruction {
 		if (sys.numXtra() != 2) {
 			throw new FaultException("BMS malformed");
 		}
-		byte x = (byte)(sys.getXtra(0) & 070);
+		byte x = (byte)((sys.getXtra(0) & 070) >> 3);
 		byte m = (byte)(sys.getXtra(0) & 007);
 		int sh = (sys.getXtra(1) & 077);
 
@@ -89,5 +89,8 @@ public class I_BMS implements Instruction {
 		sys.AC[HW2000.LOR] = I_FMA.mergeMant(sys.AC[HW2000.LOR], lor);
 		sys.denorm[x] = ((mant & 0x400000000L) == 0);
 		sys.denorm[HW2000.LOR] = ((lor & 0x400000000L) == 0);
+		// If the operation overwrote AC[7], restore 0.0
+		sys.AC[7] = 0.0;
+		sys.denorm[7] = false;
 	}
 }
