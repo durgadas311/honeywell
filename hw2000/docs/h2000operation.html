@@ -56,13 +56,13 @@ records. Eventually, this will be a fairly-complete "Tape Monitor/Loader C"
 implementation, but right now it wraps a singe program in the self-loading
 code which allows for running the program. The procedure is similar to that
 described by "Tape Monitor/Loader C" documentation:
-BOOTSTRAP 41 twice, then RUN <U>once</U>. The following format is used:
+BOOTSTRAP 40 twice, then RUN <U>once</U>. The following format is used:
 <OL>
-<LI>"1HDR " record (skipped during bootstrap)
+<LI>"1HDR&#916;" record (skipped during bootstrap)
 <LI>The loader, bootmt.mti, including bootstrap and loader records
 <LI>The program image in BRT format, single segment, multiple records
-<LI>"1EOF " record
-<LI>Two "1ERI " records
+<LI>"1EOF&#916;" record
+<LI>Two "1ERI&#916;" records
 </OL>
 
 <P>The loader will restore punctuation based on the information in the tape image.

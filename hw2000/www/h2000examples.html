@@ -91,19 +91,29 @@ the next step.
 this time the FORTRAN special characters should appear as expected.
 </OL>
 
-<H2>RUN TAPE</H2>
+<H2>BINARY RUN TAPE</H2>
 
-<P>This demo will create a "run tape" (self-loading program image on mag tape)
+<P>This demo will create a "binary run tape"
+(<A HREF="h2000brt.html">BRT</A> - self-loading program image on mag tape)
 and then use BOOTSTRAP to run it.
 
 <OL>
+<LI>Open/raise the MagTape window and mount a "blank tape" (new file) on tape drive 000.
 <LI>Select menu File->Assemble and choose the file "mcetests.ezc",
-check the "Tape Image" box, and click "Assemble". This will create "mcetests.mti".
-<LI>Open/raise the MagTape window and mount the file "mcetests.mti" on tape drive 000.
-<LI>Enter 40 into Contents (using the clear button as needed).
+check the "Tape Image" box, and click "Assemble".
+This will create a BRT image on the new file.
+<LI>Rewind the tape on tape drive 000.
+<LI>For the 220-3 console, enter the bootstrap command "B 40 0000000".
+For the full control panel:
+<OL><LI>Enter 40 into Contents (using the clear button as needed).
 <LI>Ensure Address is 0 (use the clear button as needed).
-<LI>Press BOOTSTRAP. The tape drive should indicate that about 191 bytes were read.
-<LI>Press RUN. The tape drive should stop at about 1828 bytes and the line printer
+<LI>Press BOOTSTRAP.
+</OL>
+The tape drive should indicate that about 6 bytes were read.
+This will be the BRT "1HDR&#916;" record.
+<LI>Repeat the bootstrap step to load the actual bootstrap record.
+Tape drive should show 361 bytes have been read.
+<LI>Press RUN. The tape drive should stop at about 3197 bytes and the line printer
 should show the output of running the mcetests program.
 </OL>
 
