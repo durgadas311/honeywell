@@ -47,7 +47,7 @@ public class P_CardReaderPunch extends JFrame
 
 	PunchCardStatus[] sts;
 
-	boolean loopback = false;
+	boolean readPunch = false;
 	File _last = null;
 	boolean isOn = false;
 	InputStream idev;
@@ -56,7 +56,7 @@ public class P_CardReaderPunch extends JFrame
 	int vUnit;
 
 	public P_CardReaderPunch(CharConverter cvt) {
-		super("H214 Card Reader/Punch");
+		super("H214-2 Card Reader/Punch");
 		this.cvt = cvt;
 		_last = new File(System.getProperty("user.dir"));
 		sts = new PunchCardStatus[2];
@@ -261,7 +261,7 @@ public class P_CardReaderPunch extends JFrame
 		if (sts[1].empty) {
 			return;
 		}
-		// must pass along current card...
+		// must pass along any current card...
 		vacatePunch();
 		// move card from read to punch...
 		passCard();
@@ -283,7 +283,7 @@ public class P_CardReaderPunch extends JFrame
 	private void doIn(RWChannel rwc, PunchCardStatus pcs) {
 		rwc.startCLC();
 		// 'pcs' must be sts[1]...
-		vacateReader();
+		vacateReader();	// just in case - should be no-op
 		if (!getCard(pcs)) {
 			return;
 		}
@@ -314,6 +314,7 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			}
 		}
+		// make sure we don't read same card twice
 		vacateReader();
 	}
 
@@ -337,6 +338,7 @@ public class P_CardReaderPunch extends JFrame
 				return;
 			}
 		}
+		// make sure we don't punch same card twice
 		vacatePunch();
 	}
 
@@ -364,7 +366,7 @@ public class P_CardReaderPunch extends JFrame
 		//	23	Generate busy if punch check errors
 		//	22	Offset illegal punch cards
 		//	21	Offset punch error cards
-		//	20	Punch feed read mode (loopback?)
+		//	20	Punch feed read mode (a punch may follow read)
 		//	31	Offset current punch card
 		boolean branch = false;
 		boolean in = rwc.isInput();
@@ -400,7 +402,7 @@ public class P_CardReaderPunch extends JFrame
 				}
 				break;
 			case 027:
-				loopback = false;
+				readPunch = false;
 				// FALLTHROUGH
 			case 026:
 			case 025:
@@ -423,8 +425,12 @@ public class P_CardReaderPunch extends JFrame
 				pcs.offset_err = true;
 				break;
 			case 020:
-				// TODO: what resets this?
-				loopback = true;
+				// TODO: enforce punch-feed read mode?
+				// We operate in this mode automatically now,
+				// If a punch follows a read, the card is re-punched.
+				// If a read follows a read, send card to stacker.
+				// See fillPunch(), vacateReader(), vacatePunch().
+				readPunch = true;
 				break;
 			case 031:
 				pcs.offset_next = true;
