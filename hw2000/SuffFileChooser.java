@@ -8,69 +8,25 @@ import javax.swing.*;
 class SuffFileChooser extends JFileChooser {
 	static final long serialVersionUID = 311457692041L;
 	private String _btn;
-	private class ChkBox extends JComponent {
-		static final long serialVersionUID = 31170769203L;
-		public Checkbox btn;
-		public ChkBox(String b) {
-			btn = new Checkbox(b);
-			setLayout(new FlowLayout());
-			add(btn);
-		}
-	}
-	private ChkBox _listing = null;
-	private ChkBox _prot = null;
-	private ChkBox _tape = null;
-	private void addAccessories(int opts) {
-		JPanel pn = new JPanel();
-		pn.setLayout(new BoxLayout(pn, BoxLayout.Y_AXIS));
-		if ((opts & 1) != 0) {
-			_listing = new ChkBox("Listing");
-			pn.add(_listing);
-		}
-		if ((opts & 2) != 0) {
-			_prot = new ChkBox("Write Prot");
-			pn.add(_prot);
-		}
-		if ((opts & 4) != 0) {
-			_tape = new ChkBox("Tape Image");
-			pn.add(_tape);
-		}
-		setAccessory(pn);
-	}
-	public SuffFileChooser(String btn, File dir, int opts) {
+	public SuffFileChooser(String btn, String[] sfx, String[] dsc,
+			File dir, JComponent opts) {
 		super(dir);
-		_btn = btn;
-		setApproveButtonText(btn);
-		setApproveButtonToolTipText(btn);
-		setDialogTitle(btn);
-		setDialogType(JFileChooser.SAVE_DIALOG);
-		addAccessories(opts);
-	}
-	public SuffFileChooser(String btn, String sfx, String dsc, File dir, int opts) {
-		super(dir);
-		SuffFileFilter f = new SuffFileFilter(sfx, dsc);
-		setFileFilter(f);
-		_btn = btn;
-		setApproveButtonText(btn);
-		setApproveButtonToolTipText(btn);
-		setDialogTitle(btn);
-		setDialogType(JFileChooser.SAVE_DIALOG);
-		addAccessories(opts);
-	}
-	public SuffFileChooser(String btn, String[] sfx, String[] dsc, File dir, int opts) {
-		super(dir);
-		SuffFileFilter f = new SuffFileFilter(sfx[0], dsc[0]);
-		setFileFilter(f);
-		for (int i = 1; i < dsc.length; ++i) {
-			f = new SuffFileFilter(sfx[i], dsc[i]);
-			addChoosableFileFilter(f);
+		if (sfx != null && dsc != null && sfx.length == dsc.length) {
+			SuffFileFilter f = new SuffFileFilter(sfx[0], dsc[0]);
+			setFileFilter(f);
+			for (int i = 1; i < dsc.length; ++i) {
+				f = new SuffFileFilter(sfx[i], dsc[i]);
+				addChoosableFileFilter(f);
+			}
 		}
 		_btn = btn;
 		setApproveButtonText(btn);
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		addAccessories(opts);
+		if (opts != null) {
+			setAccessory(opts);
+		}
 	}
 	public int showDialog(Component frame) {
 		int rv = super.showDialog(frame, _btn);
@@ -87,14 +43,5 @@ class SuffFileChooser extends JFileChooser {
 			}
 		}
 		return rv;
-	}
-	public boolean wantListing() {
-		return _listing != null && _listing.btn.getState();
-	}
-	public boolean wantWrProt() {
-		return _prot != null && _prot.btn.getState();
-	}
-	public boolean wantTapeImg() {
-		return _tape != null && _tape.btn.getState();
 	}
 }

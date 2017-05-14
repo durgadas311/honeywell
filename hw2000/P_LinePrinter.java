@@ -242,9 +242,10 @@ public class P_LinePrinter extends JFrame
 		File file = null;
 		SuffFileChooser ch;
 		if (typ == null) {
-			ch = new SuffFileChooser(purpose, _last, 0);
+			ch = new SuffFileChooser(purpose, null, null, _last, null);
 		} else {
-			ch = new SuffFileChooser(purpose, typ, dsc, _last, 0);
+			ch = new SuffFileChooser(purpose,
+				new String[]{typ}, new String[]{dsc}, _last, null);
 		}
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {

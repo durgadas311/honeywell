@@ -100,6 +100,9 @@ public class HW2000FrontPanel extends JFrame
 	int dumpHi;
 	private P_Console cons;
 	private P_LinePrinter lpt;
+	private JCheckBox lst;
+	private JCheckBox mti;
+	private JPanel acc;
 
 	public HW2000FrontPanel(Properties props, HW2000 sys) {
 		super("Honeywell Series 2000");
@@ -111,6 +114,13 @@ public class HW2000FrontPanel extends JFrame
 		bigFont = new Font("Sans-Serif", Font.PLAIN, 40);
 		medFont = new Font("Sans-Serif", Font.PLAIN, 28);
 		smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
+
+		lst = new JCheckBox("Listing");
+		mti = new JCheckBox("Tape Image");
+		acc = new JPanel();
+		acc.setLayout(new BoxLayout(acc, BoxLayout.Y_AXIS));
+		acc.add(lst);
+		acc.add(mti);
 
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
@@ -2250,12 +2260,13 @@ public class HW2000FrontPanel extends JFrame
 		File file = null;
 		listing = false;
 		tape = false;
-		SuffFileChooser ch = new SuffFileChooser(purpose, sfx, typ, prev, 5);
+		SuffFileChooser ch = new SuffFileChooser(purpose,
+			new String[]{sfx}, new String[]{typ}, prev, acc);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
-			listing = ch.wantListing();
-			tape = ch.wantTapeImg();
+			listing = lst.isSelected();
+			tape = mti.isSelected();
 		}
 		return file;
 	}

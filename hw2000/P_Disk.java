@@ -78,6 +78,7 @@ public class P_Disk extends JFrame
 	boolean track_dirty;
 
 	boolean prot; // only valid immediately after pickFile()
+	JCheckBox wp;
 
 	// 11 platters, 20 surfaces
 	// 200 cyls (0000-0312 or 203?)
@@ -89,6 +90,7 @@ public class P_Disk extends JFrame
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
+		wp = new JCheckBox("Write Prot");
 
 		sts = new DiskStatus[8];
 		track = new byte[trk_len];
@@ -750,11 +752,12 @@ public class P_Disk extends JFrame
 
 	private File pickFile(String purpose) {
 		File file = null;
-		SuffFileChooser ch = new SuffFileChooser(purpose, "dpi", "Disk Pack Img", _last, 2);
+		SuffFileChooser ch = new SuffFileChooser(purpose,
+			new String[]{"dpi"}, new String[]{"Disk Pack Img"}, _last, wp);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
-			prot = ch.wantWrProt();
+			prot = wp.isSelected();
 			_last = file; // or use dev[unit]?
 		}
 		return file;

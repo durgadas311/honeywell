@@ -36,6 +36,7 @@ public class P_MagneticTape extends JFrame
 	boolean vWritten = false;
 
 	boolean prot; // only valid during file choosing
+	JCheckBox wp;
 	File _last = null;
 	boolean isOn = false;
 
@@ -46,6 +47,7 @@ public class P_MagneticTape extends JFrame
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
+		wp = new JCheckBox("Write Prot");
 
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new MagTapeStatus();
@@ -398,11 +400,12 @@ public class P_MagneticTape extends JFrame
 
 	private File pickFile(String purpose) {
 		File file = null;
-		SuffFileChooser ch = new SuffFileChooser(purpose, "mti", "Mag Tape Img", _last, 2);
+		SuffFileChooser ch = new SuffFileChooser(purpose,
+			new String[]{"mti"}, new String[]{"Mag Tape Img"}, _last, wp);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
-			prot = ch.wantWrProt();
+			prot = wp.isSelected();
 			_last = file; // or use dev[unit]?
 		}
 		return file;

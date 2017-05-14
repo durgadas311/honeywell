@@ -425,7 +425,7 @@ public class P_Console extends JFrame
 
 	private File pickFile(String purpose) {
 		File file = null;
-		SuffFileChooser ch = new SuffFileChooser(purpose, _last, 0);
+		SuffFileChooser ch = new SuffFileChooser(purpose, null, null, _last, null);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();

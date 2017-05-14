@@ -450,7 +450,8 @@ public class P_CardReaderPunch extends JFrame
 
 	private File pickFile(String purpose) {
 		File file = null;
-		SuffFileChooser ch = new SuffFileChooser(purpose, "pcd", "Punch Card Deck", _last, 0);
+		SuffFileChooser ch = new SuffFileChooser(purpose,
+			new String[]{"pcd"}, new String[]{"Punch Card Deck"}, _last, null);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
