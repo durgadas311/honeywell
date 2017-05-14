@@ -8,53 +8,25 @@ import javax.swing.*;
 class SuffFileChooser extends JFileChooser {
 	static final long serialVersionUID = 311457692041L;
 	private String _btn;
-	private class TapeProt extends JComponent {
-		static final long serialVersionUID = 31170769203L;
-		public Checkbox btn;
-		public TapeProt(String b) {
-			btn = new Checkbox(b);
-			setLayout(new FlowLayout());
-			add(btn);
-		}
-	}
-	private TapeProt _prot;
-	public SuffFileChooser(String btn, File dir) {
+	public SuffFileChooser(String btn, String[] sfx, String[] dsc,
+			File dir, JComponent opts) {
 		super(dir);
-		_btn = btn;
-		setApproveButtonText(btn);
-		setApproveButtonToolTipText(btn);
-		setDialogTitle(btn);
-		setDialogType(JFileChooser.SAVE_DIALOG);
-		_prot = new TapeProt("Protect");
-		setAccessory(_prot);
-	}
-	public SuffFileChooser(String btn, String sfx, String dsc, File dir) {
-		super(dir);
-		SuffFileFilter f = new SuffFileFilter(sfx, dsc);
-		setFileFilter(f);
-		_btn = btn;
-		setApproveButtonText(btn);
-		setApproveButtonToolTipText(btn);
-		setDialogTitle(btn);
-		setDialogType(JFileChooser.SAVE_DIALOG);
-		_prot = new TapeProt("Protect");
-		setAccessory(_prot);
-	}
-	public SuffFileChooser(String btn, String[] sfx, String[] dsc, File dir) {
-		super(dir);
-		SuffFileFilter f = new SuffFileFilter(sfx[0], dsc[0]);
-		setFileFilter(f);
-		for (int i = 1; i < dsc.length; ++i) {
-			f = new SuffFileFilter(sfx[i], dsc[i]);
-			addChoosableFileFilter(f);
+		if (sfx != null && dsc != null && sfx.length == dsc.length) {
+			SuffFileFilter f = new SuffFileFilter(sfx[0], dsc[0]);
+			setFileFilter(f);
+			for (int i = 1; i < dsc.length; ++i) {
+				f = new SuffFileFilter(sfx[i], dsc[i]);
+				addChoosableFileFilter(f);
+			}
 		}
 		_btn = btn;
 		setApproveButtonText(btn);
 		setApproveButtonToolTipText(btn);
 		setDialogTitle(btn);
 		setDialogType(JFileChooser.SAVE_DIALOG);
-		_prot = new TapeProt("Protect");
-		setAccessory(_prot);
+		if (opts != null) {
+			setAccessory(opts);
+		}
 	}
 	public int showDialog(Component frame) {
 		int rv = super.showDialog(frame, _btn);
@@ -71,8 +43,5 @@ class SuffFileChooser extends JFileChooser {
 			}
 		}
 		return rv;
-	}
-	public boolean isProtected() {
-		return _prot.btn.getState();
 	}
 }

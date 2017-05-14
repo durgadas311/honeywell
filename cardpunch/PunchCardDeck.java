@@ -644,7 +644,8 @@ class PunchCardDeck extends PunchCard
 
 	private File pickFile(String purpose, String sfx, String typ, File prev) {
 		File file;
-		SuffFileChooser ch = new SuffFileChooser(purpose, sfx, typ, prev);
+		SuffFileChooser ch = new SuffFileChooser(purpose,
+			new String[]{sfx}, new String[]{typ}, prev, null);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
