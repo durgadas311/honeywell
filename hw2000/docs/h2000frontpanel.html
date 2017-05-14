@@ -111,19 +111,60 @@ adding the contents of the BRR. It is not known if/where the BRR exists in
 control memory, so there is no way to access it from the front panel.
 The same is true for IBR, Variant Register, AIR, etc.
 
+<H2>220-3 Console Commands</H2>
+<P>The Display and Debug Buttons of the standard control panel have been
+replaced by an interactive "control mode" on the 220-3 console typewriter.
+When the system is stopped, the following commands are accepted:
+<P><DL>
+<DT>A <I>ctl</I> <I>adr</I></DT>
+<DD>Store address in control register, and load into Address Register.</DD>
+<DT>P <I>ctl</I></DT>
+<DD>Print contents of control register, and load into Address Register.</DD>
+<DT>R</DT>
+<DD>Load control register from last <B>P</B> or <B>A</B> command into Address Register,
+print address and memory contents.</DD>
+<DT><I>octal-triplets</I>...</DT>
+<DD>Store values into memory starting at current Address Register value, increment.
+This is similar to the CONTENTS ENTER but with an increment of Address Register.
+The control register from last <B>P</B> or <B>A</B> command is also modified.</DD>
+<DT><B>TYPE-button</B></DT>
+<DD>Holding the TYPE button down causes the contents of memory to be printed
+starting at the Address Register.
+This is similar to using the CONTROL DISPLAY +1 button except that the function
+repeats as long as the TYPE button is held down.
+The control register from last <B>P</B> or <B>A</B> command is also modified.</DD>
+<DT>B <I>per</I> <I>adr</I></DT>
+<DD>Bootstrap using the peripheral address and memory address.
+This is similar to entering <I>per</I> into CONTENTS, <I>adr</I> into ADDRESS,
+and pressing BOOTSTRAP.</DD>
+<DT>S</DT>
+<DD>Single step one instruction. This is similar to using the INSTRUCT button.</DD>
+<DT>L <I>text</I></DT>
+<DD>Log text to the page. This is the console equivalent of a comment in EasyCoder.</DD>
+</DL>
+<P>Addresses and entered/printed as 7 octal digits, first digit 0 or 1.
+Control registers and peripheral addresses are 2 octal digits.
+Octal-triplets are 3 digit octal representations of 8 bit bytes.
+The commands will print spaces at appropriate points, and will automatically
+execute when the last valid digit is entered. Pressing Carriage Return before
+that point will cancel the command (or the current octal-triplet).
+
 
 <H2>System Control Buttons</H2>
 
 <P>Most of these buttons are fairly obvious. RUN starts the processor executing
 instructions at the current SR. STOP halts the processor (after current instruction
 completes). INTERRUPT sets a Console/Front-Panel interrupt.
+TYPE button (220-3 only) is explained above.
 
 <P>INITIALIZE will reset nearly everything related to the hardware.
 NOTE: The INITIALIZE button currently also clears all memory locations.
+This behavior will be removed in the future.
 This helps avoid complications due to latent punctuation from previous
 programs, although assembling a program will replace punctuation for all
 segments that produce code
-(i.e. RESV, or regions skipped by ORGs, would otherwise retain previous punctuation).
+(i.e. RESV, or regions skipped by ORGs, would otherwise retain previous punctuation
+unless CLEAR is used).
 
 <P>SYSTEM CLEAR does not currently do anything. The original intent seemed to be
 to reset the processor to the "extraction state", but this implementation does
@@ -132,7 +173,7 @@ not leave the virtual process in a state that requires any reset.
 <P>INSTRUCT provides a single-step function. Pressing this button causes
 one instruction to be executed.
 
-<P>BOOTSTRAP provides a more complicated function. It will execute a PDT
+<P>BOOTSTRAP (220-1 only) provides a more complicated function. It will execute a PDT
 instruction using ADDRESS as the A-Field and CONTENTS as the C2 control character.
 This implementation will use 11 as the C1 control character (RWC), and the device
 selected by C2 will provide "reasonable" defaults for any other control characters
@@ -142,6 +183,9 @@ At the end of a BOOTSTRAP, all of BAR, AAR, and SR will contain the value from A
 The intent is that the load address of the bootstrap code is the same as the start/run
 address for the bootstrap. The operator may, of course, change the SR (or any other
 registers) prior to pressing RUN.
+
+<P>Address Mode buttons "2", "3", and "4" set the (initial) address mode
+for the next RUN or INSTRUCT.
 
 </BODY>
 </HTML>
