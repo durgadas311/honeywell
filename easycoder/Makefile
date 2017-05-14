@@ -4,6 +4,13 @@ CLASSES = $(subst .java,.class,$(JAVAS))
 CPCLASSES =     CharConverter.class
 HWCLASSES =     CoreMemory.class \
 		CoreLoader.class \
+		RWChannel.class \
+		HW2000.class \
+		Peripheral.class \
+		PeriphLoader.class \
+		SequentialRecordIO.class \
+		P_MagneticTape*.class \
+		P_CardReaderPunch*.class \
 		InstrDecode.class
 
 EXTCLASSES = $(CPCLASSES) $(HWCLASSES)

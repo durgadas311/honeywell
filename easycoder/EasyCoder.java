@@ -25,6 +25,9 @@ public class EasyCoder extends JFrame implements ActionListener {
 	JTextArea min;
 	JTextArea max;
 	JTextArea start;
+	JTextArea unit;
+	P_MagneticTape magTape;
+	P_CardReaderPunch punch;
 
 	// TODO: These are supposed to be 80-char (both Tape and Card)
 	private static final byte[] _1HDR = new byte[]{ 001, 030, 024, 051, 015}; // 1HDR_
@@ -61,6 +64,11 @@ public class EasyCoder extends JFrame implements ActionListener {
 		outBg.add(brtCard);
 		outBg.add(boot);
 		outBg.add(raw);
+		unit = new JTextArea();
+		unit.setPreferredSize(new Dimension(50, 20));
+		unit.setEditable(true);
+		unit.setText("0");
+		unit.setEnabled(false);
 		min = new JTextArea();
 		min.setPreferredSize(new Dimension(50, 20));
 		min.setEditable(false);
@@ -97,6 +105,12 @@ public class EasyCoder extends JFrame implements ActionListener {
 		pn2.add(pn);
 		pn = new JPanel();
 		pn.setLayout(new BoxLayout(pn, BoxLayout.Y_AXIS));
+		JPanel pn3 = new JPanel();
+		pn3.setLayout(new BoxLayout(pn3, BoxLayout.X_AXIS));
+		pn3.add(new JLabel(" Unit:"));
+		pn3.add(unit);
+		pn.add(new JLabel(" "));
+		pn.add(pn3);
 		pn.add(self);
 		pn.add(ovrw);
 		pn.add(swi);
@@ -124,11 +138,14 @@ public class EasyCoder extends JFrame implements ActionListener {
 		pn.add(asmb);
 		add(pn);
 
+		magTape = new P_MagneticTape();
+		punch = new P_CardReaderPunch(new CharConverter());
+
 		pack();
 		setVisible(true);
 	}
 
-	private void resCopy(String res, RandomAccessFile p) throws Exception {
+	private void resCopy(String res, SequentialRecordIO p) throws Exception {
 		InputStream r = getClass().getResourceAsStream(res);
 		if (r == null) {
 			// TODO: throw error
@@ -138,7 +155,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 		int n = r.available();
 		byte[] buf = new byte[n];
 		r.read(buf);
-		p.write(buf);
+		p.appendBulk(buf, 0, -1);
 	}
 
 	// Assumes at first char of record...
@@ -159,67 +176,42 @@ public class EasyCoder extends JFrame implements ActionListener {
 		return c1;
 	}
 
-	private void setupSelfLdr(RandomAccessFile brt, boolean tape) throws Exception {
-		if (brt.length() == 0) {
-			brt.write(_1HDR);
-			brt.write(0300);
-			resCopy("bootmt.mti", brt);
-		} else {
-			brt.seek(0);
-			byte[] hdr = new byte[_1HDR.length];
-			int n = brt.read(hdr);
-			int e = brt.read();
-			if (n != hdr.length || !hdr.equals(_1HDR) ||
-					(e & 0300) != 0300) {
-				// throw error...
-				brt.close();
+	private void posTo(boolean copy, byte[] targ, SequentialRecordIO p) {
+		while (true) {
+			byte[] b = p.nextRecord();
+			if (b == null) {
 				return;
 			}
-			// Skip Bootstrap record
-			if (skipRec(brt) != 022) {
-				// throw error...
-				brt.close();
-				return;
+			if (b.length >= targ.length) {
+				int x = 0;
+				for (x = 0; x < targ.length && targ[x] == b[x]; ++x);
+				if (x == targ.length) {
+					p.backspace();
+					return;
+				}
 			}
-			int b;
-			// Skip Loader records
-			while ((b = skipRec(brt)) == 042) { }
-			// Now skip 050/054/041/044 records...
-			// i.e. skip to "1EOF " record...
-			while (b == 050 || b == 054 || b == 041 || b == 044) {
-				b = skipRec(brt);
+			if (copy) {
+				p.appendRecord(b, 0, -1);
 			}
-			if (b < 0) {
-				// throw error?
-				brt.close();
-				return;
-			}
-			if (b == 001) {
-				// possibly EOF/ERI...
-				brt.seek(brt.getFilePointer() - 1);
-			}
-			// Should be at "1EOF " record...
-			n = brt.read(hdr);
-			e = brt.read();
-			if (n != hdr.length || !hdr.equals(_1EOF) ||
-					(e & 0300) != 0300) {
-				// throw error...
-				brt.close();
-				return;
-			}
-			// Backup to overwrite "1EOF "
-			brt.seek(brt.getFilePointer() - hdr.length - 1);
 		}
 	}
 
-	private void finishSelfLdr(RandomAccessFile brt, boolean tape) throws Exception {
-		brt.write(_1EOF);
-		brt.write(0300);
-		brt.write(_1ERI);
-		brt.write(0300);
-		brt.write(_1ERI);
-		brt.write(0300);
-		brt.write(0300);
+	private void setupSelfLdr(SequentialRecordIO brt,
+			boolean copy, boolean overwrite) throws Exception {
+		if (brt.empty() || overwrite) {
+			brt.appendRecord(_1HDR, 0, -1);
+			resCopy("bootmt.mti", brt);
+		} else {
+			// Assumes no other version of this program exists.
+			posTo(copy, _1EOF, brt);
+		}
+	}
+
+	private void finishSelfLdr(SequentialRecordIO brt) throws Exception {
+		brt.appendRecord(_1EOF, 0, -1);
+		brt.appendRecord(_1ERI, 0, -1);
+		brt.appendRecord(_1ERI, 0, -1);
+		brt.end();
 	}
 
 	private void assemble() {
@@ -248,20 +240,16 @@ public class EasyCoder extends JFrame implements ActionListener {
 		Loader ldr;
 		Closeable fo = null;
 		FileOutputStream lo = null;
-		RandomAccessFile brt = null;
 		try {
 			if (slf) {
-				File out = new File(s + ".mti");
-				brt = new RandomAccessFile(out, "rw");
-				fo = brt;
-				if (ovr) {
-					brt.setLength(0);
-				}
-				setupSelfLdr(brt, !cards);
 				if (cards) {
-					ldr = new CardLoader(brt, asm.charCvt());
+					int pcs = 0; // Bootstrap can't use special codes
+					setupSelfLdr(punch, punch.begin(pcs), ovr);
+					ldr = new PeriphLoader(punch, asm.charCvt(), 80);
 				} else {
-					ldr = new TapeLoader(brt, asm.charCvt());
+					int lun = Integer.valueOf(unit.getText());
+					setupSelfLdr(magTape, magTape.begin(lun), ovr);
+					ldr = new PeriphLoader(magTape, asm.charCvt(), 250);
 				}
 			} else {
 				File out = new File(s + ".out");
@@ -291,7 +279,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 		errs = (e < 0);
 		try {
 			if (slf) {
-				finishSelfLdr(brt, !cards);
+				finishSelfLdr(cards ? punch : magTape);
 			}
 			fo.close();
 		} catch (Exception ee) {}
@@ -340,9 +328,15 @@ public class EasyCoder extends JFrame implements ActionListener {
 			if (btn == self) {
 				if (self.isSelected()) {
 					ovrw.setEnabled(true);
+					unit.setEnabled(brt.isSelected());
+					magTape.setVisible(brt.isSelected());
+					punch.setVisible(brtCard.isSelected());
 				} else {
 					ovrw.setSelected(false);
 					ovrw.setEnabled(false);
+					unit.setEnabled(false);
+					magTape.setVisible(false); // too draconian?
+					punch.setVisible(false); // too draconian?
 				}
 			}
 			return;
@@ -364,10 +358,14 @@ public class EasyCoder extends JFrame implements ActionListener {
 				self.setEnabled(false);
 				ovrw.setEnabled(false);
 				swi.setEnabled(true);
+				unit.setEnabled(false);
+				magTape.setVisible(false); // too draconian?
+				punch.setVisible(false); // too draconian?
 			} else {
 				swi.setSelected(false);
 				swi.setEnabled(false);
 				self.setEnabled(true);
+				unit.setEnabled(btn == brt && self.isSelected());
 			}
 			return;
 		}
