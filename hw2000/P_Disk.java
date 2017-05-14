@@ -13,7 +13,8 @@ import java.util.Arrays;
 //	[index][AM][header][DM][data][AM]...[DM][data][EM][garbage]
 //
 public class P_Disk extends JFrame
-		implements Peripheral, ActionListener, WindowListener {
+		implements Peripheral, RandomRecordIO,
+			ActionListener, WindowListener {
 	static final byte AM = (byte)0304; // start of record header
 	static final byte DM = (byte)0305; // start of record data
 	static final byte EM = (byte)0306; // end of valid track formatting
@@ -76,6 +77,13 @@ public class P_Disk extends JFrame
 	int track_trk;
 	long track_pos;
 	boolean track_dirty;
+
+	int vUnit;
+	int vCyl;
+	int vTrk;
+	int vRec;
+	int vLen;
+	boolean vOK;
 
 	boolean prot; // only valid immediately after pickFile()
 	JCheckBox wp;
@@ -301,28 +309,30 @@ public class P_Disk extends JFrame
 		return true;
 	}
 
-	private void newRecord() {
+	private boolean newRecord() {
 		if (curr_pos + 11 >= track.length) {
-			error = true;
-			return; // need to return error...
+			return false;
 		}
-		track[curr_pos++] = AM;
-		++curr_rec;
-		track[curr_pos++] = curr_flg;
-		track[curr_pos++] = (byte)((curr_cyl >> 6) & 077);
-		track[curr_pos++] = (byte)(curr_cyl & 077);
-		track[curr_pos++] = (byte)((curr_trk >> 6) & 077);
-		track[curr_pos++] = (byte)(curr_trk & 077);
-		track[curr_pos++] = (byte)((curr_rec >> 6) & 077);
-		track[curr_pos++] = (byte)(curr_rec & 077);
-		track[curr_pos++] = (byte)((curr_len >> 6) & 077);
-		track[curr_pos++] = (byte)(curr_len & 077);
-		track[curr_pos++] = DM;
+		int save_pos = curr_pos;
+		int save_rec = curr_rec + 1;
+		track[save_pos++] = AM;
+		track[save_pos++] = curr_flg;
+		track[save_pos++] = (byte)((curr_cyl >> 6) & 077);
+		track[save_pos++] = (byte)(curr_cyl & 077);
+		track[save_pos++] = (byte)((curr_trk >> 6) & 077);
+		track[save_pos++] = (byte)(curr_trk & 077);
+		track[save_pos++] = (byte)((save_rec >> 6) & 077);
+		track[save_pos++] = (byte)(save_rec & 077);
+		track[save_pos++] = (byte)((curr_len >> 6) & 077);
+		track[save_pos++] = (byte)(curr_len & 077);
+		track[save_pos++] = DM;
+		if (save_pos + curr_len + 1 >= track.length) {
+			return false;
+		}
+		curr_pos = save_pos;
+		curr_rec = save_rec;
 		curr_end = curr_pos + curr_len;
-		if (curr_end + 1 >= track.length) {
-			error = true;
-			return; // need to return error...
-		}
+		return true;
 	}
 
 	// At the very least, this puts curr_pos at the first data char.
@@ -619,7 +629,11 @@ public class P_Disk extends JFrame
 				}
 				if (curr_pos >= curr_end) {
 					if (extended) {
-						newRecord();
+						if (!newRecord()) {
+							error = true;
+							curr_pos = 0;
+							break;
+						}
 					} else {
 						break;
 					}
@@ -823,5 +837,89 @@ public class P_Disk extends JFrame
 	public void windowClosing(WindowEvent e) {
 		isOn = false;
 		setVisible(false);
+	}
+
+	public boolean begin(int unit) {
+		// TODO: mutex with PDT/PCB...
+		if (unit < 0 || unit > sts.length) {
+			return false;
+		}
+		if (sts[unit].dev == null) {
+			return false;
+		}
+		vUnit = unit;
+		vOK = false;
+		return true;
+	}
+	public boolean seekRecord(int cyl, int trk, int rec) {
+		vCyl = cyl;
+		vTrk = trk;
+		vRec = rec;
+		if (!cacheTrack(vCyl, vTrk)) {
+			return false;
+		}
+		adr_cyl = vCyl;
+		adr_trk = vTrk;
+		adr_rec = vRec;
+		if (!searchRecord() || !searchData()) {
+			return false;
+		}
+		vLen = curr_len;
+		vOK = true;
+		return true;
+	}
+	public byte[] readRecord() {
+		// TODO: OK to assume nothing has changed since seekRecord()?
+		if (!vOK) {
+			return null;
+		}
+		byte[] buf = new byte[vLen];
+		int p = 0;
+		while (p < vLen) {
+			buf[p++] = (byte)readChar();
+		}
+		vOK = false;
+		return buf;
+	}
+	public void writeRecord(byte[] buf, int start, int len) {
+		// TODO: OK to assume nothing has changed since seekRecord()?
+		if (!vOK) {
+			return;
+		}
+		if (len < 0) {
+			len = buf.length;
+		}
+		int p = 0;
+		while (p < vLen && start + p < len) {
+			writeChar(buf[start + p++]);
+		}
+		vOK = false;
+	}
+	public void initTrack(int cyl, int trk, int reclen) {
+		vOK = false;
+		vCyl = cyl;
+		vTrk = trk;
+		// TODO: reduce duplicate code
+		if (!cacheTrack(vCyl, vTrk)) {
+			return;
+		}
+		track_dirty = true;
+		curr_pos = 0;
+		curr_flg = 0;
+		curr_cyl = vCyl;
+		curr_trk = vTrk;
+		curr_len = reclen;
+		curr_rec = -1; // first record is 0
+		// Just put as many records as will fit...
+		while (newRecord()) {
+			Arrays.fill(track, curr_pos, curr_pos + curr_len, (byte)0);
+			curr_pos += curr_len;
+		}
+		track[curr_pos] = EM;
+		cacheTrack(-1, -1);
+	}
+	public void end() {
+		cacheTrack(-1, -1);
+		vOK = false;
 	}
 }
