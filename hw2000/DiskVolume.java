@@ -12,6 +12,17 @@ public class DiskVolume {
 	// Each operation must be atomic, i.e. bounded by dsk.begin()/dsk.end().
 	// This is because the peripheral cannot operate on multiple units
 	// at the same time (single buffer, etc).
+	// cyl 0, trk 0 = bootstrap
+	// cyl 0, trk 1 = volume header/label
+	// cyl 0, trk 2 = (3-7 tracks) volume directory
+	//              *VOLNAMES* == 1 track (cyl 0, trk 2)
+	//              *VOLDESCR* <= 3 tracks (cyl 0, trk 3...) *
+	//              *VOLALLOC* <= 3 tracks (cyl 0, trk 3+...) *
+	// * Based on MAX FILES parameter specified at init time.
+	//   *VOLDESCR* and *VOLALLOC* are the same length (in tracks).
+	// Or...
+	// Volume Header specifies beginning CCTT of *VOLNAMES* (*VOLDESCR*...)
+	//
 	public DiskVolume(RandomRecordIO dsk, int unit) {
 		if (!dsk.begin(unit)) {
 			return;
