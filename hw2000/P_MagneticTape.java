@@ -33,6 +33,7 @@ public class P_MagneticTape extends JFrame
 	MagTapeStatus[] sts;
 	int vUnit = 0;	// unit in-use by virtual client
 	byte[] vBuf = null;
+	boolean vWritten = false;
 
 	boolean prot; // only valid during file choosing
 	File _last = null;
@@ -465,6 +466,7 @@ public class P_MagneticTape extends JFrame
 	// TODO: mutex with PDC/PCB...
 	public boolean begin(int unit) {
 		vUnit = unit & 07;
+		vWritten = false;
 		return true;
 	}
 	public boolean ready() {
@@ -552,6 +554,7 @@ public class P_MagneticTape extends JFrame
 		if (sts[vUnit].dev == null) {
 			return;
 		}
+		vWritten = true;
 		if (len < 0) {
 			len = buf.length - start;
 		}
@@ -577,8 +580,10 @@ public class P_MagneticTape extends JFrame
 		if (sts[vUnit].dev == null) {
 			return;
 		}
-		try {
+		if (vWritten) try {
 			sts[vUnit].dev.write((byte)0300);
+			// Truncate to new EOT...
+			sts[vUnit].dev.setLength(sts[vUnit].dev.getFilePointer());
 		} catch (Exception ee) {}
 		updateDisp(vUnit);
 	}

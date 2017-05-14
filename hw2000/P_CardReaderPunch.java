@@ -535,16 +535,18 @@ public class P_CardReaderPunch extends JFrame
 		return false; // input != output
 	}
 	public boolean ready() {
-		return true; // TODO: check input or output???
+		return (odev != null);
 	}
 	public boolean empty() {
-		return true; // TODO: check input or output???
+		return (idev == null);
 	}
 	public boolean rewind() {
-		return true; // TODO: check input or output???
+		// Rewind not possible
+		return true;
 	}
 	public boolean backspace() {
-		return true; // TODO: check input or output???
+		// Backspace not possible
+		return true;
 	}
 	public byte[] nextRecord() {
 		if (!getCard(sts[1])) {
@@ -586,5 +588,6 @@ public class P_CardReaderPunch extends JFrame
 		appendBulk(buf, start, len);
 	}
 	public void end() {
+		// No need to truncate output... by definition output is new file.
 	}
 }
