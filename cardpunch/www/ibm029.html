@@ -10,6 +10,27 @@ May be configured as an IBM026, IBM026-H, or (default) IBM029.
 The commandline option <B>-r</B> selects the IBM026 configuration.
 The option <B>-H</B> selects the IBM026 character set "H" (typically used for FORTRAN).
 
+<P>Output from this program may be used as input to the
+<A HREF="http://honeywell2000.durgadas.com">Honeywell 200/2000 Series Computer</A>
+as well as future Punch Card Data Processing simulations. Note that the
+Honeywell 200/2000 Series punch card equipment was based on the IBM 026-H character set
+(48 characters) plus Honeywell extensions to add 16 characters.
+There is evidence of a Honeywell-branded (OEM'ed) IBM 029 card punch machine,
+however no information exists on this model and it's character set.
+Here is more information on
+<A HREF="http://honeywell2000.durgadas.com/h2000keypunch.html">keypunch character sets</A>.
+
+<P>Card decks punched by other programs can also be viewed here, using the
+IBM 029 "interpret" feature to print column characters as needed.
+The punch card data carries information about which columns were printed
+(had the printer enabled when punched or interpretted), and this program
+uses that data to show (or hide) the column interpretation.
+Note that printing here is not identical to original keypunch equipment.
+On the original hardware, multipunches or re-punches would cause multiple,
+overlapping, characters to be printed. This program only prints once, based on
+the current punches. If the final (current) column punches do not represent
+a valid character, nothing is printed.
+
 <P>Downloads are available at <A HREF="http://sebhc.durgadas.com/hw2000">sebhc.durgadas.com/hw2000</A>
 <P>Contact: <A HREF="emailto:durgadas311@gmail">durgadas311@gmail</A>
 </BODY>
