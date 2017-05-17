@@ -64,11 +64,22 @@ public class DiskVolume {
 		while (n < name.length) {
 			name[n++] = 015;
 		}
+		boolean first = true;
+		int pCyl = -1;
+		int pTrk = -1;
 		for (int cyl = 0; cyl < 203; ++cyl) {
 			for (int trk = 0; trk < 20; ++trk) {
-				dsk.initTrack(cyl, trk, 250);
+				if (!first) {
+					dsk.initTrack(pCyl, pTrk, 250, 17, cyl, trk);
+				}
+				first = false;
+				pTrk = trk;
 			}
+			// TODO: where does last track on cylinder point TLR to?
+			pCyl = cyl;
 		}
+		// TODO: where does last track on disk point TLR to?
+		dsk.initTrack(pCyl, pTrk, 250, 17, 1, 0);
 		byte[] rec = new byte[250];
 		Arrays.fill(rec, (byte)0);
 		System.arraycopy(_1VOL, 0, rec, 0, _1VOL.length);
@@ -80,15 +91,16 @@ public class DiskVolume {
 		dsk.end();
 	}
 
-	public void initTrack(int cyl, int trk, int reclen) {
+	public void initTrack(int cyl, int trk, int reclen, int rectrk,
+				int tCyl, int tTrk) {
 		// Do not allow overwrite of system area
-		if (cyl < 1) {
+		if (cyl < 1 || cyl >= 200) {
 			return;
 		}
 		if (!dsk.begin(unit)) {
 			return;
 		}
-		dsk.initTrack(cyl, trk, reclen);
+		dsk.initTrack(cyl, trk, reclen, rectrk, tCyl, tTrk);
 		dsk.end();
 	}
 

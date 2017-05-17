@@ -19,8 +19,9 @@ public class P_Disk extends JFrame
 	static final byte DM = (byte)0305; // start of record data
 	static final byte EM = (byte)0306; // end of valid track formatting
 
-	static final int trk_len = 4700;
 	static final int num_trk = 20;
+	static final int num_cyl = 203; // 200-202 reserved?
+	static final int trk_len = 4700; // a round number, >= actual track length
 	static final int cyl_len = trk_len * num_trk;
 
 	private class DiskStatus {
@@ -88,7 +89,7 @@ public class P_Disk extends JFrame
 	boolean prot; // only valid immediately after pickFile()
 	JCheckBox wp;
 
-	// 11 platters, 20 surfaces
+	// 11 platters, 20 usable surfaces
 	// 200 cyls (0000-0312 or 203?)
 	// 4602 char/trk
 	public P_Disk() {
@@ -332,6 +333,24 @@ public class P_Disk extends JFrame
 		curr_pos = save_pos;
 		curr_rec = save_rec;
 		curr_end = curr_pos + curr_len;
+		return true;
+	}
+
+	private boolean initTLR(int cyl, int trk, int rec) {
+		curr_flg = 040;
+		curr_len = 6;
+		if (!newRecord()) {
+			return false;
+		}
+		if (curr_pos + 7 >= track.length) {
+			return false;
+		}
+		track[curr_pos++] = (byte)((cyl >> 6) & 077);
+		track[curr_pos++] = (byte)(cyl & 077);
+		track[curr_pos++] = (byte)((trk >> 6) & 077);
+		track[curr_pos++] = (byte)(trk & 077);
+		track[curr_pos++] = (byte)((rec >> 6) & 077);
+		track[curr_pos++] = (byte)(rec & 077);
 		return true;
 	}
 
@@ -895,7 +914,8 @@ public class P_Disk extends JFrame
 		}
 		vOK = false;
 	}
-	public void initTrack(int cyl, int trk, int reclen) {
+	public void initTrack(int cyl, int trk, int reclen, int rectrk,
+				int tCyl, int tTrk) {
 		vOK = false;
 		vCyl = cyl;
 		vTrk = trk;
@@ -911,9 +931,19 @@ public class P_Disk extends JFrame
 		curr_len = reclen;
 		curr_rec = -1; // first record is 0
 		// Just put as many records as will fit...
-		while (newRecord()) {
+		for (int r = 0; r < rectrk; ++r) {
+			if (!newRecord()) {
+				return;
+			}
 			Arrays.fill(track, curr_pos, curr_pos + curr_len, (byte)0);
 			curr_pos += curr_len;
+		}
+		// Now set TLR... Initially, link to next physical track.
+		// Allocated data will change to link to next allocated track.
+		// TODO: what does last track on disk point to?
+		// TODO: what does last track in cylinder point to?
+		if (!initTLR(tCyl, tTrk, 0)) {
+			// TODO: what to do?
 		}
 		track[curr_pos] = EM;
 		cacheTrack(-1, -1);
