@@ -126,6 +126,7 @@ public class P_Disk extends JFrame
 	boolean search = false;
 	boolean next = false;
 	boolean error = false;
+	String errMsg = null;
 	HW2000 sys;
 
 	DiskStatus[] sts;
@@ -1041,11 +1042,14 @@ public class P_Disk extends JFrame
 	}
 
 	public boolean begin(int unit) {
+		errMsg = null;
 		// TODO: mutex with PDT/PCB...
 		if (unit < 0 || unit > sts.length) {
+			errMsg = "Invalid Unit Number";
 			return false;
 		}
 		if (sts[unit].dev == null) {
+			errMsg = "No disk pack";
 			return false;
 		}
 		vUnit = unit;
@@ -1060,6 +1064,7 @@ public class P_Disk extends JFrame
 		vRec = rec;
 		// 'cacheTrack' updates display
 		if (!cacheTrack(vCyl, vTrk)) {
+			errMsg = "Failed to access track";
 			return -1;
 		}
 		// NOTE: adr_flg not used, switches are tested directly
@@ -1067,6 +1072,7 @@ public class P_Disk extends JFrame
 		adr_trk = vTrk;
 		adr_rec = vRec;
 		if (!searchRecord() || !searchData()) {
+			errMsg = "No record";
 			return -1;
 		}
 		// curr_* matches reacord header data, incl. FLAG
@@ -1077,6 +1083,7 @@ public class P_Disk extends JFrame
 	public boolean readRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
+			errMsg = "Sequence error";
 			return false;
 		}
 		if (len < 0) {
@@ -1092,14 +1099,17 @@ public class P_Disk extends JFrame
 	public boolean writeRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
+			errMsg = "Sequence error";
 			return false;
 		}
 		if ((sts[vUnit].flag & PERMIT_DAT) == 0) {
+			errMsg = "Data Protect";
 			return false;
 		}
 		int f = sts[vUnit].flag ^ PERMIT_AB;	// invert A/B bits
 		f &= curr_flg;	// mask NOT A/B bits
 		if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
+			errMsg = "A/B Protect";
 			return false;
 		}
 		if (len < 0) {
@@ -1122,9 +1132,11 @@ public class P_Disk extends JFrame
 		}
 		// TODO: reduce duplicate code
 		if (!cacheTrack(vCyl, vTrk)) {
+			errMsg = "Failed to access track";
 			return false;
 		}
 		if ((sts[vUnit].flag & PERMIT_FMT) == 0) {
+			errMsg = "Format Protect";
 			return false;
 		}
 		track_dirty = true;
@@ -1137,6 +1149,7 @@ public class P_Disk extends JFrame
 		// Just put as many records as will fit...
 		for (int r = 0; r < rectrk; ++r) {
 			if (!newRecord()) {
+				errMsg = "Track overflow";
 				return false;
 			}
 			Arrays.fill(track, curr_pos, curr_pos + curr_len, (byte)0);
@@ -1149,6 +1162,7 @@ public class P_Disk extends JFrame
 		// NOTE: initTLR() trashes curr_* values...
 		if (!initTLR(tCyl, tTrk, 0)) {
 			// TODO: what to do?
+			errMsg = "Track overflow";
 			return false;
 		}
 		track[curr_pos] = EM;
@@ -1173,4 +1187,8 @@ public class P_Disk extends JFrame
 		// if (recTrk * (recLen + 11) + 18 > trk_len) error...
 		return recTrk;
 	}
+
+	public String getError() { return errMsg; }
+	public int numTracks() { return num_trk; }
+	public int numCylinders() { return num_cyl; }
 }

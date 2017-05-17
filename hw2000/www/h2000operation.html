@@ -33,6 +33,26 @@ There is a monitor program supplied in the sample programs tarball,
 When the monitor is active, this menu option will be disabled (grayed-out).
 Clicking INITIALIZE (after STOP) will reset monitor mode.</UL>
 </UL>
+<B>Disk Util</B>
+<UL><B>Initialize Volume</B>
+<UL>Initialize a disk pack for use with MOD1 programs.
+Disk packs must be mounted onto disk drives before they can be initialized.
+Both FMT and DAT PERMIT switches must be ON.
+Input the disk drive unit, 6-character volume name, and
+6-character volume serial number.</UL>
+<B>Map Volume</B>
+<UL>Show contents of a MOD1 disk pack volume.
+Input the disk drive unit.</UL>
+<B>Allocate File</B>
+<UL>Create a MOD1 disk file on a volume.
+Both FMT and DAT PERMIT switches must be ON.
+Input the disk drive unit, 10-character file name,
+item/record/block parameters, and allocation units.</UL>
+<B>Deallocate File</B>
+<UL>Delete a MOD1 disk file from a volume.
+The DAT PERMIT switch must be ON.
+Input the disk drive unit and 10-character file name.</UL>
+</UL>
 <B>Debug</B>
 <UL><B>Trace</B>
 <UL>Trace is enabled for the range of memory of the last assembled program.

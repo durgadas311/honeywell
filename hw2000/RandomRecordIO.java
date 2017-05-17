@@ -2,6 +2,10 @@
 
 public interface RandomRecordIO {
 	int numRecords(int recLen);
+	String getError();
+	int numTracks();
+	int numCylinders();
+	//
 	boolean begin(int unit);	// 'true' if media mounted.
 	// -1 on error, FLG char on success
 	int seekRecord(int cyl, int trk, int rec); // 'false' on error

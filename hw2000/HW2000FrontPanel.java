@@ -96,6 +96,25 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel dump_lo_pn;
 	private JPanel dump_hi_pn;
 	private JPanel dump_pn;
+	private JPanel vol_pn;
+	private JPanel map_pn;
+	private JPanel all_pn;
+	private JPanel rel_pn;
+	private JTextArea vol_lun;
+	private JTextArea vol_name;
+	private JTextArea vol_snum;
+	private JTextArea map_lun;
+	private JTextArea file_lun;
+	private JTextArea file_name;
+	private JTextArea file_itm;
+	private JTextArea file_rec;
+	private JTextArea file_blk;
+	private JTextArea file_rpt;
+	private JCheckBox file_a;
+	private JCheckBox file_b;
+	private JTextArea[][] file_unt;
+	private JTextArea rel_lun;
+	private JTextArea rel_name;
 	int dumpLow;
 	int dumpHi;
 	private P_Console cons;
@@ -176,6 +195,20 @@ public class HW2000FrontPanel extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
+		mu = new JMenu("Disk Util");
+		mi = new JMenuItem("Initialize Volume", KeyEvent.VK_V);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Map Volume", KeyEvent.VK_S);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Allocate File", KeyEvent.VK_0);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Release File", KeyEvent.VK_1);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
 		mu = new JMenu("Debug");
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
 		mi.addActionListener(this);
@@ -248,6 +281,113 @@ public class HW2000FrontPanel extends JFrame
 			// TODO: need hold/release not click...
 			type.addActionListener(this);
 			type.addChangeListener(this);
+		}
+
+		vol_pn = new JPanel();
+		vol_pn.setLayout(new BoxLayout(vol_pn, BoxLayout.Y_AXIS));
+		map_pn = new JPanel();
+		map_pn.setLayout(new BoxLayout(map_pn, BoxLayout.Y_AXIS));
+		all_pn = new JPanel();
+		all_pn.setLayout(new BoxLayout(all_pn, BoxLayout.Y_AXIS));
+		rel_pn = new JPanel();
+		rel_pn.setLayout(new BoxLayout(rel_pn, BoxLayout.Y_AXIS));
+		vol_lun = new JTextArea("0");
+		vol_lun.setPreferredSize(new Dimension(20, 20));
+		JPanel pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(vol_lun);
+		vol_pn.add(pn);
+		map_lun = new JTextArea("0");
+		map_lun.setPreferredSize(new Dimension(20, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(map_lun);
+		map_pn.add(pn);
+		file_lun = new JTextArea("0");
+		file_lun.setPreferredSize(new Dimension(20, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(file_lun);
+		all_pn.add(pn);
+		rel_lun = new JTextArea("0");
+		rel_lun.setPreferredSize(new Dimension(20, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(rel_lun);
+		rel_pn.add(pn);
+		vol_name = new JTextArea();
+		vol_name.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Name:"));
+		pn.add(vol_name);
+		vol_pn.add(pn);
+		file_name = new JTextArea();
+		file_name.setPreferredSize(new Dimension(120, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Name:"));
+		pn.add(file_name);
+		all_pn.add(pn);
+		rel_name = new JTextArea();
+		rel_name.setPreferredSize(new Dimension(120, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Name:"));
+		pn.add(rel_name);
+		rel_pn.add(pn);
+		vol_snum = new JTextArea();
+		vol_snum.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Serial:"));
+		pn.add(vol_snum);
+		vol_pn.add(pn);
+		file_a = new JCheckBox("A-file protection");
+		all_pn.add(file_a);
+		file_b = new JCheckBox("B-file protection");
+		all_pn.add(file_b);
+		file_itm = new JTextArea();
+		file_itm.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Item Len:"));
+		pn.add(file_itm);
+		all_pn.add(pn);
+		file_rec = new JTextArea();
+		file_rec.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Rec Len:"));
+		pn.add(file_rec);
+		all_pn.add(pn);
+		// TODO: dynamically compute defaults for Rec/Blk and Rec/Trk
+		file_rpt = new JTextArea();
+		file_rpt.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Rec/Trk:"));
+		pn.add(file_rpt);
+		all_pn.add(pn);
+		file_blk = new JTextArea();
+		file_blk.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Rec/Blk:"));
+		pn.add(file_blk);
+		all_pn.add(pn);
+		all_pn.add(new JLabel("Allocation Units:"));
+		// TODO: allocation units...
+		file_unt = new JTextArea[6][];
+		for (int x = 0; x < 6; ++x) {
+			file_unt[x] = new JTextArea[4];
+			pn = new JPanel();
+			file_unt[x][0] = new JTextArea();
+			file_unt[x][0].setPreferredSize(new Dimension(30, 20));
+			pn.add(file_unt[x][0]);
+			file_unt[x][1] = new JTextArea();
+			file_unt[x][1].setPreferredSize(new Dimension(30, 20));
+			pn.add(file_unt[x][1]);
+			pn.add(new JLabel(" - "));
+			file_unt[x][2] = new JTextArea();
+			file_unt[x][2].setPreferredSize(new Dimension(30, 20));
+			pn.add(file_unt[x][2]);
+			file_unt[x][3] = new JTextArea();
+			file_unt[x][3].setPreferredSize(new Dimension(30, 20));
+			pn.add(file_unt[x][3]);
+			all_pn.add(pn);
 		}
 
 		// Dialog for Dump Full / Trace Full
@@ -2586,9 +2726,200 @@ ee.printStackTrace();
 		getPrinter().output(str);
 	}
 
+	private byte[] hwString(String str, int len) {
+		byte[] ret = new byte[len];
+		int x;
+		for (x = 0; x < str.length() && x < len; ++x) {
+			ret[x] = sys.pdc.cvt.asciiToHw((byte)
+					(Character.toUpperCase(str.charAt(x)) & 0x7f));
+		}
+		for (; x < len; ++x) {
+			ret[x] = 015;	// HW blank
+		}
+		return ret;
+	}
+
+	private void volInit() {
+		String title = "Initialize Volume";
+		JOptionPane dia = new JOptionPane(vol_pn, JOptionPane.QUESTION_MESSAGE,
+						JOptionPane.OK_CANCEL_OPTION);
+		Dialog dlg = dia.createDialog(this, title);
+		dlg.setVisible(true);
+		Object res = dia.getValue();
+		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int unit;
+		try {
+			unit = Integer.valueOf(vol_lun.getText());
+			if (unit < 0 || unit > 7) {
+				throw new NumberFormatException("Out of range");
+			}
+		} catch (Exception ee) {
+			warning(this, title, "Invalid Disk Unit Number");
+			return;
+		}
+		byte[] nm = hwString(vol_name.getText(), 6);
+		byte[] sn = hwString(vol_snum.getText(), 6);
+		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+		boolean ok = FileVolSupport.initVolume(p, unit, nm, sn);
+		if (!ok) {
+			warning(this, title, "Volume Init Failed " + FileVolSupport.error);
+			return;
+		}
+	}
+
+	private void volMap() {
+		String title = "Map Volume";
+		JOptionPane dia = new JOptionPane(map_pn, JOptionPane.QUESTION_MESSAGE,
+						JOptionPane.OK_CANCEL_OPTION);
+		Dialog dlg = dia.createDialog(this, title);
+		dlg.setVisible(true);
+		Object res = dia.getValue();
+		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int unit;
+		try {
+			unit = Integer.valueOf(map_lun.getText());
+			if (unit < 0 || unit > 7) {
+				throw new NumberFormatException("Out of range");
+			}
+		} catch (Exception ee) {
+			warning(this, title, "Invalid Disk Unit Number");
+			return;
+		}
+		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+		boolean ok = FileVolSupport.mapVolume(p, unit, sys);
+		if (!ok) {
+			warning(this, title, title + "Failed " + FileVolSupport.error);
+			return;
+		}
+	}
+
+	private boolean getAlloc(DiskUnit[] units, int nCyl, int nTrk) {
+		for (int x = 0; x < 6; ++x) {
+			if (file_unt[x][0].getText().isEmpty()) {
+				break;
+			}
+			int sc, st, ec, et;
+			try {
+				sc = Integer.valueOf(file_unt[x][0].getText());
+				st = Integer.valueOf(file_unt[x][1].getText());
+				ec = Integer.valueOf(file_unt[x][2].getText());
+				et = Integer.valueOf(file_unt[x][3].getText());
+				if (sc < 0 || sc >= nCyl || st < 0 || st >= nTrk ||
+					ec < 0 || ec >= nCyl || et < 0 || et >= nTrk) {
+					throw new NumberFormatException("Out of range");
+				}
+			} catch (Exception ee) {
+				return false;
+			}
+			units[x] = new DiskUnit(sc, st, ec, et);
+		}
+		return true;
+	}
+
+	private void fileAlloc() {
+		String title = "Allocate File";
+		JOptionPane dia = new JOptionPane(all_pn, JOptionPane.QUESTION_MESSAGE,
+						JOptionPane.OK_CANCEL_OPTION);
+		Dialog dlg = dia.createDialog(this, title);
+		dlg.setVisible(true);
+		Object res = dia.getValue();
+		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int unit;
+		try {
+			unit = Integer.valueOf(file_lun.getText());
+			if (unit < 0 || unit > 7) {
+				throw new NumberFormatException("Out of range");
+			}
+		} catch (Exception ee) {
+			warning(this, title, "Invalid Disk Unit Number");
+			return;
+		}
+		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+		byte[] nm = hwString(file_name.getText(), 10);
+		int itmLen = -1;
+		int recLen = -1;
+		int recTrk = -1;
+		int recBlk = -1;
+		try {
+			if (file_rec.getText().isEmpty()) {
+				recLen = DiskVolume.def_reclen;
+			} else {
+				recLen = Integer.valueOf(file_rec.getText());
+			}
+			if (file_itm.getText().isEmpty()) {
+				itmLen = recLen;
+			} else {
+				itmLen = Integer.valueOf(file_itm.getText());
+			}
+			if (file_rpt.getText().isEmpty()) {
+				recTrk = p.numRecords(recLen);
+			} else {
+				recTrk = Integer.valueOf(file_rpt.getText());
+			}
+			if (file_blk.getText().isEmpty()) {
+				for (recBlk = 1; recBlk < recTrk; ++recBlk) {
+					if (((recBlk * recLen) % itmLen) == 0) {
+						break;
+					}
+				}
+				if (recBlk >= recTrk) {
+					throw new NumberFormatException("Overflow");
+				}
+			} else {
+				recBlk = Integer.valueOf(file_blk.getText());
+			}
+		} catch (Exception ee) {
+			warning(this, title, "Invalid File Geometry");
+			return;
+		}
+		int flag = (file_a.isSelected() ? p.PERMIT_A : 0) |
+				(file_b.isSelected() ? p.PERMIT_B : 0);
+		DiskUnit[] units = new DiskUnit[6];
+		boolean ok = getAlloc(units, p.numCylinders(), p.numTracks());
+		if (!ok) {
+			warning(this, title, title + " Failed Invalid allocation");
+			return;
+		}
+		ok = FileVolSupport.initFile(p, unit, flag, nm,
+				itmLen, recLen, recTrk, recBlk,
+				units);
+		if (!ok) {
+			warning(this, title, title + " Failed " + FileVolSupport.error);
+			return;
+		}
+	}
+
+	private void fileDealloc() {
+		String title = "Release File";
+		JOptionPane dia = new JOptionPane(rel_pn, JOptionPane.QUESTION_MESSAGE,
+						JOptionPane.OK_CANCEL_OPTION);
+		Dialog dlg = dia.createDialog(this, title);
+		dlg.setVisible(true);
+		Object res = dia.getValue();
+		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int unit;
+		try {
+			unit = Integer.valueOf(rel_lun.getText());
+			if (unit < 0 || unit > 7) {
+				throw new NumberFormatException("Out of range");
+			}
+		} catch (Exception ee) {
+			warning(this, title, "Invalid Disk Unit Number");
+			return;
+		}
+		byte[] nm = hwString(rel_name.getText(), 10);
+		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
+		if (!ok) {
+			warning(this, title, "Release File Failed " + FileVolSupport.error);
+			return;
+		}
+	}
+
 	private int dumpDialog(String name) {
 		JOptionPane dump_dia;
-		dump_dia = new JOptionPane(dump_pn, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION, null, dump_btns);
+		dump_dia = new JOptionPane(dump_pn, JOptionPane.QUESTION_MESSAGE,
+					JOptionPane.YES_NO_OPTION, null, dump_btns);
 		dump_lo.setText(Integer.toString(currLow));
 		dump_hi.setText(Integer.toString(currHi));
 		Dialog dlg = dump_dia.createDialog(this, name);
@@ -2647,6 +2978,14 @@ ee.printStackTrace();
 			if (p != null) {
 				p.visible(true);
 			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_V) {
+			volInit();
+		} else if (mi.getMnemonic() == KeyEvent.VK_S) {
+			volMap();
+		} else if (mi.getMnemonic() == KeyEvent.VK_0) {
+			fileAlloc();
+		} else if (mi.getMnemonic() == KeyEvent.VK_1) {
+			fileDealloc();
 		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
 			sys.setTrace(currLow, currHi);
 		} else if (mi.getMnemonic() == KeyEvent.VK_L) {
