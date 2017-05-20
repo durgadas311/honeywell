@@ -6,6 +6,7 @@ import java.util.Vector;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
+import java.lang.reflect.Constructor;
 
 public class Assembler {
 	File inFile;
@@ -24,6 +25,8 @@ public class Assembler {
 	byte[] code;
 	boolean end;
 	boolean asmPass;
+	String mac;
+	Vector<MacroDef> maclibs;
 	String prog;
 	String segm;
 	int segno;
@@ -60,9 +63,11 @@ public class Assembler {
 		segno = 1;
 		rev = "000";
 		vis = 0;	// TODO: needs to be non-zero?
+		adrMode = 3;	// some sort of default
 		inFile = input;
 		symTab = new HashMap<String,Integer>();
 		errs = new Vector<String>();
+		maclibs = new Vector<MacroDef>();
 		try {
 			in = new BufferedReader(new FileReader(inFile));
 		} catch (Exception ee) {
@@ -228,6 +233,63 @@ public class Assembler {
 		return ret;
 	}
 
+	private void catMac(String more) {
+		if (mac == null) {
+			mac = more.substring(7).replaceAll(" *$", "");
+		} else {
+			mac += more.substring(20).trim();
+		}
+	}
+
+	private void listLine(String line) {
+		if (listing) {
+			String l = String.format("%33s%s\n", "", line);
+			listOut(l);
+		}
+	}
+
+	private int doMacro(String mac) {
+		// NOTE: 'mac' has eliminated columns 1-7 ...
+		int n = mac.length();
+		// must have at least a 1-char name...
+		String tag = mac.substring(0, 7);
+		String nam = mac.substring(7, n > 13 ? 13 : n).trim();
+		String[] pms;
+		if (n >= 13) {
+			pms = mac.substring(13).split(",");
+		} else {
+			pms = new String[]{" "};
+		}
+		return lookupMacro(nam, tag, pms);
+	}
+
+	private int loadLib(String lib) {
+		// TODO: check if already loaded?
+		try {
+			Class<?> clazz = Class.forName("MacroLib" + lib);
+			// TODO: what does ctor need? 'this' at least?
+			Constructor<?> ctor = clazz.getConstructor(Assembler.class);
+			maclibs.add((MacroDef)ctor.newInstance(this));
+		} catch (Exception ee) {
+			errsAdd("Error loading MAC " + lib + ": " + ee.getMessage());
+			return -1;
+		}
+		return 0;
+	}
+
+	private int lookupMacro(String nam, String tag, String[] pms) {
+		// NOTE: this is (must be) done on both passes.
+		// Unless we somehow save results from first pass,
+		// or pre-process the input file, we can't avoid that.
+		for (MacroDef mac : maclibs) {
+			if (mac.handles(nam)) {
+				return mac.expand(nam, tag, pms);
+			}
+		}
+		errsAdd("No such macro " + nam);
+		return -1;
+	}
+
 	private String replaceChars(String in, String srch, String repl) {
 		char[] inc = in.toCharArray();
 		char[] out = new char[inc.length];
@@ -298,8 +360,6 @@ public class Assembler {
 		// TODO: tolerate "illegal" TAB characters
 		// TODO: input from punchcard vs ASCII file (vs MagTape?)
 		String line = "";
-		code = null;
-		int orgLoc = currLoc;
 		try {
 			line = in.readLine();
 			if (line == null) {
@@ -316,15 +376,45 @@ public class Assembler {
 		}
 		// first do convenience translations of special chars
 		line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
-		String card = String.format("%-80s", line.toUpperCase());
+		return assemble(line, false);
+	}
+
+	public int assemble(String line) {
+		return assemble(line, true); // assume in macro expansion...
+	}
+
+	// Side effects must not conflict with macro expansion recursion...
+	private int assemble(String line, boolean inMacro) {
+		code = null;
+		int orgLoc = currLoc;
+		String card = String.format("%-80s", line);
 		// TODO: handle D data cards... C/L continuation and macro...
 		char typ = card.charAt(5);
 		if (typ == '*' || typ == 'T') {
-			if (listing) {
-				String l = "                                 " + line + "\n";
-				listOut(l);
-			}
+			listLine(line);
 			return 0;
+		}
+		if (typ == 'C' || typ == 'L') { // card(s) of macro
+			listLine(line);
+			catMac(card);
+			if (typ == 'C') {
+				return 0;
+			}
+			// Last card of MACRO
+			int ret = -1;
+			if (inMacro) {
+				errsAdd("Nested MACRO not allowed");
+				mac = null;
+			} else {
+				String m = mac;
+				mac = null; // prevent false complaint
+				ret = doMacro(m); // recursion here...
+			}
+			return ret;
+		}
+		if (mac != null) {
+			errsAdd("Incomplete MACRO (ignored)");
+			mac = null;
 		}
 		char mrk = card.charAt(6);
 		String loc;
@@ -378,6 +468,10 @@ public class Assembler {
 		repSet = 0;
 		if (op != InstrDecode.OP_ILL) {
 			e = processMachCode(op, mrk, loc, rev, opd);
+		// Virtual HW2000 extensions
+		} else if (opc.equals("MAC")) {
+			listLine(line);
+			return loadLib(opd);
 		} else {
 			e = processAsmDir(opc, mrk, loc, rev, opd);
 		}
@@ -439,7 +533,7 @@ public class Assembler {
 		return e;
 	}
 
-	private void errsAdd(String err) {
+	public void errsAdd(String err) {
 		// TODO: intersperse errors in listing...
 		errs.add(err + " at line " + lineNo);
 	}

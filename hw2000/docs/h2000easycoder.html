@@ -36,6 +36,13 @@ above directives.
 <P>In addition, all of the punctuation modifiers (Set I and Set II) are
 supported.
 <P>It also supports indirect and indexed addressing.
+<P>Macros are supported, but currently only Virtual Macros.
+These require a "MAC   name" line to setup the macro definitions,
+and this line must be after a valid ORG but outside of any default executable path.
+This looks for a class named "MacroLib<I>name</I>" which must exist in the
+JAR or classpath. The class constructor must take a single parameter
+which is an instance of Assembler. See MacroDef.java for more interface
+requirements. See MacroLibTEST.java for an example.
 
 <P>None of the pseudo-opcode forms are currently supported, that is, the
 short-hand instructions for specific variant character values.
