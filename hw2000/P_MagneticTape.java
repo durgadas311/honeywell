@@ -13,20 +13,24 @@ public class P_MagneticTape extends JFrame
 		RandomAccessFile dev;
 		boolean beg;
 		boolean end;
+		boolean wrRing;
+		boolean permit;
 		boolean in;
 		int count;
 		boolean busy;
 		boolean reverse;
 		boolean backspace;
 		boolean erase;
+		boolean error;
 		boolean fwdspace;
+		JButton perm_bt;
 		JLabel stat_pn;
 		JLabel mnt_pn;
 
 		public MagTapeStatus() {
 			busy = false;
 			dev = null;
-			beg = end = false;
+			beg = end = permit = wrRing = false;
 			count = 0;
 		}
 	}
@@ -35,8 +39,7 @@ public class P_MagneticTape extends JFrame
 	byte[] vBuf = null;
 	boolean vWritten = false;
 
-	boolean prot; // only valid during file choosing
-	JCheckBox wp;
+	JCheckBox wp;	// write *permit* (write-ring inserted)
 	File _last = null;
 	boolean isOn = false;
 
@@ -47,7 +50,7 @@ public class P_MagneticTape extends JFrame
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
-		wp = new JCheckBox("Write Prot");
+		wp = new JCheckBox("Write Ring");
 
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new MagTapeStatus();
@@ -61,6 +64,13 @@ public class P_MagneticTape extends JFrame
 			bt.setActionCommand(String.format("R%d", x));
 			bt.addActionListener(this);
 			pn.add(bt);
+			bt = new JButton("PERMIT");
+			bt.setMargin(new Insets(2, 1, 2, 1));
+			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setActionCommand(String.format("P%d", x));
+			bt.addActionListener(this);
+			pn.add(bt);
+			sts[x].perm_bt = bt;
 			sts[x].stat_pn = new JLabel();
 			sts[x].stat_pn.setPreferredSize(new Dimension(75, 20));
 			sts[x].stat_pn.setOpaque(true);
@@ -287,6 +297,10 @@ public class P_MagneticTape extends JFrame
 
 	public void doOut(RWChannel rwc, MagTapeStatus unit) {
 		rwc.startCLC();
+		if (!unit.wrRing || !unit.permit) {
+			unit.error = true;
+			return;
+		}
 		try {
 			while (true) {
 				byte a = rwc.readMem();
@@ -364,7 +378,9 @@ public class P_MagneticTape extends JFrame
 			break;
 		case 040:
 			unit = rwc.c3 & 007;
-			// never any R/W errors?
+			// never any R/W errors? write permit errors...
+			branch = sts[unit].error;
+			sts[unit].error = false;
 			break;
 		case 020:
 			unit = rwc.c3 & 007;
@@ -405,7 +421,6 @@ public class P_MagneticTape extends JFrame
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
-			prot = wp.isSelected();
 			_last = file; // or use dev[unit]?
 		}
 		return file;
@@ -425,6 +440,15 @@ public class P_MagneticTape extends JFrame
 					sts[c].stat_pn.setText("0");
 				} catch (Exception ee) {}
 			}
+		} else if (a == 'P') {
+			int c = b.getActionCommand().charAt(1) - '0';
+			if (sts[c].dev != null) {
+				sts[c].permit = !sts[c].permit;
+				sts[c].perm_bt.setBackground(
+					sts[c].permit  && sts[c].wrRing ?
+					HW2000FrontPanel.btnWhiteOn :
+					HW2000FrontPanel.btnWhiteOff);
+			}
 		} else {
 			int c = a - '0';
 			String s = String.format("Mount %03o", c);
@@ -435,19 +459,26 @@ public class P_MagneticTape extends JFrame
 				sts[c].dev = null;
 				sts[c].stat_pn.setText("");
 				sts[c].mnt_pn.setText("No Tape");
+				sts[c].wrRing = false;
+				sts[c].permit = false;
+				sts[c].perm_bt.setBackground(HW2000FrontPanel.btnWhiteOff);
 			}
-			prot = false;
+			wp.setSelected(false);
 			File f = pickFile(s);
 			if (f == null) {
 				return;
 			}
 			try {
-				// TODO: allow write-protect
-				sts[c].dev = new RandomAccessFile(f, prot ? "r" : "rw");
+				sts[c].wrRing = wp.isSelected();
+				sts[c].dev = new RandomAccessFile(f, "rw");
 				sts[c].end = false;
 				sts[c].beg = true;
 				sts[c].stat_pn.setText("0");
 				sts[c].mnt_pn.setText(f.getName());
+				sts[c].perm_bt.setBackground(
+					sts[c].permit  && sts[c].wrRing ?
+					HW2000FrontPanel.btnWhiteOn :
+					HW2000FrontPanel.btnWhiteOff);
 				return;
 			} catch (Exception ee) {
 				HW2000FrontPanel.warning(this, s, ee.toString());
@@ -557,6 +588,9 @@ public class P_MagneticTape extends JFrame
 		if (sts[vUnit].dev == null) {
 			return;
 		}
+		if (!sts[vUnit].wrRing || !sts[vUnit].permit) {
+			return;
+		}
 		vWritten = true;
 		if (len < 0) {
 			len = buf.length - start;
@@ -571,6 +605,9 @@ public class P_MagneticTape extends JFrame
 	}
 	public void appendRecord(byte[] buf, int start, int len) {
 		if (sts[vUnit].dev == null) {
+			return;
+		}
+		if (!sts[vUnit].wrRing || !sts[vUnit].permit) {
 			return;
 		}
 		appendBulk(buf, start, len);

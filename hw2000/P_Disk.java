@@ -29,6 +29,10 @@ public class P_Disk extends JFrame
 		int cyl;
 		boolean busy;
 		byte flag;
+		JButton a_bt;
+		JButton b_bt;
+		JButton f_bt;
+		JButton d_bt;
 		JLabel cyl_pn;
 		JLabel mnt_pn;
 		public DiskStatus() {
@@ -86,20 +90,17 @@ public class P_Disk extends JFrame
 	int vLen;
 	boolean vOK;
 
-	boolean prot; // only valid immediately after pickFile()
-	JCheckBox wp;
-
 	// 11 platters, 20 usable surfaces
 	// 200 cyls (0000-0312 or 203?)
 	// 4602 char/trk
 	public P_Disk() {
 		super("H274 Disk Devices");
+		Font smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 		_last = new File(System.getProperty("user.dir"));
 		busy = false;
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
-		wp = new JCheckBox("Write Prot");
 
 		sts = new DiskStatus[8];
 		track = new byte[trk_len];
@@ -122,6 +123,7 @@ public class P_Disk extends JFrame
 			bt.setMargin(new Insets(0, 0, 0, 0));
 			bt.setPreferredSize(new Dimension(25, 25));
 			pn.add(bt);
+			sts[x].a_bt = bt;
 			bt = new JButton("B");
 			bt.setActionCommand(String.format("B%d", x));
 			bt.addActionListener(this);
@@ -129,6 +131,25 @@ public class P_Disk extends JFrame
 			bt.setMargin(new Insets(0, 0, 0, 0));
 			bt.setPreferredSize(new Dimension(25, 25));
 			pn.add(bt);
+			sts[x].b_bt = bt;
+			bt = new JButton("FMT");
+			bt.setFont(smallFont);
+			bt.setActionCommand(String.format("F%d", x));
+			bt.addActionListener(this);
+			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setMargin(new Insets(0, 0, 0, 0));
+			bt.setPreferredSize(new Dimension(25, 25));
+			pn.add(bt);
+			sts[x].f_bt = bt;
+			bt = new JButton("DAT");
+			bt.setFont(smallFont);
+			bt.setActionCommand(String.format("D%d", x));
+			bt.addActionListener(this);
+			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setMargin(new Insets(0, 0, 0, 0));
+			bt.setPreferredSize(new Dimension(25, 25));
+			pn.add(bt);
+			sts[x].d_bt = bt;
 			sts[x].cyl_pn = new JLabel();
 			sts[x].cyl_pn.setPreferredSize(new Dimension(50, 20));
 			sts[x].cyl_pn.setOpaque(true);
@@ -587,6 +608,14 @@ public class P_Disk extends JFrame
 
 	public void doOut(RWChannel rwc) {
 		rwc.startCLC();
+		if (format && (sts[vUnit].flag & 001) == 0) {
+			error = true;
+			return;
+		}
+		if (!format && (sts[vUnit].flag & 002) == 0) {
+			error = true;
+			return;
+		}
 		if (format) {
 			getHeaderMem(rwc); // loads adr_*
 			// if caller did not seek cyl, too bad for them...
@@ -786,14 +815,33 @@ public class P_Disk extends JFrame
 	private File pickFile(String purpose) {
 		File file = null;
 		SuffFileChooser ch = new SuffFileChooser(purpose,
-			new String[]{"dpi"}, new String[]{"Disk Pack Img"}, _last, wp);
+			new String[]{"dpi"}, new String[]{"Disk Pack Img"}, _last, null);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
-			prot = wp.isSelected();
 			_last = file; // or use dev[unit]?
 		}
 		return file;
+	}
+
+	private void updateFlags(DiskStatus unit, int flg) {
+		unit.flag = (byte)flg;
+		unit.a_bt.setBackground(
+			(unit.flag & 004) == 0 ?
+			HW2000FrontPanel.btnWhiteOff :
+			HW2000FrontPanel.btnWhiteOn);
+		unit.b_bt.setBackground(
+			(unit.flag & 010) == 0 ?
+			HW2000FrontPanel.btnWhiteOff :
+			HW2000FrontPanel.btnWhiteOn);
+		unit.f_bt.setBackground(
+			(unit.flag & 001) == 0 ?
+			HW2000FrontPanel.btnWhiteOff :
+			HW2000FrontPanel.btnWhiteOn);
+		unit.d_bt.setBackground(
+			(unit.flag & 002) == 0 ?
+			HW2000FrontPanel.btnWhiteOff :
+			HW2000FrontPanel.btnWhiteOn);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -818,6 +866,22 @@ public class P_Disk extends JFrame
 			} else {
 				b.setBackground(HW2000FrontPanel.btnWhiteOn);
 			}
+		} else if (a.charAt(0) == 'F') {
+			int c = a.charAt(1) - '0';
+			sts[c].flag ^= 001;
+			if ((sts[c].flag & 001) == 0) {
+				b.setBackground(HW2000FrontPanel.btnWhiteOff);
+			} else {
+				b.setBackground(HW2000FrontPanel.btnWhiteOn);
+			}
+		} else if (a.charAt(0) == 'D') {
+			int c = a.charAt(1) - '0';
+			sts[c].flag ^= 002;
+			if ((sts[c].flag & 002) == 0) {
+				b.setBackground(HW2000FrontPanel.btnWhiteOff);
+			} else {
+				b.setBackground(HW2000FrontPanel.btnWhiteOn);
+			}
 		} else {
 			int c = a.charAt(0) - '0';
 			String s = String.format("Mount %03o", c);
@@ -830,13 +894,13 @@ public class P_Disk extends JFrame
 				sts[c].cyl_pn.setText("");
 				sts[c].mnt_pn.setText("No Disk Pack");
 			}
-			prot = false;
+			updateFlags(sts[c], 0);
 			File f = pickFile(s);
 			if (f == null) {
 				return;
 			}
 			try {
-				sts[c].dev = new RandomAccessFile(f, prot ? "r" : "rw");
+				sts[c].dev = new RandomAccessFile(f, "rw");
 				sts[c].cyl = 0;
 				sts[c].cyl_pn.setText("0");
 				sts[c].mnt_pn.setText(f.getName());
@@ -902,6 +966,9 @@ public class P_Disk extends JFrame
 	}
 	public void writeRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
+		if ((sts[vUnit].flag & 002) == 0) {
+			return;
+		}
 		if (!vOK) {
 			return;
 		}
@@ -919,6 +986,9 @@ public class P_Disk extends JFrame
 		vOK = false;
 		vCyl = cyl;
 		vTrk = trk;
+		if ((sts[vUnit].flag & 001) == 0) {
+			return;
+		}
 		// TODO: reduce duplicate code
 		if (!cacheTrack(vCyl, vTrk)) {
 			return;
