@@ -46,9 +46,17 @@ public class MacroLibTEST implements MacroDef {
 		if (ret < 0) return ret;
 		int x;
 		for (x = 0; x < parms.length - 1; ++x) {
-			ret = asm.assemble(String.format("              DSA   %s", parms[x]));
+			if (parms[x] == null || parms[x].isEmpty()) {
+				ret = asm.assemble("              DSA   0");
+			} else {
+				ret = asm.assemble(String.format("              DSA   %s", parms[x]));
+			}
 			if (ret < 0) return ret;
 		}
-		return asm.assemble(String.format("      R       DSA   %s", parms[x]));
+		if (parms[x] == null || parms[x].isEmpty()) {
+			return asm.assemble("              DSA   0");
+		} else {
+			return asm.assemble(String.format("      R       DSA   %s", parms[x]));
+		}
 	}
 }

@@ -26,6 +26,8 @@ public class Assembler {
 	boolean end;
 	boolean asmPass;
 	String mac;
+	String macTag;
+	Vector<String> macParm;
 	Vector<MacroDef> maclibs;
 	String prog;
 	String segm;
@@ -68,6 +70,8 @@ public class Assembler {
 		symTab = new HashMap<String,Integer>();
 		errs = new Vector<String>();
 		maclibs = new Vector<MacroDef>();
+		mac = null;
+		macParm = new Vector<String>();
 		try {
 			in = new BufferedReader(new FileReader(inFile));
 		} catch (Exception ee) {
@@ -234,11 +238,27 @@ public class Assembler {
 	}
 
 	private void catMac(String more) {
+		String t = more.substring(7, 14).trim();
+		String m = more.substring(14, 20).trim();
+		String p = more.substring(20).replaceFirst(" *$", "");
+		// Trailing comma, while syntactically correct, causes
+		// extraneous, empty, parameter after split().
+		p = p.replaceFirst(",$", "");
+		String[] pp = p.split(",");
 		if (mac == null) {
-			mac = more.substring(7).replaceAll(" *$", "");
-		} else {
-			mac += more.substring(20).trim();
+			mac = m;
+			macTag = t;
+			//macParm.clear();
+		} else if (m.matches("[0-9]+")) {
+			// parameter skip syntax...
+			int n = Integer.valueOf(m) - 1;
+			if (macParm.size() > n) {
+				errsAdd("Macro param skip overflow");
+			} else while (macParm.size() < n) {
+				macParm.add("");
+			}
 		}
+		macParm.addAll(Arrays.asList(pp));
 	}
 
 	private void listLine(String line) {
@@ -248,19 +268,8 @@ public class Assembler {
 		}
 	}
 
-	private int doMacro(String mac) {
-		// NOTE: 'mac' has eliminated columns 1-7 ...
-		int n = mac.length();
-		// must have at least a 1-char name...
-		String tag = mac.substring(0, 7);
-		String nam = mac.substring(7, n > 13 ? 13 : n).trim();
-		String[] pms;
-		if (n >= 13) {
-			pms = mac.substring(13).split(",");
-		} else {
-			pms = new String[]{" "};
-		}
-		return lookupMacro(nam, tag, pms);
+	private int doMacro(String mac, String tag, Vector<String> parms) {
+		return lookupMacro(mac, tag, parms.toArray(new String[0]));
 	}
 
 	private int loadLib(String lib) {
@@ -407,14 +416,16 @@ public class Assembler {
 				mac = null;
 			} else {
 				String m = mac;
-				mac = null; // prevent false complaint
-				ret = doMacro(m); // recursion here...
+				mac = null; // prevent false complaint in recursion
+				ret = doMacro(m, macTag, macParm); // recursion here...
 			}
+			macParm.clear();
 			return ret;
 		}
 		if (mac != null) {
 			errsAdd("Incomplete MACRO (ignored)");
 			mac = null;
+			macParm.clear();
 		}
 		char mrk = card.charAt(6);
 		String loc;
