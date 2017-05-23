@@ -6,6 +6,32 @@ import javax.swing.*;
 import javax.swing.text.*;
 import java.util.Arrays;
 
+// Honeywell "Disk Pack" Devices:
+//
+//	Model	plat	cap	cyls	hds
+//	-----	----	----	----	---
+//	170-2	6	4.6
+//	173-2	6	9.2
+//	171	6	4.6	100	10
+//	172	6	9.2	200	10
+//	258	6	4.6	100	10
+//	258B	6	4.6	100	10
+//	259	6	9.2	200	10
+//	259B	6	9.2	200	10
+//	273	11	18.4	200	20
+//	274	11	18.4	200	20
+//	275	11	18.4	200	20
+//	276	11	37.4	200	20
+//	277	11	64	?	20
+//	278	11	35	200	20	"double density 274"
+//	279	12	133.3	404	19	(12 disks = 22 surfaces... not 19...)
+//	261	36/2	150	256	64
+//	262	72/2	300	256	128
+//	266	*
+//	267	*
+// plat = number of platters (disks)
+// cap = capacity, formatted, million characters
+//
 // Semantics/Rationale For I/O are described in DiskSemantics.txt
 //
 // Disk Format:
@@ -19,9 +45,43 @@ public class P_Disk extends JFrame
 	static final byte DM = (byte)0305; // start of record data
 	static final byte EM = (byte)0306; // end of valid track formatting
 
+	// Based on Model 278 drives:
 	static final int num_trk = 20;
 	static final int num_cyl = 203; // 200-202 reserved?
-	static final int trk_len = 4700; // a round number, >= actual track length
+	//
+	// NOTE: period documentation indicates storage capacity per track of
+	// between 8760 and 9725 (6-bit) chars/trk (IBM: 7294 bytes, HW: 8760 chars;
+	// seems to be formatted). HW Data rate 416000 chars/sec (2496000 bits/sec),
+	// rotational latency 12.5msec (25msec full rotation, 2400 RPM or 40 RPS).
+	// This suggests 62400 raw bits (10400 chars) per track - implying 6-16%
+	// overhead for formatting. Typical HW default record size is 250 characters
+	// (1500 bits), with known overhead of at least 15 characters per record,
+	// plus TLR record and INDEX. HW Quoted capacity is 35.0 million chars/disk,
+	// which at 250 chars/rec would be 140000 recs/disk, at 200 cyls that is
+	// 700 recs/cyl, at 20 trk/cyl that is 35 rec/trk. And 35 rec/trk at
+	// 250 char/rec is 8750 data char/trk. Adding TLR would make that about 8756
+	// (plus overhead for 36 records). Overhead for 36 records and IM would bring
+	// that to 9297 char/trk. There are 72 IRGs (plus the last one). This works
+	// out to an average IRG size of 15 chars. Total IRG overhead is 1095 char.
+	//
+	// Since this implementation does not use IRGs, the trk_len value need not
+	// reflect actual physical disk characteristics. However, a value of 10000
+	// should allow for realistic expectations when using smaller record lengths.
+	// This implementation does not use IM but does use an EM to ensure
+	// uninitialized data after last record is ignored. AM, DM, and EM are
+	// 8-bit values, all other data is strictly 6-bit.
+	//
+	// Physical disk format (original hardware):
+	//
+	//     IM IRG AM HDR IRG DM DATA IRG AM HDR IRG ... DM TLR IRG*
+	//
+	// Each of IM, AM, and DM are assumed to be one character.
+	// HDR, DATA, and TLR each include a 2-character checksum.
+	// HDR is 9 characters. TLR is 6 characters. (DATA default 250 char)
+	// IRG* (gap from end of last record to IM) is of whatever length
+	// is leftover.
+	//
+	static final int trk_len = 10000;
 	static final int cyl_len = trk_len * num_trk;
 
 	private class DiskStatus {
@@ -62,6 +122,7 @@ public class P_Disk extends JFrame
 	boolean isOn = false;
 
 	// The address register:
+	byte adr_flg;
 	int adr_cyl;
 	int adr_trk;
 	int adr_rec;
@@ -92,7 +153,7 @@ public class P_Disk extends JFrame
 
 	// 11 platters, 20 usable surfaces
 	// 200 cyls (0000-0312 or 203?)
-	// 4602 char/trk
+	// 10400 char/trk
 	public P_Disk() {
 		super("H274 Disk Devices");
 		Font smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
@@ -405,6 +466,8 @@ public class P_Disk extends JFrame
 
 	private void doAdrReg(RWChannel rwc) {
 		if (rwc.isInput()) {
+			rwc.writeChar((byte)(adr_flg));
+			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_cyl >> 6));
 			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_cyl));
@@ -418,6 +481,8 @@ public class P_Disk extends JFrame
 			rwc.writeChar((byte)(adr_rec));
 			rwc.incrCLC();
 		} else {
+			adr_flg = (byte)(rwc.readMem() & 014);	// only A/B file bits?
+			rwc.incrCLC();
 			adr_cyl = (rwc.readMem() & 077) << 6;
 			rwc.incrCLC();
 			adr_cyl |= (rwc.readMem() & 077);
@@ -491,6 +556,7 @@ public class P_Disk extends JFrame
 			if (!searchRecord()) {
 				return false;
 			}
+			// TODO: only follow TLR if "next" (or "extended")
 			if ((curr_flg & 040) != 0) { // TLR
 				// TODO: must be same cylinder...
 				adr_cyl = (track[curr_pos++] & 077) << 6;
@@ -951,26 +1017,25 @@ public class P_Disk extends JFrame
 		vOK = true;
 		return true;
 	}
-	public byte[] readRecord() {
+	public int readRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
-			return null;
+			return -1;
 		}
-		byte[] buf = new byte[vLen];
+		if (len < 0) {
+			len = buf.length;
+		}
 		int p = 0;
-		while (p < vLen) {
-			buf[p++] = (byte)readChar();
+		while (p < vLen && start + p < len) {
+			buf[start + p++] = (byte)readChar();
 		}
 		vOK = false;
-		return buf;
+		return curr_flg;
 	}
-	public void writeRecord(byte[] buf, int start, int len) {
+	public int writeRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
-		if ((sts[vUnit].flag & 002) == 0) {
-			return;
-		}
 		if (!vOK) {
-			return;
+			return -1;
 		}
 		if (len < 0) {
 			len = buf.length;
@@ -980,18 +1045,16 @@ public class P_Disk extends JFrame
 			writeChar(buf[start + p++]);
 		}
 		vOK = false;
+		return curr_flg;
 	}
-	public void initTrack(int cyl, int trk, int reclen, int rectrk,
+	public boolean initTrack(int cyl, int trk, int reclen, int rectrk,
 				int tCyl, int tTrk) {
 		vOK = false;
 		vCyl = cyl;
 		vTrk = trk;
-		if ((sts[vUnit].flag & 001) == 0) {
-			return;
-		}
 		// TODO: reduce duplicate code
 		if (!cacheTrack(vCyl, vTrk)) {
-			return;
+			return false;
 		}
 		track_dirty = true;
 		curr_pos = 0;
@@ -1003,7 +1066,7 @@ public class P_Disk extends JFrame
 		// Just put as many records as will fit...
 		for (int r = 0; r < rectrk; ++r) {
 			if (!newRecord()) {
-				return;
+				return false;
 			}
 			Arrays.fill(track, curr_pos, curr_pos + curr_len, (byte)0);
 			curr_pos += curr_len;
@@ -1014,9 +1077,11 @@ public class P_Disk extends JFrame
 		// TODO: what does last track in cylinder point to?
 		if (!initTLR(tCyl, tTrk, 0)) {
 			// TODO: what to do?
+			return false;
 		}
 		track[curr_pos] = EM;
 		cacheTrack(-1, -1);
+		return true;
 	}
 	public void end() {
 		cacheTrack(-1, -1);

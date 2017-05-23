@@ -3,8 +3,9 @@
 public interface RandomRecordIO {
 	boolean begin(int unit);	// 'true' if media mounted.
 	boolean seekRecord(int cyl, int trk, int rec); // 'false' on error
-	byte[] readRecord();	// HW codes. null on error
-	void writeRecord(byte[] buf, int start, int len); // HW codes
-	void initTrack(int cyl, int trk, int reclen, int rectrk, int tCyl, int tTrk);
+	// -1 on error, FLG char on success
+	int readRecord(byte[] buf, int start, int len);	// HW codes
+	int writeRecord(byte[] buf, int start, int len); // HW codes
+	boolean initTrack(int cyl, int trk, int reclen, int rectrk, int tCyl, int tTrk);
 	void end();
 }
