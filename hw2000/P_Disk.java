@@ -45,6 +45,17 @@ public class P_Disk extends JFrame
 	static final byte DM = (byte)0305; // start of record data
 	static final byte EM = (byte)0306; // end of valid track formatting
 
+	// Switches/indicators on control units...
+	// Also, bits from MOD1 MCA parameter 31.
+	static final byte PERMIT_FMT = (byte)001;	// Not record header
+	static final byte PERMIT_DAT = (byte)002;	// Not record header
+	static final byte HDR_XFR = (byte)002;		// Record header only
+	static final byte PERMIT_A = (byte)004;
+	static final byte PERMIT_B = (byte)010;
+	static final byte PERMIT_AB = (byte)(PERMIT_A | PERMIT_B);
+	static final byte HDR_BAD = (byte)020;		// Record header only
+	static final byte HDR_TLR = (byte)040;		// Record header only
+
 	// Based on Model 278 drives:
 	static final int num_trk = 20;
 	static final int num_cyl = 203; // 200-202 reserved?
@@ -312,8 +323,11 @@ public class P_Disk extends JFrame
 		curr_len |= (track[p++] & 077);
 	}
 
+	// This only loads the "address register", not formatting to disk.
+	// FLAG may contain any bits, user supplies all.
 	private void getHeaderMem(RWChannel rwc) {
-		int a = rwc.getCLC() + 1; // CLC points to FLAG...
+		int a = rwc.getCLC(); // CLC points to FLAG...
+		adr_flg = (byte)(rwc.sys.rawReadMem(a++) & 077);
 		adr_cyl = (rwc.sys.rawReadMem(a++) & 077) << 6;
 		adr_cyl |= (rwc.sys.rawReadMem(a++) & 077);
 		adr_trk = (rwc.sys.rawReadMem(a++) & 077) << 6;
@@ -419,7 +433,7 @@ public class P_Disk extends JFrame
 	}
 
 	private boolean initTLR(int cyl, int trk, int rec) {
-		curr_flg = 040;
+		curr_flg |= HDR_TLR;
 		curr_len = 6;
 		if (!newRecord()) {
 			return false;
@@ -481,7 +495,7 @@ public class P_Disk extends JFrame
 			rwc.writeChar((byte)(adr_rec));
 			rwc.incrCLC();
 		} else {
-			adr_flg = (byte)(rwc.readMem() & 014);	// only A/B file bits?
+			adr_flg = (byte)(rwc.readMem() & PERMIT_AB);	// only A/B file bits?
 			rwc.incrCLC();
 			adr_cyl = (rwc.readMem() & 077) << 6;
 			rwc.incrCLC();
@@ -548,7 +562,7 @@ public class P_Disk extends JFrame
 	private boolean checkEOR() {
 		// can't depend on AM since data could be 8-bit.
 		if (curr_pos >= curr_end) { // end of record
-			if (!extended || (curr_flg & 040) != 0) {
+			if (!extended || (curr_flg & HDR_TLR) != 0) {
 				// If we started with a TLR, stop now.
 				return false;
 			}
@@ -557,7 +571,7 @@ public class P_Disk extends JFrame
 				return false;
 			}
 			// TODO: only follow TLR if "next" (or "extended")
-			if ((curr_flg & 040) != 0) { // TLR
+			if ((curr_flg & HDR_TLR) != 0) { // TLR
 				// TODO: must be same cylinder...
 				adr_cyl = (track[curr_pos++] & 077) << 6;
 				adr_cyl |= (track[curr_pos++] & 077);
@@ -674,16 +688,18 @@ public class P_Disk extends JFrame
 
 	public void doOut(RWChannel rwc) {
 		rwc.startCLC();
-		if (format && (sts[vUnit].flag & 001) == 0) {
-			error = true;
-			return;
-		}
-		if (!format && (sts[vUnit].flag & 002) == 0) {
-			error = true;
-			return;
-		}
 		if (format) {
+			if ((sts[unit].flag & PERMIT_FMT) == 0) {
+				error = true;
+				return;
+			}
 			getHeaderMem(rwc); // loads adr_*
+			// TODO: do we enforce match between FLAG and PERMIT switches?
+			// or is it just "caveat emptor"?
+			//if (((sts[unit].flag ^ adr_flg) & PERMIT_AB) != 0) {
+			//	error = true;
+			//	return;
+			//}
 			// if caller did not seek cyl, too bad for them...
 			cacheTrack(sts[unit].cyl, adr_trk);
 			track_dirty = true;
@@ -713,9 +729,23 @@ public class P_Disk extends JFrame
 				error = true;
 				return;
 			}
-		} else if (!findRecord()) {
-			// error set by findRecord()...
-			return;
+		} else {
+			if ((sts[vUnit].flag & PERMIT_DAT) == 0) {
+				error = true;
+				return;
+			}
+			if (!findRecord()) {
+				// error set by findRecord()...
+				return;
+			}
+			// Check HEADER FLAG against PERMIT switches...
+			int f = sts[unit].flag ^ PERMIT_AB;	// invert A/B bits
+			f &= curr_flg;	// mask NOT A/B bits
+			if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
+				error = true;
+				// TODO: OK to leave pointer at DM?
+				return;
+			}
 		}
 		while (!error) {
 			byte a = rwc.readMem();
@@ -864,7 +894,7 @@ public class P_Disk extends JFrame
 			if (in) {
 				break;
 			}
-			if ((curr_flg & 040) != 0) {
+			if ((curr_flg & HDR_TLR) != 0) {
 				branch = true;
 			}
 			break;
@@ -893,19 +923,19 @@ public class P_Disk extends JFrame
 	private void updateFlags(DiskStatus unit, int flg) {
 		unit.flag = (byte)flg;
 		unit.a_bt.setBackground(
-			(unit.flag & 004) == 0 ?
+			(unit.flag & PERMIT_A) == 0 ?
 			HW2000FrontPanel.btnWhiteOff :
 			HW2000FrontPanel.btnWhiteOn);
 		unit.b_bt.setBackground(
-			(unit.flag & 010) == 0 ?
+			(unit.flag & PERMIT_B) == 0 ?
 			HW2000FrontPanel.btnWhiteOff :
 			HW2000FrontPanel.btnWhiteOn);
 		unit.f_bt.setBackground(
-			(unit.flag & 001) == 0 ?
+			(unit.flag & PERMIT_FMT) == 0 ?
 			HW2000FrontPanel.btnWhiteOff :
 			HW2000FrontPanel.btnWhiteOn);
 		unit.d_bt.setBackground(
-			(unit.flag & 002) == 0 ?
+			(unit.flag & PERMIT_DAT) == 0 ?
 			HW2000FrontPanel.btnWhiteOff :
 			HW2000FrontPanel.btnWhiteOn);
 	}
@@ -918,36 +948,16 @@ public class P_Disk extends JFrame
 		String a = b.getActionCommand();
 		if (a.charAt(0) == 'A') {
 			int c = a.charAt(1) - '0';
-			sts[c].flag ^= 004;
-			if ((sts[c].flag & 004) == 0) {
-				b.setBackground(HW2000FrontPanel.btnWhiteOff);
-			} else {
-				b.setBackground(HW2000FrontPanel.btnWhiteOn);
-			}
+			updateFlags(sts[c], sts[c].flag ^ PERMIT_A);
 		} else if (a.charAt(0) == 'B') {
 			int c = a.charAt(1) - '0';
-			sts[c].flag ^= 010;
-			if ((sts[c].flag & 010) == 0) {
-				b.setBackground(HW2000FrontPanel.btnWhiteOff);
-			} else {
-				b.setBackground(HW2000FrontPanel.btnWhiteOn);
-			}
+			updateFlags(sts[c], sts[c].flag ^ PERMIT_B);
 		} else if (a.charAt(0) == 'F') {
 			int c = a.charAt(1) - '0';
-			sts[c].flag ^= 001;
-			if ((sts[c].flag & 001) == 0) {
-				b.setBackground(HW2000FrontPanel.btnWhiteOff);
-			} else {
-				b.setBackground(HW2000FrontPanel.btnWhiteOn);
-			}
+			updateFlags(sts[c], sts[c].flag ^ PERMIT_FMT);
 		} else if (a.charAt(0) == 'D') {
 			int c = a.charAt(1) - '0';
-			sts[c].flag ^= 002;
-			if ((sts[c].flag & 002) == 0) {
-				b.setBackground(HW2000FrontPanel.btnWhiteOff);
-			} else {
-				b.setBackground(HW2000FrontPanel.btnWhiteOn);
-			}
+			updateFlags(sts[c], sts[c].flag ^ PERMIT_DAT);
 		} else {
 			int c = a.charAt(0) - '0';
 			String s = String.format("Mount %03o", c);
@@ -1013,6 +1023,7 @@ public class P_Disk extends JFrame
 		if (!searchRecord() || !searchData()) {
 			return false;
 		}
+		// curr_* matches reacord header data, incl. FLAG
 		vLen = curr_len;
 		vOK = true;
 		return true;
@@ -1037,6 +1048,14 @@ public class P_Disk extends JFrame
 		if (!vOK) {
 			return -1;
 		}
+		if ((sts[vUnit].flag & PERMIT_DAT) == 0) {
+			return -1;
+		}
+		int f = sts[vUnit].flag ^ PERMIT_AB;	// invert A/B bits
+		f &= curr_flg;	// mask NOT A/B bits
+		if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
+			return -1;
+		}
 		if (len < 0) {
 			len = buf.length;
 		}
@@ -1047,7 +1066,7 @@ public class P_Disk extends JFrame
 		vOK = false;
 		return curr_flg;
 	}
-	public boolean initTrack(int cyl, int trk, int reclen, int rectrk,
+	public boolean initTrack(int flg, int cyl, int trk, int reclen, int rectrk,
 				int tCyl, int tTrk) {
 		vOK = false;
 		vCyl = cyl;
@@ -1056,9 +1075,12 @@ public class P_Disk extends JFrame
 		if (!cacheTrack(vCyl, vTrk)) {
 			return false;
 		}
+		if ((sts[vUnit].flag & PERMIT_FMT) == 0) {
+			return false;
+		}
 		track_dirty = true;
 		curr_pos = 0;
-		curr_flg = 0;
+		curr_flg = (byte)(flg & PERMIT_AB);	// TODO: allow more bits?
 		curr_cyl = vCyl;
 		curr_trk = vTrk;
 		curr_len = reclen;
@@ -1075,6 +1097,7 @@ public class P_Disk extends JFrame
 		// Allocated data will change to link to next allocated track.
 		// TODO: what does last track on disk point to?
 		// TODO: what does last track in cylinder point to?
+		// NOTE: initTLR() trashes curr_* values...
 		if (!initTLR(tCyl, tTrk, 0)) {
 			// TODO: what to do?
 			return false;

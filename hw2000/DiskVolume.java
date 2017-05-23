@@ -53,7 +53,11 @@ public class DiskVolume {
 		return name;
 	}
 
+	// TODO: move Volume Prepare and File Allocate to external code...
+	// eliminating need for initVolume() and initTrack().
 	public void initVolume(byte[] volnam) {
+		// TODO: system files/records use A-file protection?
+		int flag = 0;
 		if (!dsk.begin(unit)) {
 			return;
 		}
@@ -71,7 +75,7 @@ public class DiskVolume {
 		for (int cyl = 0; cyl < 203; ++cyl) {
 			for (int trk = 0; trk < 20; ++trk) {
 				if (!first) {
-					dsk.initTrack(pCyl, pTrk, 250, 17, cyl, trk);
+					dsk.initTrack(flag, pCyl, pTrk, 250, 17, cyl, trk);
 				}
 				first = false;
 				pTrk = trk;
@@ -80,7 +84,7 @@ public class DiskVolume {
 			pCyl = cyl;
 		}
 		// TODO: where does last track on disk point TLR to?
-		dsk.initTrack(pCyl, pTrk, 250, 17, 1, 0);
+		dsk.initTrack(flag, pCyl, pTrk, 250, 17, 1, 0);
 		byte[] rec = new byte[250];
 		Arrays.fill(rec, (byte)0);
 		System.arraycopy(_1VOL, 0, rec, 0, _1VOL.length);
@@ -92,7 +96,7 @@ public class DiskVolume {
 		dsk.end();
 	}
 
-	public void initTrack(int cyl, int trk, int reclen, int rectrk,
+	public void initTrack(int flg, int cyl, int trk, int reclen, int rectrk,
 				int tCyl, int tTrk) {
 		// Do not allow overwrite of system area
 		if (cyl < 1 || cyl >= 200) {
@@ -101,7 +105,7 @@ public class DiskVolume {
 		if (!dsk.begin(unit)) {
 			return;
 		}
-		dsk.initTrack(cyl, trk, reclen, rectrk, tCyl, tTrk);
+		dsk.initTrack(flg, cyl, trk, reclen, rectrk, tCyl, tTrk);
 		dsk.end();
 	}
 

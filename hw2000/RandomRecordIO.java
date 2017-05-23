@@ -6,6 +6,7 @@ public interface RandomRecordIO {
 	// -1 on error, FLG char on success
 	int readRecord(byte[] buf, int start, int len);	// HW codes
 	int writeRecord(byte[] buf, int start, int len); // HW codes
-	boolean initTrack(int cyl, int trk, int reclen, int rectrk, int tCyl, int tTrk);
+	boolean initTrack(int flg, int cyl, int trk, int reclen, int rectrk,
+							int tCyl, int tTrk);
 	void end();
 }
