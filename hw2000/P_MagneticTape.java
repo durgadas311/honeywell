@@ -44,7 +44,7 @@ public class P_MagneticTape extends JFrame
 	boolean isOn = false;
 
 	public P_MagneticTape() {
-		super("H204 Magnetic Tape");
+		super("H204B Magnetic Tape Unit");
 		_last = new File(System.getProperty("user.dir"));
 		sts = new MagTapeStatus[8];
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));

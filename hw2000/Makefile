@@ -5,7 +5,7 @@ CPCLASSES =	CharConverter.class
 
 F4CLASSES =	FortranLibrary.class
 
-EZCLASSES =	Assembler.class \
+EZCLASSES =	Assembler*.class \
 		Loader.class \
 		BRTLoader.class \
 		CardLoader.class \

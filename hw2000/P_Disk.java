@@ -155,7 +155,7 @@ public class P_Disk extends JFrame
 	// 200 cyls (0000-0312 or 203?)
 	// 10400 char/trk
 	public P_Disk() {
-		super("H274 Disk Devices");
+		super("H278 Disk Pack Devices");
 		Font smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 		_last = new File(System.getProperty("user.dir"));
 		busy = false;

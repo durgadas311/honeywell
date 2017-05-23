@@ -36,7 +36,8 @@ public class DiskVolume {
 			dsk.end();
 			return;
 		}
-		byte[] r = dsk.readRecord();
+		byte[] r = new byte[250];
+		dsk.readRecord(r, 0, -1);
 		if (!compare(_1VOL, r, 0)) {
 			// Not previously initialized
 			dsk.end();
