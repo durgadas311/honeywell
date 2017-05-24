@@ -300,7 +300,7 @@ public class P_Disk extends JFrame
 			return false;
 		}
 		sts[unit].cyl = cyl;
-		sts[unit].cyl_pn.setText(String.format("%d.%d", cyl, trk));
+		sts[unit].cyl_pn.setText(String.format("%03d-%02d", cyl, trk));
 		track_unit = unit;
 		track_cyl = cyl;
 		track_trk = trk;
@@ -470,6 +470,24 @@ public class P_Disk extends JFrame
 				// (but no disk error).
 				return false;
 			}
+			if ((next || extended) && (curr_flg & HDR_TLR) != 0) {
+				// Must be same cylinder...
+				// pointing to DM right now...
+				++curr_pos;
+				adr_cyl = (track[curr_pos++] & 077) << 6;
+				adr_cyl |= (track[curr_pos++] & 077);
+				adr_trk = (track[curr_pos++] & 077) << 6;
+				adr_trk |= (track[curr_pos++] & 077);
+				adr_rec = (track[curr_pos++] & 077) << 6;
+				adr_rec |= (track[curr_pos++] & 077);
+				if (!cacheTrack(sts[unit].cyl, adr_trk)) {
+					return false;
+				}
+				if (!searchRecord()) {
+					// We land here if not same cylinder...
+					return false;
+				}
+			}
 		}
 		if (!searchData()) {
 			error = true;
@@ -544,6 +562,9 @@ public class P_Disk extends JFrame
 		next = ((rwc.c3 & 003) == 003);
 	}
 
+	// NOTE: when writing, transfer ends before RM.
+	//	when reading, transfer last char to RM location
+	//	(in case record length exceeds user data)
 	public void run(RWChannel rwc) {
 		if (!busy) {
 			return;
@@ -559,39 +580,8 @@ public class P_Disk extends JFrame
 		busy = false;
 	}
 
-	private boolean checkEOR() {
-		// can't depend on AM since data could be 8-bit.
-		if (curr_pos >= curr_end) { // end of record
-			if (!extended || (curr_flg & HDR_TLR) != 0) {
-				// If we started with a TLR, stop now.
-				return false;
-			}
-			++adr_rec;
-			if (!searchRecord()) {
-				return false;
-			}
-			// TODO: only follow TLR if "next" (or "extended")
-			if ((curr_flg & HDR_TLR) != 0) { // TLR
-				// TODO: must be same cylinder...
-				adr_cyl = (track[curr_pos++] & 077) << 6;
-				adr_cyl |= (track[curr_pos++] & 077);
-				adr_trk = (track[curr_pos++] & 077) << 6;
-				adr_trk |= (track[curr_pos++] & 077);
-				adr_rec = (track[curr_pos++] & 077) << 6;
-				adr_rec |= (track[curr_pos++] & 077);
-				if (!cacheTrack(sts[unit].cyl, adr_trk)) {
-					return false;
-				}
-				if (!searchRecord()) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
 	private int readChar() {
-		if (!checkEOR()) {
+		if (curr_pos >= curr_end) { // end of record
 			return -1;
 		}
 		int c = track[curr_pos] & 0377;
@@ -600,7 +590,7 @@ public class P_Disk extends JFrame
 	}
 
 	private int writeChar(byte c) {
-		if (!checkEOR()) {
+		if (curr_pos >= curr_end) { // end of record
 			return -1;
 		}
 		track[curr_pos] = c;
@@ -643,34 +633,26 @@ public class P_Disk extends JFrame
 			int a = 0;
 			int b = rwc.readMem() & 0300;
 			if (format) {
+				// TODO: what does "read format" do?
+				// Should be symmetrical with "write format",
+				// Currently then:
+				//	transfer header data and record data.
+				//	stop after one record.
 				if (curr_pos >= track.length) {
 					curr_pos = 0;
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					if (!extended) {
-						break;
-					}
-					if (track[curr_pos] == EM) {
-						break;
-					}
-					if (!searchHeader()) {
-						error = true;
-						return;
-					}
-					// TODO: getHeader?
-					// assert curr_len same?
-					// check TLR and stop?
-					if (!searchData()) {
-						error = true;
-						return;
-					}
+					// Header already transferred...
+					// must be end of data...
+					break;
 				}
 				a = track[curr_pos++];
-			} else if (b != 0300) {
+			} else {
+				// If disk record longer than RM,
+				// need to place last char at RM.
 				a = readChar(); // has side affects
-				if (a < 0) { // no more data in cylinder
-					// need to signal short read?
+				if (a < 0) { // no more data in record
 					break;
 				}
 			}
@@ -680,6 +662,7 @@ public class P_Disk extends JFrame
 				break;
 			}
 			if (b == 0300) {
+				// Ensure we go no farther than RM.
 				curr_pos = curr_end;
 				break;
 			}
@@ -772,23 +755,15 @@ public class P_Disk extends JFrame
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					if (extended) {
-						if (!newRecord()) {
-							error = true;
-							curr_pos = 0;
-							break;
-						}
-					} else {
-						break;
-					}
+					break;
 				}
 				track[curr_pos++] = a;
 				e = 0;
 			} else {
 				e = writeChar(a);
 			}
-			if (e < 0) { // no more space in cylinder...
-				error = true; // not an error?
+			if (e < 0) { // no more space in record...
+				error = true; // TODO: not an error?
 				break;
 			}
 			if (rwc.incrCLC()) {
@@ -859,7 +834,7 @@ public class P_Disk extends JFrame
 				branch = true;
 			} else {
 				sts[unit].cyl = (rwc.c5 << 6) | rwc.c6;
-				sts[unit].cyl_pn.setText(String.format("%d", sts[unit].cyl));
+				sts[unit].cyl_pn.setText(String.format("%03d-00", sts[unit].cyl));
 			}
 			break;
 		case 030:
@@ -871,7 +846,7 @@ public class P_Disk extends JFrame
 				branch = true;
 			} else if (in) {
 				sts[unit].cyl = 0;
-				sts[unit].cyl_pn.setText("0");
+				sts[unit].cyl_pn.setText("000-00");
 			}
 			break;
 		case 040:
@@ -978,7 +953,7 @@ public class P_Disk extends JFrame
 			try {
 				sts[c].dev = new RandomAccessFile(f, "rw");
 				sts[c].cyl = 0;
-				sts[c].cyl_pn.setText("0");
+				sts[c].cyl_pn.setText("000-00");
 				sts[c].mnt_pn.setText(f.getName());
 				return;
 			} catch (Exception ee) {
