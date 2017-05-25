@@ -133,7 +133,6 @@ public class P_Disk extends JFrame
 	boolean isOn = false;
 
 	// The address register:
-	byte adr_flg;
 	int adr_cyl;
 	int adr_trk;
 	int adr_rec;
@@ -324,11 +323,9 @@ public class P_Disk extends JFrame
 	}
 
 	// This only loads the "address register", does no formatting to disk.
-	// FLAG may contain any bits, user supplies all.
 	// This is only used in the FORMAT WRITE path.
 	private void getHeaderMem(RWChannel rwc) {
-		int a = rwc.getCLC(); // CLC points to FLAG...
-		adr_flg = (byte)(rwc.sys.rawReadMem(a++) & 077);
+		int a = rwc.getCLC() + 1; // CLC points to FLAG...
 		adr_cyl = (rwc.sys.rawReadMem(a++) & 077) << 6;
 		adr_cyl |= (rwc.sys.rawReadMem(a++) & 077);
 		adr_trk = (rwc.sys.rawReadMem(a++) & 077) << 6;
@@ -499,8 +496,6 @@ public class P_Disk extends JFrame
 
 	private void doAdrReg(RWChannel rwc) {
 		if (rwc.isInput()) {
-			rwc.writeChar((byte)(adr_flg));
-			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_cyl >> 6));
 			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_cyl));
@@ -514,8 +509,6 @@ public class P_Disk extends JFrame
 			rwc.writeChar((byte)(adr_rec));
 			rwc.incrCLC();
 		} else {
-			adr_flg = (byte)(rwc.readMem() & PERMIT_AB);	// only A/B file bits?
-			rwc.incrCLC();
 			adr_cyl = (rwc.readMem() & 077) << 6;
 			rwc.incrCLC();
 			adr_cyl |= (rwc.readMem() & 077);
@@ -1000,7 +993,6 @@ public class P_Disk extends JFrame
 			return false;
 		}
 		// NOTE: adr_flg not used, switches are tested directly
-		adr_flg = (byte)(sts[vUnit].flag & PERMIT_AB);
 		adr_cyl = vCyl;
 		adr_trk = vTrk;
 		adr_rec = vRec;
