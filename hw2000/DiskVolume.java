@@ -32,7 +32,7 @@ public class DiskVolume {
 		this.dsk = dsk;
 		this.unit= unit;
 		name = new byte[6];
-		if (!dsk.seekRecord(0, 1, 0)) {
+		if (dsk.seekRecord(0, 1, 0) < 0) {
 			dsk.end();
 			return;
 		}

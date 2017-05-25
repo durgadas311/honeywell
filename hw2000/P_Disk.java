@@ -448,6 +448,27 @@ public class P_Disk extends JFrame
 		return true;
 	}
 
+	private boolean searchTLR() {
+		// Must be same cylinder...
+		// pointing to DM of TLR right now...
+		++curr_pos;
+		adr_cyl = (track[curr_pos++] & 077) << 6;
+		adr_cyl |= (track[curr_pos++] & 077);
+		adr_trk = (track[curr_pos++] & 077) << 6;
+		adr_trk |= (track[curr_pos++] & 077);
+		adr_rec = (track[curr_pos++] & 077) << 6;
+		adr_rec |= (track[curr_pos++] & 077);
+		// TODO: confirm EM?
+		if (!cacheTrack(sts[unit].cyl, adr_trk)) {
+			return false;
+		}
+		if (!searchRecord()) {
+			// We land here if not same cylinder...
+			return false;
+		}
+		return true;
+	}
+
 	// At the very least, this puts curr_pos at the first data char.
 	private boolean findRecord() {
 		if (!cacheTrack(sts[unit].cyl, adr_trk)) {
@@ -469,20 +490,7 @@ public class P_Disk extends JFrame
 				return false;
 			}
 			if ((next || extended) && (curr_flg & HDR_TLR) != 0) {
-				// Must be same cylinder...
-				// pointing to DM right now...
-				++curr_pos;
-				adr_cyl = (track[curr_pos++] & 077) << 6;
-				adr_cyl |= (track[curr_pos++] & 077);
-				adr_trk = (track[curr_pos++] & 077) << 6;
-				adr_trk |= (track[curr_pos++] & 077);
-				adr_rec = (track[curr_pos++] & 077) << 6;
-				adr_rec |= (track[curr_pos++] & 077);
-				if (!cacheTrack(sts[unit].cyl, adr_trk)) {
-					return false;
-				}
-				if (!searchRecord()) {
-					// We land here if not same cylinder...
+				if (!searchTLR()) {
 					return false;
 				}
 			}
@@ -984,30 +992,32 @@ public class P_Disk extends JFrame
 		vOK = false;
 		return true;
 	}
-	public boolean seekRecord(int cyl, int trk, int rec) {
+	// Always returns TLR as regular data... caller needs info anyway.
+	// Return value is -1 for error, else FLAG character...
+	public int seekRecord(int cyl, int trk, int rec) {
 		vCyl = cyl;
 		vTrk = trk;
 		vRec = rec;
 		// 'cacheTrack' updates display
 		if (!cacheTrack(vCyl, vTrk)) {
-			return false;
+			return -1;
 		}
 		// NOTE: adr_flg not used, switches are tested directly
 		adr_cyl = vCyl;
 		adr_trk = vTrk;
 		adr_rec = vRec;
 		if (!searchRecord() || !searchData()) {
-			return false;
+			return -1;
 		}
 		// curr_* matches reacord header data, incl. FLAG
 		vLen = curr_len;
 		vOK = true;
-		return true;
+		return curr_flg;
 	}
-	public int readRecord(byte[] buf, int start, int len) {
+	public boolean readRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
-			return -1;
+			return false;
 		}
 		if (len < 0) {
 			len = buf.length;
@@ -1017,20 +1027,20 @@ public class P_Disk extends JFrame
 			buf[start + p++] = (byte)readChar();
 		}
 		vOK = false;
-		return curr_flg;
+		return true;
 	}
-	public int writeRecord(byte[] buf, int start, int len) {
+	public boolean writeRecord(byte[] buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
-			return -1;
+			return false;
 		}
 		if ((sts[vUnit].flag & PERMIT_DAT) == 0) {
-			return -1;
+			return false;
 		}
 		int f = sts[vUnit].flag ^ PERMIT_AB;	// invert A/B bits
 		f &= curr_flg;	// mask NOT A/B bits
 		if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
-			return -1;
+			return false;
 		}
 		if (len < 0) {
 			len = buf.length;
@@ -1040,7 +1050,7 @@ public class P_Disk extends JFrame
 			writeChar(buf[start + p++]);
 		}
 		vOK = false;
-		return curr_flg;
+		return true;
 	}
 	public boolean initTrack(int flg, int cyl, int trk, int reclen, int rectrk,
 				int tCyl, int tTrk) {
