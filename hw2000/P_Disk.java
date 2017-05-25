@@ -323,8 +323,9 @@ public class P_Disk extends JFrame
 		curr_len |= (track[p++] & 077);
 	}
 
-	// This only loads the "address register", not formatting to disk.
+	// This only loads the "address register", does no formatting to disk.
 	// FLAG may contain any bits, user supplies all.
+	// This is only used in the FORMAT WRITE path.
 	private void getHeaderMem(RWChannel rwc) {
 		int a = rwc.getCLC(); // CLC points to FLAG...
 		adr_flg = (byte)(rwc.sys.rawReadMem(a++) & 077);
@@ -697,6 +698,8 @@ public class P_Disk extends JFrame
 				return;
 			}
 			track[curr_pos++] = AM; // pad with gap?
+			// This goes back over data loaded in getHeaderMem(),
+			// but copies to disk record header now.
 			for (int x = 0; x < 9; ++x) {
 				// TODO: strip punc, check RM?
 				track[curr_pos++] = (byte)(rwc.readMem() & 077);
@@ -705,6 +708,9 @@ public class P_Disk extends JFrame
 					return;
 				}
 			}
+			// This now loads curr_* vars with same data
+			// gotten by getHeaderMem() and record header loop.
+			// All of this could be cleaned up.
 			getHeader(curr_pos - 9); // loads curr_* variables
 			track[curr_pos++] = DM;
 			curr_end = curr_pos + curr_len;
@@ -989,9 +995,12 @@ public class P_Disk extends JFrame
 		vCyl = cyl;
 		vTrk = trk;
 		vRec = rec;
+		// 'cacheTrack' updates display
 		if (!cacheTrack(vCyl, vTrk)) {
 			return false;
 		}
+		// NOTE: adr_flg not used, switches are tested directly
+		adr_flg = (byte)(sts[vUnit].flag & PERMIT_AB);
 		adr_cyl = vCyl;
 		adr_trk = vTrk;
 		adr_rec = vRec;
