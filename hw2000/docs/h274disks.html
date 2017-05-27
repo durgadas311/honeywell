@@ -16,6 +16,13 @@ Some details are lacking regarding various command specifics.
 and raised to the top, using the Front Panel menu "I/O" and selecting Disks.
 Closing the window only hides it, having no effect on the operation of the drives.
 
+<P>A full set of PERMIT buttons is provided for each drive: "A", "B",
+"FMT" (format), and "DAT" (data). The buttons toggle when clicked,
+illuminated means PERMIT writing. FMT allows formatting of tracks.
+DAT allows writing of data records on tracks. A and B allow
+finer-grained control over writing of records that were formatted
+with A/B flags.
+
 <P>Due to lack of detailed information about these devices,
 the following has been assumed until more information is available:
 <UL>
@@ -30,12 +37,24 @@ the address register and read/write data only.
 <LI>SEARCH AND READ/WRITE NEXT commmands will increment the record number and
 locate the record identified in
 the address register and read/write data only.
+This variation of the command will follow Track Linking Records automatically.
 <LI>EXTENDED versions operate on more than one record, governed by the
 size of the buffer (RM in memory). This variation of the command, in the case
 of SEARCH AND versions, will follow Track Linking Records automatically.
+Termination of command variations is as follow:
+<UL><TABLE BORDER>
+<TR><TH>Command</TH><TH>Normal Termination</TH><TH>EXTENDED Termination</TH></TR>
+<TR><TD>READ/WRITE</TD><TD>Record or RM</TD><TD>End of Track or RM</TD></TR>
+<TR><TD>READ/WRITE INITIAL</TD><TD>Record or RM</TD><TD>End of Track or RM</TD></TR>
+<TR><TD>SEARCH READ/WRITE</TD><TD>Record or RM</TD><TD>Error or RM*</TD></TR>
+<TR><TD>SEARCH READ/WRITE NEXT</TD><TD>Record or RM*</TD><TD>Error or RM*</TD></TR>
+</TABLE></UL> * Command Follows TLR. Others return TLR as data.
 <LI>A transfer of 0 characters,
 with no error indicated, implies that
 there are no more records in the cylinder (end of TLR chain).
+This may be a false-positive, it is likely that EOF had to be manually
+indicated by the data (i.e. a "&#9633;EOD&#162;" item indicated the program should stop)
+in which case a program that ran off the end of a file would get and error.
 </UL>
 
 <P>The description of PDT for Disk Devices shows no method of selecting a
@@ -54,16 +73,16 @@ is assumed to be the bottle-neck and only one disk operation can be active
 at a time (i.e. the control has the Address Register as well as drive selector).
 The programmer must ensure that multiple disk operations do not collide.
 
-<P>Disk geometry is set as 203 cylinders of 20 tracks (heads, surfaces)
-with 4700 raw characters
-per track. Each record consumes 11 additional characters to the record length.
-Raw capacity of a disk pack is 19 million characters.
-The image file format consists of 4060 blocks of 4700 bytes each, representing
+<P>Disk geometry is set as for Model 278 drives:
+203 cylinders of 20 tracks (heads, surfaces) with 10400 raw characters per track.
+Each record consumes 11 additional characters to the record length.
+Raw capacity of a disk pack is 42 million characters.
+The image file format consists of 4060 blocks of 10000 bytes each, representing
 the tracks. The first 20 blocks (tracks) represent the first cylinder. 
 Within a track, data is laid out starting with a 1-byte Address Mark followed
 by the header (FCCTTRRDL) followed by a 1-byte Data Mark, then DL bytes of
 data followed by either another Address Mark or an "end of track mark".
-Bytes from the End Mark to 4700th byte are ignored, although format commands
+Bytes from the End Mark to 10000th byte are ignored, although format commands
 can write there. The file size grows as tracks get formatted, with "non-existent"
 data effectively being "unformatted".
 
@@ -71,12 +90,15 @@ data effectively being "unformatted".
 drive number (000 - 007). Clicking this button opens a file dialog window
 for selecting the disk image to be mounted (clicking Cancel will leave no
 image mounted).
+Additionally, "FMT" and "DAT" buttons permit writing of track format
+and record data, respectively.
 In addition, "A" and "B" buttons exist to provide values to match
-against the A-File and B-File bits in record headers. Since no information
-has been found on how these bits were used on real hardware,
-use of these bits is currently not implemented.
+against the A-File and B-File bits in record headers.
+These bits are treated as a mask, and "0" is always writeable (if "DAT" permit is on).
+So, if a record header has AB as "10", then that record can be written (only)
+if "A" is ON, but "B" may be ON or OFF (don't-care).
 <P>Active drives will show current head position/selection
-as Cylinder.Track.
+as Cylinder-Track, e.g. "000-06" for cylinder 0 head 6.
 
 <P>There is mention in the documentation of status bits in the control
 address register:
@@ -90,13 +112,16 @@ are not used:
 <UL>
 <LI>cylinder max (known) value 0312
 <LI>track max 0023 (20 surfaces on 11-platter disk packs)
-<LI>record max 0346 (practical limit for 4602 character tracks)
+<LI>record max 0733 (practical limit for 10400 character tracks,
+record length equals header length)
 </UL>
-Uncertain which bits were status, and what statuses were provided. It would be logical
+Uncertain which bits were status
+(or if an addition character existed in the address register),
+and what statuses were provided. It would be logical
 to choose the high-order character of the track (TT), since no known disk technology
-of the time had more than 11 platter disk packs. Cylinder and record values are
-based on recording/stepping technology and are not tied (as much) to physical
-characteristics of disk packs,
+of the time had more than 11 platter disk packs (except Models 260/261?).
+Cylinder and record values are based on recording/stepping technology
+and are not tied (as much) to physical characteristics of disk packs,
 and thus could (and did) increase over time as technology advanced (limited
 only by magnetic surface quality of the disk packs).
 
