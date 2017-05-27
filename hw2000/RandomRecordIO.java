@@ -1,6 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 public interface RandomRecordIO {
+	int numRecords(int recLen);
 	boolean begin(int unit);	// 'true' if media mounted.
 	// -1 on error, FLG char on success
 	int seekRecord(int cyl, int trk, int rec); // 'false' on error

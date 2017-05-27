@@ -92,7 +92,8 @@ public class P_Disk extends JFrame
 	// IRG* (gap from end of last record to IM) is of whatever length
 	// is leftover.
 	//
-	static final int trk_len = 10000;
+	static final int raw_len = 10400; // theoretical real track capacity, chars
+	static final int trk_len = 10000; // virtual track size used.
 	static final int cyl_len = trk_len * num_trk;
 
 	private class DiskStatus {
@@ -1116,6 +1117,9 @@ public class P_Disk extends JFrame
 		vOK = false;
 		vCyl = cyl;
 		vTrk = trk;
+		if (rectrk < 0) {
+			rectrk = numRecords(reclen);
+		}
 		// TODO: reduce duplicate code
 		if (!cacheTrack(vCyl, vTrk)) {
 			return false;
@@ -1154,5 +1158,19 @@ public class P_Disk extends JFrame
 	public void end() {
 		cacheTrack(-1, -1);
 		vOK = false;
+	}
+	public int numRecords(int recLen) {
+		// On a real disk, assume 10 chars per IRG.
+		// HDR and REC have 2 char CRC. IM, AM, DM are 1 char.
+		// IM has IRG before and after.
+		// TLR+IM overhead is 52 characters (3 IRG).
+		// Each record overhead is 35 chars (two IRG).
+		// Compute how many 'recLen' records would have fit
+		// on a real disk track:
+		int recTrk = (raw_len - 52) / (recLen + 35);
+		// The above number would always fit in our virtual track,
+		// since overheads are less: TLR+IM = 18, ea REC = 11.
+		// if (recTrk * (recLen + 11) + 18 > trk_len) error...
+		return recTrk;
 	}
 }
