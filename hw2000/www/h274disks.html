@@ -16,10 +16,10 @@ Some details are lacking regarding various command specifics.
 and raised to the top, using the Front Panel menu "I/O" and selecting Disks.
 Closing the window only hides it, having no effect on the operation of the drives.
 
-<P>A fill set of PERMIT buttons is provided for each drive: "A", "B",
+<P>A full set of PERMIT buttons is provided for each drive: "A", "B",
 "FMT" (format), and "DAT" (data). The buttons toggle when clicked,
 illuminated means PERMIT writing. FMT allows formatting of tracks.
-DAT allows writing of existing records on tracks. A and B allow
+DAT allows writing of data records on tracks. A and B allow
 finer-grained control over writing of records that were formatted
 with A/B flags.
 
@@ -37,12 +37,24 @@ the address register and read/write data only.
 <LI>SEARCH AND READ/WRITE NEXT commmands will increment the record number and
 locate the record identified in
 the address register and read/write data only.
+This variation of the command will follow Track Linking Records automatically.
 <LI>EXTENDED versions operate on more than one record, governed by the
 size of the buffer (RM in memory). This variation of the command, in the case
 of SEARCH AND versions, will follow Track Linking Records automatically.
+Termination of command variations is as follow:
+<UL><TABLE BORDER>
+<TR><TH>Command</TH><TH>Normal Termination</TH><TH>EXTENDED Termination</TH></TR>
+<TR><TD>READ/WRITE</TD><TD>Record or RM</TD><TD>End of Track or RM</TD></TR>
+<TR><TD>READ/WRITE INITIAL</TD><TD>Record or RM</TD><TD>End of Track or RM</TD></TR>
+<TR><TD>SEARCH READ/WRITE</TD><TD>Record or RM</TD><TD>Error or RM*</TD></TR>
+<TR><TD>SEARCH READ/WRITE NEXT</TD><TD>Record or RM*</TD><TD>Error or RM*</TD></TR>
+</TABLE></UL> * Command Follows TLR. Others return TLR as data.
 <LI>A transfer of 0 characters,
 with no error indicated, implies that
 there are no more records in the cylinder (end of TLR chain).
+This may be a false-positive, it is likely that EOF had to be manually
+indicated by the data (i.e. a "&#9633;EOD&#162;" item indicated the program should stop)
+in which case a program that ran off the end of a file would get and error.
 </UL>
 
 <P>The description of PDT for Disk Devices shows no method of selecting a

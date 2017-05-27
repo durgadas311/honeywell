@@ -602,6 +602,7 @@ public class P_Disk extends JFrame
 	}
 
 	private void doIn(RWChannel rwc) {
+		boolean header = false; // only valid if 'format'
 		rwc.startCLC();
 		if (format) {
 			cacheTrack(sts[unit].cyl, adr_trk);
@@ -612,20 +613,11 @@ public class P_Disk extends JFrame
 				error = true;
 				return;
 			}
-			++curr_pos;
+			++curr_pos;	// skip AM
 			getHeader(curr_pos);
-			for (int x = 0; x < 9; ++x) {
-				// TODO: strip punc, check RM?
-				rwc.writeMem(track[curr_pos++]);
-				if (rwc.incrCLC()) {
-					error = true;
-					return;
-				}
-			}
-			if (!searchData()) {
-				error = true;
-				return;
-			}
+			// transfer header data first...
+			header = true;
+			curr_end = curr_pos + 9;
 		} else if (!findRecord()) {
 			// error set by findRecord()...
 			return;
@@ -640,14 +632,26 @@ public class P_Disk extends JFrame
 				// Currently then:
 				//	transfer header data and record data.
 				//	stop after one record.
+				// check this in case track unformatted
 				if (curr_pos >= track.length) {
 					curr_pos = 0;
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					// Header already transferred...
-					// must be end of data...
-					break;
+					if (header) {
+						if (!searchData()) {
+							error = true;
+							return;
+						}
+					} else if (!extended || track[curr_pos] == EM) {
+						// must be end of data...
+						break;
+					} else if (!searchHeader()) {
+						error = true;
+						return;
+					}
+					// keep going until end of track or RM
+					header = !header;
 				}
 				a = track[curr_pos++];
 			} else {
@@ -655,7 +659,22 @@ public class P_Disk extends JFrame
 				// need to place last char at RM.
 				a = readChar(); // has side affects
 				if (a < 0) { // no more data in record
-					break;
+					if (!extended) {
+						break;
+					}
+					++adr_rec;
+					if (!searchRecord()) {
+						break;
+					}
+					if ((curr_flg & HDR_TLR) != 0) {
+						if (!searchTLR()) {
+							break;
+						}
+					}
+					a = readChar();
+					if (a < 0) {
+						break;
+					}
 				}
 			}
 			// TODO: support 8-bit transfers?
@@ -672,6 +691,7 @@ public class P_Disk extends JFrame
 	}
 
 	public void doOut(RWChannel rwc) {
+		boolean header = false; // only valid if 'format'
 		rwc.startCLC();
 		if (format) {
 			if ((sts[unit].flag & PERMIT_FMT) == 0) {
@@ -698,7 +718,10 @@ public class P_Disk extends JFrame
 				error = true;
 				return;
 			}
-			track[curr_pos++] = AM; // pad with gap?
+			track[curr_pos++] = AM;
+			curr_end = curr_pos + 9;
+			header = true;
+////
 			// This goes back over data loaded in getHeaderMem(),
 			// but copies to disk record header now.
 			for (int x = 0; x < 9; ++x) {
@@ -746,6 +769,7 @@ public class P_Disk extends JFrame
 						track[curr_pos++] = 0;
 					}
 					// break will set EM...
+					// regardless of 'header', EM will be detected.
 				} else {
 					curr_pos = curr_end;
 				}
@@ -762,14 +786,48 @@ public class P_Disk extends JFrame
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					break;
+					if (header) {
+						getHeader(curr_pos - 9); // loads curr_* variables
+						if (curr_pos + curr_len + 2 >=
+								track.length) {
+							error = true;
+							break;
+						}
+						track[curr_pos++] = DM;
+						curr_end = curr_pos + curr_len;
+					} else if (!extended) {
+						break;
+					} else {
+						if (curr_pos + 11 >= track.length) {
+							error = true;
+							break;
+						}
+						track[curr_pos++] = AM;
+						curr_end = curr_pos + 9;
+					}
+					header = !header;
 				}
 				track[curr_pos++] = a;
 				e = 0;
 			} else {
 				e = writeChar(a);
+				if (e < 0 && extended) {
+					// char not written...
+					++adr_rec;
+					if (!searchRecord()) {
+						error = true;
+						break;
+					}
+					if ((curr_flg & HDR_TLR) != 0) {
+						if (!searchTLR()) {
+							break;	// error?
+						}
+					}
+					e = writeChar(a);
+				}
 			}
 			if (e < 0) { // no more space in record...
+				// char not written...
 				error = true; // TODO: not an error?
 				break;
 			}
@@ -779,9 +837,10 @@ public class P_Disk extends JFrame
 		}
 		if (format) {
 			// need to replace this next record with AM,
-			// do not increment.
+			// if followed by another write: do not increment.
 			track[curr_pos] = EM;
 		}
+		// TODO: optimize this out?
 		cacheTrack(-1, -1);
 	}
 
