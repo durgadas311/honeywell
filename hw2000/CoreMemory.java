@@ -1,17 +1,23 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public interface CoreMemory {
-	public byte readMem(int adr);
-	public byte readChar(int adr);
-	public byte rawReadMem(int adr);
-	public void rawWriteMem(int adr, byte val);
-	public void rawWriteChar(int adr, byte val);
-	public void writeMem(int adr, byte val);
-	public void writeChar(int adr, byte val);
-	public void setWord(int adr);
-	public void setItem(int adr);
-	public void clrWord(int adr);
-	public void clrItem(int adr);
-	public void listOut(String str);
+	byte readMem(int adr);
+	byte readChar(int adr);
+	byte rawReadMem(int adr);
+	void rawWriteMem(int adr, byte val);
+	void rawWriteChar(int adr, byte val);
+	void writeMem(int adr, byte val);
+	void writeChar(int adr, byte val);
+	void setWord(int adr);
+	void setItem(int adr);
+	void clrWord(int adr);
+	void clrItem(int adr);
+	void copyIn(int adr, byte[] buf, int start, int len);
+	void copyOut(int adr, byte[] buf, int start, int len);
+	void zero(int adr, int len);
+	int size();
+
+	// Not specifically memory-related
+	void listOut(String str);
 	void addTrap(HW2000Trap trap);
 	void removeTrap(HW2000Trap trap);
 	CharConverter cvt();

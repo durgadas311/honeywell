@@ -368,6 +368,39 @@ public class HW2000 implements CoreMemory
 		mem[a] &= ~0200;
 	}
 
+	public void copyIn(int adr, byte[] buf, int start, int len) {
+		for (int x = 0; x < len; ++x) {
+			writeChar(adr++, buf[start + x]);
+		}
+	}
+
+	public void copyOut(int adr, byte[] buf, int start, int len) {
+		int a = start;
+		for (int x = 0; x < len; ++x) {
+			buf[a] = (byte)((buf[a] & 0300) | readChar(adr++));
+			++a;
+		}
+	}
+
+	public void zero(int adr, int len) {
+		int a = validAdr(adr);
+		if (a >= mem.length) {
+			return;
+		}
+		if (len < 0) {
+			len = mem.length - a;
+		}
+		int end = a + len;
+		if (end > mem.length) {
+			end = mem.length;
+		}
+		Arrays.fill(mem, a, end, (byte)0);
+	}
+
+	public int size() {
+		return mem.length;
+	}
+
 	// 
 	private int fetchAddr(int ptr, int ref) {
 		int a = 0;

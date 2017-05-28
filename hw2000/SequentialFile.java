@@ -30,7 +30,8 @@ public class SequentialFile implements DiskFile {
 	int blkTrk;
 	int blkRec;
 	byte[] blkBuf;
-	byte[] tlrBuf;
+	CoreMemory blkBufMem;
+	CoreMemory tlrBuf;
 	boolean dirty;
 	String error = null;
 
@@ -52,7 +53,8 @@ public class SequentialFile implements DiskFile {
 		lastUnit = 0;
 		// TODO: use this buf even when program supplied buf?
 		blkBuf = new byte[blkLen];
-		tlrBuf = new byte[6];
+		blkBufMem = new BufferMemory(blkBuf);
+		tlrBuf = new BufferMemory(6);
 		curOff = -1;
 		blkCyl = -1;
 		blkTrk = -1;
@@ -77,7 +79,8 @@ public class SequentialFile implements DiskFile {
 		this.recBlk = recblk;
 		this.blkLen = recLen * recblk;
 		blkBuf = new byte[blkLen];
-		tlrBuf = new byte[6];
+		blkBufMem = new BufferMemory(blkBuf);
+		tlrBuf = new BufferMemory(6);
 		curOff = -1;
 		blkCyl = -1;
 		blkTrk = -1;
@@ -159,7 +162,7 @@ public class SequentialFile implements DiskFile {
 	// also must remember ending cyl,trk,rec for "increment"...
 	// So, really can't ignore TLRs...
 	// TODO: block cannot span allocation units (cylinders)?
-	private boolean readBlock(int cyl, int trk, int rec, byte[] buf) {
+	private boolean readBlock(int cyl, int trk, int rec, CoreMemory buf) {
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
 			return false;
@@ -182,12 +185,12 @@ public class SequentialFile implements DiskFile {
 						error = dsk.getError();
 						return false;
 					}
-					cyl = (tlrBuf[0] & 077) << 6;
-					cyl |= (tlrBuf[1] & 077);
-					trk = (tlrBuf[2] & 077) << 6;
-					trk |= (tlrBuf[3] & 077);
-					rec = (tlrBuf[4] & 077) << 6;
-					rec |= (tlrBuf[5] & 077);
+					cyl = tlrBuf.readChar(0) << 6;
+					cyl |= tlrBuf.readChar(1);
+					trk = tlrBuf.readChar(2) << 6;
+					trk |= tlrBuf.readChar(3);
+					rec = tlrBuf.readChar(4) << 6;
+					rec |= tlrBuf.readChar(5);
 					f = dsk.seekRecord(cyl, trk, rec);
 					if (f < 0) {
 						error = dsk.getError();
@@ -216,7 +219,7 @@ public class SequentialFile implements DiskFile {
 		return true;
 	}
 
-	private boolean writeBlock(int cyl, int trk, int rec, byte[] buf) {
+	private boolean writeBlock(int cyl, int trk, int rec, CoreMemory buf) {
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
 			return false;
@@ -239,12 +242,12 @@ public class SequentialFile implements DiskFile {
 						error = dsk.getError();
 						return false;
 					}
-					cyl = (tlrBuf[0] & 077) << 6;
-					cyl |= (tlrBuf[1] & 077);
-					trk = (tlrBuf[2] & 077) << 6;
-					trk |= (tlrBuf[3] & 077);
-					rec = (tlrBuf[4] & 077) << 6;
-					rec |= (tlrBuf[5] & 077);
+					cyl = tlrBuf.readChar(0) << 6;
+					cyl |= tlrBuf.readChar(1);
+					trk = tlrBuf.readChar(2) << 6;
+					trk |= tlrBuf.readChar(3);
+					rec = tlrBuf.readChar(4) << 6;
+					rec |= tlrBuf.readChar(5);
 					f = dsk.seekRecord(cyl, trk, rec);
 					if (f < 0) {
 						error = dsk.getError();
@@ -278,13 +281,13 @@ public class SequentialFile implements DiskFile {
 		}
 		if (dirty && blkCyl >= 0 && blkTrk >= 0 && blkRec >= 0) {
 			// TODO: preserve error? PERMIT errors need to be reported
-			ok = writeBlock(blkCyl, blkTrk, blkRec, blkBuf);
+			ok = writeBlock(blkCyl, blkTrk, blkRec, blkBufMem);
 		}
 		dirty = false;
 		if (cyl < 0 || trk < 0 || rec < 0) {
 			return ok;
 		}
-		if (!readBlock(cyl, trk, rec, blkBuf)) {
+		if (!readBlock(cyl, trk, rec, blkBufMem)) {
 			return false;
 		}
 		blkCyl = cyl;
@@ -322,42 +325,30 @@ public class SequentialFile implements DiskFile {
 	//
 	// These routines are for the MOVE item delivery mode...
 	//
-	public boolean getItem(byte[] itm) {
-		if (itm.length != itmLen) {
-			error = "Wrong Item size";
-			return false;
-		}
+	public boolean getItem(CoreMemory itm, int adr) {
 		if (!cacheNextItem()) {
 			return false;
 		}
-		System.arraycopy(blkBuf, curOff, itm, 0, itm.length);
+		itm.copyIn(adr, blkBuf, curOff, itmLen);
 		return true;
 	}
 
-	public boolean repItem(byte[] itm) {
-		if (itm.length != itmLen) {
-			error = "Wrong Item size";
-			return false;
-		}
+	public boolean repItem(CoreMemory itm, int adr) {
 		if (curOff < 0) {
 			return false;
 		}
-		System.arraycopy(itm, 0, blkBuf, curOff, itm.length);
+		itm.copyOut(adr, blkBuf, curOff, itmLen);
 		dirty = true;
 		return true;
 	}
 
-	public boolean putItem(byte[] itm) {
-		if (itm.length != itmLen) {
-			error = "Wrong Item size";
-			return false;
-		}
+	public boolean putItem(CoreMemory itm, int adr) {
 		// Techically, we don't need to read block first,
 		// But this way we catch physical end of file...
 		if (!cacheNextItem()) {
 			return false;
 		}
-		System.arraycopy(itm, 0, blkBuf, curOff, itm.length);
+		itm.copyOut(adr, blkBuf, curOff, itmLen);
 		dirty = true;
 		return true;
 	}

@@ -48,60 +48,60 @@ public class FileVolSupport {
 				error = dsk.getError();
 				return false;
 			}
-			byte[] rec = new byte[DiskVolume.def_reclen];
+			CoreMemory rec = new BufferMemory(DiskVolume.def_reclen);
 			DiskVolume.initVOL(rec, volnam, volser);
 			dsk.seekRecord(0, 1, 0);
 			dsk.writeRecord(rec, 0, -1);
 			// Init *VOLNAMES*
-			byte[] itmNames = new byte[volNames.itemLen()];
-			Arrays.fill(itmNames, (byte)0);
-			itmNames[0] = 077; // "unused/free/deleted"
+			CoreMemory itmNames = new BufferMemory(volNames.itemLen());
+			itmNames.zero(0, -1);
+			itmNames.writeChar(0, (byte)077); // "unused/free/deleted"
 			for (int i = 0; i < 100; ++i) {
-				ok = volNames.putItem(itmNames);
+				ok = volNames.putItem(itmNames, 0);
 				if (!ok) {
 					error = volNames.getError();
 					return false;
 				}
 			}
 			DiskVolume.setEOD(itmNames, 0);
-			ok = volNames.putItem(itmNames);
+			ok = volNames.putItem(itmNames, 0);
 			if (!ok) {
 				error = volNames.getError();
 				return false;
 			}
 			volNames.close();
 			// Init *VOLDESCR*
-			byte[] itmDescr = new byte[volDescr.itemLen()];
-			Arrays.fill(itmDescr, (byte)0);
-			itmDescr[0] = 077; // "unused/free/deleted"
+			CoreMemory itmDescr = new BufferMemory(volDescr.itemLen());
+			itmDescr.zero(0, -1);
+			itmDescr.writeChar(0, (byte)077); // "unused/free/deleted"
 			for (int i = 0; i < 100; ++i) {
-				ok = volDescr.putItem(itmDescr);
+				ok = volDescr.putItem(itmDescr, 0);
 				if (!ok) {
 					error = volDescr.getError();
 					return false;
 				}
 			}
 			DiskVolume.setEOD(itmDescr, 0);
-			ok = volDescr.putItem(itmDescr);
+			ok = volDescr.putItem(itmDescr, 0);
 			if (!ok) {
 				error = volDescr.getError();
 				return false;
 			}
 			volDescr.close();
 			// Init *VOLALLOC*
-			byte[] itmAlloc = new byte[volAlloc.itemLen()];
-			Arrays.fill(itmAlloc, (byte)0);
-			itmAlloc[0] = 077; // "unused/free/deleted"
+			CoreMemory itmAlloc = new BufferMemory(volAlloc.itemLen());
+			itmAlloc.zero(0, -1);
+			itmAlloc.writeChar(0, (byte)077); // "unused/free/deleted"
 			// 6 allocation units per file, max
 			for (int i = 0; i < 600; ++i) {
-				ok = volAlloc.putItem(itmAlloc);
+				ok = volAlloc.putItem(itmAlloc, 0);
 				if (!ok) {
 					error = volAlloc.getError();
 					return false;
 				}
 			}
 			DiskVolume.setEOD(itmAlloc, 0);
-			ok = volAlloc.putItem(itmAlloc);
+			ok = volAlloc.putItem(itmAlloc, 0);
 			if (!ok) {
 				error = volAlloc.getError();
 				return false;
@@ -118,6 +118,15 @@ public class FileVolSupport {
 		String ret = "";
 		for (int x = 0; x < len; ++x) {
 			ret += cvt.hwToLP(in[start + x]);
+		}
+		return ret;
+	}
+
+	static private String hwToString(CoreMemory in, int start, int len,
+					CharConverter cvt) {
+		String ret = "";
+		for (int x = 0; x < len; ++x) {
+			ret += cvt.hwToLP(in.readChar(start + x));
 		}
 		return ret;
 	}
@@ -164,20 +173,20 @@ public class FileVolSupport {
 					hwToString(vol.getSerial(), 0, 6, sys.pdc.cvt)));
 		int free = 0;
 		int total = 0;
-		byte[] names = new byte[vol.getVolNames().itemLen()];
-		byte[] descr = new byte[vol.getVolDescr().itemLen()];
-		byte[] alloc = new byte[vol.getVolAlloc().itemLen()];
+		CoreMemory names = new BufferMemory(vol.getVolNames().itemLen());
+		CoreMemory descr = new BufferMemory(vol.getVolDescr().itemLen());
+		CoreMemory alloc = new BufferMemory(vol.getVolAlloc().itemLen());
 		int[][] map = new int[203][];
 		vol.getVolNames().rewind();
 		while (true) {
 			String ret = "";
-			if (!vol.getVolNames().getItem(names)) {
+			if (!vol.getVolNames().getItem(names, 0)) {
 				error = vol.getVolNames().getError();
 				return false;
 			}
 			++total;
 			String hash = Integer.toString(total, 36);
-			if ((names[0] & 077) == 077) {
+			if (names.readChar(0) == 077) {
 				++free;
 				continue;
 			}
@@ -190,9 +199,9 @@ public class FileVolSupport {
 			int[] ctri = vol.getSome(names, 14, 4);
 			vol.getVolDescr().seek(ctri);
 			// TODO: hot to detect past EOD
-			vol.getVolDescr().getItem(descr);
+			vol.getVolDescr().getItem(descr, 0);
 			// TODO: check errors, EOD
-			switch (descr[0] & 077) {
+			switch (descr.readChar(0)) {
 			case 001: ret += 'S'; break;
 			case 002: ret += 'D'; break;
 			case 003: ret += 'I'; break;
@@ -217,12 +226,12 @@ public class FileVolSupport {
 					vol.getVolAlloc().seek(ctri);
 					// TODO: hot to detect past EOD
 				}
-				vol.getVolAlloc().getItem(alloc);
+				vol.getVolAlloc().getItem(alloc, 0);
 				// TODO: check errors, EOD
 				fd = vol.getSome(alloc, 4, 4);
 				tracks += (fd[2] - fd[0] + 1) * (fd[3] - fd[1] + 1);
 				mapTracks(map, total, fd[0], fd[1], fd[2], fd[3]);
-				int t = (alloc[0] & 077);
+				int t = alloc.readChar(0);
 				if (t == 040) {
 					break;
 				}
@@ -247,11 +256,11 @@ public class FileVolSupport {
 		return true;
 	}
 
-	static private byte[] findName(DiskVolume vol, DiskFile file, byte[] name) {
-		byte[] buf = new byte[file.itemLen()];
+	static private CoreMemory findName(DiskVolume vol, DiskFile file, byte[] name) {
+		CoreMemory buf = new BufferMemory(file.itemLen());
 		file.rewind();
 		while (true) {
-			if (!file.getItem(buf)) {
+			if (!file.getItem(buf, 0)) {
 				error = file.getError();
 				return null;
 			}
@@ -259,7 +268,7 @@ public class FileVolSupport {
 				error = "No file";
 				return null;
 			}
-			if ((buf[0] & 077) == 077) {
+			if (buf.readChar(0) == 077) {
 				continue;
 			}
 			if (vol.compare(name, buf, 0)) {
@@ -269,11 +278,11 @@ public class FileVolSupport {
 		return buf;
 	}
 
-	static private byte[] findFree(DiskVolume vol, DiskFile file) {
-		byte[] buf = new byte[file.itemLen()];
+	static private CoreMemory findFree(DiskVolume vol, DiskFile file) {
+		CoreMemory buf = new BufferMemory(file.itemLen());
 		file.rewind();
 		while (true) {
-			if (!file.getItem(buf)) {
+			if (!file.getItem(buf, 0)) {
 				error = file.getError();
 				return null;
 			}
@@ -281,7 +290,7 @@ public class FileVolSupport {
 				error = "No space";
 				return null;
 			}
-			if ((buf[0] & 077) == 077) {
+			if (buf.readChar(0) == 077) {
 				break;
 			}
 		}
@@ -299,7 +308,7 @@ public class FileVolSupport {
 			error = vol.getError();
 			return false;
 		}
-		byte[] names = findName(vol, vol.getVolNames(), name);
+		CoreMemory names = findName(vol, vol.getVolNames(), name);
 		if (names != null) {
 			error = "File exists";
 			return false;
@@ -311,33 +320,33 @@ public class FileVolSupport {
 		// found a free slot for new file...
 		// Now find space in *VOLDESCR* and *VOLALLOC*.
 		// We make *VOLALLOC* simpler by always taking 6 slots.
-		byte[] descr = findFree(vol, vol.getVolDescr());
+		CoreMemory descr = findFree(vol, vol.getVolDescr());
 		if (descr == null) {
 			return false;
 		}
-		byte[] alloc = findFree(vol, vol.getVolAlloc());
+		CoreMemory alloc = findFree(vol, vol.getVolAlloc());
 		if (alloc == null) {
 			return false;
 		}
-		System.arraycopy(name, 0, names, 0, 10);
-		names[10] = (byte)0;	// first (only) volume
-		names[11] = (byte)0;	// MOD1
+		names.copyIn(0, name, 0, 10);
+		names.writeChar(10, (byte)0);	// first (only) volume
+		names.writeChar(11, (byte)0);	// MOD1
 		vol.putSome(vol.getVolDescr().getAddress(), names, 14);
 		vol.putSome(vol.getVolAlloc().getAddress(), names, 22);
-		ok = vol.getVolNames().repItem(names);
+		ok = vol.getVolNames().repItem(names, 0);
 		ok = vol.getVolNames().sync();
 		if (!ok) {
 			error = vol.getVolNames().getError();
 			return false;
 		}
-		descr[0] = 001;	// Sequential - TODO: support other organizations
+		descr.writeChar(0, (byte)001);	// Sequential - TODO: support other organizations
 		vol.putOne(itmLen, descr, 1);
 		vol.putOne(recLen, descr, 3);
 		vol.putOne(itmBlk, descr, 5);
 		vol.putOne(recBlk, descr, 7);
 		vol.putOne(recTrk, descr, 9);
 		// TODO: populate other fields...
-		ok = vol.getVolDescr().repItem(descr);
+		ok = vol.getVolDescr().repItem(descr, 0);
 		ok = vol.getVolDescr().sync();
 		if (!ok) {
 			error = vol.getVolNames().getError();
@@ -346,21 +355,21 @@ public class FileVolSupport {
 		// TODO: verify units[*] are free...
 		for (int a = 0; a < 6; ++a) {
 			if (a > 0) {
-				ok = vol.getVolAlloc().getItem(alloc);
+				ok = vol.getVolAlloc().getItem(alloc, 0);
 			}
 			if (units[a] == null) {
 				// Make all unused entries appear "not free"
-				alloc[0] = 075; // extension to MOD1
+				alloc.writeChar(0, (byte)075); // extension to MOD1
 			} else if (a == 5 || units[a + 1] == null) {
-				alloc[0] = 040; // last unit
+				alloc.writeChar(0, (byte)040); // last unit
 			} else {
-				alloc[0] = 060; // more units follow
+				alloc.writeChar(0, (byte)060); // more units follow
 			}
 			if (units[a] != null) {
 				vol.putSome(units[a].get(), alloc, 4);
 			}
-			Arrays.fill(alloc, 12, 20, (byte)0);
-			ok = vol.getVolAlloc().repItem(alloc);
+			alloc.zero(12, 20);
+			ok = vol.getVolAlloc().repItem(alloc, 0);
 			if (!ok) {
 				error = vol.getVolNames().getError();
 				return false;
@@ -408,26 +417,26 @@ public class FileVolSupport {
 			return false;
 		}
 		try {
-			byte[] names = findName(vol, vol.getVolNames(), name);
-			byte[] descr = new byte[vol.getVolDescr().itemLen()];
-			byte[] alloc = new byte[vol.getVolAlloc().itemLen()];
+			CoreMemory names = findName(vol, vol.getVolNames(), name);
+			CoreMemory descr = new BufferMemory(vol.getVolDescr().itemLen());
+			CoreMemory alloc = new BufferMemory(vol.getVolAlloc().itemLen());
 			if (names == null) {
 				return false;
 			}
-			names[0] = (byte)077;
-			vol.getVolNames().repItem(names);
+			names.writeChar(0, (byte)077);
+			vol.getVolNames().repItem(names, 0);
 			int[] ctri = vol.getSome(names, 14, 4);
 			vol.getVolDescr().seek(ctri);
-			vol.getVolDescr().getItem(descr);
-			descr[0] = (byte)077;
-			vol.getVolDescr().repItem(descr);
+			vol.getVolDescr().getItem(descr, 0);
+			descr.writeChar(0, (byte)077);
+			vol.getVolDescr().repItem(descr, 0);
 			ctri = vol.getSome(names, 22, 4);
 			vol.getVolAlloc().seek(ctri);
 			// assume all contiguous
 			for (int u = 0; u < 6; ++u) {
-				vol.getVolAlloc().getItem(alloc);
-				alloc[0] = (byte)077;
-				vol.getVolAlloc().putItem(alloc);
+				vol.getVolAlloc().getItem(alloc, 0);
+				alloc.writeChar(0, (byte)077);
+				vol.getVolAlloc().putItem(alloc, 0);
 			}
 		} finally {
 			vol.unmount();

@@ -1,9 +1,10 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 public interface DiskFile {
-	boolean getItem(byte[] itm);
-	boolean repItem(byte[] itm);
-	boolean putItem(byte[] itm);
+	// Open done by ctor and caller.
+	boolean getItem(CoreMemory itm, int adr);
+	boolean repItem(CoreMemory itm, int adr);
+	boolean putItem(CoreMemory itm, int adr);
 	boolean close();
 	// Non-standard: (Not part of MOD1 i/f)
 	byte[] getName();

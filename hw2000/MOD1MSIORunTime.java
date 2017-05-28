@@ -9,6 +9,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	private int base = 0;
 	private int[] parms;
 	private int nparms;
+	private int exitSR;	// original action call return
 
 	private HW2000 sys;
 
@@ -34,24 +35,31 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	}
 
 	public boolean doTrap() {
-		if (sys.SR != base) {
+		if (sys.SR < base || sys.SR > base + 1) {
 			return false;
 		}
-		// Need parameters to decode call
-		sys.SR = sys.BAR;
-		// RM single char is end...
+		int op;
 		nparms = 0;
-		while ((sys.rawReadMem(sys.SR) & 0300) != 0300) {
-			if (nparms >= parms.length) {
-				// halt? panic?
-				sys.halt = true;
-				sys.SR = sys.BAR; // guess
-				return true;
+		if (sys.SR == base + 1) {
+			op = 0; // some unused value
+		} else {
+			// Need parameters to decode call
+			sys.SR = sys.BAR;
+			// RM single char is end, rest are addresses.
+			while ((sys.rawReadMem(sys.SR) & 0300) != 0300) {
+				if (nparms >= parms.length) {
+					// halt? panic?
+					sys.halt = true;
+					sys.SR = sys.BAR; // guess
+					return true;
+				}
+				parms[nparms++] = getAdr();
 			}
-			parms[nparms++] = getAdr();
+			op = sys.rawReadMem(sys.SR++);
+			exitSR = sys.SR;
 		}
-		int op = sys.rawReadMem(sys.SR++);
 		switch (op) {
+		case 0: exitReturn(); break; // return from EXITs
 		case 4:	msopen(); break; // MSOPEN
 		case 5:	msclos(); break; // MSCLOS
 		case 6:	msget(); break; // MSGET
@@ -71,6 +79,17 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	private void exit() {
 		// System.err.format("exit %07o\n", sys.SR);
 		sys.removeTrap(this);
+	}
+
+	private void exitReturn() {
+		// TODO: restore context, recover if possible...
+		//sys.halt = true;
+		sys.SR = exitSR;
+	}
+
+	private void callExit(int rtn) {
+		sys.BAR = base + 1;
+		sys.SR = rtn;
 	}
 
 	// Doesn't check IM...

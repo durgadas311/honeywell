@@ -76,11 +76,9 @@ public class DiskVolume {
 			error = dsk.getError();
 			return false;
 		}
-		// TODO: Optionally use alloc values from Volume header.
-		int cyl = 0;
-		int trk = 2;
+		int[] ct = new int[]{ 0, 2 };	// default location CCTT
 		try {
-			byte[] r = new byte[def_reclen];
+			CoreMemory r = new BufferMemory(def_reclen);
 			int f = dsk.seekRecord(0, 1, 0);
 			if (f < 0) {
 				error = dsk.getError();
@@ -96,27 +94,24 @@ public class DiskVolume {
 				return false;
 			}
 			// TODO: trim trailing blanks?
-			System.arraycopy(r, 5, name, 0, 6);
-			System.arraycopy(r, 12, snum, 0, 6);
+			r.copyOut(5, name, 0, 6);
+			r.copyOut(12, snum, 0, 6);
 			// TODO: verify device type (what vlaue is 278?)
 			// TODO: what other data?
-			if ((r[19] & 077) == 010) {
-				cyl = (r[23] & 077) << 6;
-				cyl |= (r[24] & 077);
-				trk = (r[25] & 077) << 6;
-				trk |= (r[26] & 077);
+			if (r.readChar(19) == 010) {
+				ct = getSome(r, 23, 2);
 			}
 			mounted = true;
 		} finally {
 			dsk.end();
 		}
 		// Length of data may vary, but starting cyl/trk cannot.
-		volNames = newVolNames(dsk, unit, cyl, trk);
-		trk += 1;
-		volDescr = newVolDescr(dsk, unit, cyl, trk);
-		trk += 3;
-		volAlloc = newVolAlloc(dsk, unit, cyl, trk);
-		trk += 3;
+		volNames = newVolNames(dsk, unit, ct[0], ct[1]);
+		ct[1] += 1;
+		volDescr = newVolDescr(dsk, unit, ct[0], ct[1]);
+		ct[1] += 3;
+		volAlloc = newVolAlloc(dsk, unit, ct[0], ct[1]);
+		ct[1] += 3;
 		return true;
 	}
 
@@ -179,14 +174,14 @@ public class DiskVolume {
 	// TODO: Support access to *VOLNAMES*, etc., here?
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
 	public DiskFile openFile(byte[] name) {
-		byte[] nItm = new byte[volNames.itemLen()];
+		CoreMemory nItm = new BufferMemory(volNames.itemLen());
 		volNames.rewind();
 		while (true) {
-			if (!volNames.getItem(nItm)) {
+			if (!volNames.getItem(nItm, 0)) {
 				error = volNames.getError();
 				return null;	// error
 			}
-			if ((nItm[0] & 077) == 077) {
+			if (nItm.readChar(0) == 077) {
 				continue;
 			}
 			if (compare(_EOD_, nItm, 0)) {
@@ -197,8 +192,8 @@ public class DiskVolume {
 				break;
 			}
 		}
-		byte[] dItm = new byte[volDescr.itemLen()];
-		byte[] aItm = new byte[volAlloc.itemLen()];
+		CoreMemory dItm = new BufferMemory(volDescr.itemLen());
+		CoreMemory aItm = new BufferMemory(volAlloc.itemLen());
 		// TODO: volume sequence number, etc.
 		int[] ctri = getSome(nItm, 14, 4);
 		// get *VOLDESCR* item...
@@ -206,11 +201,11 @@ public class DiskVolume {
 			error = volDescr.getError();
 			return null;
 		}
-		if (!volDescr.getItem(dItm)) {
+		if (!volDescr.getItem(dItm, 0)) {
 			error = volDescr.getError();
 			return null;
 		}
-		int type = dItm[0] & 077;
+		int type = dItm.readChar(0);
 		int[] desc = getSome(dItm, 1, 5);
 		// TODO: overflow, etc.
 		DiskUnit[] units = new DiskUnit[6];
@@ -222,11 +217,11 @@ public class DiskVolume {
 				error = volAlloc.getError();
 				return null;
 			}
-			if (!volAlloc.getItem(aItm)) {
+			if (!volAlloc.getItem(aItm, 0)) {
 				error = volAlloc.getError();
 				return null;
 			}
-			int sts = aItm[0] & 077;
+			int sts = aItm.readChar(0);
 			if (sts == 077) { // error (?)
 				error = "Empty file";
 				return null;
@@ -244,7 +239,7 @@ public class DiskVolume {
 			ctri = getSome(aItm, 12, 4);
 		}
 		if (type == 1) {
-			return new SequentialFile(dsk, unit, nItm,
+			return new SequentialFile(dsk, unit, name,
 					desc[0], desc[1], desc[4], desc[3],
 					units);
 		} else {
@@ -255,53 +250,50 @@ public class DiskVolume {
 	}
 
 	// Get one or more 2-char integers from a buffer.
-	public int[] getSome(byte[] buf, int start, int num) {
+	public int[] getSome(CoreMemory buf, int start, int num) {
 		int z = start;
 		int[] ints = new int[num];
 		for (int x = 0; x < num; ++x) {
-			ints[x] = (buf[z++] & 077) << 6;
-			ints[x] |= (buf[z++] & 077);
+			ints[x] = buf.readChar(z++) << 6;
+			ints[x] |= buf.readChar(z++);
 		}
 		return ints;
 	}
 
 	// Put one or more 2-char integers into a buffer.
-	public void putSome(int[] ints, byte[] buf, int start) {
+	public void putSome(int[] ints, CoreMemory buf, int start) {
 		int z = start;
 		for (int x = 0; x < ints.length; ++x) {
-			buf[z++] = (byte)((ints[x] >> 6) & 077);
-			buf[z++] = (byte)(ints[x] & 077);
+			buf.writeChar(z++, (byte)(ints[x] >> 6));
+			buf.writeChar(z++, (byte)ints[x]);
 		}
 	}
-	public void putOne(int val, byte[] buf, int start) {
+	public void putOne(int val, CoreMemory buf, int start) {
 		int z = start;
-		buf[z++] = (byte)((val >> 6) & 077);
-		buf[z++] = (byte)(val & 077);
+		buf.writeChar(z++, (byte)(val >> 6));
+		buf.writeChar(z++, (byte)val);
 	}
 
-	static public void initVOL(byte[] rec, byte[] name, byte[] snum) {
-		Arrays.fill(rec, (byte)0);
-		System.arraycopy(_1VOL, 0, rec, 0, _1VOL.length);
-		System.arraycopy(name, 0, rec, 5, 6);
-		System.arraycopy(snum, 0, rec, 12, 6);
-		rec[11] = 013; // TODO: this is model 274? need 278?
+	static public void initVOL(CoreMemory rec, byte[] name, byte[] snum) {
+		rec.zero(0, -1);
+		rec.copyIn(0, _1VOL, 0, _1VOL.length);
+		rec.copyIn(5, name, 0, 6);
+		rec.copyIn(12, snum, 0, 6);
+		rec.writeChar(11, (byte)013); // TODO: this is model 274? need 278?
 		// TODO: *VOLNAMES* starting cyl/trk?
 	}
 
-	static public void setEOD(byte[] var, int start) {
-		System.arraycopy(_EOD_, 0, var, start, _EOD_.length);
+	static public void setEOD(CoreMemory var, int start) {
+		var.copyIn(start, _EOD_, 0, _EOD_.length);
 	}
 
-	static public boolean isEOD(byte[] var, int start) {
+	static public boolean isEOD(CoreMemory var, int start) {
 		return compare(_EOD_, var, start);
 	}
 
-	static public boolean compare(byte[] con, byte[] var, int start) {
-		if (con.length + start > var.length) {
-			return false;
-		}
+	static public boolean compare(byte[] con, CoreMemory var, int start) {
 		for (int x = 0; x < con.length; ++x) {
-			if (con[x] != var[x + start]) {
+			if (con[x] != var.readChar(x + start)) {
 				return false;
 			}
 		}

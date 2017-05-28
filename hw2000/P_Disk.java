@@ -1080,23 +1080,23 @@ public class P_Disk extends JFrame
 		vOK = true;
 		return curr_flg;
 	}
-	public boolean readRecord(byte[] buf, int start, int len) {
+	public boolean readRecord(CoreMemory buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
 			errMsg = "Sequence error";
 			return false;
 		}
 		if (len < 0) {
-			len = buf.length;
+			len = buf.size();
 		}
 		int p = 0;
 		while (p < vLen && start + p < len) {
-			buf[start + p++] = (byte)readChar();
+			buf.writeChar(start + p++, (byte)readChar());
 		}
 		vOK = false;
 		return true;
 	}
-	public boolean writeRecord(byte[] buf, int start, int len) {
+	public boolean writeRecord(CoreMemory buf, int start, int len) {
 		// TODO: OK to assume nothing has changed since seekRecord()?
 		if (!vOK) {
 			errMsg = "Sequence error";
@@ -1113,11 +1113,11 @@ public class P_Disk extends JFrame
 			return false;
 		}
 		if (len < 0) {
-			len = buf.length;
+			len = buf.size();
 		}
 		int p = 0;
 		while (p < vLen && start + p < len) {
-			writeChar(buf[start + p++]);
+			writeChar(buf.readChar(start + p++));
 		}
 		vOK = false;
 		return true;

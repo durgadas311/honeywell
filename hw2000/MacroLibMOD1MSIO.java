@@ -29,7 +29,6 @@ public class MacroLibMOD1MSIO implements MacroDef {
 
 	public MacroLibMOD1MSIO(Assembler asm) {
 		this.asm = asm;
-		assemble(' ', "$MIOC", "DCW", "#1B0");
 		// TODO: how to exit/cleanup...
 	}
 
@@ -44,6 +43,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 
 	public int expand(String mac, String tag, String[] parms) {
 		int cmd = cmds.get(mac);
+		int np = parms.length;
 		int ret = -1;
 		int mode = 0; // not MSOPEN
 		String mca;
@@ -54,41 +54,45 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		case 1:	// MIOC
 			// Currently allows only one per program
 			// ADMODE: parms.size() >= 29 ? parms[28] : "3"
-			if (assemble(' ', "$MIOC", "DCW", "#1B0") < 0) break;
+			if (assemble(' ', "$MIOC", "DCW", "#1B0") < 0) break; // trap
+			if (assemble(' ', "", "DCW", "#1B0") < 0) break; // ret from exits
 			if (assemble(' ', "$MINIT", "DCW", "#1B1") < 0) break;
 			if (assemble(' ', "$MIOCI", "SCR", "$MIOCZ,70") < 0) break;
 			if (assemble(' ', "", "B", "0-1") < 0) break;
 			if (assemble(' ', "", "DCW",
 					"@" + MOD1MSIORunTime.name() + "@") < 0) break;
 			if (assemble('R', "", "DSA", "$MIOC") < 0) break;
-			if (assemble(' ', "", "B", "0") < 0) break;
 			if (assemble(' ', " $MIOCZ", "B", "0") < 0) break;
+			// TODO: use this or not?
+			if (assemble(' ', "$MIOCE", "SCR", "$MIOCY,70") < 0) break;
+			if (assemble(' ', "", "B", "$MIOC") < 0) break;
+			if (assemble(' ', " $MIOCY", "B", "0") < 0) break;
 			ret = 0;
 			break;
 		case 2:	// MPIOC - TBD
 			break;
 		case 3:	// MCA
-			if (parms.length < 20) {
+			if (tag == null || tag.isEmpty() || np < 20) {
 				asm.errsAdd("Missing required MCA parameters");
 				break;
 			}
-			// requires parms[0] - tag prefix, and parms[1] - MIOC char
-			mca = "MCA" + parms[0];
-			if (!tag.isEmpty()) {
-				if (assemble(' ', tag, "RESV", "0") < 0) break;
-			}
+			// requires tag - file tag prefix, and parms[0] - MIOC char
+			mca = "MCA" + tag;
 			// NOTE! mac points to right-most char of string!
-			if (assemble(' ', mca, "DCW",
-					"@" + parms[19] + "@") < 0) break;
+			if (assemble(' ', mca, "DCW", "#10A" + parms[19]) < 0) break;
 			// NOTE! "mca+1" points to result/error return code...
 			if (assemble(' ', "", "DCW", "#1B0") < 0) break;  // result code
 			if (assemble(' ', "", "DCW", "#1A" + parms[1]) < 0) break;
+			if (np >= 40 &&
+				assemble(' ', "DIR" + tag, "DSA", parms[39]) < 0) break;
+			if (np >= 43 &&
+				assemble(' ', "DAT" + tag, "DSA", parms[42]) < 0) break;
 			// TODO: terminate structure?
 			ret = 0;
 			break;
 		case 4: // MSOPEN special handling
 			mode = 1; // IN (only)
-			if (parms.length >= 2) {
+			if (np >= 2) {
 				if (parms[1].equals("IN/OUT")) {
 					mode = 3;
 				} else if (parms[1].equals("OUT")) {
