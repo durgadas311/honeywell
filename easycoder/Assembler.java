@@ -389,7 +389,12 @@ public class Assembler {
 	}
 
 	public int assemble(String line) {
-		return assemble(line, true); // assume in macro expansion...
+		try {
+			return assemble(line, true); // assume in macro expansion...
+		} catch (Exception ee) {
+			errsAdd(ee.getMessage());
+			return -1;
+		}
 	}
 
 	// Side effects must not conflict with macro expansion recursion...
