@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.io.*;
 import java.util.concurrent.Semaphore;
+import java.lang.reflect.Constructor;
 
 public class HW2000 implements CoreMemory
 {
@@ -382,6 +383,16 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	public void copyIn(int adr, CoreMemory buf, int start, int len) {
+		for (int x = 0; x < len; ++x) {
+			writeChar(adr++, buf.readChar(start + x));
+		}
+	}
+
+	public void copyOut(int adr, CoreMemory buf, int start, int len) {
+		buf.copyIn(start, this, adr, len);
+	}
+
 	public void zero(int adr, int len) {
 		int a = validAdr(adr);
 		if (a >= mem.length) {
@@ -685,16 +696,35 @@ public class HW2000 implements CoreMemory
 	// This is for programs that load their own traps...
 	// right now, we have to know what those might be...
 	private void trap() {
-		SR = BAR;
-		//System.err.format("Trap %07o \"%s\"\n", SR);
-		if (FortranRunTime.check(this)) {
-			String key = FortranRunTime.name();
-			if (!traps.containsKey(key)) {
-				// ctor must advance SR past params!
-				addTrap(new FortranRunTime(this));
-			}
-		} else {
+		SR = BAR;	// return to caller, always
+		int a = SR;
+		String rt = "";
+		do {
+			rt += pdc.cvt.hwToLP((byte)(mem[a++] & 077));
+		} while (a - SR < 30 && (mem[a] & 0100) == 0);
+		if ((mem[a] & 0100) == 0) {
 			halt = true;
+			return;
+		}
+		if (traps.containsKey(rt)) {
+			return;
+		}
+		//System.err.format("Trap %07o \"%s\"\n", SR, rt);
+		// TODO: rename FortranRunTime to FORTRANRunTime
+		// and eliminate special case here.
+		if (rt.equals(FortranRunTime.name())) {
+			// ctor must advance SR past params!
+			addTrap(new FortranRunTime(this));
+		} else {
+			try {
+				Class<?> clazz = Class.forName(rt + "RunTime");
+				Constructor<?> ctor = clazz.getConstructor(HW2000.class);
+				HW2000Trap rti = (HW2000Trap)ctor.newInstance(this);
+				addTrap(rti);
+			} catch (Exception ee) {
+				halt = true;
+				return;
+			}
 		}
 	}
 

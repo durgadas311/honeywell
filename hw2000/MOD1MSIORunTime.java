@@ -9,30 +9,48 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	private int base = 0;
 	private int[] parms;
 	private int nparms;
-	private int exitSR;	// original action call return
 
 	private HW2000 sys;
+
+	class MCA {
+		public byte[] name;	// file name
+		public int mode;	// 1=IN, 2=OUT, 3=IN/OUT
+		public int result;	// address of result char
+		public int prot;	// protection
+		public int buf1;	// address of block buffer 1
+		public int itm1;	// address of item buffer 1
+		public int xitDir;	// directory exit routine
+		public int xitDat;	// data exit routine
+		public int xitDev;	// device exit routine
+		public int[] devtab;
+		public DiskVolume vol;
+		public DiskFile file;
+
+		public MCA() {
+			name = new byte[10];
+			file = null;
+		}
+	}
+
+	Map<Integer, MCA> mcas;
+
+	private int exitSR;	// original action call return
+	private MCA xitMCA;	// current MCA or null if not in EXIT
+	private int xitOp;	// current operation if in EXIT
+	private int xitRes;	// address of current EXIT result/recovery code
+	private int xitErr;	// original error code if in EXIT
+	private int xitAct;	// user action code if in EXIT
 
 	public MOD1MSIORunTime(HW2000 sys) {
 		this.sys = sys;
 		sys.SR += name.length();
 		base = getAdr();
 		parms = new int[6];
+		mcas = new HashMap<Integer, MCA>();
 	}
 
 	public String getName() { return name; }
 	static public String name() { return name; }
-	static public boolean check(HW2000 sys) {
-		if ((sys.rawReadMem(sys.SR) & 0100) == 0 ||
-			(sys.rawReadMem(sys.SR + name.length()) & 0100) == 0) {
-			return false;
-		}
-		String s = "";
-		for (int a = 0; a < name.length(); ++a) {
-			s += sys.pdc.cvt.hwToLP((byte)(sys.rawReadMem(sys.SR + a) & 077));
-		}
-		return name.equals(s);
-	}
 
 	public boolean doTrap() {
 		if (sys.SR < base || sys.SR > base + 1) {
@@ -41,7 +59,12 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		int op;
 		nparms = 0;
 		if (sys.SR == base + 1) {
-			op = 0; // some unused value
+			// Return from EXIT callback...
+			sys.SR = exitSR;
+			if (xitRes > 0) {
+				xitAct = sys.readChar(xitRes);
+			}
+			op = xitOp;
 		} else {
 			// Need parameters to decode call
 			sys.SR = sys.BAR;
@@ -55,17 +78,19 @@ public class MOD1MSIORunTime implements HW2000Trap {
 				}
 				parms[nparms++] = getAdr();
 			}
-			op = sys.rawReadMem(sys.SR++);
+			op = sys.rawReadMem(sys.SR++) & 077;
 			exitSR = sys.SR;
+			xitOp = op;
 		}
 		switch (op) {
-		case 0: exitReturn(); break; // return from EXITs
 		case 4:	msopen(); break; // MSOPEN
 		case 5:	msclos(); break; // MSCLOS
 		case 6:	msget(); break; // MSGET
 		case 7:	msrep(); break; // MSREP
 		case 8:	msput(); break; // MSPUT
 		default:
+			System.err.format("invalid op %02o\n", op);
+			sys.halt = true;
 			// our best guess... is?
 			exit();
 			break;
@@ -74,6 +99,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	}
 
 	public void done() {
+		// TODO: any cleanup required?
 	}
 
 	private void exit() {
@@ -81,15 +107,39 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		sys.removeTrap(this);
 	}
 
-	private void exitReturn() {
-		// TODO: restore context, recover if possible...
-		//sys.halt = true;
-		sys.SR = exitSR;
-	}
-
-	private void callExit(int rtn) {
+	// TODO: exit may be error or informative.
+	// Need to handle no-exit case appropriately.
+	private void setupExit(int xiterr) {
+		xitErr = xiterr & 077;
+		int xit = 0;
+		switch ((xiterr >> 6) & 077) {
+		case 0:	
+			// can't exit - what to do?
+			System.err.format("Untrapped error %d\n", xiterr);
+			sys.halt = true;
+			return;
+		case 1:
+			xit = xitMCA.xitDir;
+			break;
+		case 2:
+			break;
+		case 4:
+			xit = xitMCA.xitDat;
+			break;
+		case 5:
+			xit = xitMCA.xitDev;
+			break;
+		}
+		if (xit == 0) {
+			// As if caller just returned...
+			xitAct = xitErr; // right?
+			sys.SR = base + 1;
+			return;
+		}
+		xitRes = xit - 1;
+		putChar(xitRes, xitErr);
 		sys.BAR = base + 1;
-		sys.SR = rtn;
+		sys.SR = xit;
 	}
 
 	// Doesn't check IM...
@@ -133,38 +183,6 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		return a;
 	}
 
-	// Search backward until WM... TODO: is that right?
-	private String getStr(int a) {
-		String s = "";
-		int b;
-		for (b = a; b >= 0; --b) {
-			if ((sys.rawReadMem(b) & 0100) != 0) {
-				break;
-			}
-		}
-		while (b <= a) {
-			s += sys.pdc.cvt.hwToLP((byte)(sys.rawReadMem(b++) & 077));
-		}
-		return s;
-	}
-
-	private void putStr(int a, String s) {
-		int b;
-		for (b = a; b >= 0; --b) {
-			if ((sys.rawReadMem(b) & 0100) != 0) {
-				break;
-			}
-		}
-		int x = 0;
-		while (b <= a) {
-			byte bb = (byte)015; // blank space
-			if (x < s.length()) {
-				bb = sys.pdc.cvt.asciiToHw((byte)s.charAt(x++));
-			}
-			sys.rawWriteChar(b, bb);
-		}
-	}
-
 	// Works backward until WM...
 	private int getInt(int a) {
 		int i = 0;
@@ -180,21 +198,205 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		return i;
 	}
-	private void putInt(int a, int v) {
-		int b;
-		// TODO: re-use routines from instructions?
-		for (b = a; b >= 0; --b) {
-			sys.rawWriteChar(b, (byte)(v & 077));
-			v >>= 6;
-			if ((sys.rawReadMem(b) & 0100) != 0) {
-				break;
-			}
+
+	private void getChars(int a, byte[] out) {
+		int n = out.length;
+		// TODO: check WM?
+		for (int x = 0; x < n; ++x) {
+			out[x] = sys.readChar(a++);
 		}
 	}
 
-	private void msopen() {}
-	private void msclos() {}
-	private void msget() {}
-	private void msrep() {}
-	private void msput() {}
+	private void putChar(int a, int out) {
+		sys.writeChar(a, (byte)out);
+	}
+
+	private void getDevTab(int b, MCA mca) {
+		if (b == 0) {
+			mca.devtab = new int[1];
+			mca.devtab[0] = 0040000;
+		}
+		int c = b;
+		int n = 0;
+		// TODO: improve this
+		while ((sys.rawReadMem(c) & 0300) != 0300) {
+			if ((sys.rawReadMem(c) & 0100) == 0100) {
+				++n;
+			}
+			++c;
+		}
+		mca.devtab = new int[n];
+		b += 2;
+		int x = 0;
+		while (b < c) {
+			mca.devtab[x++] = getInt(b);
+			b += 3;
+		}
+	}
+
+	private void getMCA(int adr) {
+		if (mcas.containsKey(adr)) {
+			xitMCA = mcas.get(adr);
+			return;
+		}
+		MCA mca = new MCA();
+		int a = adr;
+		getChars(a, mca.name);
+		a += mca.name.length;
+		mca.result = a++;
+		++a;	// skip "unique char"
+		mca.prot = sys.readChar(a++);	// protection
+		int b = fetchAdr(a); // index/indirect not allowed
+		a += sys.am_na;
+		getDevTab(b, mca);
+		mca.buf1 = fetchAdr(a); // index/indirect allowed?
+		a += sys.am_na;
+		mca.itm1 = fetchAdr(a); // index/indirect not allowed
+		a += sys.am_na;
+		mca.xitDir = fetchAdr(a); // index/indirect allowed?
+		a += sys.am_na;
+		mca.xitDat = fetchAdr(a); // index/indirect allowed?
+		a += sys.am_na;
+		mca.xitDev = fetchAdr(a); // index/indirect allowed?
+		a += sys.am_na;
+		// TODO: more data?
+		mcas.put(adr, mca);
+		xitMCA = mca;
+	}
+
+	private boolean volOpen(MCA mca) {
+		int pp = (mca.devtab[0] >> 12) & 077;
+		int dd = (mca.devtab[0] >> 6) & 077;
+		Peripheral p = sys.pdc.getPeriph((byte)pp);
+		if (!(p instanceof RandomRecordIO)) {
+			setupExit(00501);
+			return false;
+		}
+		RandomRecordIO dsk = (RandomRecordIO)p;
+		mca.vol = new DiskVolume(dsk, dd);
+		if (!mca.vol.mount()) {
+			mca.vol = null;
+			setupExit(mca.vol.getError());
+			return false;
+		}
+		return true;
+	}
+
+	private void msopen() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+			// TODO: check for file already open?
+			xitMCA.mode = parms[1];
+		} else {
+			// resturning from an EXIT...
+			// TODO: work out semantics...
+			if (xitAct == 040 || xitAct == xitErr) {
+				// TODO: "...or typewriter message"
+				sys.halt = true;
+				return;
+			} else if (xitAct == 021) {
+				// force re-open - e.g. disk pack changed
+				xitMCA.vol = null;
+				xitMCA.file = null;
+			}
+		}
+		if (xitMCA.vol == null) {
+			if (!volOpen(xitMCA)) {
+				// Exit already setup...
+				return;
+			}
+		}
+		if (xitMCA.file == null) {
+			xitMCA.file = xitMCA.vol.openFile(xitMCA.name,
+						sys, xitMCA.buf1);
+			if (xitMCA.file == null) {
+				setupExit(xitMCA.vol.getError());
+				return;
+			}
+		}
+		// TODO: all set?
+		xitMCA = null;
+	}
+
+	private void msclos() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// do we ever call exits from close?
+		}
+		if (xitMCA.file != null) {
+			xitMCA.file.close();
+			xitMCA.file = null;
+		}
+		xitMCA = null;
+	}
+
+	private void msget() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			// TODO: "...or typewriter message"
+			sys.halt = true;
+			return;
+		}
+		if (xitMCA.file == null) {
+			// theoretically can't happen?
+			// TODO: what is the right error/exit?
+			setupExit(00506); // Read error
+			return;
+		}
+		if (!xitMCA.file.getItem(sys, xitMCA.itm1)) {
+			setupExit(xitMCA.file.getError());
+			return;
+		}
+		xitMCA = null;
+	}
+
+	private void msrep() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			// TODO: "...or typewriter message"
+			sys.halt = true;
+			return;
+		}
+		if (xitMCA.file == null) {
+			// theoretically can't happen?
+			// TODO: what is the right error/exit?
+			setupExit(00506); // Read error
+			return;
+		}
+		if (!xitMCA.file.repItem(sys, xitMCA.itm1)) {
+			setupExit(xitMCA.file.getError());
+			return;
+		}
+		xitMCA = null;
+	}
+
+	private void msput() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			// TODO: "...or typewriter message"
+			sys.halt = true;
+			return;
+		}
+		if (xitMCA.file == null) {
+			// theoretically can't happen?
+			// TODO: what is the right error/exit?
+			setupExit(00506); // Read error
+			return;
+		}
+		if (!xitMCA.file.putItem(sys, xitMCA.itm1)) {
+			setupExit(xitMCA.file.getError());
+			return;
+		}
+		xitMCA = null;
+	}
 }

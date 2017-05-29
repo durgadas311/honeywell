@@ -14,7 +14,7 @@ public class DiskVolume {
 	RandomRecordIO dsk = null;
 	int unit;
 	boolean mounted = false;
-	String error = null;
+	int error = 0;
 	byte[] name;	// a.k.a. volume name (i.e. label - may change)
 	byte[] snum;	// a.k.a. volume serial number (i.e. UUID)
 	static final int def_reclen = 250;
@@ -46,7 +46,7 @@ public class DiskVolume {
 		Arrays.fill(name, (byte)015);
 	}
 
-	public String getError() {
+	public int getError() {
 		return error;
 	}
 
@@ -90,7 +90,7 @@ public class DiskVolume {
 			}
 			if (!compare(_1VOL, r, 0)) {
 				// Not previously initialized
-				error = "Disk pack not initialized";
+				error = 00000; // Disk pack not initialized
 				return false;
 			}
 			// TODO: trim trailing blanks?
@@ -174,6 +174,9 @@ public class DiskVolume {
 	// TODO: Support access to *VOLNAMES*, etc., here?
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
 	public DiskFile openFile(byte[] name) {
+		return openFile(name, null, 0);
+	}
+	public DiskFile openFile(byte[] name, CoreMemory blkBuf, int blkBufAdr) {
 		CoreMemory nItm = new BufferMemory(volNames.itemLen());
 		volNames.rewind();
 		while (true) {
@@ -185,7 +188,7 @@ public class DiskVolume {
 				continue;
 			}
 			if (compare(_EOD_, nItm, 0)) {
-				error = "No file";
+				error = 00103;	// No file
 				return null;	// not found
 			}
 			if (compare(name, nItm, 0)) {
@@ -223,7 +226,7 @@ public class DiskVolume {
 			}
 			int sts = aItm.readChar(0);
 			if (sts == 077) { // error (?)
-				error = "Empty file";
+				error = 00105;	// *VOLALLOC* corrupt
 				return null;
 			}
 			int[] ctct = getSome(aItm, 4, 4);
@@ -233,18 +236,19 @@ public class DiskVolume {
 			}
 			if (sts != 060) {
 				// TODO: support multi-volume and overflow
-				error = "Unsupported allocation";
+				error = 00123;	// File type unknown
 				return null;
 			}
 			ctri = getSome(aItm, 12, 4);
 		}
 		if (type == 1) {
 			return new SequentialFile(dsk, unit, name,
+					blkBuf, blkBufAdr,
 					desc[0], desc[1], desc[4], desc[3],
 					units);
 		} else {
 			// TODO: support other file organizations
-			error = "Unsupported file organization";
+			error = 00123;	// File type unknown
 			return null;
 		}
 	}

@@ -205,7 +205,7 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Allocate File", KeyEvent.VK_0);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Release File", KeyEvent.VK_1);
+		mi = new JMenuItem("Deallocate File", KeyEvent.VK_1);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -2762,7 +2762,7 @@ ee.printStackTrace();
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.initVolume(p, unit, nm, sn);
 		if (!ok) {
-			warning(this, title, "Volume Init Failed " + FileVolSupport.error);
+			warning(this, title, "Volume Init Failed " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2788,7 +2788,7 @@ ee.printStackTrace();
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.mapVolume(p, unit, sys);
 		if (!ok) {
-			warning(this, title, title + "Failed " + FileVolSupport.error);
+			warning(this, title, title + "Failed " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2884,13 +2884,13 @@ ee.printStackTrace();
 				itmLen, recLen, recTrk, recBlk,
 				units);
 		if (!ok) {
-			warning(this, title, title + " Failed " + FileVolSupport.error);
+			warning(this, title, title + " Failed " + FileVolSupport.getError());
 			return;
 		}
 	}
 
 	private void fileDealloc() {
-		String title = "Release File";
+		String title = "Deallocate File";
 		JOptionPane dia = new JOptionPane(rel_pn, JOptionPane.QUESTION_MESSAGE,
 						JOptionPane.OK_CANCEL_OPTION);
 		Dialog dlg = dia.createDialog(this, title);
@@ -2911,7 +2911,7 @@ ee.printStackTrace();
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
 		if (!ok) {
-			warning(this, title, "Release File Failed " + FileVolSupport.error);
+			warning(this, title, title + "Failed " + FileVolSupport.getError());
 			return;
 		}
 	}

@@ -29,16 +29,49 @@ public class SequentialFile implements DiskFile {
 	int blkCyl;
 	int blkTrk;
 	int blkRec;
-	byte[] blkBuf;
 	CoreMemory blkBufMem;
+	int blkBufAdr;
 	CoreMemory tlrBuf;
 	boolean dirty;
-	String error = null;
+	boolean put;
+	boolean eof;
+	int error = 0;
 
 	// Special-case for *VOLNAMES*, etc.
 	public SequentialFile(RandomRecordIO dsk, int unit, byte[] name,
 			int itmLen, int recLen, int recTrk, int recblk,
 			int sCyl, int sTrk, int eCyl, int eTrk) {
+		init(dsk, unit, name, itmLen, recLen, recTrk, recblk);
+		units = new DiskUnit[6];
+		Arrays.fill(units, null);
+		units[0] = new DiskUnit(sCyl, sTrk, eCyl, eTrk);
+		lastUnit = 0;
+		blkBufMem = new BufferMemory(blkLen);
+		blkBufAdr = 0;
+	}
+
+	// General Open of "real" file.
+	// Caller locates *VOLNAMES*, etc items and passes info to this ctor.
+	public SequentialFile(RandomRecordIO dsk, int unit, byte[] name,
+			CoreMemory blkBuf, int blkAdr,
+			int itmLen, int recLen, int recTrk, int recblk,
+			DiskUnit[] alloc) {
+		init(dsk, unit, name, itmLen, recLen, recTrk, recblk);
+		units = alloc;
+		for (int u = 0; u < 6 && u < units.length && units[u] != null; ++u) {
+			lastUnit = u;
+		}
+		if (blkBuf == null) {
+			blkBufMem = new BufferMemory(blkLen);
+			blkBufAdr = 0;
+		} else {
+			blkBufMem = blkBuf;
+			blkBufAdr = blkAdr;
+		}
+	}
+
+	private void init(RandomRecordIO dsk, int unit, byte[] name,
+			int itmLen, int recLen, int recTrk, int recblk) {
 		// TODO: do we need recTrk?
 		this.dsk = dsk;
 		this.unit = unit;
@@ -47,52 +80,25 @@ public class SequentialFile implements DiskFile {
 		this.recLen = recLen;
 		this.recBlk = recblk;
 		this.blkLen = recLen * recblk;
-		units = new DiskUnit[6];
-		Arrays.fill(units, null);
-		units[0] = new DiskUnit(sCyl, sTrk, eCyl, eTrk);
-		lastUnit = 0;
-		// TODO: use this buf even when program supplied buf?
-		blkBuf = new byte[blkLen];
-		blkBufMem = new BufferMemory(blkBuf);
 		tlrBuf = new BufferMemory(6);
 		curOff = -1;
 		blkCyl = -1;
 		blkTrk = -1;
 		blkRec = -1;
+		put = false;
+		eof = false;
 	}
 
-	// General Open of "real" file.
-	// Caller locates *VOLNAMES* item and passes to this ctor.
-	public SequentialFile(RandomRecordIO dsk, int unit, byte[] volname,
-			int itmLen, int recLen, int recTrk, int recblk,
-			DiskUnit[] alloc) {
-		this.dsk = dsk;
-		this.unit = unit;
-		name = new byte[10];
-		System.arraycopy(volname, 0, name, 0, 10);
-		units = alloc;
-		for (int u = 0; u < 6 && u < units.length && units[u] != null; ++u) {
-			lastUnit = u;
-		}
-		this.itmLen = itmLen;
-		this.recLen = recLen;
-		this.recBlk = recblk;
-		this.blkLen = recLen * recblk;
-		blkBuf = new byte[blkLen];
-		blkBufMem = new BufferMemory(blkBuf);
-		tlrBuf = new BufferMemory(6);
-		curOff = -1;
-		blkCyl = -1;
-		blkTrk = -1;
-		blkRec = -1;
-	}
-
-	public String getError() {
+	public int getError() {
 		return error;
 	}
 
 	public byte[] getName() {
 		return name;
+	}
+
+	public DiskUnit[] getAlloc() {
+		return units;
 	}
 
 	public int itemLen() {
@@ -112,6 +118,8 @@ public class SequentialFile implements DiskFile {
 	public boolean rewind() {
 		// This only works if no item is size 1.
 		curOff = -1;
+		put = false;
+		eof = false;
 		return true;
 	}
 	public boolean sync() {
@@ -120,14 +128,16 @@ public class SequentialFile implements DiskFile {
 		}
 		return true;
 	}
+	// MUST be followed by getItem or putItem, NOT repItem!
 	public boolean seek(int[] ctri) {
 		if (ctri.length != 4) {
-			error = "Internal error";
+			error = 00001;
 			return false;
 		}
 		return seek(ctri[0], ctri[1], ctri[2], ctri[3]);
 	}
 
+	// MUST be followed by getItem or putItem, NOT repItem!
 	public boolean seek(int cyl, int trk, int rec, int itm) {
 		// 'rec' is start of block (MSR Data Management, pg 3-54)
 		// TODO: validate against units[*], itmBlk, etc?
@@ -139,6 +149,8 @@ public class SequentialFile implements DiskFile {
 		curRec = rec;
 		// must be different than curOff = -1 when itm == 0
 		curOff = (itm - 1) * itmLen;
+		put = false;	// only if backward seek?
+		eof = false;	// only if backward seek?
 		return true;
 	}
 
@@ -152,6 +164,8 @@ public class SequentialFile implements DiskFile {
 		return ints;
 	}
 
+	public boolean isEOF() { return eof; }
+
 	// called when 'rec' is a TLR and about to follow it.
 	private boolean lastRecord(int cyl, int trk, int rec) {
 		return (units[lastUnit].eCyl == cyl && units[lastUnit].eTrk == trk);
@@ -162,13 +176,14 @@ public class SequentialFile implements DiskFile {
 	// also must remember ending cyl,trk,rec for "increment"...
 	// So, really can't ignore TLRs...
 	// TODO: block cannot span allocation units (cylinders)?
-	private boolean readBlock(int cyl, int trk, int rec, CoreMemory buf) {
+	private boolean readBlock(int cyl, int trk, int rec,
+				CoreMemory buf, int adr) {
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
 			return false;
 		}
 		try {
-			int off = 0;
+			int off = adr;
 			for (int r = 0; r < recBlk; ++r) {
 				int f = dsk.seekRecord(cyl, trk, rec);
 				if (f < 0) {
@@ -178,7 +193,7 @@ public class SequentialFile implements DiskFile {
 				if ((f & P_Disk.HDR_TLR) != 0) {
 					if (lastRecord(cyl, trk, rec)) {
 						// User error: ran off end
-						error = "File overrun";
+						error = 00401;	// File overrun
 						return false;
 					}
 					if (!dsk.readRecord(tlrBuf, 0, -1)) {
@@ -219,13 +234,14 @@ public class SequentialFile implements DiskFile {
 		return true;
 	}
 
-	private boolean writeBlock(int cyl, int trk, int rec, CoreMemory buf) {
+	private boolean writeBlock(int cyl, int trk, int rec,
+				CoreMemory buf, int adr) {
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
 			return false;
 		}
 		try {
-			int off = 0;
+			int off = adr;
 			for (int r = 0; r < recBlk; ++r) {
 				int f = dsk.seekRecord(cyl, trk, rec);
 				if (f < 0) {
@@ -235,7 +251,7 @@ public class SequentialFile implements DiskFile {
 				if ((f & P_Disk.HDR_TLR) != 0) {
 					if (lastRecord(cyl, trk, rec)) {
 						// User error: ran off end
-						error = "File overrun";
+						error = 00411;
 						return false;
 					}
 					if (!dsk.readRecord(tlrBuf, 0, -1)) {
@@ -281,13 +297,13 @@ public class SequentialFile implements DiskFile {
 		}
 		if (dirty && blkCyl >= 0 && blkTrk >= 0 && blkRec >= 0) {
 			// TODO: preserve error? PERMIT errors need to be reported
-			ok = writeBlock(blkCyl, blkTrk, blkRec, blkBufMem);
+			ok = writeBlock(blkCyl, blkTrk, blkRec, blkBufMem, blkBufAdr);
 		}
 		dirty = false;
 		if (cyl < 0 || trk < 0 || rec < 0) {
 			return ok;
 		}
-		if (!readBlock(cyl, trk, rec, blkBufMem)) {
+		if (!readBlock(cyl, trk, rec, blkBufMem, blkBufAdr)) {
 			return false;
 		}
 		blkCyl = cyl;
@@ -329,15 +345,20 @@ public class SequentialFile implements DiskFile {
 		if (!cacheNextItem()) {
 			return false;
 		}
-		itm.copyIn(adr, blkBuf, curOff, itmLen);
+		if (DiskVolume.isEOD(blkBufMem, blkBufAdr + curOff)) {
+			eof = true;
+			error = 00401;	// End of File
+			return false;
+		}
+		itm.copyIn(adr, blkBufMem, blkBufAdr + curOff, itmLen);
 		return true;
 	}
 
 	public boolean repItem(CoreMemory itm, int adr) {
-		if (curOff < 0) {
+		if (curOff < 0 || eof) {
 			return false;
 		}
-		itm.copyOut(adr, blkBuf, curOff, itmLen);
+		itm.copyOut(adr, blkBufMem, blkBufAdr + curOff, itmLen);
 		dirty = true;
 		return true;
 	}
@@ -348,16 +369,28 @@ public class SequentialFile implements DiskFile {
 		if (!cacheNextItem()) {
 			return false;
 		}
-		itm.copyOut(adr, blkBuf, curOff, itmLen);
+		itm.copyOut(adr, blkBufMem, blkBufAdr + curOff, itmLen);
 		dirty = true;
+		put = true;
+		eof = false;	// right?
 		return true;
 	}
 
 	public boolean close() {
-		// TODO: add _EOD_ if OUTPUT-only and written...
-		// or, does caller do that?
-		sync();
-		rewind();
-		return true;
+		boolean ret = true;
+		// TODO: partitioned sequential places EOD in each partition.
+		if (put) {
+			if (!cacheNextItem()) {
+				ret = false;
+			} else {
+				DiskVolume.setEOD(blkBufMem, blkBufAdr + curOff);
+				dirty = true;
+			}
+		}
+		if (!sync()) {
+			ret = false;
+		}
+		rewind(); // not needed?
+		return ret;
 	}
 }

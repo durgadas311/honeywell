@@ -8,10 +8,12 @@ public interface DiskFile {
 	boolean close();
 	// Non-standard: (Not part of MOD1 i/f)
 	byte[] getName();
-	String getError();
+	int getError();
+	DiskUnit[] getAlloc();
 	int itemLen();
 	int recordLen();
 	int blockLen();
+	boolean isEOF();
 	boolean rewind();
 	boolean sync();
 	boolean seek(int cyl, int trk, int rec, int itm);

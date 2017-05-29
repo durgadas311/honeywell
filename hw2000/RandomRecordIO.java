@@ -2,7 +2,7 @@
 
 public interface RandomRecordIO {
 	int numRecords(int recLen);
-	String getError();
+	int getError();
 	int numTracks();
 	int numCylinders();
 	//

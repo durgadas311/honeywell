@@ -113,6 +113,16 @@ public class BufferMemory implements CoreMemory
 		}
 	}
 
+	public void copyIn(int adr, CoreMemory buf, int start, int len) {
+		for (int x = 0; x < len; ++x) {
+			writeChar(adr++, buf.readChar(start + x));
+		}
+	}
+
+	public void copyOut(int adr, CoreMemory buf, int start, int len) {
+		buf.copyIn(start, this, adr, len);
+	}
+
 	public void zero(int adr, int len) {
 		if (adr >= mem.length) {
 			return;

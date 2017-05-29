@@ -1,15 +1,85 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 public class FileVolSupport {
-	static public String error = null;
+	static private int error = 0;
+
+	// param 40 = directory exit (01)
+	// param 41 = index exit     (02)
+	// param 42 = not used       (03)
+	// param 43 = data exit      (04)
+	// param 44 = device exit    (05)
+	static Map<Integer, String> errmsg;
+	static {
+		// This represents all documented EXITs, many are not used.
+		errmsg = new HashMap<Integer, String>();
+		errmsg.put(00001, "Directory full");
+		errmsg.put(00002, "Allocation conflict");
+		errmsg.put(00003, "File exists");
+		errmsg.put(00004, "Track overflow");
+		errmsg.put(00101, "OPEN CALLOUT");
+		errmsg.put(00103, "No File");
+		errmsg.put(00104, "Allocation Table overflow");
+		errmsg.put(00105, "*VOLALLOC* corrupt");
+		errmsg.put(00111, "CLOSE CALLOUT");
+		errmsg.put(00113, "Out of Sequence");
+		errmsg.put(00114, "Password incorrect");
+		errmsg.put(00121, "VOL2 CALLOUT");
+		errmsg.put(00123, "File type unknown");
+		errmsg.put(00124, "Password required");
+		errmsg.put(00133, "No More Volumes");
+		errmsg.put(00134, "No more devices");
+		errmsg.put(00143, "Not first volume");
+		errmsg.put(00153, "File empty");
+		errmsg.put(00203, "SETM No member");
+		errmsg.put(00213, "MALTER No member");
+		errmsg.put(00204, "SETM No index space");
+		errmsg.put(00214, "SETM output-only not allowed");
+		errmsg.put(00224, "MALTER can't delete");
+		errmsg.put(00401, "MSGET End of file");
+		errmsg.put(00411, "MSPUT No space");
+		errmsg.put(00412, "MSINS CALLOUT 1");
+		errmsg.put(00422, "MSINS CALLOUT 1");
+		errmsg.put(00434, "SETM No space");
+		errmsg.put(00403, "MSGET Key not found");
+		errmsg.put(00413, "MSINS No space");
+		errmsg.put(00404, "Invalid bucket");
+		errmsg.put(00423, "Indexed overflow");
+		errmsg.put(00414, "Key verification fail");
+		errmsg.put(00424, "Duplicate key");
+		errmsg.put(00501, "Device inoperable");
+		errmsg.put(00502, "Protection violation");
+		errmsg.put(00503, "Device error");
+		errmsg.put(00504, "Possible device failure");
+		errmsg.put(00505, "Record not found");
+		errmsg.put(00506, "Read error");
+		errmsg.put(00507, "Read error - no data");
+		errmsg.put(00510, "Write error");
+		errmsg.put(00511, "Track-Linking Record");
+		errmsg.put(00512, "Track-Linking error");
+	}
+
+	static public String getError() {
+		if (errmsg.containsKey(error)) {
+			return errmsg.get(error);
+		} else {
+			return String.format("Unknown error %d", error);
+		}
+	}
+
+	static int nTrk;
+	static int nCyl;
 
 	static public boolean initVolume(RandomRecordIO dsk, int unit,
 			// TODO: any other parameters?
 			byte[] volnam, byte[] volser) {
 		// TODO: system files/records use A-file protection?
-		error = null;
+		nCyl = dsk.numCylinders();
+		nTrk = dsk.numTracks();
+		error = 0;
 		int flag = 0;
 		DiskFile volNames = DiskVolume.newVolNames(dsk, unit, -1, -1);
 		DiskFile volDescr = DiskVolume.newVolDescr(dsk, unit, -1, -1);
@@ -26,8 +96,8 @@ public class FileVolSupport {
 			// We could only format (part of) cylinder 0 here,
 			// since in most cases each file re-formats the cylinders
 			// assigned to it. But this avoids "sparse" formatting.
-			for (int cyl = 0; cyl < 203; ++cyl) {
-				for (int trk = 0; trk < 20; ++trk) {
+			for (int cyl = 0; cyl < nCyl; ++cyl) {
+				for (int trk = 0; trk < nTrk; ++trk) {
 					if (!first) {
 						ok = dsk.initTrack(flag, pCyl, pTrk,
 								DiskVolume.def_reclen, -1,
@@ -63,13 +133,12 @@ public class FileVolSupport {
 					return false;
 				}
 			}
-			DiskVolume.setEOD(itmNames, 0);
-			ok = volNames.putItem(itmNames, 0);
+			// close() will add _EOD_ item...
+			ok = volNames.close();
 			if (!ok) {
 				error = volNames.getError();
 				return false;
 			}
-			volNames.close();
 			// Init *VOLDESCR*
 			CoreMemory itmDescr = new BufferMemory(volDescr.itemLen());
 			itmDescr.zero(0, -1);
@@ -81,13 +150,12 @@ public class FileVolSupport {
 					return false;
 				}
 			}
-			DiskVolume.setEOD(itmDescr, 0);
-			ok = volDescr.putItem(itmDescr, 0);
+			// close() will add _EOD_ item...
+			ok = volDescr.close();
 			if (!ok) {
 				error = volDescr.getError();
 				return false;
 			}
-			volDescr.close();
 			// Init *VOLALLOC*
 			CoreMemory itmAlloc = new BufferMemory(volAlloc.itemLen());
 			itmAlloc.zero(0, -1);
@@ -100,13 +168,12 @@ public class FileVolSupport {
 					return false;
 				}
 			}
-			DiskVolume.setEOD(itmAlloc, 0);
-			ok = volAlloc.putItem(itmAlloc, 0);
+			// close() will add _EOD_ item...
+			ok = volAlloc.close();
 			if (!ok) {
 				error = volAlloc.getError();
 				return false;
 			}
-			volAlloc.close();
 		} finally {
 			dsk.end();
 		}
@@ -131,11 +198,18 @@ public class FileVolSupport {
 		return ret;
 	}
 
+	static private void mapTracks(int[][] map, int fno, DiskUnit[] units) {
+		for (int u = 0; u < units.length && units[u] != null; ++u) {
+			mapTracks(map, fno, units[u].sCyl, units[u].sTrk,
+					units[u].eCyl, units[u].eTrk);
+		}
+	}
+
 	static private void mapTracks(int[][] map, int fno,
 				int sCyl, int sTrk, int eCyl, int eTrk) {
 		for (int cyl = sCyl; cyl <= eCyl; ++cyl) {
 			if (map[cyl] == null) {
-				map[cyl] = new int[20];
+				map[cyl] = new int[nTrk];
 				Arrays.fill(map[cyl], 0);
 			}
 			for (int trk = sTrk; trk <= eTrk; ++trk) {
@@ -144,14 +218,23 @@ public class FileVolSupport {
 		}
 	}
 
-	static private String getMap(int[] map) {
-		if (map == null) {
-			return String.format("%60s", "");
-		}
+	static private String getMapHdr() {
 		String ret = "";
-		for (int trk = 0; trk < 20; ++trk) {
-			if (map[trk] == 0) {
-				ret += "   ";
+		for (int trk = 0; trk < nTrk; ++trk) {
+			ret += String.format(" %02d", trk);
+		}
+		return ret;
+	}
+
+	static private String getMap(int[] map) {
+		String ret = "";
+		for (int trk = 0; trk < nTrk; ++trk) {
+			if (map == null) {
+				ret += "  .";
+			} else if (map[trk] == 0) {
+				ret += "  .";
+			} else if (map[trk] == -1) {
+				ret += " $$";
 			} else {
 				String hash = Integer.toString(map[trk], 36);
 				ret += String.format(" %2s", hash);
@@ -162,7 +245,9 @@ public class FileVolSupport {
 
 	// TODO: how best to deliver volume map...
 	static public boolean mapVolume(RandomRecordIO dsk, int unit, HW2000 sys) {
-		error = null;
+		nCyl = dsk.numCylinders();
+		nTrk = dsk.numTracks();
+		error = 0;
 		DiskVolume vol = new DiskVolume(dsk, unit);
 		if (!vol.mount()) {
 			error = vol.getError();
@@ -176,11 +261,21 @@ public class FileVolSupport {
 		CoreMemory names = new BufferMemory(vol.getVolNames().itemLen());
 		CoreMemory descr = new BufferMemory(vol.getVolDescr().itemLen());
 		CoreMemory alloc = new BufferMemory(vol.getVolAlloc().itemLen());
-		int[][] map = new int[203][];
+		int[][] map = new int[nCyl][];
+		nCyl -= 3;	// reserved...
+		// TODO: get actual allocated tracks...
+		mapTracks(map, -1, 0, 0, 0, 1);	// boot track and volume header
+		mapTracks(map, -1, vol.getVolNames().getAlloc());
+		mapTracks(map, -1, vol.getVolDescr().getAlloc());
+		mapTracks(map, -1, vol.getVolAlloc().getAlloc());
 		vol.getVolNames().rewind();
 		while (true) {
 			String ret = "";
 			if (!vol.getVolNames().getItem(names, 0)) {
+				if (vol.getVolNames().isEOF()) {
+					--total;
+					break;
+				}
 				error = vol.getVolNames().getError();
 				return false;
 			}
@@ -190,15 +285,11 @@ public class FileVolSupport {
 				++free;
 				continue;
 			}
-			if (vol.isEOD(names, 0)) {
-				--total; // don't count EOD
-				break;
-			}
 			ret += String.format("%2s: %10s ", hash,
 					hwToString(names, 0, 10, sys.pdc.cvt));
 			int[] ctri = vol.getSome(names, 14, 4);
 			vol.getVolDescr().seek(ctri);
-			// TODO: hot to detect past EOD
+			// TODO: how to detect past EOD
 			vol.getVolDescr().getItem(descr, 0);
 			// TODO: check errors, EOD
 			switch (descr.readChar(0)) {
@@ -248,8 +339,12 @@ public class FileVolSupport {
 		}
 		sys.listOut(String.format("Total *VOLNAMES* entries: %d  free: %d\n",
 						total, free));
-		for (int cyl = 0; cyl < 100; ++cyl) {
-			String ret = getMap(map[cyl]) + " : " + getMap(map[cyl + 100]);
+		sys.listOut("   " + getMapHdr() + " :    " + getMapHdr() + '\n');
+		for (int cyl = 0; cyl < nCyl / 2; ++cyl) {
+			String ret = String.format("%03d", cyl) +
+				getMap(map[cyl]) +
+				String.format(" : %03d", cyl + nCyl / 2) +
+				getMap(map[cyl + nCyl / 2]);
 			sys.listOut(ret + '\n');
 		}
 		// TODO: look for orphaned allocations
@@ -261,11 +356,11 @@ public class FileVolSupport {
 		file.rewind();
 		while (true) {
 			if (!file.getItem(buf, 0)) {
-				error = file.getError();
-				return null;
-			}
-			if (vol.isEOD(buf, 0)) {
-				error = "No file";
+				if (file.isEOF()) {
+					error = 00103;	// No file
+				} else {
+					error = file.getError();
+				}
 				return null;
 			}
 			if (buf.readChar(0) == 077) {
@@ -283,11 +378,11 @@ public class FileVolSupport {
 		file.rewind();
 		while (true) {
 			if (!file.getItem(buf, 0)) {
-				error = file.getError();
-				return null;
-			}
-			if (vol.isEOD(buf, 0)) {
-				error = "No space";
+				if (file.isEOF()) {
+					error = 00001;
+				} else {
+					error = file.getError();
+				}
 				return null;
 			}
 			if (buf.readChar(0) == 077) {
@@ -297,10 +392,63 @@ public class FileVolSupport {
 		return buf;
 	}
 
+	static private boolean chkAlloc(DiskUnit[] units, int[] ctct) {
+		DiskUnit alloc = new DiskUnit(ctct);
+		for (int u = 0; u < units.length; ++u) {
+			if (units[u] == null) {
+				break;
+			}
+			if (units[u].intersects(alloc)) {
+				return true;
+			}
+		}
+		return false; // no conflict
+	}
+
+	static private CoreMemory findFreeAlloc(DiskVolume vol, DiskFile file,
+						DiskUnit[] units) {
+		int[] free = null;
+		int[] ctct = null;
+		CoreMemory buf = new BufferMemory(file.itemLen());
+		file.rewind();
+		while (true) {
+			if (!file.getItem(buf, 0)) {
+				if (file.isEOF()) {
+					if (free != null) {
+						break;
+					}
+					error = 00001; // no space
+				} else {
+					error = file.getError();
+				}
+				return null;
+			}
+			byte sts = buf.readChar(0);
+			switch (sts) {
+			case 077:
+				if (free == null) {
+					free = file.getAddress();
+				}
+				break;
+			case 040:
+			case 060:
+				ctct = vol.getSome(buf, 4, 4);
+				if (chkAlloc(units, ctct)) {
+					error = 00002;	// space already used
+					return null;
+				}
+				break;
+			}
+		}
+		file.seek(free);
+		file.getItem(buf, 0);
+		return buf;
+	}
+
 	static public boolean initFile(RandomRecordIO dsk, int unit, int flag,
 			byte[] name, int itmLen, int recLen, int recTrk, int recBlk,
 			DiskUnit[] units) {
-		error = null;
+		error = 0;
 		boolean ok;
 		int itmBlk = (recBlk * recLen) / itmLen;
 		DiskVolume vol = new DiskVolume(dsk, unit);
@@ -310,7 +458,7 @@ public class FileVolSupport {
 		}
 		CoreMemory names = findName(vol, vol.getVolNames(), name);
 		if (names != null) {
-			error = "File exists";
+			error = 00003;	// File exists
 			return false;
 		}
 		names = findFree(vol, vol.getVolNames());
@@ -324,7 +472,7 @@ public class FileVolSupport {
 		if (descr == null) {
 			return false;
 		}
-		CoreMemory alloc = findFree(vol, vol.getVolAlloc());
+		CoreMemory alloc = findFreeAlloc(vol, vol.getVolAlloc(), units);
 		if (alloc == null) {
 			return false;
 		}
@@ -352,6 +500,7 @@ public class FileVolSupport {
 			error = vol.getVolNames().getError();
 			return false;
 		}
+		int e = 0;
 		// TODO: verify units[*] are free...
 		for (int a = 0; a < 6; ++a) {
 			if (a > 0) {
@@ -359,8 +508,9 @@ public class FileVolSupport {
 			}
 			if (units[a] == null) {
 				// Make all unused entries appear "not free"
-				alloc.writeChar(0, (byte)075); // extension to MOD1
+				alloc.writeChar(0, (byte)076); // extension to MOD1
 			} else if (a == 5 || units[a + 1] == null) {
+				e = a;
 				alloc.writeChar(0, (byte)040); // last unit
 			} else {
 				alloc.writeChar(0, (byte)060); // more units follow
@@ -380,6 +530,7 @@ public class FileVolSupport {
 		boolean first = true;
 		int pCyl = -1;
 		int pTrk = -1;
+		int recs = 0;
 		for (int u = 0; u < units.length && units[u] != null; ++u) {
 			for (int cyl = units[u].sCyl; cyl <= units[u].eCyl; ++cyl) {
 				pCyl = cyl;
@@ -392,6 +543,7 @@ public class FileVolSupport {
 							error = dsk.getError();
 							return false;
 						}
+						recs += recTrk;
 					}
 					pTrk = trk;
 					first = false;
@@ -405,11 +557,31 @@ public class FileVolSupport {
 			error = dsk.getError();
 			return false;
 		}
+		recs += recTrk;
+		// Sequential files (or each partition of Partitioned Sequential)
+		// TODO: is there a better way?
+		CoreMemory itmBuf = new BufferMemory(itmLen);
+		DiskFile file = new SequentialFile(dsk, unit, name,
+					null, 0,
+					itmLen, recLen, recTrk, recBlk,
+					units);
+		ok = file.seek(units[0].sCyl, units[0].sTrk, 0, 0);
+		ok = file.getItem(itmBuf, 0);
+		vol.setEOD(itmBuf, 0);
+		ok = file.repItem(itmBuf, 0);
+		// ...compute last item of last whole block...
+		int recXXX = ((recs / recBlk) * recBlk - recBlk) % recTrk;
+		ok = file.seek(units[e].eCyl, units[e].eTrk, recXXX, itmBlk - 1);
+		ok = file.getItem(itmBuf, 0);
+		vol.setEOD(itmBuf, 0);
+		ok = file.repItem(itmBuf, 0);
+		ok = file.close();
+		//
 		return true;
 	}
 
 	static public boolean releaseFile(RandomRecordIO dsk, int unit, byte[] name) {
-		error = null;
+		error = 0;
 		DiskVolume vol = new DiskVolume(dsk, unit);
 		if (!vol.mount()) {
 			// Volume not initialized or other error
@@ -436,8 +608,9 @@ public class FileVolSupport {
 			for (int u = 0; u < 6; ++u) {
 				vol.getVolAlloc().getItem(alloc, 0);
 				alloc.writeChar(0, (byte)077);
-				vol.getVolAlloc().putItem(alloc, 0);
+				vol.getVolAlloc().repItem(alloc, 0);
 			}
+			vol.getVolAlloc().sync();
 		} finally {
 			vol.unmount();
 		}
