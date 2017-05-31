@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Vector;
 
-public class FortranRunTime extends FortranLibrary implements HW2000Trap {
+public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 	private int base = 0;
 	private int numOps = 0;
 	private int comm = 0;
@@ -24,7 +24,7 @@ public class FortranRunTime extends FortranLibrary implements HW2000Trap {
 	private int fmtAdr;
 	private HW2000 sys;
 
-	public FortranRunTime(HW2000 sys) {
+	public FORTRANRunTime(HW2000 sys) {
 		this.sys = sys;
 		sys.SR += name.length();
 		base = getAdr();

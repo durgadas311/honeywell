@@ -710,21 +710,14 @@ public class HW2000 implements CoreMemory
 			return;
 		}
 		//System.err.format("Trap %07o \"%s\"\n", SR, rt);
-		// TODO: rename FortranRunTime to FORTRANRunTime
-		// and eliminate special case here.
-		if (rt.equals(FortranRunTime.name())) {
-			// ctor must advance SR past params!
-			addTrap(new FortranRunTime(this));
-		} else {
-			try {
-				Class<?> clazz = Class.forName(rt + "RunTime");
-				Constructor<?> ctor = clazz.getConstructor(HW2000.class);
-				HW2000Trap rti = (HW2000Trap)ctor.newInstance(this);
-				addTrap(rti);
-			} catch (Exception ee) {
-				halt = true;
-				return;
-			}
+		try {
+			Class<?> clazz = Class.forName(rt + "RunTime");
+			Constructor<?> ctor = clazz.getConstructor(HW2000.class);
+			HW2000Trap rti = (HW2000Trap)ctor.newInstance(this);
+			addTrap(rti);
+		} catch (Exception ee) {
+			halt = true;
+			return;
 		}
 	}
 
