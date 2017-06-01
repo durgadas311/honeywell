@@ -707,6 +707,10 @@ public class HW2000 implements CoreMemory
 			return;
 		}
 		if (traps.containsKey(rt)) {
+			// Must advance SR past parameters, but...
+			// This instance of a program might need different
+			// setup than previous, so make sure we re-init.
+			traps.get(rt).reinit();
 			return;
 		}
 		//System.err.format("Trap %07o \"%s\"\n", SR, rt);

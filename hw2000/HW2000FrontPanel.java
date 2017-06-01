@@ -2762,7 +2762,7 @@ ee.printStackTrace();
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.initVolume(p, unit, nm, sn);
 		if (!ok) {
-			warning(this, title, "Volume Init Failed " + FileVolSupport.getError());
+			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2788,7 +2788,7 @@ ee.printStackTrace();
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.mapVolume(p, unit, sys);
 		if (!ok) {
-			warning(this, title, title + "Failed " + FileVolSupport.getError());
+			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2884,7 +2884,7 @@ ee.printStackTrace();
 				itmLen, recLen, recTrk, recBlk,
 				units);
 		if (!ok) {
-			warning(this, title, title + " Failed " + FileVolSupport.getError());
+			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2911,7 +2911,7 @@ ee.printStackTrace();
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
 		if (!ok) {
-			warning(this, title, title + "Failed " + FileVolSupport.getError());
+			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}

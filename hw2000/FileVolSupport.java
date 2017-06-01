@@ -533,7 +533,6 @@ public class FileVolSupport {
 		int recs = 0;
 		for (int u = 0; u < units.length && units[u] != null; ++u) {
 			for (int cyl = units[u].sCyl; cyl <= units[u].eCyl; ++cyl) {
-				pCyl = cyl;
 				for (int trk = units[u].sTrk; trk <= units[u].eTrk; ++trk) {
 					if (!first) {
 						ok = dsk.initTrack(flag, pCyl, pTrk,
@@ -546,6 +545,7 @@ public class FileVolSupport {
 						recs += recTrk;
 					}
 					pTrk = trk;
+					pCyl = cyl;
 					first = false;
 				}
 			}
@@ -589,28 +589,72 @@ public class FileVolSupport {
 			return false;
 		}
 		try {
+			boolean ok;
 			CoreMemory names = findName(vol, vol.getVolNames(), name);
 			CoreMemory descr = new BufferMemory(vol.getVolDescr().itemLen());
 			CoreMemory alloc = new BufferMemory(vol.getVolAlloc().itemLen());
 			if (names == null) {
+				// error already set
 				return false;
 			}
 			names.writeChar(0, (byte)077);
-			vol.getVolNames().repItem(names, 0);
+			ok = vol.getVolNames().repItem(names, 0);
+			if (!ok) {
+				error = vol.getVolNames().getError();
+				return false;
+			}
+			ok = vol.getVolNames().sync();
+			if (!ok) {
+				error = vol.getVolNames().getError();
+				return false;
+			}
 			int[] ctri = vol.getSome(names, 14, 4);
-			vol.getVolDescr().seek(ctri);
-			vol.getVolDescr().getItem(descr, 0);
+			ok = vol.getVolDescr().seek(ctri);
+			if (!ok) {
+				error = vol.getVolDescr().getError();
+				return false;
+			}
+			ok = vol.getVolDescr().getItem(descr, 0);
+			if (!ok) {
+				error = vol.getVolDescr().getError();
+				return false;
+			}
 			descr.writeChar(0, (byte)077);
-			vol.getVolDescr().repItem(descr, 0);
+			ok = vol.getVolDescr().repItem(descr, 0);
+			if (!ok) {
+				error = vol.getVolDescr().getError();
+				return false;
+			}
+			ok = vol.getVolDescr().sync();
+			if (!ok) {
+				error = vol.getVolDescr().getError();
+				return false;
+			}
 			ctri = vol.getSome(names, 22, 4);
-			vol.getVolAlloc().seek(ctri);
+			ok = vol.getVolAlloc().seek(ctri);
+			if (!ok) {
+				error = vol.getVolAlloc().getError();
+				return false;
+			}
 			// assume all contiguous
 			for (int u = 0; u < 6; ++u) {
-				vol.getVolAlloc().getItem(alloc, 0);
+				ok = vol.getVolAlloc().getItem(alloc, 0);
+				if (!ok) {
+					error = vol.getVolAlloc().getError();
+					return false;
+				}
 				alloc.writeChar(0, (byte)077);
-				vol.getVolAlloc().repItem(alloc, 0);
+				ok = vol.getVolAlloc().repItem(alloc, 0);
+				if (!ok) {
+					error = vol.getVolAlloc().getError();
+					return false;
+				}
 			}
-			vol.getVolAlloc().sync();
+			ok = vol.getVolAlloc().sync();
+			if (!ok) {
+				error = vol.getVolAlloc().getError();
+				return false;
+			}
 		} finally {
 			vol.unmount();
 		}

@@ -43,18 +43,28 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	public MOD1MSIORunTime(HW2000 sys) {
 		this.sys = sys;
-		sys.SR += name.length();
-		base = getAdr();
 		parms = new int[6];
 		mcas = new HashMap<Integer, MCA>();
+		reinit();
+	}
+
+	public void reinit() {
+		sys.SR += name.length();
+		base = getAdr();
+		setupCA();
+		mcas.clear();
 	}
 
 	public String getName() { return name; }
 	static public String name() { return name; }
 
 	public boolean doTrap() {
-		if (sys.SR < base || sys.SR > base + 1) {
+		if (!(sys.SR < 190 || sys.SR == base || sys.SR == base + 1)) {
 			return false;
+		}
+		if (sys.SR < 190) {
+			doSupervisor();
+			return true;
 		}
 		int op;
 		nparms = 0;
@@ -91,8 +101,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		default:
 			System.err.format("invalid op %02o\n", op);
 			sys.halt = true;
-			// our best guess... is?
-			exit();
+			exit();	// too draconian?
 			break;
 		}
 		return true;
@@ -105,6 +114,33 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	private void exit() {
 		// System.err.format("exit %07o\n", sys.SR);
 		sys.removeTrap(this);
+	}
+
+	private void doSupervisor() {
+		if (sys.SR == 130) { // return for segment load
+			// Not supported, just STOP
+		} else if (sys.SR == 131) { // return for program exit
+			// Nothing special to do, just STOP
+			setupCA();
+		} else if (sys.SR == 86) {
+			// emergency exit... just STOP
+			setupCA();
+		} else {
+			// error. report issue...
+			// TODO: trigger exception?
+			System.err.format("Invalid supervisor call from %07o\n", sys.BAR);
+		}
+		sys.SR = sys.BAR;
+		sys.halt = true;
+	}
+
+	private void setupCA() {
+		_putAdr(3, 139, 131); // 3-char prog exit - B (139)...
+		_putAdr(4, 164, 131); // 4-char prog exit - B (164)...
+		_putAdr(4, 168, 130); // 4-char segm load - B (168)...
+		_putAdr(3, 187, 0777777); // memory limit
+		//sys.rawWriteMem(155, ?); // Operator mode: panel or console...
+		// other initialization?
 	}
 
 	// TODO: exit may be error or informative.
@@ -147,6 +183,19 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		int a = fetchAdr(sys.SR);
 		sys.SR += sys.am_na;
 		return a;
+	}
+
+	private void putAdr(int loc, int val) {
+		_putAdr(sys.am_na, loc, val);
+	}
+
+	// Put an address based on specified address mode (NOT current CPU mode)
+	private void _putAdr(int am, int loc, int val) {
+		int a = val;
+		for (int n = am - 1; n >= 0; --n) {
+			sys.rawWriteMem(loc + n, (byte)(a & 077));
+			a >>= 6;
+		}
 	}
 
 	// This is a clone of HW2000.fetchAddr() - keep in sync!

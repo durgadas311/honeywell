@@ -26,6 +26,10 @@ public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 
 	public FORTRANRunTime(HW2000 sys) {
 		this.sys = sys;
+		reinit();
+	}
+
+	public void reinit() {
 		sys.SR += name.length();
 		base = getAdr();
 		comm = getAdr();
@@ -86,8 +90,9 @@ public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 		case MOD: mod(); break;
 		case EXP: exp(); break;
 		default:
-			// our best guess...
+			System.err.format("invalid op %02o\n", op);
 			sys.SR = sys.BAR;
+			sys.halt = true;
 			break;
 		}
 		return true;
