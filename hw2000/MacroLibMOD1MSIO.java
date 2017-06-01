@@ -71,6 +71,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			if (assemble(' ', "", "DCW",
 					"@" + MOD1MSIORunTime.name() + "@") < 0) break;
 			if (assemble('R', "", "DSA", "$MIOC") < 0) break;
+			if (assemble(' ', "", "BS", "$MINIT") < 0) break;
 			if (assemble(' ', " $MIOCZ", "B", "0") < 0) break;
 			ret = 0;
 			break;
