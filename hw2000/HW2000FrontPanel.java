@@ -91,8 +91,8 @@ public class HW2000FrontPanel extends JFrame
 	static final int OPTION_CANCEL = 0;
 	static final int OPTION_YES = 1;
 	private Object[] dump_btns;
-	private JTextArea dump_lo;
-	private JTextArea dump_hi;
+	private JTextField dump_lo;
+	private JTextField dump_hi;
 	private JPanel dump_lo_pn;
 	private JPanel dump_hi_pn;
 	private JPanel dump_pn;
@@ -100,21 +100,21 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel map_pn;
 	private JPanel all_pn;
 	private JPanel rel_pn;
-	private JTextArea vol_lun;
-	private JTextArea vol_name;
-	private JTextArea vol_snum;
-	private JTextArea map_lun;
-	private JTextArea file_lun;
-	private JTextArea file_name;
-	private JTextArea file_itm;
-	private JTextArea file_rec;
-	private JTextArea file_blk;
-	private JTextArea file_rpt;
+	private JTextField vol_lun;
+	private JTextField vol_name;
+	private JTextField vol_snum;
+	private JTextField map_lun;
+	private JTextField file_lun;
+	private JTextField file_name;
+	private JTextField file_itm;
+	private JTextField file_rec;
+	private JTextField file_blk;
+	private JTextField file_rpt;
 	private JCheckBox file_a;
 	private JCheckBox file_b;
-	private JTextArea[][] file_unt;
-	private JTextArea rel_lun;
-	private JTextArea rel_name;
+	private JTextField[][] file_unt;
+	private JTextField rel_lun;
+	private JTextField rel_name;
 	int dumpLow;
 	int dumpHi;
 	private P_Console cons;
@@ -291,49 +291,50 @@ public class HW2000FrontPanel extends JFrame
 		all_pn.setLayout(new BoxLayout(all_pn, BoxLayout.Y_AXIS));
 		rel_pn = new JPanel();
 		rel_pn.setLayout(new BoxLayout(rel_pn, BoxLayout.Y_AXIS));
-		vol_lun = new JTextArea("0");
+		vol_lun = new JTextField("0");
 		vol_lun.setPreferredSize(new Dimension(20, 20));
-		JPanel pn = new JPanel();
+		JPanel pn;
+		pn = new JPanel();
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(vol_lun);
 		vol_pn.add(pn);
-		map_lun = new JTextArea("0");
+		map_lun = new JTextField("0");
 		map_lun.setPreferredSize(new Dimension(20, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(map_lun);
 		map_pn.add(pn);
-		file_lun = new JTextArea("0");
+		file_lun = new JTextField("0");
 		file_lun.setPreferredSize(new Dimension(20, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(file_lun);
 		all_pn.add(pn);
-		rel_lun = new JTextArea("0");
+		rel_lun = new JTextField("0");
 		rel_lun.setPreferredSize(new Dimension(20, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(rel_lun);
 		rel_pn.add(pn);
-		vol_name = new JTextArea();
+		vol_name = new JTextField();
 		vol_name.setPreferredSize(new Dimension(60, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Name:"));
 		pn.add(vol_name);
 		vol_pn.add(pn);
-		file_name = new JTextArea();
+		file_name = new JTextField();
 		file_name.setPreferredSize(new Dimension(120, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Name:"));
 		pn.add(file_name);
 		all_pn.add(pn);
-		rel_name = new JTextArea();
+		rel_name = new JTextField();
 		rel_name.setPreferredSize(new Dimension(120, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Name:"));
 		pn.add(rel_name);
 		rel_pn.add(pn);
-		vol_snum = new JTextArea();
+		vol_snum = new JTextField();
 		vol_snum.setPreferredSize(new Dimension(60, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Serial:"));
@@ -343,26 +344,26 @@ public class HW2000FrontPanel extends JFrame
 		all_pn.add(file_a);
 		file_b = new JCheckBox("B-file protection");
 		all_pn.add(file_b);
-		file_itm = new JTextArea();
+		file_itm = new JTextField();
 		file_itm.setPreferredSize(new Dimension(60, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Item Len:"));
 		pn.add(file_itm);
 		all_pn.add(pn);
-		file_rec = new JTextArea();
+		file_rec = new JTextField();
 		file_rec.setPreferredSize(new Dimension(60, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Rec Len:"));
 		pn.add(file_rec);
 		all_pn.add(pn);
 		// TODO: dynamically compute defaults for Rec/Blk and Rec/Trk
-		file_rpt = new JTextArea();
+		file_rpt = new JTextField();
 		file_rpt.setPreferredSize(new Dimension(60, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Rec/Trk:"));
 		pn.add(file_rpt);
 		all_pn.add(pn);
-		file_blk = new JTextArea();
+		file_blk = new JTextField();
 		file_blk.setPreferredSize(new Dimension(60, 20));
 		pn = new JPanel();
 		pn.add(new JLabel("Rec/Blk:"));
@@ -370,21 +371,21 @@ public class HW2000FrontPanel extends JFrame
 		all_pn.add(pn);
 		all_pn.add(new JLabel("Allocation Units:"));
 		// TODO: allocation units...
-		file_unt = new JTextArea[6][];
+		file_unt = new JTextField[6][];
 		for (int x = 0; x < 6; ++x) {
-			file_unt[x] = new JTextArea[4];
+			file_unt[x] = new JTextField[4];
 			pn = new JPanel();
-			file_unt[x][0] = new JTextArea();
+			file_unt[x][0] = new JTextField();
 			file_unt[x][0].setPreferredSize(new Dimension(30, 20));
 			pn.add(file_unt[x][0]);
-			file_unt[x][1] = new JTextArea();
+			file_unt[x][1] = new JTextField();
 			file_unt[x][1].setPreferredSize(new Dimension(30, 20));
 			pn.add(file_unt[x][1]);
 			pn.add(new JLabel(" - "));
-			file_unt[x][2] = new JTextArea();
+			file_unt[x][2] = new JTextField();
 			file_unt[x][2].setPreferredSize(new Dimension(30, 20));
 			pn.add(file_unt[x][2]);
-			file_unt[x][3] = new JTextArea();
+			file_unt[x][3] = new JTextField();
 			file_unt[x][3].setPreferredSize(new Dimension(30, 20));
 			pn.add(file_unt[x][3]);
 			all_pn.add(pn);
@@ -397,12 +398,12 @@ public class HW2000FrontPanel extends JFrame
 		dump_btns = new Object[2];
 		dump_btns[OPTION_YES] = "Dump";
 		dump_btns[OPTION_CANCEL] = "Cancel";
-		dump_lo = new JTextArea();
+		dump_lo = new JTextField();
 		dump_lo.setPreferredSize(new Dimension(200, 20));
 		dump_lo_pn = new JPanel();
 		dump_lo_pn.add(new JLabel("Low Adr:"));
 		dump_lo_pn.add(dump_lo);
-		dump_hi = new JTextArea();
+		dump_hi = new JTextField();
 		dump_hi.setPreferredSize(new Dimension(200, 20));
 		dump_hi_pn = new JPanel();
 		dump_hi_pn.add(new JLabel("High Adr:"));
@@ -2741,12 +2742,10 @@ ee.printStackTrace();
 
 	private void volInit() {
 		String title = "Initialize Volume";
-		JOptionPane dia = new JOptionPane(vol_pn, JOptionPane.QUESTION_MESSAGE,
-						JOptionPane.OK_CANCEL_OPTION);
-		Dialog dlg = dia.createDialog(this, title);
-		dlg.setVisible(true);
-		Object res = dia.getValue();
-		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int res = JOptionPane.showOptionDialog(this, vol_pn, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
 		int unit;
 		try {
 			unit = Integer.valueOf(vol_lun.getText());
@@ -2769,12 +2768,10 @@ ee.printStackTrace();
 
 	private void volMap() {
 		String title = "Map Volume";
-		JOptionPane dia = new JOptionPane(map_pn, JOptionPane.QUESTION_MESSAGE,
-						JOptionPane.OK_CANCEL_OPTION);
-		Dialog dlg = dia.createDialog(this, title);
-		dlg.setVisible(true);
-		Object res = dia.getValue();
-		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int res = JOptionPane.showOptionDialog(this, map_pn, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
 		int unit;
 		try {
 			unit = Integer.valueOf(map_lun.getText());
@@ -2818,12 +2815,10 @@ ee.printStackTrace();
 
 	private void fileAlloc() {
 		String title = "Allocate File";
-		JOptionPane dia = new JOptionPane(all_pn, JOptionPane.QUESTION_MESSAGE,
-						JOptionPane.OK_CANCEL_OPTION);
-		Dialog dlg = dia.createDialog(this, title);
-		dlg.setVisible(true);
-		Object res = dia.getValue();
-		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int res = JOptionPane.showOptionDialog(this, all_pn, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
 		int unit;
 		try {
 			unit = Integer.valueOf(file_lun.getText());
@@ -2891,12 +2886,10 @@ ee.printStackTrace();
 
 	private void fileDealloc() {
 		String title = "Deallocate File";
-		JOptionPane dia = new JOptionPane(rel_pn, JOptionPane.QUESTION_MESSAGE,
-						JOptionPane.OK_CANCEL_OPTION);
-		Dialog dlg = dia.createDialog(this, title);
-		dlg.setVisible(true);
-		Object res = dia.getValue();
-		if (!res.equals(JOptionPane.OK_OPTION)) return;
+		int res = JOptionPane.showOptionDialog(this, rel_pn, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
 		int unit;
 		try {
 			unit = Integer.valueOf(rel_lun.getText());
@@ -2918,15 +2911,11 @@ ee.printStackTrace();
 
 	private int dumpDialog(String name) {
 		JOptionPane dump_dia;
-		dump_dia = new JOptionPane(dump_pn, JOptionPane.QUESTION_MESSAGE,
-					JOptionPane.YES_NO_OPTION, null, dump_btns);
-		dump_lo.setText(Integer.toString(currLow));
-		dump_hi.setText(Integer.toString(currHi));
-		Dialog dlg = dump_dia.createDialog(this, name);
-		dlg.setVisible(true);
-		Object res = dump_dia.getValue();
-		if (dump_btns[OPTION_CANCEL].equals(res)) return 0;
-		if (dump_btns[OPTION_YES].equals(res)) {
+		int res = JOptionPane.showOptionDialog(this, dump_pn, name,
+			JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, dump_btns, dump_btns[OPTION_YES]);
+		if (res == OPTION_CANCEL) return 0;
+		if (res == OPTION_YES) {
 			try {
 				if (dump_lo.getText().length() > 0) {
 					dumpLow = Integer.valueOf(dump_lo.getText());
