@@ -68,6 +68,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		int op;
 		nparms = 0;
+		if (sys.fp != null) {
+			sys.fp.setActive(true);
+		}
 		if (sys.SR == base + 1) {
 			// Return from EXIT callback...
 			sys.SR = exitSR;

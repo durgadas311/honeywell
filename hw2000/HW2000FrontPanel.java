@@ -2756,10 +2756,12 @@ ee.printStackTrace();
 			warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
+		setActive(true);
 		byte[] nm = hwString(vol_name.getText(), 6);
 		byte[] sn = hwString(vol_snum.getText(), 6);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.initVolume(p, unit, nm, sn);
+		setActive(false);
 		if (!ok) {
 			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
@@ -2782,8 +2784,10 @@ ee.printStackTrace();
 			warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
+		setActive(true);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.mapVolume(p, unit, sys);
+		setActive(false);
 		if (!ok) {
 			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
@@ -2829,6 +2833,7 @@ ee.printStackTrace();
 			warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
+		setActive(true);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		byte[] nm = hwString(file_name.getText(), 10);
 		int itmLen = -1;
@@ -2865,6 +2870,7 @@ ee.printStackTrace();
 			}
 		} catch (Exception ee) {
 			warning(this, title, "Invalid File Geometry");
+			setActive(false);
 			return;
 		}
 		int flag = (file_a.isSelected() ? p.PERMIT_A : 0) |
@@ -2873,11 +2879,13 @@ ee.printStackTrace();
 		boolean ok = getAlloc(units, p.numCylinders(), p.numTracks());
 		if (!ok) {
 			warning(this, title, title + " Failed Invalid allocation");
+			setActive(false);
 			return;
 		}
 		ok = FileVolSupport.initFile(p, unit, flag, nm,
 				itmLen, recLen, recTrk, recBlk,
 				units);
+		setActive(false);
 		if (!ok) {
 			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
@@ -2900,9 +2908,11 @@ ee.printStackTrace();
 			warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
+		setActive(true);
 		byte[] nm = hwString(rel_name.getText(), 10);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
+		setActive(false);
 		if (!ok) {
 			warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
