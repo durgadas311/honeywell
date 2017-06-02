@@ -213,7 +213,13 @@ public class FileVolSupport {
 				Arrays.fill(map[cyl], 0);
 			}
 			for (int trk = sTrk; trk <= eTrk; ++trk) {
-				map[cyl][trk] = fno;
+				if (map[cyl][trk] != 0) {
+					if (fno != 0x20000) {
+						map[cyl][trk] |= 0x40000;
+					}
+				} else {
+					map[cyl][trk] = fno;
+				}
 			}
 		}
 	}
@@ -231,20 +237,47 @@ public class FileVolSupport {
 		for (int trk = 0; trk < nTrk; ++trk) {
 			if (map == null) {
 				ret += "  .";
-			} else if (map[trk] == 0) {
-				ret += "  .";
-			} else if (map[trk] == -1) {
-				ret += " $$";
+				continue;
+			}
+			int fno = map[trk] & 0x3ffff;
+			boolean err = (map[trk] & 0x40000) != 0;
+			String hash;
+			if (fno == 0) {
+				hash = "  .";
+			} else if (fno == 0x10000) {
+				hash = " $$";
+			} else if (fno == 0x20000) {
+				hash = " ??";
 			} else {
-				String hash = Integer.toString(map[trk], 36);
-				ret += String.format(" %2s", hash);
+				hash = String.format("%3s", Integer.toString(fno, 36));
+			}
+			if (err) {
+				ret += hash.replace(' ', '*');
+			} else {
+				ret += hash;
 			}
 		}
 		return ret;
 	}
 
+	static private int totalTracks(int[][] map) {
+		int tracks = 0;
+		for (int cyl = 0; cyl < nCyl; ++cyl) {
+			if (map[cyl] == null) {
+				continue;
+			}
+			for (int trk = 0; trk < nTrk; ++trk) {
+				if (map[cyl][trk] != 0) {
+					++tracks;
+				}
+			}
+		}
+		return tracks;
+	}
+
 	// TODO: how best to deliver volume map...
 	static public boolean mapVolume(RandomRecordIO dsk, int unit, HW2000 sys) {
+		// TODO: make disk map optional.
 		nCyl = dsk.numCylinders();
 		nTrk = dsk.numTracks();
 		error = 0;
@@ -264,11 +297,12 @@ public class FileVolSupport {
 		int[][] map = new int[nCyl][];
 		nCyl -= 3;	// reserved...
 		// TODO: get actual allocated tracks...
-		mapTracks(map, -1, 0, 0, 0, 1);	// boot track and volume header
-		mapTracks(map, -1, vol.getVolNames().getAlloc());
-		mapTracks(map, -1, vol.getVolDescr().getAlloc());
-		mapTracks(map, -1, vol.getVolAlloc().getAlloc());
+		mapTracks(map, 0x10000, 0, 0, 0, 1);	// boot track and volume header
+		mapTracks(map, 0x10000, vol.getVolNames().getAlloc());
+		mapTracks(map, 0x10000, vol.getVolDescr().getAlloc());
+		mapTracks(map, 0x10000, vol.getVolAlloc().getAlloc());
 		vol.getVolNames().rewind();
+		sys.listOut("ID  NAME       O ITM REC I/B R/B R/T   CAPACITY\n");
 		while (true) {
 			String ret = "";
 			if (!vol.getVolNames().getItem(names, 0)) {
@@ -337,8 +371,25 @@ public class FileVolSupport {
 			ret += '\n';
 			sys.listOut(ret);
 		}
-		sys.listOut(String.format("Total *VOLNAMES* entries: %d  free: %d\n",
-						total, free));
+		// Go through *VOLALLOC* looking for orphaned allocations.
+		vol.getVolAlloc().rewind();
+		while (true) {
+			vol.getVolAlloc().getItem(alloc, 0);
+			if (vol.getVolAlloc().isEOF()) {
+				break;
+			}
+			int t = alloc.readChar(0);
+			if (t != 040 && t != 060) {
+				continue;
+			}
+			int[] fd = vol.getSome(alloc, 4, 4);
+			mapTracks(map, 0x20000, fd[0], fd[1], fd[2], fd[3]);
+		}
+		int tracks = totalTracks(map);
+		sys.listOut(String.format("Total *VOLNAMES* entries: %d  free: %d" +
+				"  Tracks used: %d/%d %d%%\n",
+				total, free, tracks, (nCyl * nTrk),
+				(tracks * 100 + 50) / (nCyl * nTrk)));
 		sys.listOut("   " + getMapHdr() + " :    " + getMapHdr() + '\n');
 		for (int cyl = 0; cyl < nCyl / 2; ++cyl) {
 			String ret = String.format("%03d", cyl) +
@@ -501,7 +552,7 @@ public class FileVolSupport {
 			return false;
 		}
 		int e = 0;
-		// TODO: verify units[*] are free...
+		// units[*] were checked for free in findFreeAlloc()...
 		for (int a = 0; a < 6; ++a) {
 			if (a > 0) {
 				ok = vol.getVolAlloc().getItem(alloc, 0);

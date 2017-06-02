@@ -49,22 +49,49 @@ click Cancel).
 cards and then ran out of cards. The line printer should show 311 lines of the barber pole pattern.
 </OL>
 
-<H2>DISK PACK</H2>
+<H2>MOD1 MASS STORAGE FILES</H2>
 
-<P>This demo will take data from a magnetic tape and format that onto a disk pack,
-and then read that disk pack and print the records on the line printer.
+<P>This demo will take data from a card deck (e.g. as produced in previous example)
+and write that onto a mass storage file (disk pack),
+and then read back that file and print the records on the line printer.
+This example goes through all steps required to initialize a new volume,
+create a file, and use the file. If you already have a disk pack initialized,
+or files allocated, some steps may be skipped. Note, these example programs
+have the file name hard-coded, so require modification if the file name
+is to change. Also, MOD1 files have strict item/record sizes and this program
+expects the item size to be 80 characters.
 
 <OL>
-<LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
-tape drive 000.
 <LI>Open/raise the Disks window and mount a new file on disk drive 000.
-<LI>Select menu File->Assemble and choose the file "dsktest1.ezc" and click "Assemble".
-<LI>Press RUN. The tape drive should show about 25192 characters read. The disk drive should
-show current position "0.6" for cylinder 0 track 6.
-<LI>Select menu File->Assemble and choose the file "dsktest2.ezc" and click "Assemble".
-<LI>Press RUN. The disk drive should momentarily show "0" and then
-advance to final position "0.6". The line printer 
-should have printed the 311-line barber pole pattern.
+<LI>Select menu Disk_Util->Initialize_Volume and
+<UL>
+	<LI>Enter a volume name and serial number.
+	<LI>Click OK to initialize the volume.
+	<LI>NOTE: The drive FMT and DAT permit switches must be ON.
+</UL>
+<LI>Select menu Disk_Util->Allocate_File and
+<UL>
+	<LI>Enter the file name "MYFILE01" (unless the programs have been altered
+	for a different file name).
+	<LI>Enter Item Len of "80" and Rec Len of "240".
+	<LI>Enter Allocation Units. A minimum of 3 tracks are needed to hold the
+	311 cards created in the previous example.
+	<LI>Click OK to create the file.
+	<LI>NOTE: The drive FMT and DAT permit switches must be ON.
+</UL>
+<LI>Optionally, use the Disk_Util->Map_Volume menu item to print
+the files and allocation of the volume.
+<LI>Open/raise the PunchCard window and mount a card deck, such as the
+barber pole one created in the previous example.
+<LI>Select menu File->Assemble and choose the file "mod1test1.ezc" and click "Assemble".
+<LI>Press RUN. The card reader should show 311 cards read, and "END".
+The disk drive should show current position on the third track allocated.
+NOTE: The drive DAT permit switch must be ON.
+<LI>Select menu File->Assemble and choose the file "mod1test2.ezc" and click "Assemble".
+<LI>Press RUN. The disk drive should momentarily show activity and then
+advance to final position of the previous step. The line printer 
+should have printed the 311-line barber pole pattern and "FINISHED".
+NOTE: No drive PERMIT switches are required.
 </OL>
 
 <H2>FORTRAN CHARACTER CONVERSION</H2>
