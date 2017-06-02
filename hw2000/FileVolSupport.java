@@ -307,7 +307,6 @@ public class FileVolSupport {
 			String ret = "";
 			if (!vol.getVolNames().getItem(names, 0)) {
 				if (vol.getVolNames().isEOF()) {
-					--total;
 					break;
 				}
 				error = vol.getVolNames().getError();
