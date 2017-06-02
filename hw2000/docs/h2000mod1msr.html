@@ -8,6 +8,9 @@
 <P> An implementation/simulation of the MOD1 MSR (Mass Storage Resident)
 operating system and programming environment is available. This provides
 an easy way to manipulate files on mass storage media (Disk Packs).
+This feature is implemented as a set of java virtual extensions.
+See <A HREF="h2000extending.html">Virtual Series 2000 Extensions</A>
+for more on virtual software extensions.
 
 <P>Features of "File Support C" and "Volume Preparation C" are implemented in
 the menu "Disk Util". These allow initialization of a volume, mapping (listing)
@@ -18,7 +21,7 @@ See information in <A HREF="h2000operation.html">Basic Operation</A>.
 package, invoked (loaded) using the "MAC" assembler directive as described in
 <A HREF="h2000easycoder.html">Easycoder Assembler Implementation</A>.
 Apart from the non-standard virtual extension "MAC", the macros are
-used as described in the MOD1 documentation, with the following exceptions:
+used as described in the original MOD1 documentation, with the following exceptions:
 
 <UL>
 <LI>Only Sequential Organization files are supported.
@@ -31,7 +34,7 @@ used as described in the MOD1 documentation, with the following exceptions:
 <LI>File data type designation (print-image, etc) is not Supported.
 <LI>Advisory EXITs are not supported (for example,
 the EXIT to allow a program to extract *VOLDESCR* information during MSOPEN).
-<LI>more...
+<LI>more...?
 </UL>
 
 <P>Here is a sample program to read a file named "MYFILE01" and print it,
@@ -60,38 +63,38 @@ simplified for clarity.
 00210         PDT   RECD1,12,02,01    PRINT RECORD
 00220         PCB   *,12,02,00
 00230         B     NEXT
-00330*
-00340L DONE   MSCLOSF1,
-00350         PDT   FIN,10,02,01
-00360         PCB   *,10,02,00
-00370         B     (164)             MOD1 PROGRAM EXIT
 00240*
-00250  DEXITC DCW   #1B0
-00260  DEXIT  SCR   ENDR,70
-00270         BCE   DONE,DEXITC,01    EOF IS SOFT ERROR
-00280         B     86                REST ARE FATAL
+00250L DONE   MSCLOSF1,
+00260         PDT   FIN,10,02,01
+00270         PCB   *,10,02,00
+00280         B     (164)             MOD1 PROGRAM EXIT
 00290*
-00300  ERRORC DCW   #1B0
-00310  ERROR  SCR   ENDR,70
-00320         B     86                ALL ARE FATAL
-00390*
-00400  ENDR   DSA   0
-00410*
-00420  DEVTAB RESV  0
-00430         DCW   #3C040000         PCU, LUN, 00
-00440 L       DCW   #1B0
-00450*
-00460   RECD1 RESV, 80                ITEM BUFFER
-00470 L       DCW   #1A
-00480*
-00490   RECD2 RESV, 256               BLOCK BUFFER
+00300  DEXITC DCW   #1B0
+00310  DEXIT  SCR   ENDR,70
+00320         BCE   DONE,DEXITC,01    EOF IS SOFT ERROR
+00330         B     86                REST ARE FATAL
+00340*
+00350  ERRORC DCW   #1B0
+00360  ERROR  SCR   ENDR,70
+00370         B     86                ALL ARE FATAL
+00380*
+00390  ENDR   DSA   0
+00400*
+00410  DEVTAB RESV  0
+00420         DCW   #3C040000         PCU, LUN, 00
+00430 L       DCW   #1B0
+00440*
+00450   RECD1 RESV, 80                ITEM BUFFER
+00460 L       DCW   #1A
+00470*
+00480   RECD2 RESV, 256               BLOCK BUFFER
+00490 L       DCW   #1A
 00500 L       DCW   #1A
 00510 L       DCW   #1A
-00520 L       DCW   #1A
-00530*
-00540 F FIN   DC    @FINISHED @
-00550*
-00560         END   START
+00520*
+00530 F FIN   DC    @FINISHED @
+00540*
+00550         END   START
 </PRE></UL>
 
 <P>At card (line) 00050 is the modern extension to EasyCoder to load a macro library.
@@ -102,8 +105,8 @@ thus consumes no extra program memory, making most parameters to MIOC irrelevant
 <P>At line 00190 the file is opened for input-only. Note, any failures at this point
 cause an EXIT call which is fatal/terminal.
 <P>At line 00200 one item is read from the file. Note, a Data EXIT for EOF
-will cause a graceful end to the program, checked on line 00270.
-<P>In the case of a graceful end, the file is closed on line 00340.
+will cause a graceful end to the program, checked on line 00320.
+<P>In the case of a graceful end, the file is closed on line 00250.
 
 </BODY>
 </HTML>

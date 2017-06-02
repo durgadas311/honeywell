@@ -1,0 +1,77 @@
+<HTML>
+<HEAD>
+<TITLE>Virtual Series 2000 Extensions</TITLE>
+</HEAD>
+<BODY>
+<H2>Virtual Series 2000 Extensions</H2>
+
+<P>The Virtual Series 2000 computer programming environment may be extended
+in two ways. First, the EasyCoder assembler may be extended with "Macro Libraries".
+Second, the system software may be simulated using "Virtual Runtimes".
+
+<H4>Macro Libraries</H4>
+
+<P>When the assdembler encounters the (non-standard) "MAC" directive, it tries
+to load a java class using the single parameter. When the directive:
+
+<UL><PRE>              MAC   &lt;parameter&gt;</PRE></UL>
+
+is encountered, a class is loaded with the name:
+
+<UL><PRE><B>MacroLib</B><I>&lt;parameter&gt;</I></PRE></UL>
+
+This class's constructor must accept an <CODE>Assembler</CODE> object as it's only parameter.
+The assembler will then call the <CODE>boolean handles(String mac)</CODE> method
+when it encounters a macro named in 'mac', and if return is 'true' then the assembler will
+call <CODE>int expand(String mac, String tag, String[] parms)</CODE> to expand the macro.
+
+<P>Macro expansion typically calls back to the assembler's
+<CODE>int assemble(String line)</CODE> method to add instructions to the program,
+although it may also call the assembler's <CODE>errsAdd(String)</CODE> method
+and return -1 in case of errors.
+
+<P>Conventional ("native EasyCoder") macros are not (currently) possible due to lack of
+support for EasyCoder program libraries. This would also require support for job control
+commands in order to associate and assembler run with external libraries.
+
+<H4>Virtual Runtimes</H4>
+
+<P>A virtual runtime is loaded when a program makes a branch to location '0-1'
+(the last character in memory). This is trapped by the virtual H2000 and an
+attempt is made to load a class named by the first parameter after the branch instruction.
+Additional paramaters are required by the runtime for initializing the program environment,
+but may vary between runtimes.
+
+<P>For example, a FORTRAN program always starts with:
+
+<UL><PRE>
+              B     0-1
+              DCW   @FORTRAN@
+              DCW   $FLIB
+              DCW   $FLIB1
+      R       DCW   $FLIB2
+</PRE></UL>
+
+Note the RM at the end of the last parameter, which is required. When the
+virtual H2000 services this branch/trap, it will load a class named
+<CODE>FORTRAN<B>RunTime</B></CODE> and call the constructor with the H2000 instance of
+the running system. The runtime constructor then initializes the communications
+area(s) in memory based on the additional parameters. This includes configuring
+traps so that the program may call into the runtime.
+
+<P>The runtime method <CODE>boolean doTrap()</CODE> will be called at the
+start of every instruction, and if returns 'true' then it means the trap
+was serviced by the runtime (this only ends the system's search for the trap,
+the runtime will have altered memory and/or registers, specifically SR, in
+order to arrange for the correct program flow).
+
+<P>Since a runtime may persist in the system beyond the end of a program,
+there must exist a <CODE>void reinit()</CODE> method which is used to re-configure
+an already-loaded runtime for a different program run.
+
+<P>Virtual runtimes are necessary due to the lack of any actual Honeywell
+systems program images. Without virtual runtimes, things like FORTRAN and MOD1
+would be impractical/impossible.
+
+</BODY>
+</HTML>
