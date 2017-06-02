@@ -106,17 +106,18 @@ public class DiskVolume {
 			dsk.end();
 		}
 		// Length of data may vary, but starting cyl/trk cannot.
-		volNames = newVolNames(dsk, unit, ct[0], ct[1]);
+		volNames = newVolNames(dsk, unit, false, ct[0], ct[1]);
 		ct[1] += 1;
-		volDescr = newVolDescr(dsk, unit, ct[0], ct[1]);
+		volDescr = newVolDescr(dsk, unit, false, ct[0], ct[1]);
 		ct[1] += 3;
-		volAlloc = newVolAlloc(dsk, unit, ct[0], ct[1]);
+		volAlloc = newVolAlloc(dsk, unit, false, ct[0], ct[1]);
 		ct[1] += 3;
 		return true;
 	}
 
+	// Always consumes one track
 	static public DiskFile newVolNames(RandomRecordIO dsk, int unit,
-							int cyl, int trk) {
+						boolean prot, int cyl, int trk) {
 		if (cyl < 0) {
 			cyl = 0;
 		}
@@ -125,13 +126,14 @@ public class DiskVolume {
 		}
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
-		return new SequentialFile(dsk, unit, VOLNAMES,
+		return new SequentialFile(dsk, unit, VOLNAMES, prot,
 					30, def_reclen, recTrk, 3,
 					cyl, trk, cyl, trk + 0);
 	}
 
+	// Always consumes three tracks
 	static public DiskFile newVolDescr(RandomRecordIO dsk, int unit,
-							int cyl, int trk) {
+						boolean prot, int cyl, int trk) {
 		if (cyl < 0) {
 			cyl = 0;
 		}
@@ -140,13 +142,14 @@ public class DiskVolume {
 		}
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
-		return new SequentialFile(dsk, unit, VOLDESCR,
+		return new SequentialFile(dsk, unit, VOLDESCR, prot,
 					100, def_reclen, recTrk, 2,
 					cyl, trk, cyl, trk + 2);
 	}
 
+	// Always consumes three tracks
 	static public DiskFile newVolAlloc(RandomRecordIO dsk, int unit,
-							int cyl, int trk) {
+						boolean prot, int cyl, int trk) {
 		if (cyl < 0) {
 			cyl = 0;
 		}
@@ -155,7 +158,7 @@ public class DiskVolume {
 		}
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
-		return new SequentialFile(dsk, unit, VOLALLOC,
+		return new SequentialFile(dsk, unit, VOLALLOC, prot,
 					20, def_reclen, recTrk, 2,
 					cyl, trk, cyl, trk + 2);
 	}
@@ -173,10 +176,21 @@ public class DiskVolume {
 
 	// TODO: Support access to *VOLNAMES*, etc., here?
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
-	public DiskFile openFile(byte[] name) {
-		return openFile(name, null, 0);
+	public DiskFile openFile(byte[] name, boolean prot) {
+		return openFile(name, prot, null, 0);
 	}
-	public DiskFile openFile(byte[] name, CoreMemory blkBuf, int blkBufAdr) {
+	public DiskFile openFile(byte[] name, boolean prot,
+				CoreMemory blkBuf, int blkBufAdr) {
+		// Special-case system files - only allow R/O
+		if (compare(VOLNAMES, name)) {
+			return volNames.dup();
+		}
+		if (compare(VOLDESCR, name)) {
+			return volDescr.dup();
+		}
+		if (compare(VOLALLOC, name)) {
+			return volAlloc.dup();
+		}
 		CoreMemory nItm = new BufferMemory(volNames.itemLen());
 		volNames.rewind();
 		while (true) {
@@ -242,7 +256,7 @@ public class DiskVolume {
 			ctri = getSome(aItm, 12, 4);
 		}
 		if (type == 1) {
-			return new SequentialFile(dsk, unit, name,
+			return new SequentialFile(dsk, unit, name, prot,
 					blkBuf, blkBufAdr,
 					desc[0], desc[1], desc[4], desc[3],
 					units);
@@ -293,6 +307,18 @@ public class DiskVolume {
 
 	static public boolean isEOD(CoreMemory var, int start) {
 		return compare(_EOD_, var, start);
+	}
+
+	private boolean compare(byte[] con, byte[] var) {
+		if (var.length < con.length) {
+			return false;
+		}
+		for (int x = 0; x < con.length; ++x) {
+			if (con[x] != var[x]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	static public boolean compare(byte[] con, CoreMemory var, int start) {

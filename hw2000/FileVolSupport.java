@@ -77,13 +77,14 @@ public class FileVolSupport {
 			// TODO: any other parameters?
 			byte[] volnam, byte[] volser) {
 		// TODO: system files/records use A-file protection?
+		// TODO: allow custom cylinder/track where *VOLNAMES* begins?
 		nCyl = dsk.numCylinders();
 		nTrk = dsk.numTracks();
 		error = 0;
 		int flag = 0;
-		DiskFile volNames = DiskVolume.newVolNames(dsk, unit, -1, -1);
-		DiskFile volDescr = DiskVolume.newVolDescr(dsk, unit, -1, -1);
-		DiskFile volAlloc = DiskVolume.newVolAlloc(dsk, unit, -1, -1);
+		DiskFile volNames = DiskVolume.newVolNames(dsk, unit, false, -1, -1);
+		DiskFile volDescr = DiskVolume.newVolDescr(dsk, unit, false, -1, -1);
+		DiskFile volAlloc = DiskVolume.newVolAlloc(dsk, unit, false, -1, -1);
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
 			return false;
@@ -611,7 +612,7 @@ public class FileVolSupport {
 		// Sequential files (or each partition of Partitioned Sequential)
 		// TODO: is there a better way?
 		CoreMemory itmBuf = new BufferMemory(itmLen);
-		DiskFile file = new SequentialFile(dsk, unit, name,
+		DiskFile file = new SequentialFile(dsk, unit, name, false,
 					null, 0,
 					itmLen, recLen, recTrk, recBlk,
 					units);

@@ -7,6 +7,7 @@ public interface DiskFile {
 	boolean putItem(CoreMemory itm, int adr);
 	boolean close();
 	// Non-standard: (Not part of MOD1 i/f)
+	DiskFile dup();	// R/O clone
 	byte[] getName();
 	int getError();
 	DiskUnit[] getAlloc();

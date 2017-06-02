@@ -360,7 +360,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		if (xitMCA.file == null) {
 			xitMCA.file = xitMCA.vol.openFile(xitMCA.name,
-						sys, xitMCA.buf1);
+					(xitMCA.mode < 2), sys, xitMCA.buf1);
 			if (xitMCA.file == null) {
 				setupExit(xitMCA.vol.getError());
 				return;

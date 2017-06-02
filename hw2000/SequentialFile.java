@@ -11,10 +11,12 @@ public class SequentialFile implements DiskFile {
 	RandomRecordIO dsk = null;
 	int unit;
 	byte[] name;
+	boolean prot; // R/O
 	int itmLen;
 	int recLen;
 	int blkLen;
 	int recBlk;
+	int recTrk;
 	DiskUnit[] units;
 	int lastUnit;
 	int relRec;
@@ -38,10 +40,10 @@ public class SequentialFile implements DiskFile {
 	int error = 0;
 
 	// Special-case for *VOLNAMES*, etc.
-	public SequentialFile(RandomRecordIO dsk, int unit, byte[] name,
-			int itmLen, int recLen, int recTrk, int recblk,
+	public SequentialFile(RandomRecordIO dsk, int unit, byte[] name, boolean prot,
+			int itmLen, int recLen, int recTrk, int recBlk,
 			int sCyl, int sTrk, int eCyl, int eTrk) {
-		init(dsk, unit, name, itmLen, recLen, recTrk, recblk);
+		init(dsk, unit, name, prot, itmLen, recLen, recTrk, recBlk);
 		units = new DiskUnit[6];
 		Arrays.fill(units, null);
 		units[0] = new DiskUnit(sCyl, sTrk, eCyl, eTrk);
@@ -52,11 +54,11 @@ public class SequentialFile implements DiskFile {
 
 	// General Open of "real" file.
 	// Caller locates *VOLNAMES*, etc items and passes info to this ctor.
-	public SequentialFile(RandomRecordIO dsk, int unit, byte[] name,
+	public SequentialFile(RandomRecordIO dsk, int unit, byte[] name, boolean prot,
 			CoreMemory blkBuf, int blkAdr,
-			int itmLen, int recLen, int recTrk, int recblk,
+			int itmLen, int recLen, int recTrk, int recBlk,
 			DiskUnit[] alloc) {
-		init(dsk, unit, name, itmLen, recLen, recTrk, recblk);
+		init(dsk, unit, name, prot, itmLen, recLen, recTrk, recBlk);
 		units = alloc;
 		for (int u = 0; u < 6 && u < units.length && units[u] != null; ++u) {
 			lastUnit = u;
@@ -70,16 +72,18 @@ public class SequentialFile implements DiskFile {
 		}
 	}
 
-	private void init(RandomRecordIO dsk, int unit, byte[] name,
-			int itmLen, int recLen, int recTrk, int recblk) {
+	private void init(RandomRecordIO dsk, int unit, byte[] name, boolean prot,
+			int itmLen, int recLen, int recTrk, int recBlk) {
 		// TODO: do we need recTrk?
 		this.dsk = dsk;
 		this.unit = unit;
 		this.name = name;
+		this.prot = prot;
 		this.itmLen = itmLen;
 		this.recLen = recLen;
-		this.recBlk = recblk;
-		this.blkLen = recLen * recblk;
+		this.recBlk = recBlk;
+		this.recTrk = recTrk;
+		this.blkLen = recLen * recBlk;
 		tlrBuf = new BufferMemory(6);
 		curOff = -1;
 		blkCyl = -1;
@@ -87,6 +91,14 @@ public class SequentialFile implements DiskFile {
 		blkRec = -1;
 		put = false;
 		eof = false;
+	}
+
+	// Create a R/O clone of this file.
+	public DiskFile dup() {
+		SequentialFile dup = new SequentialFile(dsk, unit, name, true,
+				null, 0, itmLen, recLen, recTrk, recBlk,
+				units);
+		return dup;
 	}
 
 	public int getError() {
@@ -355,6 +367,10 @@ public class SequentialFile implements DiskFile {
 	}
 
 	public boolean repItem(CoreMemory itm, int adr) {
+		if (prot) {
+			error = 00502; // Not really device protection...
+			return false;
+		}
 		if (curOff < 0 || eof) {
 			return false;
 		}
@@ -364,6 +380,10 @@ public class SequentialFile implements DiskFile {
 	}
 
 	public boolean putItem(CoreMemory itm, int adr) {
+		if (prot) {
+			error = 00502; // Not really device protection...
+			return false;
+		}
 		// Techically, we don't need to read block first,
 		// But this way we catch physical end of file...
 		if (!cacheNextItem()) {
