@@ -156,6 +156,7 @@ public class P_Disk extends JFrame
 	long track_pos;
 	boolean track_dirty;
 
+	int pUnit;
 	int vUnit;
 	int vCyl;
 	int vTrk;
@@ -879,7 +880,7 @@ public class P_Disk extends JFrame
 				break;
 			}
 			// device busy...
-			unit = rwc.c3 & 007;
+			unit = pUnit = rwc.c3 & 007;
 			if (sts[unit].busy) {
 				branch = true;
 			}
@@ -1041,18 +1042,18 @@ public class P_Disk extends JFrame
 		setVisible(false);
 	}
 
-	public boolean begin(int unit) {
+	public boolean begin(int lun) {
 		errno = 0;
 		// TODO: mutex with PDT/PCB...
-		if (unit < 0 || unit > sts.length) {
+		if (lun < 0 || lun > sts.length) {
 			errno = 00501; // device inoperable
 			return false;
 		}
-		if (sts[unit].dev == null) {
+		if (sts[lun].dev == null) {
 			errno = 00501; // "device inoperable" (No disk pack)
 			return false;
 		}
-		vUnit = unit;
+		unit = vUnit = lun;
 		vOK = false;
 		return true;
 	}
@@ -1102,11 +1103,11 @@ public class P_Disk extends JFrame
 			errno = 00505;  // Record not found
 			return false;
 		}
-		if ((sts[vUnit].flag & PERMIT_DAT) == 0) {
+		if ((sts[unit].flag & PERMIT_DAT) == 0) {
 			errno = 00502;	// Protection violation (DATA)
 			return false;
 		}
-		int f = sts[vUnit].flag ^ PERMIT_AB;	// invert A/B bits
+		int f = sts[unit].flag ^ PERMIT_AB;	// invert A/B bits
 		f &= curr_flg;	// mask NOT A/B bits
 		if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
 			errno = 00502;	// Protection violation (A/B)
@@ -1135,7 +1136,7 @@ public class P_Disk extends JFrame
 			errno = 00503; // device error
 			return false;
 		}
-		if ((sts[vUnit].flag & PERMIT_FMT) == 0) {
+		if ((sts[unit].flag & PERMIT_FMT) == 0) {
 			errno = 00502;	// Protection violation (FORMAT)
 			return false;
 		}
@@ -1172,6 +1173,7 @@ public class P_Disk extends JFrame
 	public void end() {
 		cacheTrack(-1, -1);
 		vOK = false;
+		unit = pUnit;
 	}
 	public int numRecords(int recLen) {
 		// On a real disk, assume 10 chars per IRG.

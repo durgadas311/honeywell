@@ -799,7 +799,7 @@ public class HW2000 implements CoreMemory
 					if (fp != null) {
 						fp.setProgram(true);
 						HW2000FrontPanel.warning(fp.getContentPane(), "Run II",
-							String.format("%07o: %s",
+							String.format("II %07o: %s",
 								oSR,
 								ie.toString()));
 					} else {
@@ -817,7 +817,7 @@ public class HW2000 implements CoreMemory
 					if (fp != null) {
 						fp.setProgram(true);
 						HW2000FrontPanel.warning(fp.getContentPane(), "Run EI",
-							String.format("%07o: %s",
+							String.format("EI %07o: %s",
 								oSR,
 								ee.toString()));
 					} else {
@@ -829,7 +829,7 @@ public class HW2000 implements CoreMemory
 				if (fp != null) {
 					fp.setProgram(true);
 					HW2000FrontPanel.warning(fp.getContentPane(), "Run Fault",
-						String.format("%07o: %s",
+						String.format("Fault %07o: %s",
 								oSR,
 								fe.toString()));
 				} else {

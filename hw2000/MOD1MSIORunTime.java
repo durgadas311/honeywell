@@ -77,41 +77,49 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		if (sys.fp != null) {
 			sys.fp.setActive(true);
 		}
-		if (sys.SR == base + 1) {
-			// Return from EXIT callback...
-			sys.SR = exitSR;
-			if (xitRes > 0) {
-				xitAct = sys.readChar(xitRes);
-			}
-			op = xitOp;
-		} else {
-			// Need parameters to decode call
-			sys.SR = sys.BAR;
-			// RM single char is end, rest are addresses.
-			while ((sys.rawReadMem(sys.SR) & 0300) != 0300) {
-				if (nparms >= parms.length) {
-					// halt? panic?
-					sys.halt = true;
-					sys.SR = sys.BAR; // guess
-					return true;
+		try {
+			if (sys.SR == base + 1) {
+				// Return from EXIT callback...
+				sys.SR = exitSR;
+				if (xitRes > 0) {
+					xitAct = sys.readChar(xitRes);
 				}
-				parms[nparms++] = getAdr();
+				op = xitOp;
+			} else {
+				// Need parameters to decode call
+				sys.SR = sys.BAR;
+				// RM single char is end, rest are addresses.
+				while ((sys.rawReadMem(sys.SR) & 0300) != 0300) {
+					if (nparms >= parms.length) {
+						// halt? panic?
+						sys.halt = true;
+						sys.SR = sys.BAR; // guess
+						System.err.format("runaway params %07o\n",
+								sys.SR);
+						return true;
+					}
+					parms[nparms++] = getAdr();
+				}
+				op = sys.rawReadMem(sys.SR++) & 077;
+				exitSR = sys.SR;
+				xitOp = op;
 			}
-			op = sys.rawReadMem(sys.SR++) & 077;
-			exitSR = sys.SR;
-			xitOp = op;
-		}
-		switch (op) {
-		case 4:	msopen(); break; // MSOPEN
-		case 5:	msclos(); break; // MSCLOS
-		case 6:	msget(); break; // MSGET
-		case 7:	msrep(); break; // MSREP
-		case 8:	msput(); break; // MSPUT
-		default:
-			System.err.format("invalid op %02o\n", op);
-			sys.halt = true;
-			exit();	// too draconian?
-			break;
+			switch (op) {
+			case 4:	msopen(); break; // MSOPEN
+			case 5:	msclos(); break; // MSCLOS
+			case 6:	msget(); break; // MSGET
+			case 7:	msrep(); break; // MSREP
+			case 8:	msput(); break; // MSPUT
+			default:
+				System.err.format("invalid op %02o\n", op);
+				sys.halt = true;
+				exit();	// too draconian?
+				break;
+			}
+		} finally {
+			if (sys.fp != null) {
+				sys.fp.setActive(false);
+			}
 		}
 		return true;
 	}
@@ -369,8 +377,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		RandomRecordIO dsk = (RandomRecordIO)p;
 		mca.vol = new DiskVolume(dsk, mca.dd);
 		if (!mca.vol.mount()) {
-			mca.vol = null;
 			setupExit(mca.vol.getError());
+			mca.vol = null;
 			return false;
 		}
 		sys.copyIn(mca.vnmAdr, mca.vol.getName(), 0, 6);
