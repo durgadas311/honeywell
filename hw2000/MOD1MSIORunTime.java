@@ -7,12 +7,14 @@ import java.util.Vector;
 public class MOD1MSIORunTime implements HW2000Trap {
 	static final String name = "MOD1MSIO";
 	private int base = 0;
+	private int vbuf = 0;
 	private int[] parms;
 	private int nparms;
 
 	private HW2000 sys;
 
 	class MCA {
+		public int adr;		// address of MCA in program
 		public byte[] name;	// file name
 		public int mode;	// 1=IN, 2=OUT, 3=IN/OUT
 		public int result;	// address of result char
@@ -22,6 +24,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		public int xitDir;	// directory exit routine
 		public int xitDat;	// data exit routine
 		public int xitDev;	// device exit routine
+		public int apdAdr;	// address of DSA for APD
 		public int cadAdr;	// actual disk address current I/O
 		public int ricAdr;	// disk address last item retrieved
 		public int vnmAdr;	// volume name
@@ -47,18 +50,22 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	private int xitErr;	// original error code if in EXIT
 	private int xitAct;	// user action code if in EXIT
 
+	P_Console cons;
+
 	public MOD1MSIORunTime(HW2000 sys) {
 		this.sys = sys;
 		parms = new int[6];
 		mcas = new HashMap<Integer, MCA>();
+		cons = (P_Console)sys.pdc.getPeriph(PeriphDecode.P_CO);
 		reinit();
 	}
 
 	public void reinit() {
+		endProg(); // in case previous run was unclean
 		sys.SR += name.length();
 		base = getAdr();
+		vbuf = getAdr();
 		setupCA();
-		mcas.clear();
 	}
 
 	public String getName() { return name; }
@@ -147,6 +154,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			// TODO: trigger exception?
 			System.err.format("Invalid supervisor call from %07o\n", sys.BAR);
 		}
+		endProg();
 		sys.SR = sys.BAR;
 		sys.halt = true;
 	}
@@ -162,15 +170,15 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	// TODO: exit may be error or informative.
 	// Need to handle no-exit case appropriately.
-	private void setupExit(int xiterr) {
-		xitErr = xiterr & 077;
+	private boolean setupExit(int xiterr) {
+		xitErr = xiterr;
 		int xit = 0;
 		switch ((xiterr >> 6) & 077) {
 		case 0:	
 			// can't exit - what to do?
 			System.err.format("Untrapped error %d\n", xiterr);
 			sys.halt = true;
-			return;
+			return false;
 		case 1:
 			xit = xitMCA.xitDir;
 			break;
@@ -184,15 +192,40 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			break;
 		}
 		if (xit == 0) {
-			// As if caller just returned...
-			xitAct = xitErr; // right?
-			sys.SR = base + 1;
-			return;
+			return false;
 		}
 		xitRes = xit - 1;
 		putChar(xitRes, xitErr);
 		sys.BAR = base + 1;
 		sys.SR = xit;
+		return true;
+	}
+
+	// Fatal conditions, unless handled by program
+	private void handleError(int err) {
+		if (setupExit(err)) {
+			return;
+		}
+		haltErr(err);
+	}
+
+	private void haltErr(int err) {
+		// TODO: consult console mode...
+		cons.output(FileVolSupport.errmsg.get(err) + '\n');
+		sys.AAR = err;
+		sys.halt = true;
+	}
+
+	private void endProg() {
+		xitMCA = null;
+		for (MCA mca : mcas.values()) {
+			if (mca.file != null) {
+				mca.file.close();
+				mca.file = null;
+			}
+		}
+		mcas.clear();
+		// TODO: any other cleanup?
 	}
 
 	// Doesn't check IM...
@@ -333,6 +366,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			return;
 		}
 		MCA mca = new MCA();
+		mca.adr = adr;
 		int a = adr;
 		getChars(a, mca.name);
 		a += mca.name.length;
@@ -353,6 +387,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		mca.xitDev = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
 		// could use WM to locate fields...
+		mca.apdAdr = a;
+		a += sys.am_na;
 		mca.cadAdr = a + 7; // copy R-L
 		a += 8;
 		mca.ricAdr = a + 9; // copy R-L
@@ -366,18 +402,37 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		xitMCA = mca;
 	}
 
+	// Called after resuming from EXIT
+	private void updateMCA() {
+		int a = xitMCA.adr;
+		// TODO: which fields can change?
+		a += xitMCA.name.length + 3 + sys.am_na;
+		xitMCA.buf1 = fetchAdr(a); // index/indirect allowed?
+		a += sys.am_na;
+		xitMCA.itm1 = fetchAdr(a); // index/indirect not allowed
+		a += sys.am_na;
+		// TODO: more data?
+		// Open file must be notified of buffer change...
+		if (xitMCA.file != null) {
+			// This is bad if I/O has started...
+			// Should restrict changes to Item buffer only...
+			xitMCA.file.setBuffer(sys, xitMCA.buf1);
+		}
+	}
+
 	private boolean volOpen(MCA mca) {
 		mca.pp = (mca.devtab[0] >> 12) & 077;
 		mca.dd = (mca.devtab[0] >> 6) & 077;
 		Peripheral p = sys.pdc.getPeriph((byte)mca.pp);
 		if (!(p instanceof RandomRecordIO)) {
-			setupExit(00501);
+			handleError(00501);
 			return false;
 		}
 		RandomRecordIO dsk = (RandomRecordIO)p;
+		// TODO: share volume mounts between files...
 		mca.vol = new DiskVolume(dsk, mca.dd);
 		if (!mca.vol.mount()) {
-			setupExit(mca.vol.getError());
+			handleError(mca.vol.getError());
 			mca.vol = null;
 			return false;
 		}
@@ -394,14 +449,16 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		} else {
 			// resturning from an EXIT...
 			// TODO: work out semantics...
-			if (xitAct == 040 || xitAct == xitErr) {
-				// TODO: "...or typewriter message"
-				sys.halt = true;
+			if (xitAct == 040 || xitAct == (xitErr & 077)) {
+				haltErr(xitErr);
 				return;
 			} else if (xitAct == 021) {
 				// force re-open - e.g. disk pack changed
 				xitMCA.vol = null;
 				xitMCA.file = null;
+			} else if (xitAct == 010) {
+				// continue. re-load MCA
+				updateMCA();
 			}
 		}
 		if (xitMCA.vol == null) {
@@ -412,9 +469,15 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		if (xitMCA.file == null) {
 			xitMCA.file = xitMCA.vol.openFile(xitMCA.name,
-					(xitMCA.mode < 2), sys, xitMCA.buf1);
+					(xitMCA.mode < 2), sys, xitMCA.buf1,
+					sys, vbuf);
 			if (xitMCA.file == null) {
-				setupExit(xitMCA.vol.getError());
+				handleError(xitMCA.vol.getError());
+				return;
+			}
+			// allow program to finalize MCA...
+			if (setupExit(00101)) {
+				putAdr(xitMCA.apdAdr, vbuf);
 				return;
 			}
 		}
@@ -448,11 +511,11 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		if (xitMCA.file == null) {
 			// theoretically can't happen?
 			// TODO: what is the right error/exit?
-			setupExit(00506); // Read error
+			handleError(00506); // Read error
 			return;
 		}
 		if (!xitMCA.file.getItem(sys, xitMCA.itm1)) {
-			setupExit(xitMCA.file.getError());
+			handleError(xitMCA.file.getError());
 			return;
 		}
 		int[] ctri = xitMCA.file.getAddress();
@@ -474,11 +537,11 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		if (xitMCA.file == null) {
 			// theoretically can't happen?
 			// TODO: what is the right error/exit?
-			setupExit(00506); // Read error
+			handleError(00510); // Write error
 			return;
 		}
 		if (!xitMCA.file.repItem(sys, xitMCA.itm1)) {
-			setupExit(xitMCA.file.getError());
+			handleError(xitMCA.file.getError());
 			return;
 		}
 		xitMCA = null;
@@ -497,11 +560,11 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		if (xitMCA.file == null) {
 			// theoretically can't happen?
 			// TODO: what is the right error/exit?
-			setupExit(00506); // Read error
+			handleError(00510); // Write error
 			return;
 		}
 		if (!xitMCA.file.putItem(sys, xitMCA.itm1)) {
-			setupExit(xitMCA.file.getError());
+			handleError(xitMCA.file.getError());
 			return;
 		}
 		int[] ctri = xitMCA.file.getAddress();

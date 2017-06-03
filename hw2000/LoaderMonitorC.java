@@ -34,6 +34,7 @@ public class LoaderMonitorC implements HW2000Trap {
 	public void done() {
 		// cleanup only
 	}
+	public void reinit() {}
 
 	private void putAdr(int a, int v, int n) {
 		// TODO: use sys.addrMode() ?

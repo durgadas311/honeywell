@@ -3,6 +3,9 @@
 import java.util.Arrays;
 
 public class DiskVolume {
+	public static final int namesItmLen = 30;
+	public static final int descrItmLen = 100;
+	public static final int allocItmLen = 20;
 	public static final byte[] _1VOL = new byte[]{ 001, 065, 046, 043, 015}; // 1VOL_
 	public static final byte[] _EOD_ = new byte[]{ 076, 025, 046, 024, 077}; // [EOD^
 	public static final byte[] VOLNAMES = new byte[]
@@ -127,7 +130,7 @@ public class DiskVolume {
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
 		return new SequentialFile(dsk, unit, VOLNAMES, prot,
-					30, def_reclen, recTrk, 3,
+					namesItmLen, def_reclen, recTrk, 3,
 					cyl, trk, cyl, trk + 0);
 	}
 
@@ -143,7 +146,7 @@ public class DiskVolume {
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
 		return new SequentialFile(dsk, unit, VOLDESCR, prot,
-					100, def_reclen, recTrk, 2,
+					descrItmLen, def_reclen, recTrk, 2,
 					cyl, trk, cyl, trk + 2);
 	}
 
@@ -159,7 +162,7 @@ public class DiskVolume {
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
 		return new SequentialFile(dsk, unit, VOLALLOC, prot,
-					20, def_reclen, recTrk, 2,
+					allocItmLen, def_reclen, recTrk, 2,
 					cyl, trk, cyl, trk + 2);
 	}
 
@@ -177,39 +180,51 @@ public class DiskVolume {
 	// TODO: Support access to *VOLNAMES*, etc., here?
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
 	public DiskFile openFile(byte[] name, boolean prot) {
-		return openFile(name, prot, null, 0);
+		return openFile(name, prot, null, 0, null, 0);
 	}
 	public DiskFile openFile(byte[] name, boolean prot,
-				CoreMemory blkBuf, int blkBufAdr) {
+				CoreMemory blkBuf, int blkBufAdr,
+				CoreMemory dscBuf, int dscBufAdr) {
 		// Special-case system files - only allow R/O
 		if (compare(VOLNAMES, name)) {
+			// TODO: fake entry in dscBuf
 			return volNames.dup();
 		}
 		if (compare(VOLDESCR, name)) {
+			// TODO: fake entry in dscBuf
 			return volDescr.dup();
 		}
 		if (compare(VOLALLOC, name)) {
+			// TODO: fake entry in dscBuf
 			return volAlloc.dup();
 		}
 		CoreMemory nItm = new BufferMemory(volNames.itemLen());
 		volNames.rewind();
 		while (true) {
 			if (!volNames.getItem(nItm, 0)) {
-				error = volNames.getError();
-				return null;	// error
+				if (volNames.isEOF()) {
+					error = 00103;	// No file
+				} else {
+					error = volNames.getError();
+				}
+				return null;
 			}
 			if (nItm.readChar(0) == 077) {
 				continue;
-			}
-			if (compare(_EOD_, nItm, 0)) {
-				error = 00103;	// No file
-				return null;	// not found
 			}
 			if (compare(name, nItm, 0)) {
 				break;
 			}
 		}
-		CoreMemory dItm = new BufferMemory(volDescr.itemLen());
+		CoreMemory dItm;
+		int dAdr;
+		if (dscBuf != null) {
+			dItm = dscBuf;
+			dAdr = dscBufAdr;
+		} else {
+			dItm = new BufferMemory(volDescr.itemLen());
+			dAdr = 0;
+		}
 		CoreMemory aItm = new BufferMemory(volAlloc.itemLen());
 		// TODO: volume sequence number, etc.
 		int[] ctri = getSome(nItm, 14, 4);
@@ -218,12 +233,12 @@ public class DiskVolume {
 			error = volDescr.getError();
 			return null;
 		}
-		if (!volDescr.getItem(dItm, 0)) {
+		if (!volDescr.getItem(dItm, dAdr)) {
 			error = volDescr.getError();
 			return null;
 		}
-		int type = dItm.readChar(0);
-		int[] desc = getSome(dItm, 1, 5);
+		int type = dItm.readChar(dAdr);
+		int[] desc = getSome(dItm, dAdr + 1, 5);
 		// TODO: overflow, etc.
 		DiskUnit[] units = new DiskUnit[6];
 		ctri = getSome(nItm, 22, 4);

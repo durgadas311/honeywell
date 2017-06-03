@@ -48,14 +48,11 @@ simplified for clarity.
 00060*
 00070L        MIOC  A
 00080*
-00090C F1     MCA   A,
-00100C        10    RECD2,DEVTAB,MOVE,RECD1
+00090C F1     MCA   A,DEVTAB
+00100C        10    RECD2,,MOVE,RECD1
 00110C        20    MYFILE01,
 00120C        31    00,
-00130C        40    ERROR,
-00140C        43    DEXIT,
-00150L        44    ERROR,
-00160* ALL EXITS ARE TERMINAL, NEVER RETURN TO MIOC
+00140L        43    DEXIT,
 00170*
 00180  START  CAM   60
 00190L        MSOPENF1,IN
@@ -69,17 +66,13 @@ simplified for clarity.
 00270         PCB   *,10,02,00
 00280         B     (164)             MOD1 PROGRAM EXIT
 00290*
-00300  DEXITC DCW   #1B0
-00310  DEXIT  SCR   ENDR,70
-00320         BCE   DONE,DEXITC,01    EOF IS SOFT ERROR
-00330         B     86                REST ARE FATAL
-00340*
-00350  ERRORC DCW   #1B0
-00360  ERROR  SCR   ENDR,70
-00370         B     86                ALL ARE FATAL
-00380*
-00390  ENDR   DSA   0
-00400*
+00300  ABORT  DCW   #1C40
+00310  DEXITC DCW   #1B0
+00320  DEXIT  SCR   DXITZ,70
+00330         BCE   DONE,DEXITC,01    EOF IS SOFT ERROR
+00340         EXM   ABORT,VEXITC,01   ANYTHING ELSE FATAL
+00350   DXITZ B     0
+00360*
 00410  DEVTAB RESV  0
 00420         DCW   #3C040000         PCU, LUN, 00
 00430 L       DCW   #1B0
@@ -97,7 +90,8 @@ simplified for clarity.
 00550         END   START
 </PRE></UL>
 
-<P>At card (line) 00050 is the modern extension to EasyCoder to load a macro library.
+<P>At card (line) 00050 is the modern (non-standard) extension
+to EasyCoder to load a macro library.
 <P>At line 00070 is the initialization of MIOC, declaring instance "A".
 Note that, in this implementation, all of MIOC/MPIOC is in a virtual runtime and
 thus consumes no extra program memory, making most parameters to MIOC irrelevant.
@@ -105,7 +99,7 @@ thus consumes no extra program memory, making most parameters to MIOC irrelevant
 <P>At line 00190 the file is opened for input-only. Note, any failures at this point
 cause an EXIT call which is fatal/terminal.
 <P>At line 00200 one item is read from the file. Note, a Data EXIT for EOF
-will cause a graceful end to the program, checked on line 00320.
+will cause a graceful end to the program, checked on line 00330.
 <P>In the case of a graceful end, the file is closed on line 00250.
 
 </BODY>

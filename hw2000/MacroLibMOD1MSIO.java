@@ -73,9 +73,14 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			if (assemble(' ', "", "B", "0-1") < 0) break;
 			if (assemble(' ', "", "DCW",
 					"@" + MOD1MSIORunTime.name() + "@") < 0) break;
-			if (assemble('R', "", "DSA", "$MIOC") < 0) break;
+			if (assemble(' ', "", "DSA", "$MIOC") < 0) break;
+			if (assemble('R', "", "DSA", "$VBUF") < 0) break;
 			if (assemble(' ', "", "BS", "$MINIT") < 0) break;
 			if (assemble(' ', " $MIOCZ", "B", "0") < 0) break;
+			if (assemble(' ', "", "NOP","") < 0) break;
+			if (assemble(' ', " $VBUF", "RESV,",
+				String.format("%d", DiskVolume.descrItmLen)) < 0) break;
+			if (assemble('R', "", "DCW", "#1A") < 0) break;
 			ret = 0;
 			break;
 		case 2:	// MPIOC - TBD
@@ -106,6 +111,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			// [41] reserved
 			if (assemble(' ', "", "DSA", defParm(parms, 42, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 43, "0")) < 0) break;
+			if (assemble(' ', "APD" + tag, "DSA", "0") < 0) break;
 			if (assemble(' ', "CAD" + tag, "DCW", "#8B0") < 0) break;
 			if (assemble(' ', "RIC" + tag, "DCW", "#10B0") < 0) break;
 			if (assemble(' ', "VNM" + tag, "DCW", "#6A") < 0) break;
