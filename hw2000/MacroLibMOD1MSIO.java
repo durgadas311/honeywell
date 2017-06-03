@@ -25,6 +25,8 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		cmds.put("MSGET", 6);
 		cmds.put("MSREP", 7);
 		cmds.put("MSPUT", 8);
+		cmds.put("MUCA", 20);
+		cmds.put("MLCA", 21);
 	}
 
 	public MacroLibMOD1MSIO(Assembler asm) {
@@ -53,6 +55,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		int np = parms.length;
 		int ret = -1;
 		int mode = 0; // not MSOPEN
+		int x;
 		String mca;
 		switch (cmd) {
 		case 0:
@@ -87,21 +90,56 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			// requires tag - file tag prefix, and parms[0] - MIOC char
 			mca = "MCA" + tag;
 			if (assemble(' ', mca, "RESV", "0") < 0) break;
-			if (assemble(' ', "", "DCW", "#10A" + parms[19]) < 0) break;
+			if (assemble(' ', "FID" + tag, "DCW", "#10A" + parms[19]) < 0) break;
 			if (assemble(' ', "", "DCW", "#1B0") < 0) break;  // result code
 			if (assemble(' ', "", "DCW", "#1A" + parms[0]) < 0) break;
 			if (assemble(' ', "", "DCW",
 					"#1C" + defParm(parms, 30, "00")) < 0) break;
-			if (assemble(' ', "", "DSA", defParm(parms, 10, "0")) < 0) break;
-			if (assemble(' ', "", "DSA", defParm(parms, 9, "0")) < 0) break;
+			if (assemble(' ', "", "DSA", defParm(parms, 1, "0")) < 0) break;
+			if (assemble(' ', "PBL" + tag, "DSA",
+						defParm(parms, 9, "0")) < 0) break;
 			// TODO: alternate buffer?
-			if (assemble(' ', "", "DSA", defParm(parms, 12, "0")) < 0) break;
+			if (assemble(' ', "CBL" + tag, "DSA",
+						defParm(parms, 12, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 39, "0")) < 0) break;
 			// [40] index exit
 			// [41] reserved
 			if (assemble(' ', "", "DSA", defParm(parms, 42, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 43, "0")) < 0) break;
+			if (assemble(' ', "CAD" + tag, "DCW", "#8B0") < 0) break;
+			if (assemble(' ', "RIC" + tag, "DCW", "#10B0") < 0) break;
+			if (assemble(' ', "VNM" + tag, "DCW", "#6A") < 0) break;
+			if (assemble(' ', "VSN" + tag, "DCW", "#6A") < 0) break;
 			// TODO: terminate structure?
+			ret = 0;
+			break;
+		case 20: // MUCA
+			if (np < 3 || (np & 1) == 0) {
+				asm.errsAdd("Missing required MUCA parameters");
+				break;
+			}
+			for (x = 1; x < np; x += 2) {
+				if (assemble(' ', tag, "EXM", parms[x + 1] + parms[0] +
+						"," + parms[x] + ",21") < 0) break;
+			}
+			if (x < np) {
+				break;
+			}
+			ret = 0;
+			break;
+		case 21: // MLCA
+			if (np < 3 || (np & 1) == 0) {
+				asm.errsAdd("Missing required MLCA parameters");
+				break;
+			}
+			// TODO: check for valid fields
+			for (x = 1; x < np; x += 2) {
+				if (assemble(' ', tag, "EXM", parms[x] + "," +
+					parms[x + 1] + parms[0] + ",21") < 0) break;
+			}
+			if (x < np) {
+				break;
+			}
 			ret = 0;
 			break;
 		case 4: // MSOPEN special handling

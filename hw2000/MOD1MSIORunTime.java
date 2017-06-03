@@ -22,7 +22,13 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		public int xitDir;	// directory exit routine
 		public int xitDat;	// data exit routine
 		public int xitDev;	// device exit routine
+		public int cadAdr;	// actual disk address current I/O
+		public int ricAdr;	// disk address last item retrieved
+		public int vnmAdr;	// volume name
+		public int vsnAdr;	// volume serial number
 		public int[] devtab;
+		public int dd;	// current disk unit
+		public int pp;	// current disk pack (always 0)
 		public DiskVolume vol;
 		public DiskFile file;
 
@@ -251,6 +257,33 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		return i;
 	}
 
+	// DPCCTTRRII... ('P' always 0)
+	// Works backward until WM...
+	private void putDskAdr(int a, int d, int p, int[] ctri, int num) {
+		byte b;
+		int i = num - 1;
+		for (int x = 0; a - x >= 0; ++x) {
+			b = (byte)(sys.rawReadMem(a - x) & ~077);
+			if ((x & 1) == 0) {
+				if (i >= 0) {
+					b |= (byte)(ctri[i] & 077);
+				} else {
+					b |= (byte)p;
+				}
+			} else {
+				if (i >= 0) {
+					b |= (byte)((ctri[i--] >> 6) & 077);
+				} else {
+					b |= (byte)d;
+				}
+			}
+			sys.rawWriteMem(a - x, b);
+			if ((b & 0100) != 0) {
+				break;
+			}
+		}
+	}
+
 	private void getChars(int a, byte[] out) {
 		int n = out.length;
 		// TODO: check WM?
@@ -311,26 +344,37 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		a += sys.am_na;
 		mca.xitDev = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
+		// could use WM to locate fields...
+		mca.cadAdr = a + 7; // copy R-L
+		a += 8;
+		mca.ricAdr = a + 9; // copy R-L
+		a += 10;
+		mca.vnmAdr = a; // copy L-R
+		a += 6;
+		mca.vsnAdr = a; // copy L-R
+		a += 6;
 		// TODO: more data?
 		mcas.put(adr, mca);
 		xitMCA = mca;
 	}
 
 	private boolean volOpen(MCA mca) {
-		int pp = (mca.devtab[0] >> 12) & 077;
-		int dd = (mca.devtab[0] >> 6) & 077;
-		Peripheral p = sys.pdc.getPeriph((byte)pp);
+		mca.pp = (mca.devtab[0] >> 12) & 077;
+		mca.dd = (mca.devtab[0] >> 6) & 077;
+		Peripheral p = sys.pdc.getPeriph((byte)mca.pp);
 		if (!(p instanceof RandomRecordIO)) {
 			setupExit(00501);
 			return false;
 		}
 		RandomRecordIO dsk = (RandomRecordIO)p;
-		mca.vol = new DiskVolume(dsk, dd);
+		mca.vol = new DiskVolume(dsk, mca.dd);
 		if (!mca.vol.mount()) {
 			mca.vol = null;
 			setupExit(mca.vol.getError());
 			return false;
 		}
+		sys.copyIn(mca.vnmAdr, mca.vol.getName(), 0, 6);
+		sys.copyIn(mca.vsnAdr, mca.vol.getSerial(), 0, 6);
 		return true;
 	}
 
@@ -403,6 +447,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			setupExit(xitMCA.file.getError());
 			return;
 		}
+		int[] ctri = xitMCA.file.getAddress();
+		putDskAdr(xitMCA.ricAdr, xitMCA.dd, 0, ctri, 4);
+		putDskAdr(xitMCA.cadAdr, xitMCA.dd, 0, ctri, 3);
 		xitMCA = null;
 	}
 
@@ -449,6 +496,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			setupExit(xitMCA.file.getError());
 			return;
 		}
+		int[] ctri = xitMCA.file.getAddress();
+		putDskAdr(xitMCA.cadAdr, xitMCA.dd, 0, ctri, 3);
 		xitMCA = null;
 	}
 }
