@@ -187,15 +187,21 @@ public class DiskVolume {
 				CoreMemory dscBuf, int dscBufAdr) {
 		// Special-case system files - only allow R/O
 		if (compare(VOLNAMES, name)) {
-			// TODO: fake entry in dscBuf
+			if (dscBuf != null) {
+				volNames.setDescr(dscBuf, dscBufAdr);
+			}
 			return volNames.dup();
 		}
 		if (compare(VOLDESCR, name)) {
-			// TODO: fake entry in dscBuf
+			if (dscBuf != null) {
+				volDescr.setDescr(dscBuf, dscBufAdr);
+			}
 			return volDescr.dup();
 		}
 		if (compare(VOLALLOC, name)) {
-			// TODO: fake entry in dscBuf
+			if (dscBuf != null) {
+				volAlloc.setDescr(dscBuf, dscBufAdr);
+			}
 			return volAlloc.dup();
 		}
 		CoreMemory nItm = new BufferMemory(volNames.itemLen());
@@ -301,7 +307,7 @@ public class DiskVolume {
 			buf.writeChar(z++, (byte)ints[x]);
 		}
 	}
-	public void putOne(int val, CoreMemory buf, int start) {
+	static public void putOne(int val, CoreMemory buf, int start) {
 		int z = start;
 		buf.writeChar(z++, (byte)(val >> 6));
 		buf.writeChar(z++, (byte)val);

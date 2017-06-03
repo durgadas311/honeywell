@@ -8,6 +8,7 @@ public interface DiskFile {
 	boolean close();
 	// Non-standard: (Not part of MOD1 i/f)
 	void setBuffer(CoreMemory blkBuf, int blkAdr);
+	void setDescr(CoreMemory dscBuf, int dscAdr);
 	DiskFile dup();	// R/O clone
 	byte[] getName();
 	int getError();

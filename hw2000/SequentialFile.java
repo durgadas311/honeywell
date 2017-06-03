@@ -98,6 +98,18 @@ public class SequentialFile implements DiskFile {
 		eof = false;
 	}
 
+	// Setup a *VOLDESCR* item based on this file
+	public void setDescr(CoreMemory dscBuf, int dscAdr) {
+		dscBuf.zero(dscAdr + 0, DiskVolume.descrItmLen); // clean slate
+		dscBuf.rawWriteMem(dscAdr + 0, (byte)001); // type = Sequential
+		DiskVolume.putOne(itmLen, dscBuf, dscAdr + 1);
+		DiskVolume.putOne(recLen, dscBuf, dscAdr + 3);
+		DiskVolume.putOne(blkLen / itmLen, dscBuf, dscAdr + 5);
+		DiskVolume.putOne(recBlk, dscBuf, dscAdr + 7);
+		DiskVolume.putOne(recTrk, dscBuf, dscAdr + 9);
+		// TODO: populate other fields...
+	}
+
 	// Create a R/O clone of this file.
 	public DiskFile dup() {
 		SequentialFile dup = new SequentialFile(dsk, unit, name, true,
