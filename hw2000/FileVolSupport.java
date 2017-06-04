@@ -20,14 +20,15 @@ public class FileVolSupport {
 		errmsg.put(00002, "Allocation conflict");
 		errmsg.put(00003, "File exists");
 		errmsg.put(00004, "Track overflow");
-		errmsg.put(00101, "OPEN CALLOUT");
+		errmsg.put(00005, "Invalid operation");
+		errmsg.put(00101, "OPEN CALLOUT 1");
 		errmsg.put(00103, "No File");
 		errmsg.put(00104, "Allocation Table overflow");
 		errmsg.put(00105, "*VOLALLOC* corrupt");
 		errmsg.put(00111, "CLOSE CALLOUT");
 		errmsg.put(00113, "Out of Sequence");
 		errmsg.put(00114, "Password incorrect");
-		errmsg.put(00121, "VOL2 CALLOUT");
+		errmsg.put(00121, "OPEN CALLOUT 2");
 		errmsg.put(00123, "File type unknown");
 		errmsg.put(00124, "Password required");
 		errmsg.put(00133, "No More Volumes");
@@ -42,7 +43,7 @@ public class FileVolSupport {
 		errmsg.put(00401, "MSGET End of file");
 		errmsg.put(00411, "MSPUT No space");
 		errmsg.put(00412, "MSINS CALLOUT 1");
-		errmsg.put(00422, "MSINS CALLOUT 1");
+		errmsg.put(00422, "MSINS CALLOUT 2");
 		errmsg.put(00434, "SETM No space");
 		errmsg.put(00403, "MSGET Key not found");
 		errmsg.put(00413, "MSINS No space");

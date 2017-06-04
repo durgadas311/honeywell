@@ -298,7 +298,7 @@ public class DiskVolume {
 	}
 
 	// Get one or more 2-char integers from a buffer.
-	public int[] getSome(CoreMemory buf, int start, int num) {
+	static public int[] getSome(CoreMemory buf, int start, int num) {
 		int z = start;
 		int[] ints = new int[num];
 		for (int x = 0; x < num; ++x) {
@@ -309,7 +309,7 @@ public class DiskVolume {
 	}
 
 	// Put one or more 2-char integers into a buffer.
-	public void putSome(int[] ints, CoreMemory buf, int start) {
+	static public void putSome(int[] ints, CoreMemory buf, int start) {
 		int z = start;
 		for (int x = 0; x < ints.length; ++x) {
 			buf.writeChar(z++, (byte)(ints[x] >> 6));

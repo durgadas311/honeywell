@@ -429,7 +429,7 @@ public class SequentialFile implements DiskFile {
 		if (!sync()) {
 			ret = false;
 		}
-		rewind(); // not needed?
+		// must leave address pointing to last item
 		return ret;
 	}
 
