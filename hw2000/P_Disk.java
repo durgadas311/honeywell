@@ -55,6 +55,8 @@ public class P_Disk extends JFrame
 	static final byte PERMIT_AB = (byte)(PERMIT_A | PERMIT_B);
 	static final byte HDR_BAD = (byte)020;		// Record header only
 	static final byte HDR_TLR = (byte)040;		// Record header only
+	static final byte HDR_USER = (HDR_TLR | PERMIT_AB | PERMIT_DAT | PERMIT_FMT);
+	static final byte HDR_FORMAT = (HDR_TLR | PERMIT_AB);
 
 	// Based on Model 278 drives:
 	static final int num_trk = 20;
@@ -116,7 +118,6 @@ public class P_Disk extends JFrame
 	}
 
 	// These are all stored by io() and used during run()...
-	int unit = 0; // this would help BOOTSTRAP
 	boolean busy;
 	boolean fmt_allow = false; // switch setting, per drive?
 	boolean format = false;
@@ -135,9 +136,22 @@ public class P_Disk extends JFrame
 	boolean isOn = false;
 
 	// The address register:
-	int adr_cyl;
-	int adr_trk;
-	int adr_rec;
+	// According to MOD1 MSR documents (MPIOC) the "control unit
+	// address register" contains: the device number, disk pack number,
+	// cylinder, track, record, and protection bits. This is represented
+	// in 10 characters in memory, implying that the transfer to/from
+	// also involves 10 characters. There is also reason to suspect
+	// data-length is also there, it is needed for formatting and is
+	// peritinent data otherwise. This makes the total structure 12 chars.
+	// adr_rec will be incremented for !INITIAL format writes, similar
+	// to "search...next" and "extended" operations.
+	// ISSUES: EXTENDED formatting operations - details of data blocking.
+	int adr_lun;	// DP, P (pack) not used (?)
+	int adr_cyl;	// CC
+	int adr_trk;	// TT
+	int adr_rec;	// RR
+	int adr_prt;	// 0 ; [TLR] [B] [A] [DAT] [FMT*] PERMIT bits
+	int adr_len;	// DL
 	// Current head position:
 	int curr_pos;
 	int curr_end; // points to end of data, after searchData()
@@ -158,9 +172,6 @@ public class P_Disk extends JFrame
 
 	int pUnit;
 	int vUnit;
-	int vCyl;
-	int vTrk;
-	int vRec;
 	int vLen;
 	boolean vOK;
 
@@ -244,7 +255,12 @@ public class P_Disk extends JFrame
 
 	public void reset() {
 		cacheTrack(-1, -1);
-		unit = 0;
+		pUnit = adr_lun = 0;
+		adr_cyl = 0;
+		adr_trk = 0;
+		adr_rec = 0;
+		adr_prt = 0;
+		adr_len = 0;
 	}
 
 	public void setInterrupt(HW2000 sys) {
@@ -266,7 +282,7 @@ public class P_Disk extends JFrame
 
 	private boolean cacheTrack(int cyl, int trk) {
 		if (track_unit >= 0 && track_cyl >= 0 && track_trk >= 0 &&
-		    track_unit == unit && track_cyl == cyl && track_trk == trk) {
+		    track_unit == adr_lun && track_cyl == cyl && track_trk == trk) {
 			return true;
 		}
 		if (track_dirty && sts[track_unit].dev != null) {
@@ -284,11 +300,11 @@ public class P_Disk extends JFrame
 			return true;
 		}
 		int n = -1;
-		if (sts[unit].dev != null) {
+		if (sts[adr_lun].dev != null) {
 			try {
 				track_pos = (cyl * cyl_len) + (trk * trk_len);
-				sts[unit].dev.seek(track_pos);
-				n = sts[unit].dev.read(track);
+				sts[adr_lun].dev.seek(track_pos);
+				n = sts[adr_lun].dev.read(track);
 				if (n <= 0) {
 					n = track.length;
 					Arrays.fill(track, (byte)0);
@@ -301,9 +317,9 @@ public class P_Disk extends JFrame
 			error = true;
 			return false;
 		}
-		sts[unit].cyl = cyl;
-		sts[unit].cyl_pn.setText(String.format("%03d-%02d", cyl, trk));
-		track_unit = unit;
+		sts[adr_lun].cyl = cyl;
+		sts[adr_lun].cyl_pn.setText(String.format("%03d-%02d", cyl, trk));
+		track_unit = adr_lun;
 		track_cyl = cyl;
 		track_trk = trk;
 		curr_pos = 0;
@@ -325,16 +341,14 @@ public class P_Disk extends JFrame
 		curr_len |= (track[p++] & 077);
 	}
 
-	// This only loads the "address register", does no formatting to disk.
-	// This is only used in the FORMAT WRITE path.
-	private void getHeaderMem(RWChannel rwc) {
-		int a = rwc.getCLC() + 1; // CLC points to FLAG...
-		adr_cyl = (rwc.sys.rawReadMem(a++) & 077) << 6;
-		adr_cyl |= (rwc.sys.rawReadMem(a++) & 077);
-		adr_trk = (rwc.sys.rawReadMem(a++) & 077) << 6;
-		adr_trk |= (rwc.sys.rawReadMem(a++) & 077);
-		adr_rec = (rwc.sys.rawReadMem(a++) & 077) << 6;
-		adr_rec |= (rwc.sys.rawReadMem(a++) & 077);
+	// Copy current header data into address register.
+	// Used only by format read.
+	private void getAddressReg() {
+		adr_prt = curr_flg;	// strip some flags?
+		adr_cyl = curr_cyl;
+		adr_trk = curr_trk;
+		adr_rec = curr_rec;
+		adr_len = curr_len;
 	}
 
 	private boolean searchHeader() {
@@ -407,39 +421,41 @@ public class P_Disk extends JFrame
 		return true;
 	}
 
-	private boolean newRecord() {
+	// Used only by format write
+	private boolean newRecord(boolean next) {
 		if (curr_pos + 11 >= track.length) {
 			return false;
 		}
 		int save_pos = curr_pos;
-		int save_rec = curr_rec + 1;
+		int nxt_rec = adr_rec;
+		if (next) {
+			++nxt_rec;
+		}
 		track[save_pos++] = AM;
-		track[save_pos++] = curr_flg;
-		track[save_pos++] = (byte)((curr_cyl >> 6) & 077);
-		track[save_pos++] = (byte)(curr_cyl & 077);
-		track[save_pos++] = (byte)((curr_trk >> 6) & 077);
-		track[save_pos++] = (byte)(curr_trk & 077);
-		track[save_pos++] = (byte)((save_rec >> 6) & 077);
-		track[save_pos++] = (byte)(save_rec & 077);
-		track[save_pos++] = (byte)((curr_len >> 6) & 077);
-		track[save_pos++] = (byte)(curr_len & 077);
+		track[save_pos++] = (byte)(adr_prt & HDR_FORMAT);
+		track[save_pos++] = (byte)((adr_cyl >> 6) & 077);
+		track[save_pos++] = (byte)(adr_cyl & 077);
+		track[save_pos++] = (byte)((adr_trk >> 6) & 077);
+		track[save_pos++] = (byte)(adr_trk & 077);
+		track[save_pos++] = (byte)((nxt_rec >> 6) & 077);
+		track[save_pos++] = (byte)(nxt_rec & 077);
+		track[save_pos++] = (byte)((adr_len >> 6) & 077);
+		track[save_pos++] = (byte)(adr_len & 077);
 		track[save_pos++] = DM;
-		if (save_pos + curr_len + 1 >= track.length) {
+		if (save_pos + adr_len + 1 >= track.length) {
 			return false;
 		}
 		curr_pos = save_pos;
-		curr_rec = save_rec;
-		curr_end = curr_pos + curr_len;
+		adr_rec = nxt_rec;
+		curr_end = curr_pos + adr_len;
 		return true;
 	}
 
+	// Used only by format write
 	private boolean initTLR(int cyl, int trk, int rec) {
-		curr_flg |= HDR_TLR;
-		curr_len = 6;
-		if (!newRecord()) {
-			return false;
-		}
-		if (curr_pos + 7 >= track.length) {
+		adr_prt |= HDR_TLR;
+		adr_len = 6;	// TODO: must restore old valule?
+		if (!newRecord(true)) {
 			return false;
 		}
 		track[curr_pos++] = (byte)((cyl >> 6) & 077);
@@ -462,7 +478,7 @@ public class P_Disk extends JFrame
 		adr_rec = (track[curr_pos++] & 077) << 6;
 		adr_rec |= (track[curr_pos++] & 077);
 		// TODO: confirm EM?
-		if (!cacheTrack(sts[unit].cyl, adr_trk)) {
+		if (!cacheTrack(sts[adr_lun].cyl, adr_trk)) {
 			return false;
 		}
 		if (!searchRecord()) {
@@ -474,7 +490,7 @@ public class P_Disk extends JFrame
 
 	// At the very least, this puts curr_pos at the first data char.
 	private boolean findRecord() {
-		if (!cacheTrack(sts[unit].cyl, adr_trk)) {
+		if (!cacheTrack(sts[adr_lun].cyl, adr_trk)) {
 			error = true;
 			return false;
 		}
@@ -507,6 +523,10 @@ public class P_Disk extends JFrame
 
 	private void doAdrReg(RWChannel rwc) {
 		if (rwc.isInput()) {
+			rwc.writeChar((byte)(adr_lun));
+			rwc.incrCLC();
+			rwc.writeChar((byte)0);
+			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_cyl >> 6));
 			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_cyl));
@@ -519,7 +539,18 @@ public class P_Disk extends JFrame
 			rwc.incrCLC();
 			rwc.writeChar((byte)(adr_rec));
 			rwc.incrCLC();
+			rwc.writeChar((byte)0);
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_prt & HDR_USER));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_len >> 6));
+			rwc.incrCLC();
+			rwc.writeChar((byte)(adr_len));
+			rwc.incrCLC();
 		} else {
+			pUnit = adr_lun = (rwc.readMem() & 007);
+			rwc.incrCLC();
+			rwc.incrCLC();	// skip pack
 			adr_cyl = (rwc.readMem() & 077) << 6;
 			rwc.incrCLC();
 			adr_cyl |= (rwc.readMem() & 077);
@@ -531,6 +562,13 @@ public class P_Disk extends JFrame
 			adr_rec = (rwc.readMem() & 077) << 6;
 			rwc.incrCLC();
 			adr_rec |= (rwc.readMem() & 077);
+			rwc.incrCLC();
+			rwc.incrCLC();	// skip zero
+			adr_prt = (rwc.readMem() & HDR_USER);
+			rwc.incrCLC();
+			adr_len = (rwc.readMem() & 077) << 6;
+			rwc.incrCLC();
+			adr_len |= (rwc.readMem() & 077);
 			rwc.incrCLC();
 		}
 	}
@@ -553,11 +591,11 @@ public class P_Disk extends JFrame
 			doAdrReg(rwc);
 			return;
 		}
-		if (sts[unit].dev == null) {
+		if (sts[adr_lun].dev == null) {
 			error = true;
 			return;
 		}
-		sts[unit].busy = true;
+		sts[adr_lun].busy = true;
 		busy = true;
 		extended = ((rwc.c3 & 020) == 020);
 		verify = ((rwc.c3 & 010) == 010);
@@ -581,7 +619,7 @@ public class P_Disk extends JFrame
 		}
 		// cyl not changed by run()...
 		// but if we track record/sector...
-		sts[unit].busy = false;
+		sts[adr_lun].busy = false;
 		busy = false;
 	}
 
@@ -608,7 +646,7 @@ public class P_Disk extends JFrame
 		boolean header = false; // only valid if 'format'
 		rwc.startCLC();
 		if (format) {
-			cacheTrack(sts[unit].cyl, adr_trk);
+			cacheTrack(sts[adr_lun].cyl, adr_trk);
 			if (initial) {
 				curr_pos = 0;
 			}
@@ -618,9 +656,9 @@ public class P_Disk extends JFrame
 			}
 			++curr_pos;	// skip AM
 			getHeader(curr_pos);
-			// transfer header data first...
-			header = true;
-			curr_end = curr_pos + 9;
+			getAddressReg();
+			curr_pos += 10;	// skip past DM
+			curr_end = curr_pos + curr_len;
 		} else if (!findRecord()) {
 			// error set by findRecord()...
 			return;
@@ -630,31 +668,24 @@ public class P_Disk extends JFrame
 			int a = 0;
 			int b = rwc.readMem() & 0300;
 			if (format) {
-				// TODO: what does "read format" do?
-				// Should be symmetrical with "write format",
-				// Currently then:
-				//	transfer header data and record data.
-				//	stop after one record.
 				// check this in case track unformatted
 				if (curr_pos >= track.length) {
 					curr_pos = 0;
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					if (header) {
-						if (!searchData()) {
-							error = true;
-							return;
-						}
-					} else if (!extended || track[curr_pos] == EM) {
-						// must be end of data...
+					if (!extended) {
 						break;
-					} else if (!searchHeader()) {
+					}
+					if (!searchHeader()) {
 						error = true;
 						return;
 					}
-					// keep going until end of track or RM
-					header = !header;
+					++curr_pos;	// skip AM
+					getHeader(curr_pos);
+					getAddressReg();
+					curr_pos += 10;	// skip past DM
+					curr_end = curr_pos + curr_len;
 				}
 				a = track[curr_pos++];
 			} else {
@@ -697,19 +728,18 @@ public class P_Disk extends JFrame
 		boolean header = false; // only valid if 'format'
 		rwc.startCLC();
 		if (format) {
-			if ((sts[unit].flag & PERMIT_FMT) == 0) {
+			if ((sts[adr_lun].flag & PERMIT_FMT) == 0) {
 				error = true;
 				return;
 			}
-			getHeaderMem(rwc); // loads adr_*
 			// TODO: do we enforce match between FLAG and PERMIT switches?
 			// or is it just "caveat emptor"?
-			//if (((sts[unit].flag ^ adr_flg) & PERMIT_AB) != 0) {
+			//if (((sts[adr_lun].flag ^ adr_flg) & PERMIT_AB) != 0) {
 			//	error = true;
 			//	return;
 			//}
 			// if caller did not seek cyl, too bad for them...
-			cacheTrack(sts[unit].cyl, adr_trk);
+			cacheTrack(sts[adr_lun].cyl, adr_trk);
 			track_dirty = true;
 			if (initial) {
 				curr_pos = 0;
@@ -717,36 +747,16 @@ public class P_Disk extends JFrame
 				// else search for EM?
 				// if (track[curr_pos] != EM) error...
 			}
-			if (curr_pos + 11 >= track.length) {
+			if (!newRecord(!initial)) {
 				error = true;
 				return;
-			}
-			track[curr_pos++] = AM;
-			curr_end = curr_pos + 9;
-			header = true;
-////
-			// This goes back over data loaded in getHeaderMem(),
-			// but copies to disk record header now.
-			for (int x = 0; x < 9; ++x) {
-				// TODO: strip punc, check RM?
-				track[curr_pos++] = (byte)(rwc.readMem() & 077);
-				if (rwc.incrCLC()) {
-					error = true;
-					return;
-				}
 			}
 			// This now loads curr_* vars with same data
-			// gotten by getHeaderMem() and record header loop.
+			// just formatted.
 			// All of this could be cleaned up.
 			getHeader(curr_pos - 9); // loads curr_* variables
-			track[curr_pos++] = DM;
-			curr_end = curr_pos + curr_len;
-			if (curr_end + 1 >= track.length) {
-				error = true;
-				return;
-			}
 		} else {
-			if ((sts[vUnit].flag & PERMIT_DAT) == 0) {
+			if ((sts[adr_lun].flag & PERMIT_DAT) == 0) {
 				error = true;
 				return;
 			}
@@ -755,7 +765,7 @@ public class P_Disk extends JFrame
 				return;
 			}
 			// Check HEADER FLAG against PERMIT switches...
-			int f = sts[unit].flag ^ PERMIT_AB;	// invert A/B bits
+			int f = sts[adr_lun].flag ^ PERMIT_AB;	// invert A/B bits
 			f &= curr_flg;	// mask NOT A/B bits
 			if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
 				error = true;
@@ -789,26 +799,15 @@ public class P_Disk extends JFrame
 					break;
 				}
 				if (curr_pos >= curr_end) {
-					if (header) {
-						getHeader(curr_pos - 9); // loads curr_* variables
-						if (curr_pos + curr_len + 2 >=
-								track.length) {
-							error = true;
-							break;
-						}
-						track[curr_pos++] = DM;
-						curr_end = curr_pos + curr_len;
-					} else if (!extended) {
-						break;
-					} else {
-						if (curr_pos + 11 >= track.length) {
-							error = true;
-							break;
-						}
-						track[curr_pos++] = AM;
-						curr_end = curr_pos + 9;
+					if (!extended) {
+						break; // done with transfer
 					}
-					header = !header;
+					// 'newRecord' increments adr_rec...
+					if (!newRecord(true)) {
+						error = true;
+						break;
+					}
+					getHeader(curr_pos - 9); // loads curr_* variables
 				}
 				track[curr_pos++] = a;
 				e = 0;
@@ -874,14 +873,15 @@ public class P_Disk extends JFrame
 
 		boolean branch = false;
 		boolean in = rwc.isInput();
+		int lun;
 		switch(rwc.c3 & 070) {
 		case 000:
 			if (in) {
 				break;
 			}
 			// device busy...
-			unit = pUnit = rwc.c3 & 007;
-			if (sts[unit].busy) {
+			lun = rwc.c3 & 007;
+			if (sts[lun].busy) {
 				branch = true;
 			}
 			break;
@@ -898,24 +898,24 @@ public class P_Disk extends JFrame
 			if (in) {
 				break;
 			}
-			unit = rwc.c3 & 007;
-			if (sts[unit].busy) {
+			lun = rwc.c3 & 007;
+			if (sts[lun].busy) {
 				branch = true;
 			} else {
-				sts[unit].cyl = (rwc.c5 << 6) | rwc.c6;
-				sts[unit].cyl_pn.setText(String.format("%03d-00", sts[unit].cyl));
+				sts[lun].cyl = (rwc.c5 << 6) | rwc.c6;
+				sts[lun].cyl_pn.setText(String.format("%03d-00", sts[lun].cyl));
 			}
 			break;
 		case 030:
 			if (!in) {
 				break;
 			}
-			unit = rwc.c3 & 007;
-			if (sts[unit].busy) {
+			lun = rwc.c3 & 007;
+			if (sts[lun].busy) {
 				branch = true;
 			} else if (in) {
-				sts[unit].cyl = 0;
-				sts[unit].cyl_pn.setText("000-00");
+				sts[lun].cyl = 0;
+				sts[lun].cyl_pn.setText("000-00");
 			}
 			break;
 		case 040:
@@ -1053,30 +1053,28 @@ public class P_Disk extends JFrame
 			errno = 00501; // "device inoperable" (No disk pack)
 			return false;
 		}
-		unit = vUnit = lun;
+		vUnit = lun;
 		vOK = false;
 		return true;
 	}
 	// Always returns TLR as regular data... caller needs info anyway.
 	// Return value is -1 for error, else FLAG character...
 	public int seekRecord(int cyl, int trk, int rec) {
-		vCyl = cyl;
-		vTrk = trk;
-		vRec = rec;
+		adr_lun = vUnit;
+		adr_cyl = cyl;
+		adr_trk = trk;
+		adr_rec = rec;
+		//adr_prt = ???;
 		// 'cacheTrack' updates display
-		if (!cacheTrack(vCyl, vTrk)) {
+		if (!cacheTrack(adr_cyl, adr_trk)) {
 			errno = 00503; // device error
 			return -1;
 		}
-		// NOTE: adr_flg not used, switches are tested directly
-		adr_cyl = vCyl;
-		adr_trk = vTrk;
-		adr_rec = vRec;
 		if (!searchRecord() || !searchData()) {
 			errno = 00505;	// Record not found
 			return -1;
 		}
-		// curr_* matches reacord header data, incl. FLAG
+		// curr_* matches record header data, incl. FLAG
 		vLen = curr_len;
 		vOK = true;
 		return curr_flg;
@@ -1103,11 +1101,11 @@ public class P_Disk extends JFrame
 			errno = 00505;  // Record not found
 			return false;
 		}
-		if ((sts[unit].flag & PERMIT_DAT) == 0) {
+		if ((sts[adr_lun].flag & PERMIT_DAT) == 0) {
 			errno = 00502;	// Protection violation (DATA)
 			return false;
 		}
-		int f = sts[unit].flag ^ PERMIT_AB;	// invert A/B bits
+		int f = sts[adr_lun].flag ^ PERMIT_AB;	// invert A/B bits
 		f &= curr_flg;	// mask NOT A/B bits
 		if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit is 1, prot error...
 			errno = 00502;	// Protection violation (A/B)
@@ -1126,30 +1124,28 @@ public class P_Disk extends JFrame
 	public boolean initTrack(int flg, int cyl, int trk, int reclen, int rectrk,
 				int tCyl, int tTrk) {
 		vOK = false;
-		vCyl = cyl;
-		vTrk = trk;
+		adr_lun = vUnit;
+		adr_cyl = cyl;
+		adr_trk = trk;
+		adr_rec = 0;
+		adr_prt = (flg & HDR_USER) & ~HDR_TLR;
+		adr_len = reclen;
 		if (rectrk < 0) {
 			rectrk = numRecords(reclen);
 		}
 		// TODO: reduce duplicate code
-		if (!cacheTrack(vCyl, vTrk)) {
+		if (!cacheTrack(adr_cyl, adr_trk)) {
 			errno = 00503; // device error
 			return false;
 		}
-		if ((sts[unit].flag & PERMIT_FMT) == 0) {
+		if ((sts[adr_lun].flag & PERMIT_FMT) == 0) {
 			errno = 00502;	// Protection violation (FORMAT)
 			return false;
 		}
 		track_dirty = true;
 		curr_pos = 0;
-		curr_flg = (byte)(flg & PERMIT_AB);	// TODO: allow more bits?
-		curr_cyl = vCyl;
-		curr_trk = vTrk;
-		curr_len = reclen;
-		curr_rec = -1; // first record is 0
-		// Just put as many records as will fit...
 		for (int r = 0; r < rectrk; ++r) {
-			if (!newRecord()) {
+			if (!newRecord(r > 0)) {
 				errno = 00004;	// Track overflow
 				return false;
 			}
@@ -1173,7 +1169,7 @@ public class P_Disk extends JFrame
 	public void end() {
 		cacheTrack(-1, -1);
 		vOK = false;
-		unit = pUnit;
+		adr_lun = pUnit;
 	}
 	public int numRecords(int recLen) {
 		// On a real disk, assume 10 chars per IRG.

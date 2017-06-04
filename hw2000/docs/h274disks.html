@@ -26,12 +26,34 @@ with A/B flags.
 <P>Due to lack of detailed information about these devices,
 the following has been assumed until more information is available:
 <UL>
+<LI>The ADDRESS REGISTER is loaded/stored from 12 characters in memory.
+The characters are DPCCTTRR0WDL, where "D" is the drive/unit number,
+"P" is the disk pack number (not used), "CC" is the cylinder, "TT" is the track,
+"RR" is the record, "W" is the protection/flag bits (TLR, A-FILE, B-FILE),
+and "DL" is the record data length.
+Some of these values are only used during format read/write commands.
+It is not clear whether a RM can limit
+the amount of the address register that is stored/loaded.
+MOD1 MPIOC documentation describes 10 characters, but "DL" is needed for
+format WRITE, and is pertinent data for others.
+It is assumed that "TT" will actually select the head to read/write through.
+"CC" and "RR" are used for comparison to header data and to generate headers for formatting.
+"W" is used to generate the FLAG character during formatting, but it is
+assumed that the drive PERMIT switches actually determine write protection.
+"D" is assumed to select the device unit to perform I/O.
+"DL" is used during format WRITE for the record length, and indicates
+the actual record length after other commands.
 <LI>READ/WRITE INITIAL commmands will format record(s) beginning with the
-index point on the track. Record address information is provided with
-record data.
+index point on the track.
+For WRITE, record address information comes from the ADDRESS REGISTER.
+For READ, record header data is copied to the ADDRESS REGISTER where
+it may be stored and examined in memory.
+The WRITE EXTENDED variant will increment "RR" between records.
 <LI>READ/WRITE (plain) commmands will format record(s) beginning with the
-current point on the track. Record address information is provided with
-record data.
+current position on the track.
+Record address information comes from the ADDRESS REGISTER.
+"RR" is incremented before WRITE.
+The WRITE EXTENDED variant will increment "RR" between records.
 <LI>SEARCH AND READ/WRITE commmands will locate the record identified in
 the address register and read/write data only.
 <LI>SEARCH AND READ/WRITE NEXT commmands will increment the record number and
@@ -59,19 +81,15 @@ in which case a program that ran off the end of a file would get and error.
 
 <P>The description of PDT for Disk Devices shows no method of selecting a
 disk drive (C3 is used for the command, and no other control characters
-are defined). The PCB instruction does define commands that select a drive.
-It is currently being assumed that the PCB drive selection persists
-and is used by PDT instructions. This requires the programmer to use
-a PCB instruction before any (drive related) PDT instruction.
-The "check device busy" operation (C3=0D) seems to be a likely candidate.
-What is not clear is just how this context relates to RWC, control, and drive.
-If there is only one Address Register, in the control, then only one drive
-can be busy at a time - regardless of use of RWC. However, if each drive
-has it's own Address Register (or each RWC), then multiple disk operations
-can be active, if they are tied to separate RWCs. At the moment, the control
-is assumed to be the bottle-neck and only one disk operation can be active
-at a time (i.e. the control has the Address Register as well as drive selector).
-The programmer must ensure that multiple disk operations do not collide.
+are defined). The PCB instruction does define commands that select a drive,
+but only appear to select it for the duration of the operation.
+It is currently being assumed that the ADDRESS REGISTER "D" character
+selects the drive to be used for subsequent READ/WRITE operations.
+There can be only one data transfer active at a time, but multiple
+seek/restore operations on different drives could be active.
+The PCB instructions to test busy can select different drives,
+allow for multiple head-movement operations to be started and then
+polled to see what drive is ready to do I/O.
 
 <P>Disk geometry is set as for Model 278 drives:
 203 cylinders of 20 tracks (heads, surfaces) with 10400 raw characters per track.
