@@ -631,6 +631,17 @@ public class FileVolSupport {
 			vol.setEOD(itmBuf, 0);
 			ok = file.repItem(itmBuf, 0);
 			ok = file.close();
+		} else if (type == DiskFile.PART_SEQ) {
+			DiskFile file = new PartitionedSeqFile(dsk, unit, name, false,
+					null, 0,
+					itmLen, recLen, recTrk, recBlk,
+					0, 0, // TODO: get parameters
+					units);
+			if (!file.release()) {
+				error = file.getError();
+				return false;
+			}
+			ok = file.close();
 		}
 		return true;
 	}

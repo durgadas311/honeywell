@@ -243,8 +243,11 @@ public class DiskVolume {
 			error = volDescr.getError();
 			return null;
 		}
-		int type = dItm.readChar(dAdr);
+		int type = dItm.readChar(dAdr + 0);
 		int[] desc = getSome(dItm, dAdr + 1, 5);
+		int idxLen = dItm.readChar(dAdr + 63) << 6;
+		idxLen |= dItm.readChar(dAdr + 64);
+		int mmbIdxLen = dItm.readChar(dAdr + 68);
 		// TODO: overflow, etc.
 		DiskUnit[] units = new DiskUnit[6];
 		ctri = getSome(nItm, 22, 4);
@@ -280,6 +283,12 @@ public class DiskVolume {
 			return new SequentialFile(dsk, unit, name, prot,
 					blkBuf, blkBufAdr,
 					desc[0], desc[1], desc[4], desc[3],
+					units);
+		} else if (type == DiskFile.PART_SEQ) {
+			return new PartitionedSeqFile(dsk, unit, name, prot,
+					blkBuf, blkBufAdr,
+					desc[0], desc[1], desc[4], desc[3],
+					idxLen, mmbIdxLen,
 					units);
 		} else {
 			// TODO: support other file organizations

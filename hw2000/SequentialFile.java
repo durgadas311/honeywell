@@ -76,7 +76,7 @@ public class SequentialFile implements DiskFile {
 		blkBufAdr = blkAdr;
 	}
 
-	private void init(RandomRecordIO dsk, int unit, byte[] name, boolean prot,
+	protected void init(RandomRecordIO dsk, int unit, byte[] name, boolean prot,
 			int itmLen, int recLen, int recTrk, int recBlk) {
 		// TODO: do we need recTrk?
 		inPut = false;
@@ -196,7 +196,7 @@ public class SequentialFile implements DiskFile {
 	public boolean isEOF() { return eof; }
 
 	// called when 'rec' is a TLR and about to follow it.
-	private boolean lastRecord(int cyl, int trk, int rec) {
+	protected boolean lastRecord(int cyl, int trk, int rec) {
 		return (units[lastUnit].eCyl == cyl && units[lastUnit].eTrk == trk);
 	}
 
@@ -205,7 +205,7 @@ public class SequentialFile implements DiskFile {
 	// also must remember ending cyl,trk,rec for "increment"...
 	// So, really can't ignore TLRs...
 	// TODO: block cannot span allocation units (cylinders)?
-	private boolean readBlock(boolean inPut, int cyl, int trk, int rec,
+	protected boolean readBlock(boolean inPut, int cyl, int trk, int rec,
 				CoreMemory buf, int adr) {
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
@@ -263,7 +263,7 @@ public class SequentialFile implements DiskFile {
 		return true;
 	}
 
-	private boolean writeBlock(boolean inPut, int cyl, int trk, int rec,
+	protected boolean writeBlock(boolean inPut, int cyl, int trk, int rec,
 				CoreMemory buf, int adr) {
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
@@ -320,7 +320,7 @@ public class SequentialFile implements DiskFile {
 	}
 
 	// 'rec' must be the first record of a block...
-	private boolean cacheBlock(boolean inPut, int cyl, int trk, int rec) {
+	protected boolean cacheBlock(boolean inPut, int cyl, int trk, int rec) {
 		boolean ok = true;
 		if (blkCyl >= 0 && blkTrk >= 0 && blkRec >= 0 &&
 				blkCyl == cyl && blkTrk == trk && blkRec == rec) {
@@ -343,7 +343,7 @@ public class SequentialFile implements DiskFile {
 		return ok;
 	}
 
-	private boolean cacheNextItem(boolean inPut) {
+	protected boolean cacheNextItem(boolean inPut) {
 		// This only works if no item is size 1.
 		if (curOff == -1) { // initial access (or after rewind)
 			curOff = 0;
