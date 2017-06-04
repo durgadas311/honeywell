@@ -497,7 +497,8 @@ public class FileVolSupport {
 	}
 
 	static public boolean initFile(RandomRecordIO dsk, int unit, int flag,
-			byte[] name, int itmLen, int recLen, int recTrk, int recBlk,
+			byte[] name, int type,
+			int itmLen, int recLen, int recTrk, int recBlk,
 			DiskUnit[] units) {
 		error = 0;
 		boolean ok;
@@ -538,7 +539,7 @@ public class FileVolSupport {
 			error = vol.getVolNames().getError();
 			return false;
 		}
-		descr.writeChar(0, (byte)001);	// Sequential - TODO: support other organizations
+		descr.writeChar(0, (byte)type);
 		vol.putOne(itmLen, descr, 1);
 		vol.putOne(recLen, descr, 3);
 		vol.putOne(itmBlk, descr, 5);
@@ -609,25 +610,28 @@ public class FileVolSupport {
 			return false;
 		}
 		recs += recTrk;
-		// Sequential files (or each partition of Partitioned Sequential)
-		// TODO: is there a better way?
-		CoreMemory itmBuf = new BufferMemory(itmLen);
-		DiskFile file = new SequentialFile(dsk, unit, name, false,
+		// Type-specific file initialization...
+		// TODO: handle other types
+		if (type == DiskFile.SEQUENTIAL) {
+			// Sequential files (or each partition of Partitioned Sequential)
+			// TODO: is there a better way?
+			CoreMemory itmBuf = new BufferMemory(itmLen);
+			DiskFile file = new SequentialFile(dsk, unit, name, false,
 					null, 0,
 					itmLen, recLen, recTrk, recBlk,
 					units);
-		ok = file.seek(units[0].sCyl, units[0].sTrk, 0, 0);
-		ok = file.getItem(itmBuf, 0);
-		vol.setEOD(itmBuf, 0);
-		ok = file.repItem(itmBuf, 0);
-		// ...compute last item of last whole block...
-		int recXXX = ((recs / recBlk) * recBlk - recBlk) % recTrk;
-		ok = file.seek(units[e].eCyl, units[e].eTrk, recXXX, itmBlk - 1);
-		ok = file.getItem(itmBuf, 0);
-		vol.setEOD(itmBuf, 0);
-		ok = file.repItem(itmBuf, 0);
-		ok = file.close();
-		//
+			ok = file.seek(units[0].sCyl, units[0].sTrk, 0, 0);
+			ok = file.getItem(itmBuf, 0);
+			vol.setEOD(itmBuf, 0);
+			ok = file.repItem(itmBuf, 0);
+			// ...compute last item of last whole block...
+			int recXXX = ((recs / recBlk) * recBlk - recBlk) % recTrk;
+			ok = file.seek(units[e].eCyl, units[e].eTrk, recXXX, itmBlk - 1);
+			ok = file.getItem(itmBuf, 0);
+			vol.setEOD(itmBuf, 0);
+			ok = file.repItem(itmBuf, 0);
+			ok = file.close();
+		}
 		return true;
 	}
 

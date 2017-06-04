@@ -276,7 +276,7 @@ public class DiskVolume {
 			}
 			ctri = getSome(aItm, 12, 4);
 		}
-		if (type == 1) {
+		if (type == DiskFile.SEQUENTIAL) {
 			return new SequentialFile(dsk, unit, name, prot,
 					blkBuf, blkBufAdr,
 					desc[0], desc[1], desc[4], desc[3],

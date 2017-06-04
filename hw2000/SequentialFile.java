@@ -432,4 +432,28 @@ public class SequentialFile implements DiskFile {
 		rewind(); // not needed?
 		return ret;
 	}
+
+	public int getType() { return DiskFile.SEQUENTIAL; }
+
+	public boolean setMemb(CoreMemory memb, int adr, int mode) {
+		// TODO: find correct error code/action
+		error = 00434;
+		return false;
+	}
+
+	public boolean endMemb() {
+		error = 00434;
+		return false;
+	}
+
+	public boolean alterMemb(CoreMemory memb, int adr, int op,
+				CoreMemory newm, int nadr) {
+		error = 00434;
+		return false;
+	}
+
+	public boolean release() {
+		error = 00434;
+		return false;
+	}
 }

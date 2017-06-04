@@ -2883,6 +2883,7 @@ ee.printStackTrace();
 			return;
 		}
 		ok = FileVolSupport.initFile(p, unit, flag, nm,
+				DiskFile.SEQUENTIAL,
 				itmLen, recLen, recTrk, recBlk,
 				units);
 		setActive(false);
