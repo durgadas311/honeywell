@@ -1149,8 +1149,8 @@ public class P_Disk extends JFrame
 				errno = 00004;	// Track overflow
 				return false;
 			}
-			Arrays.fill(track, curr_pos, curr_pos + curr_len, (byte)0);
-			curr_pos += curr_len;
+			Arrays.fill(track, curr_pos, curr_pos + adr_len, (byte)0);
+			curr_pos += adr_len;
 		}
 		// Now set TLR... Initially, link to next physical track.
 		// Allocated data will change to link to next allocated track.
