@@ -304,7 +304,7 @@ public class FileVolSupport {
 		mapTracks(map, 0x10000, vol.getVolDescr().getAlloc());
 		mapTracks(map, 0x10000, vol.getVolAlloc().getAlloc());
 		vol.getVolNames().rewind();
-		sys.listOut("ID  NAME       O ITM REC I/B R/B R/T   CAPACITY\n");
+		sys.listOut("ID  NAME       O ITM REC I/B R/B R/T B/X   CAPACITY\n");
 		while (true) {
 			String ret = "";
 			if (!vol.getVolNames().getItem(names, 0)) {
@@ -327,11 +327,12 @@ public class FileVolSupport {
 			// TODO: how to detect past EOD
 			vol.getVolDescr().getItem(descr, 0);
 			// TODO: check errors, EOD
-			switch (descr.readChar(0)) {
-			case 001: ret += 'S'; break;
-			case 002: ret += 'D'; break;
-			case 003: ret += 'I'; break;
-			case 011: ret += 'P'; break;
+			int type = descr.readChar(0);
+			switch (type) {
+			case DiskFile.SEQUENTIAL: ret += 'S'; break;
+			case DiskFile.DIRECT: ret += 'D'; break;
+			case DiskFile.INDEXED_SEQ: ret += 'I'; break;
+			case DiskFile.PART_SEQ: ret += 'P'; break;
 			case 070: ret += 'N'; break;
 			default: ret += '?'; break;
 			}
@@ -343,6 +344,12 @@ public class FileVolSupport {
 			int recTrk = fd[4];
 			ret += String.format(" %3d %3d %3d %3d %3d ",
 					itmLen, recLen, itmBlk, recBlk, recTrk);
+			if (type == DiskFile.PART_SEQ) {
+				int[] xx = vol.getSome(descr, 63, 1);
+				ret += String.format("%3d ", xx[0]);
+			} else {
+				ret += "    ";
+			}
 			ctri = vol.getSome(names, 22, 4);
 			vol.getVolAlloc().rewind();
 			int tracks = 0;
@@ -366,7 +373,7 @@ public class FileVolSupport {
 				}
 				ctri = vol.getSome(alloc, 12, 4);
 			}
-			ret += String.format("= %d tracks/%d records/%d blocks/%d items",
+			ret += String.format("= %d trks/%d recs/%d blks/%d items",
 				tracks, tracks * recTrk, (tracks * recTrk) / recBlk,
 				((tracks * recTrk) / recBlk) * itmBlk);
 			ret += '\n';
@@ -546,6 +553,9 @@ public class FileVolSupport {
 		vol.putOne(itmBlk, descr, 5);
 		vol.putOne(recBlk, descr, 7);
 		vol.putOne(recTrk, descr, 9);
+		if (type == DiskFile.PART_SEQ) {
+			vol.putOne(blkIdx, descr, 63);
+		}
 		// TODO: populate other fields...
 		ok = vol.getVolDescr().repItem(descr, 0);
 		ok = vol.getVolDescr().sync();
