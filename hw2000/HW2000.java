@@ -289,13 +289,14 @@ public class HW2000 implements CoreMemory
 		mem[adr] = val;
 	}
 
-	public void rawWriteChar(int adr, byte val) {
+	public byte rawWriteChar(int adr, byte val) {
 		if (bootstrap) {
 			// force clearing of punctuation
 			mem[adr] = (byte)(val & 077);
 		} else {
 			mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
 		}
+		return mem[adr];
 	}
 
 	public byte readMem(int adr) {

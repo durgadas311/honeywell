@@ -70,7 +70,7 @@
 00000  TT     DCW   #2B0
 00000  RR     DCW   #2B0
 00000         DCW   #1B0      ZERO
-00000         DCW   #1B0      PROTECTION
+00000         DCW   #1C00     PROTECTION (READ ONLY)
 00000         DCW   #2B0      DATA LENGTH
 00000 L       DCW   #1A
 00000*

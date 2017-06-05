@@ -220,8 +220,8 @@ public class P_Console extends JFrame
 					break;
 				}
 				// Must not disturb punctuation
-				rwc.writeChar(c);
-				if ((rwc.readMem() & 0300) == 0300) {
+				c = rwc.writeChar(c);
+				if ((c & 0300) == 0300) {
 					break;
 				}
 				if (rwc.incrCLC()) {

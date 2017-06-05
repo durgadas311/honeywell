@@ -4,7 +4,7 @@ public interface CoreMemory {
 	byte readChar(int adr);
 	byte rawReadMem(int adr);
 	void rawWriteMem(int adr, byte val);
-	void rawWriteChar(int adr, byte val);
+	byte rawWriteChar(int adr, byte val);	// returns puntuation bits
 	void writeMem(int adr, byte val);
 	void writeChar(int adr, byte val);
 	void setWord(int adr);

@@ -287,30 +287,31 @@ public class P_CardReaderPunch extends JFrame
 		if (!getCard(pcs)) {
 			return;
 		}
+		byte m;
 		for (int x = 0; x < 80; ++x) {
 			boolean stop = false;
 			// Must not disturb punctuation...
 			int p = getCol(pcs, x);
 			if (pcs.code == 2) {
 				// TODO: what is proper order...
-				rwc.writeChar((byte)((p >> 6) & 077));
+				m = rwc.writeChar((byte)((p >> 6) & 077));
 				// this would probably be an error...
-				stop = ((rwc.readMem() & 0300) == 0300);
-				if (stop || rwc.incrCLC()) {
+				stop = ((m & 0300) == 0300);
+				if (rwc.incrCLC() || stop) {
 					break;
 				}
-				rwc.writeChar((byte)p);
-				stop = ((rwc.readMem() & 0300) == 0300);
+				m = rwc.writeChar((byte)p);
+				stop = ((m & 0300) == 0300);
 			} else {
 				int c = cvt.punToHW(p, (pcs.code == 1));
 				if (c < 0) {
 					pcs.illegal = true;
 					c = 0; // TODO: error code?
 				}
-				rwc.writeChar((byte)c);
-				stop = ((rwc.readMem() & 0300) == 0300);
+				m = rwc.writeChar((byte)c);
+				stop = ((m & 0300) == 0300);
 			}
-			if (stop || rwc.incrCLC()) {
+			if (rwc.incrCLC() || stop) {
 				break;
 			}
 		}

@@ -21,8 +21,10 @@ public class BufferMemory implements CoreMemory
 		mem[adr] = val;
 	}
 
-	public void rawWriteChar(int adr, byte val) {
+	// returns puntuation bits
+	public byte rawWriteChar(int adr, byte val) {
 		mem[adr] = (byte)((mem[adr] & 0300) | (val & 077));
+		return mem[adr];
 	}
 
 	public byte readMem(int adr) {

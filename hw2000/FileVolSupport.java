@@ -19,7 +19,6 @@ public class FileVolSupport {
 		errmsg.put(00001, "Directory full");
 		errmsg.put(00002, "Allocation conflict");
 		errmsg.put(00003, "File exists");
-		errmsg.put(00004, "Track overflow");
 		errmsg.put(00005, "Invalid operation");
 		errmsg.put(00101, "OPEN CALLOUT 1");
 		errmsg.put(00103, "No File");
@@ -53,8 +52,8 @@ public class FileVolSupport {
 		errmsg.put(00424, "Duplicate key");
 		errmsg.put(00501, "Device inoperable");
 		errmsg.put(00502, "Protection violation");
-		errmsg.put(00503, "Device error");
-		errmsg.put(00504, "Possible device failure");
+		errmsg.put(00503, "Device error");	// seek error
+		errmsg.put(00504, "Format error");	// violation or overflow
 		errmsg.put(00505, "Record not found");
 		errmsg.put(00506, "Read error");
 		errmsg.put(00507, "Read error - no data");

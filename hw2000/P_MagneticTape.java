@@ -277,8 +277,7 @@ public class P_MagneticTape extends JFrame
 				if (unit.fwdspace || unit.backspace) {
 					continue;
 				}
-				rwc.writeChar((byte)a);
-				a = rwc.readMem() & 0300;
+				a = (rwc.writeChar((byte)a) & 0300);
 				if (rwc.incrCLC()) {
 					break;
 				}

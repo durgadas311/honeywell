@@ -50,8 +50,9 @@ public class P_Time
 		String tod = _timestamp.format(dt);
 		for (int x = 0; x < 10; ++x) {
 			byte c = rwc.sys.pdc.cvt.asciiToHw((byte)tod.charAt(x));
-			rwc.writeChar(c);
+			byte m = rwc.writeChar(c);
 			rwc.incrCLC();
+			if ((m & 0300) == 0300) break;
 		}
 	}
 

@@ -54,8 +54,9 @@ public class RWChannel implements Runnable {
 		sys.rawWriteMem(sys.cr[clc], c);
 	}
 
-	public void writeChar(byte c) {
-		sys.rawWriteChar(sys.cr[clc], (byte)(c & 077));
+	// Returns puntuation bits.
+	public byte writeChar(byte c) {
+		return sys.rawWriteChar(sys.cr[clc], (byte)(c & 077));
 	}
 
 	public byte readMem() {
