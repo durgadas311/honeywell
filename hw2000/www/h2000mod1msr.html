@@ -24,16 +24,17 @@ Apart from the non-standard virtual extension "MAC", the macros are
 used as described in the original MOD1 documentation, with the following exceptions:
 
 <UL>
-<LI>Only Sequential Organization files are supported.
+<LI>Only Sequential and Partitioned Sequential Organization files are supported.
 <LI>Only single-volume files are supported.
 <LI>LOCATE item-delivery mode is not Supported.
 <LI>Password protection is not Supported.
-<LI>The MUCA and MLCA macros are not supported.
+<LI>The MUCA and MLCA macros are not fully supported.
 <LI>Cylinder and general overflow is not Supported.
 <LI>File date-stamping is not Supported.
 <LI>File data type designation (print-image, etc) is not Supported.
-<LI>Advisory EXITs are not supported (for example,
-the EXIT to allow a program to extract *VOLDESCR* information during MSOPEN).
+<LI>Some advisory EXITs are not supported
+(for example, the EXIT to allow a program to extract *VOLDESCR*
+information during MSOPEN is implemented).
 <LI>more...?
 </UL>
 
