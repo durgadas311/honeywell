@@ -104,12 +104,18 @@ public class HW2000FrontPanel extends JFrame
 	private JTextField vol_name;
 	private JTextField vol_snum;
 	private JTextField map_lun;
+	private ButtonGroup file_bg;
+	private JRadioButton file_seq;
+	private JRadioButton file_par;
+	private JRadioButton file_idx;
+	private JRadioButton file_dir;
 	private JTextField file_lun;
 	private JTextField file_name;
 	private JTextField file_itm;
 	private JTextField file_rec;
 	private JTextField file_blk;
 	private JTextField file_rpt;
+	private JTextField file_bpx;
 	private JCheckBox file_a;
 	private JCheckBox file_b;
 	private JTextField[][] file_unt;
@@ -340,6 +346,21 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(new JLabel("Serial:"));
 		pn.add(vol_snum);
 		vol_pn.add(pn);
+		file_bg = new ButtonGroup();
+		// TODO: alter rest of panel based on changes to these...
+		file_seq = new JRadioButton("Sequential");
+		file_par = new JRadioButton("Partitioned Sequential");
+		file_idx = new JRadioButton("Indexed Sequential");
+		file_dir = new JRadioButton("Direct Access");
+		file_bg.add(file_seq);
+		file_bg.add(file_par);
+		file_bg.add(file_idx);
+		file_bg.add(file_dir);
+		file_seq.setSelected(true);
+		all_pn.add(file_seq);
+		all_pn.add(file_par);
+		all_pn.add(file_idx);
+		all_pn.add(file_dir);
 		file_a = new JCheckBox("A-file protection");
 		all_pn.add(file_a);
 		file_b = new JCheckBox("B-file protection");
@@ -368,6 +389,12 @@ public class HW2000FrontPanel extends JFrame
 		pn = new JPanel();
 		pn.add(new JLabel("Rec/Blk:"));
 		pn.add(file_blk);
+		all_pn.add(pn);
+		file_bpx = new JTextField();
+		file_bpx.setPreferredSize(new Dimension(60, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Blk/Idx:"));
+		pn.add(file_bpx);
 		all_pn.add(pn);
 		all_pn.add(new JLabel("Allocation Units:"));
 		// TODO: allocation units...
@@ -2833,6 +2860,20 @@ ee.printStackTrace();
 			warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
+		int type = -1;
+		if (file_seq.isSelected()) {
+			type = DiskFile.SEQUENTIAL;
+		} else if (file_par.isSelected()) {
+			type = DiskFile.PART_SEQ;
+		} else if (file_idx.isSelected()) {
+			type = DiskFile.INDEXED_SEQ;
+		} else if (file_dir.isSelected()) {
+			type = DiskFile.DIRECT;
+		} else {
+			// Can't happen with radio buttons?
+			warning(this, title, "Invalid File Type");
+			return;
+		}
 		setActive(true);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		byte[] nm = hwString(file_name.getText(), 10);
@@ -2840,6 +2881,7 @@ ee.printStackTrace();
 		int recLen = -1;
 		int recTrk = -1;
 		int recBlk = -1;
+		int blkIdx = -1;
 		try {
 			if (file_rec.getText().isEmpty()) {
 				recLen = DiskVolume.def_reclen;
@@ -2868,6 +2910,12 @@ ee.printStackTrace();
 			} else {
 				recBlk = Integer.valueOf(file_blk.getText());
 			}
+			// TODO: ignore if not partitioned sequential
+			if (file_bpx.getText().isEmpty()) {
+				blkIdx = 1;
+			} else {
+				blkIdx = Integer.valueOf(file_bpx.getText());
+			}
 		} catch (Exception ee) {
 			warning(this, title, "Invalid File Geometry");
 			setActive(false);
@@ -2882,10 +2930,9 @@ ee.printStackTrace();
 			setActive(false);
 			return;
 		}
-		ok = FileVolSupport.initFile(p, unit, flag, nm,
-				DiskFile.SEQUENTIAL,
+		ok = FileVolSupport.initFile(p, unit, flag, nm, type,
 				itmLen, recLen, recTrk, recBlk,
-				units);
+				blkIdx, units);
 		setActive(false);
 		if (!ok) {
 			warning(this, title, title + " failed: " + FileVolSupport.getError());

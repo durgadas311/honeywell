@@ -500,7 +500,7 @@ public class FileVolSupport {
 	static public boolean initFile(RandomRecordIO dsk, int unit, int flag,
 			byte[] name, int type,
 			int itmLen, int recLen, int recTrk, int recBlk,
-			DiskUnit[] units) {
+			int blkIdx, DiskUnit[] units) {
 		error = 0;
 		boolean ok;
 		int itmBlk = (recBlk * recLen) / itmLen;
@@ -636,7 +636,7 @@ public class FileVolSupport {
 			DiskFile file = new PartitionedSeqFile(dsk, unit, name, false,
 					null, 0,
 					itmLen, recLen, recTrk, recBlk,
-					0, 0, // TODO: get parameters
+					blkIdx, 25, // hard-code index item length
 					units);
 			if (!file.release()) {
 				error = file.getError();
