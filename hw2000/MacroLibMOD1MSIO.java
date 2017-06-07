@@ -25,6 +25,11 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		cmds.put("MSGET", 6);
 		cmds.put("MSREP", 7);
 		cmds.put("MSPUT", 8);
+		cmds.put("SETM", 9);
+		cmds.put("ENDM", 10);
+		cmds.put("MALTER", 11);
+		cmds.put("MSREL", 12);
+		// These do not produce a call to runtime
 		cmds.put("MUCA", 20);
 		cmds.put("MLCA", 21);
 	}
@@ -148,31 +153,99 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			}
 			ret = 0;
 			break;
-		case 4: // MSOPEN special handling
-			mode = 1; // IN (only)
-			if (np >= 2) {
-				if (parms[1].equals("IN/OUT")) {
-					mode = 3;
-				} else if (parms[1].equals("OUT")) {
-					mode = 2;
-				}
-			}
-			// MSOPEN must be first call ever made...
-			if (assemble(' ', tag, "BCE", "$MIOCI,$MINIT,01") < 0) break;
-			// FALLTHROUGH
 		default:
-			mca = "MCA" + parms[0];
-			if (assemble(' ', tag, "B", "$MIOC") < 0) break;
-			if (assemble(' ', "", "DSA", mca) < 0) break;
-			if (mode > 0) {
-				if (assemble(' ', "", "DSA",
-					String.format("%d", mode)) < 0) break;
+			if (!doFileTag(cmd, tag, parms)) {
+				break;
 			}
-			if (assemble('R', "", "DCW",
-					String.format("#1B%d", cmd)) < 0) break;
 			ret = 0;
 			break;
 		}
 		return ret;
+	}
+
+	private boolean doFileTag(int cmd, String tag, String[] parms) {
+		int np = parms.length;
+		int ret = -1;
+		int mode = 0; // not MSOPEN
+		int x;
+		String mca;
+		mca = "MCA" + parms[0];
+		if (assemble(' ', tag, "B", "$MIOC") < 0) return false;
+		if (assemble(' ', "", "DSA", mca) < 0) return false;
+		switch (cmd) {
+		case 4: // MSOPEN special handling
+			mode = 1; // IN (only)
+			if (np >= 2 && !parms[1].isEmpty()) {
+				if (parms[1].equals("IN")) {
+					//
+				} else if (parms[1].equals("IN/OUT")) {
+					mode = 3;
+				} else if (parms[1].equals("OUT")) {
+					mode = 2;
+				} else {
+					asm.errsAdd("Invalid MSOPEN mode value");
+					break;
+				}
+			}
+			// MSOPEN must be first call ever made...
+			if (assemble(' ', tag, "BCE", "$MIOCI,$MINIT,01") < 0) break;
+			if (assemble(' ', "", "DSA",
+					String.format("%d", mode)) < 0) break;
+			ret = 0;
+			break;
+		case 9: // SETM file,member,mode special handling
+			if (np != 3 || parms[1].isEmpty() || parms[2].isEmpty()) {
+				asm.errsAdd("Missing required SETM parameters");
+				break;
+			}
+			mode = 1; // IN (only)
+			if (!parms[2].isEmpty()) {
+				if (parms[2].equals("IN")) {
+					//
+				} else if (parms[2].equals("IN/OUT")) {
+					mode = 3;
+				} else if (parms[2].equals("OUT")) {
+					mode = 2;
+				} else {
+					asm.errsAdd("Invalid SETM mode value");
+					break;
+				}
+			}
+			if (assemble(' ', "", "DSA", parms[1]) < 0) break;
+			if (assemble(' ', "", "DSA",
+					String.format("%d", mode)) < 0) break;
+			ret = 0;
+			break;
+		case 11: // MALTER special handling
+			if (np < 3 || np > 4 || parms[1].isEmpty() ||
+					(parms[2].isEmpty() && parms[3].isEmpty())) {
+				asm.errsAdd("Missing required MALTER parameters");
+				break;
+			}
+			if (!parms[2].isEmpty()) {
+				if (parms[2].equals("AVAIL")) {
+					mode = 1;
+				} else if (parms[2].equals("UNAVAIL")) {
+					mode = 2;
+				} else if (parms[2].equals("DELETE")) {
+					mode = 3;
+				} else {
+					asm.errsAdd("Invalid MALTER status value");
+					break;
+				}
+			}
+			if (assemble(' ', "", "DSA", parms[1]) < 0) break;
+			if (assemble(' ', "", "DSA",
+					String.format("%d", mode)) < 0) break;
+			if (assemble(' ', "", "DSA", defParm(parms, 3, "0")) < 0) break;
+			ret = 0;
+			break;
+		default:
+			ret = 0;
+			break;
+		}
+		if (assemble('R', "", "DCW",
+				String.format("#1B%d", cmd)) < 0) return false;
+		return ret == 0;
 	}
 }

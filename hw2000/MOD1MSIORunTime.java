@@ -117,6 +117,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			case 6:	msget(); break; // MSGET
 			case 7:	msrep(); break; // MSREP
 			case 8:	msput(); break; // MSPUT
+			case 9:	setm(); break; // SETM
+			case 10: endm(); break; // ENDM
+			case 11: malter(); break; // MALTER
+			case 12: msrel(); break; // MSREL
 			default:
 				System.err.format("invalid op %02o\n", op);
 				sys.halt = true;
@@ -490,6 +494,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			getMCA(parms[0]);
 		} else {
 			// do we ever call exits from close?
+			haltErr(xitErr);
 		}
 		if (xitMCA.file != null) {
 			xitMCA.file.close();
@@ -504,8 +509,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		} else {
 			// Any return from EXIT is "fatal"?
 			// There are some "10 continue" cases...
-			// TODO: "...or typewriter message"
-			sys.halt = true;
+			haltErr(xitErr);
 			return;
 		}
 		if (xitMCA.file == null) {
@@ -530,8 +534,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		} else {
 			// Any return from EXIT is "fatal"?
 			// There are some "10 continue" cases...
-			// TODO: "...or typewriter message"
-			sys.halt = true;
+			haltErr(xitErr);
 			return;
 		}
 		if (xitMCA.file == null) {
@@ -553,8 +556,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		} else {
 			// Any return from EXIT is "fatal"?
 			// There are some "10 continue" cases...
-			// TODO: "...or typewriter message"
-			sys.halt = true;
+			haltErr(xitErr);
 			return;
 		}
 		if (xitMCA.file == null) {
@@ -569,6 +571,86 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		int[] ctri = xitMCA.file.getAddress();
 		putDskAdr(xitMCA.cadAdr, xitMCA.dd, 0, ctri, 3);
+		xitMCA = null;
+	}
+
+	public void setm() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			haltErr(xitErr);
+			return;
+		}
+		if (xitMCA.file == null) {
+			handleError(00510); // Write error
+			return;
+		}
+		if (!xitMCA.file.setMemb(sys, parms[1], parms[2])) {
+			handleError(xitMCA.file.getError());
+			return;
+		}
+		xitMCA = null;
+	}
+
+	public void endm() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			haltErr(xitErr);
+			return;
+		}
+		if (xitMCA.file == null) {
+			handleError(00510); // Write error
+			return;
+		}
+		if (!xitMCA.file.endMemb()) {
+			handleError(xitMCA.file.getError());
+			return;
+		}
+		xitMCA = null;
+	}
+
+	public void malter() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			haltErr(xitErr);
+			return;
+		}
+		if (xitMCA.file == null) {
+			handleError(00510); // Write error
+			return;
+		}
+		if (!xitMCA.file.alterMemb(sys, parms[1], parms[2], sys, parms[3])) {
+			handleError(xitMCA.file.getError());
+			return;
+		}
+		xitMCA = null;
+	}
+
+	public void msrel() {
+		if (xitMCA == null) {
+			getMCA(parms[0]);
+		} else {
+			// Any return from EXIT is "fatal"?
+			// There are some "10 continue" cases...
+			haltErr(xitErr);
+			return;
+		}
+		if (xitMCA.file == null) {
+			handleError(00510); // Write error
+			return;
+		}
+		if (!xitMCA.file.release()) {
+			handleError(xitMCA.file.getError());
+			return;
+		}
 		xitMCA = null;
 	}
 }
