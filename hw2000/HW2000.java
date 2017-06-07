@@ -111,8 +111,11 @@ public class HW2000 implements CoreMemory
 		SR = 0;
 		setAM(HW2000CCR.AIR_AM_3C);
 		CTL.reset();
-		Arrays.fill(mem, (byte)0); // This is a cheat, but needed for now
 		pdc.reset();
+	}
+
+	public void clearMem() {
+		Arrays.fill(mem, (byte)0);
 	}
 
 	public byte getSENSE() {

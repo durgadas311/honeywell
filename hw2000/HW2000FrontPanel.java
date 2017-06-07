@@ -95,6 +95,7 @@ public class HW2000FrontPanel extends JFrame
 	private JTextField dump_hi;
 	private JPanel dump_lo_pn;
 	private JPanel dump_hi_pn;
+	private JCheckBox dump_rx;
 	private JPanel dump_pn;
 	private JPanel vol_pn;
 	private JPanel map_pn;
@@ -229,6 +230,9 @@ public class HW2000FrontPanel extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Dump Full", KeyEvent.VK_N);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Clear Memory", KeyEvent.VK_Z);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -425,6 +429,7 @@ public class HW2000FrontPanel extends JFrame
 		dump_btns = new Object[2];
 		dump_btns[OPTION_YES] = "Dump";
 		dump_btns[OPTION_CANCEL] = "Cancel";
+		dump_rx = new JCheckBox("Octal (decimal)");
 		dump_lo = new JTextField();
 		dump_lo.setPreferredSize(new Dimension(200, 20));
 		dump_lo_pn = new JPanel();
@@ -435,6 +440,7 @@ public class HW2000FrontPanel extends JFrame
 		dump_hi_pn = new JPanel();
 		dump_hi_pn.add(new JLabel("High Adr:"));
 		dump_hi_pn.add(dump_hi);
+		dump_pn.add(dump_rx);
 		dump_pn.add(dump_lo_pn);
 		dump_pn.add(dump_hi_pn);
 
@@ -2974,14 +2980,15 @@ ee.printStackTrace();
 			null, dump_btns, dump_btns[OPTION_YES]);
 		if (res == OPTION_CANCEL) return 0;
 		if (res == OPTION_YES) {
+			int radix = dump_rx.isSelected() ? 8 : 10;
 			try {
 				if (dump_lo.getText().length() > 0) {
-					dumpLow = Integer.valueOf(dump_lo.getText());
+					dumpLow = Integer.valueOf(dump_lo.getText(), radix);
 				} else {
 					dumpLow = currLow;
 				}
 				if (dump_hi.getText().length() > 0) {
-					dumpHi = Integer.valueOf(dump_hi.getText());
+					dumpHi = Integer.valueOf(dump_hi.getText(), radix);
 				} else {
 					dumpHi = currHi;
 				}
@@ -3051,6 +3058,8 @@ ee.printStackTrace();
 			if (dumpDialog("Dump Parameters") > 0) {
 				sys.dumpHW(dumpLow, dumpHi);
 			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_Z) {
+			sys.clearMem();
 		} else if (mi.getMnemonic() == KeyEvent.VK_I) {
 			showAbout();
 		} else if (mi.getMnemonic() == KeyEvent.VK_E) {
