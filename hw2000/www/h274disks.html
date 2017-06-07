@@ -26,23 +26,51 @@ with A/B flags.
 <P>Due to lack of detailed information about these devices,
 the following has been assumed until more information is available:
 <UL>
-<LI>The ADDRESS REGISTER is loaded/stored from 12 characters in memory.
-The characters are DPCCTTRR0WDL, where "D" is the drive/unit number,
-"P" is the disk pack number (not used), "CC" is the cylinder, "TT" is the track,
-"RR" is the record, "W" is the protection/flag bits (TLR, A-FILE, B-FILE),
-and "DL" is the record data length.
-Some of these values are only used during format read/write commands.
-It is not clear whether a RM can limit
+<LI>The ADDRESS REGISTER is loaded/stored from 12 characters in memory,
+referred to as "DPCCTTRRSWDL".
+This register is closely-related to the record header on disk, which
+is FCCTTRRDL ("F" is the flag, which includes A/B bits from "W").
+MOD1 MPIOC documentation describes only the first 10 characters,
+in a field that is said to "reflect the address register".
+The address register is defined as:
+<UL>
+<LI>"D" is the drive/unit number (00-07)
+<LI>"P" is the disk pack number (not used - 00)
+<LI>"CC" is the cylinder
+<LI>"TT" is the track
+<LI>"RR" is the record
+<LI>"SW" is the protection/status bits (SSSSSS:SSWWWW)
+<LI>"DL" is the record data length
+</UL>
+Some of these values are only used during formatting commands.
+This implementation honors an RM to limit
 the amount of the address register that is stored/loaded.
-MOD1 MPIOC documentation describes 10 characters, but "DL" is needed for
-format WRITE, and is pertinent data for others.
-It is assumed that "TT" will actually select the head to read/write through.
-"CC" and "RR" are used for comparison to header data and to generate headers for formatting.
-"W" is used to generate the FLAG character during formatting, but it is
-assumed that the drive PERMIT switches actually determine write protection.
-"D" is assumed to select the device unit to perform I/O.
-"DL" is used during format WRITE for the record length, and indicates
+Formatting, not described in any documentation available, requires
+the ability to specify the record length (DL) as well as to indicate
+that a TLR record is to be formatted. The only mechanism for those seems
+to have been the address register. So, "DL" is appended after known characters
+and a special arrangement is made for a TLR bit in the "SW" characters.
+Assumptions about fields are:
+<UL>
+<LI>"D" physically selected the device unit to perform the I/O.
+<LI>"CC" was compared to header data when locating records,
+and written to new headers during formatting.
+<LI>"TT" would physically select the head to read/write through.
+It is also compared to header data when locating records,
+and written to new headers during formatting.
+<LI>"RR" was compared to header data when locating records,
+and written to new headers during formatting.
+It also included circuitry to increment it, for NEXT and EXTENDED operations.
+<LI>"S" was ignored during load, and presented during store as the status of the
+last operation. Cleared after storing.
+<LI>"W" was used to generate the A/B FLAG character bits during formatting,
+and for other operations was used to augment the PERMIT switches on the drive:
+if the corresponding bit in "W" was not set, then the PERMIT switch was effectively OFF.
+The bit 40 (octal) is interpretted as the TLR indicator for formatting (load only).
+<LI>"DL" (non-standard, not documented)
+is used as the record length during formatting, and indicates
 the actual record length after other commands.
+</UL>
 <LI>READ/WRITE INITIAL commmands will format record(s) beginning with the
 index point on the track.
 For WRITE, record address information comes from the ADDRESS REGISTER.

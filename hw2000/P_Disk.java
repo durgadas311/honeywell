@@ -57,7 +57,7 @@ public class P_Disk extends JFrame
 	static final byte HDR_TLR = (byte)040;		// Record header only
 	static final byte HDR_USER = (PERMIT_AB | PERMIT_DAT | PERMIT_FMT);
 	static final byte HDR_FORMAT = (HDR_TLR | PERMIT_AB);
-	// These are ORed into adr_prt
+	// These are ORed into adr_prt to form the status word
 	static final int STS_TRKOVR = 00020;
 	static final int STS_FMTVIO = 00040;
 	static final int STS_TLR = 00100;
@@ -447,9 +447,11 @@ public class P_Disk extends JFrame
 		if (next) {
 			++nxt_rec;
 		}
+		int len = adr_len;
 		byte flag = (byte)(adr_prt & HDR_FORMAT);
 		if (tlr) {
 			flag |= HDR_TLR;
+			len = 6;
 		}
 		track[save_pos++] = AM;
 		track[save_pos++] = flag;
@@ -459,22 +461,20 @@ public class P_Disk extends JFrame
 		track[save_pos++] = (byte)(adr_trk & 077);
 		track[save_pos++] = (byte)((nxt_rec >> 6) & 077);
 		track[save_pos++] = (byte)(nxt_rec & 077);
-		track[save_pos++] = (byte)((adr_len >> 6) & 077);
-		track[save_pos++] = (byte)(adr_len & 077);
+		track[save_pos++] = (byte)((len >> 6) & 077);
+		track[save_pos++] = (byte)(len & 077);
 		track[save_pos++] = DM;
-		if (save_pos + adr_len + 1 >= track.length) {
+		if (save_pos + len + 1 >= track.length) {
 			return false;
 		}
 		curr_pos = save_pos;
 		adr_rec = nxt_rec;
-		curr_end = curr_pos + adr_len;
+		curr_end = curr_pos + len;
 		return true;
 	}
 
 	// Used only by format write
 	private boolean initTLR(int cyl, int trk, int rec) {
-		adr_prt |= HDR_TLR;
-		adr_len = 6;	// TODO: must restore old valule?
 		if (!newRecord(true, true)) {
 			return false;
 		}
@@ -626,9 +626,9 @@ public class P_Disk extends JFrame
 			rwc.incrCLC();	// skip zero
 			m = rwc.readMem();
 			if ((m & 0300) == 0300) return;
+			// this can't be right w.r.t. TLR ...
 			adr_prt &= ~(STS_RESET | STS_TLR);
 			adr_prt |= (m & STS_RESET);
-			// this can't be right...
 			if ((m & HDR_TLR) != 0) {
 				adr_prt |= STS_TLR;
 			}
@@ -809,20 +809,15 @@ public class P_Disk extends JFrame
 	public void doOut(RWChannel rwc) {
 		boolean header = false; // only valid if 'format'
 		rwc.startCLC();
+		// NOTE: format takes A/B direct from adr_prt, so we can invert in 'f'
+		int f = (sts[adr_lun].flag & adr_prt) ^ PERMIT_AB; // invert A/B bits
 		if (format) {
-			if ((sts[adr_lun].flag & PERMIT_FMT) == 0) {
+			if ((f & PERMIT_FMT) == 0) {
 				adr_prt |= STS_FMTVIO;
 				errno = 00504;
 				error = true;
 				return;
 			}
-			// TODO: do we enforce match between FLAG and PERMIT switches?
-			// or is it just "caveat emptor"?
-			//if (((sts[adr_lun].flag ^ adr_flg) & PERMIT_AB) != 0) {
-			//	error = true;
-			//	return;
-			//}
-			// if caller did not seek cyl, too bad for them...
 			cacheTrack(sts[adr_lun].cyl, adr_trk);
 			track_dirty = true;
 			if (initial) {
@@ -831,6 +826,8 @@ public class P_Disk extends JFrame
 				// else search for EM?
 				// if (track[curr_pos] != EM) error...
 			}
+			// TODO: fix this whole TLR debacle
+			// TODO: disable EXTENED if TLR?
 			if (!newRecord(!initial, (adr_prt & STS_TLR) != 0)) {
 				adr_prt |= STS_TRKOVR;
 				errno = 00504;
@@ -842,7 +839,7 @@ public class P_Disk extends JFrame
 			// All of this could be cleaned up.
 			getHeader(curr_pos - 9); // loads curr_* variables
 		} else {
-			if ((sts[adr_lun].flag & PERMIT_DAT) == 0) {
+			if ((f & PERMIT_DAT) == 0) {
 				adr_prt |= STS_PRTVIO;
 				errno = 00502;
 				error = true;
@@ -854,7 +851,6 @@ public class P_Disk extends JFrame
 			}
 			// Check HEADER FLAG against PERMIT switches...
 			// invert A/B bits
-			int f = (sts[adr_lun].flag & adr_prt) ^ PERMIT_AB;
 			f &= curr_flg;	// mask NOT A/B bits
 			if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit, prot error...
 				adr_prt |= STS_PRTVIO;
@@ -896,6 +892,7 @@ public class P_Disk extends JFrame
 						break; // done with transfer
 					}
 					// 'newRecord' increments adr_rec...
+					// should never land here if TLR
 					if (!newRecord(true, (adr_prt & STS_TLR) != 0)) {
 						adr_prt |= STS_TRKOVR;
 						errno = 00504;
@@ -1210,12 +1207,12 @@ public class P_Disk extends JFrame
 			errno = 00505;  // Record not found
 			return false;
 		}
-		if ((sts[adr_lun].flag & PERMIT_DAT) == 0) {
+		int f = (sts[adr_lun].flag & adr_prt) ^ PERMIT_AB;	// invert A/B bits
+		if ((f & PERMIT_DAT) == 0) {
 			adr_prt |= STS_PRTVIO;
 			errno = 00502;	// Protection violation (DATA)
 			return false;
 		}
-		int f = (sts[adr_lun].flag & adr_prt) ^ PERMIT_AB;	// invert A/B bits
 		f &= curr_flg;	// mask NOT A/B bits
 		if ((f & PERMIT_AB) != 0) {	// if NOT A/B bit, prot error...
 			adr_prt |= STS_PRTVIO;
@@ -1243,7 +1240,9 @@ public class P_Disk extends JFrame
 		adr_cyl = cyl;
 		adr_trk = trk;
 		adr_rec = 0;
-		adr_prt = (flg & HDR_USER);
+		// Use A/B from caller, FMT/DAT from switches.
+		adr_prt = (flg & PERMIT_AB) |
+			(sts[adr_lun].flag & (PERMIT_FMT | PERMIT_DAT));
 		adr_len = reclen;
 		if (rectrk < 0) {
 			rectrk = numRecords(reclen);
@@ -1254,7 +1253,8 @@ public class P_Disk extends JFrame
 			errno = 00503; // device error
 			return false;
 		}
-		if ((sts[adr_lun].flag & PERMIT_FMT) == 0) {
+		int f = (sts[adr_lun].flag & adr_prt);
+		if ((f & PERMIT_FMT) == 0) {
 			adr_prt |= STS_FMTVIO;
 			errno = 00504;	// Protection violation (FORMAT)
 			return false;
