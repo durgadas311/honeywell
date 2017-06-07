@@ -271,6 +271,9 @@ public class P_Disk extends JFrame
 		adr_rec = 0;
 		adr_prt = 0;
 		adr_len = 0;
+		// must at least restore heads on drive 0, for BOOTSTRAP
+		sts[0].cyl = 0;
+		sts[0].cyl_pn.setText("000-00");
 	}
 
 	public void setInterrupt(HW2000 sys) {
@@ -367,19 +370,25 @@ public class P_Disk extends JFrame
 		adr_len = curr_len;
 	}
 
-	private boolean searchHeader() {
+	private boolean searchHeader(boolean wrap) {
 		// we must not be in middle of record data...
 		int r = revs;
 		// should never require searching, except for EM case.
 		while (track[curr_pos] != AM && revs - r < 2) {
 			if (track[curr_pos] == EM) {
 				curr_pos = 0;
+				if (!wrap) {
+					return false;
+				}
 				++revs;
 			} else {
 				incrPos(1);
+				if (!wrap && r > revs) {
+					return false;
+				}
 			}
 		}
-		return true;
+		return (track[curr_pos] == AM);
 	}
 
 	private void incrPos(int incr) {
@@ -394,7 +403,7 @@ public class P_Disk extends JFrame
 	private boolean searchRecord() {
 		revs = 0;
 		do {
-			if (!searchHeader()) {
+			if (!searchHeader(true)) {
 				break;
 			}
 			// now pointing at AM
@@ -729,7 +738,7 @@ public class P_Disk extends JFrame
 			if (initial) {
 				curr_pos = 0;
 			}
-			if (!searchHeader()) {
+			if (!searchHeader(true)) {
 				adr_prt |= STS_INCOMP;
 				errno = 00505;
 				error = true;
@@ -757,11 +766,12 @@ public class P_Disk extends JFrame
 					if (!extended) {
 						break;
 					}
-					if (!searchHeader()) {
-						adr_prt |= STS_INCOMP;
-						errno = 00505;
-						error = true;
-						return;
+					if (!searchHeader(false)) {
+						// Not an error... we get here
+						// only if we already found 1 or
+						// more records, so this is simply
+						// the end of track.
+						break;
 					}
 					++curr_pos;	// skip AM
 					getHeader(curr_pos);
