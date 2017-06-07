@@ -10,6 +10,11 @@
 //	MREL - erase all members
 
 public class PartitionedSeqFile extends SequentialFile {
+	static final byte _BEG_ = (byte)010;
+	static final byte _END_ = (byte)001;
+	static final byte _ALL_ = (byte)020;
+	static final byte _PRT_ = (byte)000;
+	static final byte _DEL_ = (byte)040;
 	static final byte[] _UNUSED_ = new byte[]
 		{ 054, 064, 045, 064, 062, 025, 024, 054,
 				015, 015, 015, 015, 015, 015 };	// *UNUSED*______
@@ -105,7 +110,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		}
 		int sts = blkBufMem.readChar(blkBufAdr + 24);
 		// not necessary to compare to _UNUSED_?
-		if (sts != 010) {
+		if (sts != _BEG_) {
 			error = 00434;	// actually, file not initialized
 			return false;
 		}
@@ -119,10 +124,18 @@ public class PartitionedSeqFile extends SequentialFile {
 			while (off < blkLen) {
 				sts = blkBufMem.readChar(blkBufAdr + off + 24);
 				// not necessary to compare to _ENDINDEX_?
-				if (sts == 001) {	// _ENDINDEX_
+				if (sts == _END_) {	// _ENDINDEX_
+					// there must be 1 more item available...
+					// in order to declare freeMember...
+					if (freeMember == null &&
+							(off + mmbIdxLen < blkLen ||
+							nBlks + 1 < idxLen)) {
+						freeMember = getAddress();
+						freeOff = off;
+					}
 					return true;	// caller examines foundMember
 				}
-				if (sts == 040) {	// deleted
+				if (sts == _DEL_) {	// deleted
 					if (freeMember == null) {
 						freeMember = getAddress();
 						freeOff = off;
@@ -212,8 +225,8 @@ public class PartitionedSeqFile extends SequentialFile {
 			return false;
 		}
 		// output-only requires member status 020...
-		byte req = (byte)(mode == 2 ? 020 : 000);
-		byte sts = (byte)020;	// default for new members
+		byte req = (byte)(mode == 2 ? _ALL_ : _PRT_);
+		byte sts = _ALL_;	// default for new members
 		int[] beg = null;
 		if (foundMember == null) {
 			// no match found
@@ -224,13 +237,37 @@ public class PartitionedSeqFile extends SequentialFile {
 			beg = freeCCTTRR;
 			foundMember = freeMember;
 			foundOff = freeOff;
-			super.seek(foundMember);
-			blkBufMem.copyIn(blkBufAdr + foundOff, memb, adr, 14);
-			blkBufMem.writeChar(blkBufAdr + foundOff + 14, (byte)015);
-			DiskVolume.putSome(beg, blkBufMem, blkBufAdr + foundOff + 15);
-			putNum(0, blkBufMem, blkBufAdr + foundOff + 21, 3);
-			blkBufMem.writeChar(blkBufAdr + foundOff + 24, sts);
+			super.seek(foundMember); // this might be *ENDINDEX*...
+			int off = foundOff;
+			sts = blkBufMem.readChar(blkBufAdr + off + 24);
+			CoreMemory tmp = null;
+			if (sts == _END_) {
+				// openMemb() does not set freeMember unless
+				// we have space to insert one more...
+				tmp = new BufferMemory(mmbIdxLen);
+				tmp.copyIn(0, blkBufMem, off, mmbIdxLen);
+			}
+			blkBufMem.copyIn(blkBufAdr + off, memb, adr, 14);
+			blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
+			DiskVolume.putSome(beg, blkBufMem, blkBufAdr + off + 15);
+			putNum(0, blkBufMem, blkBufAdr + off + 21, 3);
+			blkBufMem.writeChar(blkBufAdr + off + 24, _ALL_);
 			dirty = true;
+			if (sts == _END_) {
+				off += mmbIdxLen;
+				if (off >= blkLen) {
+					// we already know there is room
+					curCyl = nxtCyl;
+					curTrk = nxtTrk;
+					curRec = nxtRec;
+					if (!cacheBlock(false, curCyl, curTrk, curRec)) {
+						return false;
+					}
+					off = 0;
+				}
+				tmp.copyOut(0, blkBufMem, off, mmbIdxLen);
+				dirty = true;
+			}
 		} else {
 			// blkBufMem has the index item at foundOff...
 			sts = blkBufMem.readChar(blkBufAdr + foundOff + 24);
@@ -295,14 +332,9 @@ public class PartitionedSeqFile extends SequentialFile {
 		if (!rewindIndex()) {
 			return false;
 		}
-		int off = mmbIdxLen;
+		// Brute-force mechanism to locate end of index...
 		int nBlks = 0;
 		while (true) {
-			while (off < blkLen) {
-				blkBufMem.writeChar(blkBufAdr + off + 24, (byte)040);
-				dirty = true;
-				off += mmbIdxLen;
-			}
 			if (++nBlks >= idxLen) {
 				break;
 			}
@@ -312,26 +344,25 @@ public class PartitionedSeqFile extends SequentialFile {
 			if (!cacheBlock(false, curCyl, curTrk, curRec)) {
 				return false;
 			}
-			off = 0;
 		}
-		// back up one and set _ENDINDEX_...
-		// also save "data start" address...
-		off -= mmbIdxLen;
+		if (!rewindIndex()) {
+			return false;
+		}
 		int[] dat = new int[]{ nxtCyl, nxtTrk, nxtRec };
+		int off = 0;
+		blkBufMem.copyIn(blkBufAdr + off, _UNUSED_, 0, 14);
+		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
+		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + off + 15);
+		putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
+		blkBufMem.writeChar(blkBufAdr + off + 24, _BEG_);
+		dirty = true;
+		// assume at least two per record?
+		off += mmbIdxLen;
 		blkBufMem.copyIn(blkBufAdr + off, _ENDINDEX_, 0, 14);
 		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
 		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + off + 15);
 		putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
-		blkBufMem.writeChar(blkBufAdr + off + 24, (byte)001);
-		dirty = true;
-		if (!rewindIndex()) {
-			return false;
-		}
-		blkBufMem.copyIn(blkBufAdr, _UNUSED_, 0, 14);
-		blkBufMem.writeChar(blkBufAdr + 14, (byte)015);
-		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + 15);
-		putNum(totBlks - idxLen, blkBufMem, blkBufAdr + 21, 3);
-		blkBufMem.writeChar(blkBufAdr + 24, (byte)010);
+		blkBufMem.writeChar(blkBufAdr + off + 24, _END_);
 		dirty = true;
 		if (!sync()) {
 			return false;
