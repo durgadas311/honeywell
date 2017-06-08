@@ -105,7 +105,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		int off = mmbIdxLen;
 		int nBlks = 0;
 		while (true) {
-			while (off < blkLen) {
+			while (off + mmbIdxLen <= blkLen) {
 				sts = blkBufMem.readChar(blkBufAdr + off + 24);
 				// not necessary to compare to _ENDINDEX_?
 				if (sts == _END_) {	// _ENDINDEX_
@@ -239,7 +239,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			dirty = true;
 			if (sts == _END_) {
 				off += mmbIdxLen;
-				if (off >= blkLen) {
+				if (off + mmbIdxLen >= blkLen) {
 					// we already know there is room
 					curCyl = nxtCyl;
 					curTrk = nxtTrk;
