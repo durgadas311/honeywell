@@ -302,6 +302,18 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		return i;
 	}
 
+	// Works backward until WM...
+	private int getStrPtr(int a) {
+		int b;
+		for (b = a; b >= 0; --b) {
+			if ((sys.rawReadMem(b) & 0100) != 0) {
+				break;
+			}
+		}
+		// TODO: detect error?
+		return b;
+	}
+
 	// DPCCTTRRII... ('P' always 0)
 	// Works backward until WM...
 	private void putDskAdr(int a, int d, int p, int[] ctri, int num) {
@@ -587,7 +599,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(00510); // Write error
 			return;
 		}
-		if (!xitMCA.file.setMemb(sys, parms[1], parms[2])) {
+		if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), parms[2])) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
@@ -627,7 +639,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(00510); // Write error
 			return;
 		}
-		if (!xitMCA.file.alterMemb(sys, parms[1], parms[2], sys, parms[3])) {
+		if (!xitMCA.file.alterMemb(sys, getStrPtr(parms[1]),
+				parms[2], sys, getStrPtr(parms[3]))) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
