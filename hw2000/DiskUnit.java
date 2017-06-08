@@ -28,6 +28,10 @@ public class DiskUnit {
 			(eCyl - sCyl + 1), (eTrk - sTrk + 1));
 	}
 
+	public int size() {
+		return (eCyl - sCyl + 1) * (eTrk - sTrk + 1);
+	}
+
 	public int[] get() {
 		int[] ints = new int[4];
 		ints[0] = sCyl;

@@ -510,6 +510,7 @@ public class FileVolSupport {
 		error = 0;
 		boolean ok;
 		int itmBlk = (recBlk * recLen) / itmLen;
+		int mmbItm = 25; // Hard-coded for Part. Seq. files
 		DiskVolume vol = new DiskVolume(dsk, unit);
 		if (!vol.mount()) {
 			error = vol.getError();
@@ -531,9 +532,14 @@ public class FileVolSupport {
 		if (descr == null) {
 			return false;
 		}
+		// This also checks for conflicts...
 		CoreMemory alloc = findFreeAlloc(vol, vol.getVolAlloc(), units);
 		if (alloc == null) {
 			return false;
+		}
+		int nTrks = 0;
+		for (int a = 0; a < 6 && units[a] != null; ++a) {
+			nTrks += units[a].size();
 		}
 		names.copyIn(0, name, 0, 10);
 		names.writeChar(10, (byte)0);	// first (only) volume
@@ -552,8 +558,12 @@ public class FileVolSupport {
 		vol.putOne(itmBlk, descr, 5);
 		vol.putOne(recBlk, descr, 7);
 		vol.putOne(recTrk, descr, 9);
+		if (type == DiskFile.SEQUENTIAL || type == DiskFile.PART_SEQ) {
+			vol.putNum(((nTrks * recTrk) / recBlk), descr, 65, 3);
+		}
 		if (type == DiskFile.PART_SEQ) {
 			vol.putOne(blkIdx, descr, 63);
+			descr.writeChar(68, (byte)mmbItm);
 		}
 		// TODO: populate other fields...
 		ok = vol.getVolDescr().repItem(descr, 0);
@@ -645,7 +655,7 @@ public class FileVolSupport {
 			DiskFile file = new PartitionedSeqFile(dsk, unit, name, false,
 					null, 0,
 					itmLen, recLen, recTrk, recBlk,
-					blkIdx, 25, // hard-code index item length
+					blkIdx, mmbItm,
 					units);
 			if (!file.release()) {
 				error = file.getError();

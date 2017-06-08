@@ -59,7 +59,6 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		int cmd = cmds.get(mac);
 		int np = parms.length;
 		int ret = -1;
-		int mode = 0; // not MSOPEN
 		int x;
 		String mca;
 		switch (cmd) {
@@ -170,6 +169,10 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		int x;
 		String mca;
 		mca = "MCA" + parms[0];
+		if (cmd == 4) { // MSOPEN must be first call ever made...
+			if (assemble(' ', tag, "BCE", "$MIOCI,$MINIT,01") < 0) return false;
+			tag = "";
+		}
 		if (assemble(' ', tag, "B", "$MIOC") < 0) return false;
 		if (assemble(' ', "", "DSA", mca) < 0) return false;
 		switch (cmd) {
@@ -187,8 +190,6 @@ public class MacroLibMOD1MSIO implements MacroDef {
 					break;
 				}
 			}
-			// MSOPEN must be first call ever made...
-			if (assemble(' ', tag, "BCE", "$MIOCI,$MINIT,01") < 0) break;
 			if (assemble(' ', "", "DSA",
 					String.format("%d", mode)) < 0) break;
 			ret = 0;

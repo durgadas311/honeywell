@@ -245,8 +245,7 @@ public class DiskVolume {
 		}
 		int type = dItm.readChar(dAdr + 0);
 		int[] desc = getSome(dItm, dAdr + 1, 5);
-		int idxLen = dItm.readChar(dAdr + 63) << 6;
-		idxLen |= dItm.readChar(dAdr + 64);
+		int idxLen = getNum(dItm, dAdr + 63, 2);
 		int mmbIdxLen = dItm.readChar(dAdr + 68);
 		// TODO: overflow, etc.
 		DiskUnit[] units = new DiskUnit[6];
@@ -320,6 +319,22 @@ public class DiskVolume {
 		int z = start;
 		buf.writeChar(z++, (byte)(val >> 6));
 		buf.writeChar(z++, (byte)val);
+	}
+
+	static public void putNum(int val, CoreMemory buf, int start, int num) {
+		while (--num >= 0) {
+			buf.writeChar(start + num, (byte)val);
+			val >>= 6;
+		}
+	}
+
+	static public int getNum(CoreMemory buf, int start, int num) {
+		int val = 0;
+		while (num-- > 0) {
+			val <<= 6;
+			val |= buf.readChar(start++);
+		}
+		return val;
 	}
 
 	static public void initVOL(CoreMemory rec, byte[] name, byte[] snum) {

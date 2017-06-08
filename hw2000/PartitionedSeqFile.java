@@ -68,22 +68,6 @@ public class PartitionedSeqFile extends SequentialFile {
 		return trks * recTrk;
 	}
 
-	private int getNum(CoreMemory buf, int start, int num) {
-		int val = 0;
-		while (num-- > 0) {
-			val <<= 6;
-			val |= buf.readChar(start++);
-		}
-		return val;
-	}
-
-	private void putNum(int val, CoreMemory buf, int start, int num) {
-		while (--num >= 0) {
-			buf.writeChar(start + num, (byte)val);
-			val >>= 6;
-		}
-	}
-
 	private boolean compare(CoreMemory buf, int adr,
 				CoreMemory buf2, int adr2, int len) {
 		for (int x = 0; x < len; ++x) {
@@ -115,7 +99,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			return false;
 		}
 		freeCCTTRR = DiskVolume.getSome(blkBufMem, blkBufAdr + 15, 3);
-		freeBlocks = getNum(blkBufMem, blkBufAdr + 21, 3);
+		freeBlocks = DiskVolume.getNum(blkBufMem, blkBufAdr + 21, 3);
 		freeMember = null;
 		foundMember = null;
 		int off = mmbIdxLen;
@@ -250,7 +234,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			blkBufMem.copyIn(blkBufAdr + off, memb, adr, 14);
 			blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
 			DiskVolume.putSome(beg, blkBufMem, blkBufAdr + off + 15);
-			putNum(0, blkBufMem, blkBufAdr + off + 21, 3);
+			DiskVolume.putNum(0, blkBufMem, blkBufAdr + off + 21, 3);
 			blkBufMem.writeChar(blkBufAdr + off + 24, _ALL_);
 			dirty = true;
 			if (sts == _END_) {
@@ -300,14 +284,14 @@ public class PartitionedSeqFile extends SequentialFile {
 			int putBlks = (putItms + itmBlk - 1) / itmBlk;
 			int[] end = new int[]{ nxtCyl, nxtTrk, nxtRec };
 			super.seek(foundMember);
-			putNum(putBlks, blkBufMem, blkBufAdr + foundOff + 21, 3);
+			DiskVolume.putNum(putBlks, blkBufMem, blkBufAdr + foundOff + 21, 3);
 			dirty = true;
 			ok = rewindIndex();
 			if (ok) {
-				int n = getNum(blkBufMem, blkBufAdr + 21, 3);
+				int n = DiskVolume.getNum(blkBufMem, blkBufAdr + 21, 3);
 				n -= putBlks;
 				if (n < 0) n = 0;
-				putNum(n, blkBufMem, blkBufAdr + 21, 3);
+				DiskVolume.putNum(n, blkBufMem, blkBufAdr + 21, 3);
 				DiskVolume.putSome(end, blkBufMem, blkBufAdr + 15);
 				dirty = true;
 				ok = sync();
@@ -353,7 +337,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		blkBufMem.copyIn(blkBufAdr + off, _UNUSED_, 0, 14);
 		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
 		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + off + 15);
-		putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
+		DiskVolume.putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
 		blkBufMem.writeChar(blkBufAdr + off + 24, _BEG_);
 		dirty = true;
 		// assume at least two per record?
@@ -361,7 +345,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		blkBufMem.copyIn(blkBufAdr + off, _ENDINDEX_, 0, 14);
 		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
 		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + off + 15);
-		putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
+		DiskVolume.putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
 		blkBufMem.writeChar(blkBufAdr + off + 24, _END_);
 		dirty = true;
 		if (!sync()) {
