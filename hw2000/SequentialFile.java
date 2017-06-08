@@ -352,7 +352,7 @@ public class SequentialFile implements DiskFile {
 			curRec = 0;
 		} else {
 			curOff += itmLen;
-			if (curOff + itmLen >= blkLen) {
+			if (curOff + itmLen > blkLen) {
 				curOff = 0;
 				curCyl = nxtCyl;
 				curTrk = nxtTrk;

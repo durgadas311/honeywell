@@ -112,7 +112,7 @@ public class PartitionedSeqFile extends SequentialFile {
 					// there must be 1 more item available...
 					// in order to declare freeMember...
 					if (freeMember == null &&
-							(off + mmbIdxLen < blkLen ||
+							(off + mmbIdxLen <= blkLen ||
 							nBlks + 1 < idxLen)) {
 						freeMember = getAddress();
 						freeOff = off;
@@ -229,7 +229,7 @@ public class PartitionedSeqFile extends SequentialFile {
 				// openMemb() does not set freeMember unless
 				// we have space to insert one more...
 				tmp = new BufferMemory(mmbIdxLen);
-				tmp.copyIn(0, blkBufMem, off, mmbIdxLen);
+				tmp.copyIn(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
 			}
 			blkBufMem.copyIn(blkBufAdr + off, memb, adr, 14);
 			blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
@@ -239,7 +239,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			dirty = true;
 			if (sts == _END_) {
 				off += mmbIdxLen;
-				if (off + mmbIdxLen >= blkLen) {
+				if (off + mmbIdxLen > blkLen) {
 					// we already know there is room
 					curCyl = nxtCyl;
 					curTrk = nxtTrk;
@@ -249,7 +249,7 @@ public class PartitionedSeqFile extends SequentialFile {
 					}
 					off = 0;
 				}
-				tmp.copyOut(0, blkBufMem, off, mmbIdxLen);
+				tmp.copyOut(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
 				dirty = true;
 			}
 		} else {
@@ -297,6 +297,7 @@ public class PartitionedSeqFile extends SequentialFile {
 				ok = sync();
 			}
 		}
+		foundMember = null;
 		put = false;
 		return ok;
 	}
@@ -329,10 +330,11 @@ public class PartitionedSeqFile extends SequentialFile {
 				return false;
 			}
 		}
+		// snapshot end of index (start of data)
+		int[] dat = new int[]{ nxtCyl, nxtTrk, nxtRec };
 		if (!rewindIndex()) {
 			return false;
 		}
-		int[] dat = new int[]{ nxtCyl, nxtTrk, nxtRec };
 		int off = 0;
 		blkBufMem.copyIn(blkBufAdr + off, _UNUSED_, 0, 14);
 		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
