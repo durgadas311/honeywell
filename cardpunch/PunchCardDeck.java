@@ -243,7 +243,7 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
-	private void newCard() {
+	private void newCard(boolean blank) {
 		_endOfCard = false;
 		if (_prev != null) {
 			// anything more required to free array?
@@ -254,7 +254,7 @@ class PunchCardDeck extends PunchCard
 		_curr = _code;
 		Arrays.fill(_code, (byte)0);
 		_noCard = false;
-		if (_inDeck != null) {
+		if (_inDeck != null && !blank) {
 			try {
 				int n = _inDeck.read(_code);
 				if (n <= 0) {
@@ -393,6 +393,14 @@ class PunchCardDeck extends PunchCard
 		repaint();
 	}
 
+	private void blank() {
+		if (!_noCard) {
+			finishCard(false, false, true);
+		}
+		newCard(true);
+		cardInRight();
+	}
+
 	private void finishCard(boolean auto, boolean drum, boolean noFeed) {
 		if (!_currIsProg && !_noCard) {
 			if (_autoSD_cb.isSelected()) {
@@ -449,7 +457,7 @@ class PunchCardDeck extends PunchCard
 			_noCard = true;
 			repaint();
 		} else {
-			newCard();	// does repaint
+			newCard(false);	// does repaint
 		}
 		if (!_noCard) {
 			if (_currIsProg) {
@@ -579,6 +587,11 @@ class PunchCardDeck extends PunchCard
 			}
 			if (c == '\030') {	// ^X
 				shred();
+				continue;
+			}
+			if (c == '\016') {	// ^N
+				// insert blank card
+				blank();
 				continue;
 			}
 			if (c == '\n') {
