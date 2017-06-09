@@ -272,8 +272,10 @@ public class P_Disk extends JFrame
 		adr_prt = 0;
 		adr_len = 0;
 		// must at least restore heads on drive 0, for BOOTSTRAP
-		sts[0].cyl = 0;
-		sts[0].cyl_pn.setText("000-00");
+		if (sts[0].dev != null) {
+			sts[0].cyl = 0;
+			sts[0].cyl_pn.setText("000-00");
+		}
 	}
 
 	public void setInterrupt(HW2000 sys) {

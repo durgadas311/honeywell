@@ -77,7 +77,7 @@ public class I_MOS implements Instruction {
 		byte b;
 		do {
 			a = sys.readMem(sys.AAR);
-			b = sys.readMem(sys.AAR);
+			b = sys.readMem(sys.BAR);
 			if (m != 0) {
 				byte c = (byte)((b & ~m) | (a & m));
 				sys.writeMem(sys.BAR, c);
