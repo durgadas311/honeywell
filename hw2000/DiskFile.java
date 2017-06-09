@@ -6,6 +6,11 @@ public interface DiskFile {
 	static final byte INDEXED_SEQ = 003;
 	static final byte PART_SEQ = 011;
 
+	static final int IN = 001;
+	static final int OUT = 002;
+	static final int IN_OUT = (IN | OUT);
+	static final int UPDATE = 004;
+
 	// Open done by ctor and caller.
 	// All types (except MSPUT on INDEXED_SEQ, DIRECT)
 	boolean getItem(CoreMemory itm, int adr);
@@ -23,6 +28,7 @@ public interface DiskFile {
 	void setDescr(CoreMemory dscBuf, int dscAdr);
 	DiskFile dup();	// R/O clone
 	byte[] getName();
+	int getMode();
 	int getType();
 	int getError();
 	DiskUnit[] getAlloc();

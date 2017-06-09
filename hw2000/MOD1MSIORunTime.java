@@ -484,9 +484,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			}
 		}
 		if (xitMCA.file == null) {
-			xitMCA.file = xitMCA.vol.openFile(xitMCA.name,
-					(xitMCA.mode < 2), sys, xitMCA.buf1,
-					sys, vbuf);
+			xitMCA.file = xitMCA.vol.openFile(xitMCA.name, xitMCA.mode,
+						sys, xitMCA.buf1, sys, vbuf);
 			if (xitMCA.file == null) {
 				handleError(xitMCA.vol.getError());
 				return;
@@ -599,6 +598,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(00510); // Write error
 			return;
 		}
+		// TODO: update mode
 		if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), parms[2])) {
 			handleError(xitMCA.file.getError());
 			return;
@@ -619,6 +619,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(00510); // Write error
 			return;
 		}
+		// TODO: update mode
 		if (!xitMCA.file.endMemb()) {
 			handleError(xitMCA.file.getError());
 			return;

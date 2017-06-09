@@ -24,7 +24,6 @@ public class PartitionedSeqFile extends SequentialFile {
 	int idxLen;	// number of blocks in index
 	int mmbIdxLen;	// length of index item (must be 25?)
 	int itmBlk;	// number of items per block
-	int totBlks;
 
 	int putItms;	// number of items MSPUT
 
@@ -35,37 +34,36 @@ public class PartitionedSeqFile extends SequentialFile {
 	int freeOff;
 	int[] foundMember;
 	int foundOff;
+	CoreMemory newMembBuf;
+	int newMembOff;
 
 	// Caller locates *VOLNAMES*, etc items and passes info to this ctor.
-	public PartitionedSeqFile(RandomRecordIO dsk, int unit, byte[] name, boolean prot,
+	public PartitionedSeqFile(RandomRecordIO dsk, int unit, byte[] name, int mode,
 			CoreMemory blkBuf, int blkAdr,
 			int itmLen, int recLen, int recTrk, int recBlk,
 			int idxLen, int mmbIdxLen,
 			DiskUnit[] alloc) {
-		super(dsk, unit, name, prot, blkBuf, blkAdr,
+		super(dsk, unit, name, mode, blkBuf, blkAdr,
 				itmLen, recLen, recTrk, recBlk, alloc);
 		itmBlk = (recLen * recBlk) / itmLen;
 		this.idxLen = idxLen;	// number of blocks
 		this.mmbIdxLen = mmbIdxLen;	// always 25? at least 25?
-		totBlks = totalBlocks();
 	}
 
 	// Create a R/O clone of this file. Not used?
 	@Override
 	public DiskFile dup() {
-		PartitionedSeqFile dup = new PartitionedSeqFile(dsk, unit, name, true,
-				null, 0, itmLen, recLen, recTrk, recBlk,
+		PartitionedSeqFile dup = new PartitionedSeqFile(dsk, unit, name,
+				DiskFile.IN, null, 0, itmLen, recLen, recTrk, recBlk,
 				idxLen, mmbIdxLen, units);
 		return dup;
 	}
 
-	private int totalBlocks() {
-		int trks = 0;
-		for (int u = 0; u < units.length && units[u] != null; ++u) {
-			trks += ((units[u].eCyl - units[u].sCyl + 1) *
-				(units[u].eTrk - units[u].sTrk + 1));
-		}
-		return trks * recTrk;
+	@Override
+	public void setDescr(CoreMemory dscBuf, int dscAdr) {
+		super.setDescr(dscBuf, dscAdr);
+		DiskVolume.putOne(idxLen, dscBuf, dscAdr + 63);
+		dscBuf.writeChar(dscAdr + 68, (byte)mmbIdxLen);
 	}
 
 	private boolean compare(CoreMemory buf, int adr,
@@ -150,6 +148,53 @@ public class PartitionedSeqFile extends SequentialFile {
 		// NOTREACHED
 	}
 
+	// MSPUT was done on member... must create member...
+	private boolean updateMemb() {
+		int putBlks = (putItms + itmBlk - 1) / itmBlk;
+		int[] end = new int[]{ nxtCyl, nxtTrk, nxtRec };
+		boolean ok = rewindIndex();
+		if (!ok) return false;
+		int n = DiskVolume.getNum(blkBufMem, blkBufAdr + 21, 3);
+		n -= putBlks;
+		if (n < 0) n = 0;
+		DiskVolume.putNum(n, blkBufMem, blkBufAdr + 21, 3);
+		DiskVolume.putSome(end, blkBufMem, blkBufAdr + 15);
+		dirty = true;
+		ok = super.seek(foundMember); // this might be *ENDINDEX*...
+		if (!ok) return false;
+		int off = foundOff;
+		byte sts = blkBufMem.readChar(blkBufAdr + off + 24);
+		CoreMemory tmp = null;
+		if (sts == _END_) {
+			// openMemb() does not set freeMember unless
+			// we have space to insert one more...
+			tmp = new BufferMemory(mmbIdxLen);
+			tmp.copyIn(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
+		}
+		blkBufMem.copyIn(blkBufAdr + off, newMembBuf, newMembOff, 14);
+		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
+		DiskVolume.putSome(freeCCTTRR, blkBufMem, blkBufAdr + off + 15);
+		DiskVolume.putNum(putBlks, blkBufMem, blkBufAdr + off + 21, 3);
+		blkBufMem.writeChar(blkBufAdr + off + 24, _ALL_);
+		dirty = true;
+		if (sts == _END_) {
+			off += mmbIdxLen;
+			if (off + mmbIdxLen > blkLen) {
+				// we already know there is room
+				curCyl = nxtCyl;
+				curTrk = nxtTrk;
+				curRec = nxtRec;
+				if (!cacheBlock(false, curCyl, curTrk, curRec)) {
+					return false;
+				}
+				off = 0;
+			}
+			tmp.copyOut(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
+			dirty = true;
+		}
+		return sync();
+	}
+
 	@Override
 	public boolean rewind() { error = 00005; return false; }
 
@@ -209,8 +254,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			return false;
 		}
 		// output-only requires member status 020...
-		byte req = (byte)(mode == 2 ? _ALL_ : _PRT_);
-		byte sts = _ALL_;	// default for new members
+		byte req = (byte)(mode == DiskFile.OUT ? _ALL_ : _PRT_);
 		int[] beg = null;
 		if (foundMember == null) {
 			// no match found
@@ -218,43 +262,17 @@ public class PartitionedSeqFile extends SequentialFile {
 				error = 00204;	// no space in index
 				return false;
 			}
-			beg = freeCCTTRR;
+			// This member might be _END_, in which case
+			// we insert new member and push _END_ down one.
 			foundMember = freeMember;
 			foundOff = freeOff;
-			super.seek(foundMember); // this might be *ENDINDEX*...
-			int off = foundOff;
-			sts = blkBufMem.readChar(blkBufAdr + off + 24);
-			CoreMemory tmp = null;
-			if (sts == _END_) {
-				// openMemb() does not set freeMember unless
-				// we have space to insert one more...
-				tmp = new BufferMemory(mmbIdxLen);
-				tmp.copyIn(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
-			}
-			blkBufMem.copyIn(blkBufAdr + off, memb, adr, 14);
-			blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
-			DiskVolume.putSome(beg, blkBufMem, blkBufAdr + off + 15);
-			DiskVolume.putNum(0, blkBufMem, blkBufAdr + off + 21, 3);
-			blkBufMem.writeChar(blkBufAdr + off + 24, _ALL_);
-			dirty = true;
-			if (sts == _END_) {
-				off += mmbIdxLen;
-				if (off + mmbIdxLen > blkLen) {
-					// we already know there is room
-					curCyl = nxtCyl;
-					curTrk = nxtTrk;
-					curRec = nxtRec;
-					if (!cacheBlock(false, curCyl, curTrk, curRec)) {
-						return false;
-					}
-					off = 0;
-				}
-				tmp.copyOut(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
-				dirty = true;
-			}
+			newMembBuf = memb;
+			newMembOff = adr;
+			// Member index is not updated until ENDM...
+			beg = freeCCTTRR;
 		} else {
 			// blkBufMem has the index item at foundOff...
-			sts = blkBufMem.readChar(blkBufAdr + foundOff + 24);
+			byte sts = blkBufMem.readChar(blkBufAdr + foundOff + 24);
 			if (req > sts) {
 				error = 00214;
 				return false;
@@ -264,6 +282,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		if (!super.seek(beg[0], beg[1], beg[2], 0)) {
 			return false;
 		}
+		// TODO: update 'mode' to reflect current member mode
 		putItms = 0;
 		return true;
 	}
@@ -281,22 +300,9 @@ public class PartitionedSeqFile extends SequentialFile {
 		// this should add EOD if MSPUT...
 		super.close();	// must not be terminal
 		if (put) {
-			int putBlks = (putItms + itmBlk - 1) / itmBlk;
-			int[] end = new int[]{ nxtCyl, nxtTrk, nxtRec };
-			super.seek(foundMember);
-			DiskVolume.putNum(putBlks, blkBufMem, blkBufAdr + foundOff + 21, 3);
-			dirty = true;
-			ok = rewindIndex();
-			if (ok) {
-				int n = DiskVolume.getNum(blkBufMem, blkBufAdr + 21, 3);
-				n -= putBlks;
-				if (n < 0) n = 0;
-				DiskVolume.putNum(n, blkBufMem, blkBufAdr + 21, 3);
-				DiskVolume.putSome(end, blkBufMem, blkBufAdr + 15);
-				dirty = true;
-				ok = sync();
-			}
+			updateMemb();
 		}
+		mode &= ~DiskFile.IN_OUT;
 		foundMember = null;
 		put = false;
 		return ok;
@@ -339,7 +345,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		blkBufMem.copyIn(blkBufAdr + off, _UNUSED_, 0, 14);
 		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
 		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + off + 15);
-		DiskVolume.putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
+		DiskVolume.putNum(numBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
 		blkBufMem.writeChar(blkBufAdr + off + 24, _BEG_);
 		dirty = true;
 		// assume at least two per record?
@@ -347,7 +353,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		blkBufMem.copyIn(blkBufAdr + off, _ENDINDEX_, 0, 14);
 		blkBufMem.writeChar(blkBufAdr + off + 14, (byte)015);
 		DiskVolume.putSome(dat, blkBufMem, blkBufAdr + off + 15);
-		DiskVolume.putNum(totBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
+		DiskVolume.putNum(numBlks - idxLen, blkBufMem, blkBufAdr + off + 21, 3);
 		blkBufMem.writeChar(blkBufAdr + off + 24, _END_);
 		dirty = true;
 		if (!sync()) {

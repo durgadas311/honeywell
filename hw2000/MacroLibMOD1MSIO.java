@@ -177,14 +177,16 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		if (assemble(' ', "", "DSA", mca) < 0) return false;
 		switch (cmd) {
 		case 4: // MSOPEN special handling
-			mode = 1; // IN (only)
+			mode = DiskFile.IN;
 			if (np >= 2 && !parms[1].isEmpty()) {
 				if (parms[1].equals("IN")) {
 					//
 				} else if (parms[1].equals("IN/OUT")) {
-					mode = 3;
+					mode = DiskFile.IN_OUT;
 				} else if (parms[1].equals("OUT")) {
-					mode = 2;
+					mode = DiskFile.OUT;
+				} else if (parms[1].equals("UPDATE")) {
+					mode = DiskFile.UPDATE;
 				} else {
 					asm.errsAdd("Invalid MSOPEN mode value");
 					break;
@@ -199,14 +201,14 @@ public class MacroLibMOD1MSIO implements MacroDef {
 				asm.errsAdd("Missing required SETM parameters");
 				break;
 			}
-			mode = 1; // IN (only)
+			mode = DiskFile.IN;
 			if (!parms[2].isEmpty()) {
 				if (parms[2].equals("IN")) {
 					//
 				} else if (parms[2].equals("IN/OUT")) {
-					mode = 3;
+					mode = DiskFile.IN_OUT;
 				} else if (parms[2].equals("OUT")) {
-					mode = 2;
+					mode = DiskFile.OUT;
 				} else {
 					asm.errsAdd("Invalid SETM mode value");
 					break;

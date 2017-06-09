@@ -15,11 +15,16 @@ public class FileVolSupport {
 	static Map<Integer, String> errmsg;
 	static {
 		// This represents all documented EXITs, many are not used.
+		//
+		// These are errors outside of MIOC (MOD1MSIO never uses).
+		// Mainly used between FileVolSupport and HW2000FrontPanel.
 		errmsg = new HashMap<Integer, String>();
 		errmsg.put(00001, "Directory full");
 		errmsg.put(00002, "Allocation conflict");
 		errmsg.put(00003, "File exists");
 		errmsg.put(00005, "Invalid operation");
+		//
+		// "Directory" errors - MSOPEN, MSCLOS
 		errmsg.put(00101, "OPEN CALLOUT 1");
 		errmsg.put(00103, "No File");
 		errmsg.put(00104, "Allocation Table overflow");
@@ -34,11 +39,13 @@ public class FileVolSupport {
 		errmsg.put(00134, "No more devices");
 		errmsg.put(00143, "Not first volume");
 		errmsg.put(00153, "File empty");
+		// "Index" errors - Partitioned or Indexed files
 		errmsg.put(00203, "SETM No member");
 		errmsg.put(00213, "MALTER No member");
 		errmsg.put(00204, "SETM No index space");
 		errmsg.put(00214, "SETM output-only not allowed");
 		errmsg.put(00224, "MALTER can't delete");
+		// "Data" errors -
 		errmsg.put(00401, "MSGET End of file");
 		errmsg.put(00411, "MSPUT No space");
 		errmsg.put(00412, "MSINS CALLOUT 1");
@@ -50,6 +57,7 @@ public class FileVolSupport {
 		errmsg.put(00423, "Indexed overflow");
 		errmsg.put(00414, "Key verification fail");
 		errmsg.put(00424, "Duplicate key");
+		// "Device" (hardware) errors
 		errmsg.put(00501, "Device inoperable");
 		errmsg.put(00502, "Protection violation");
 		errmsg.put(00503, "Device error");	// seek error
@@ -60,6 +68,10 @@ public class FileVolSupport {
 		errmsg.put(00510, "Write error");
 		errmsg.put(00511, "Track-Linking Record");
 		errmsg.put(00512, "Track-Linking error");
+		// TBD: logic errors: invalid actions, etc.
+		// These do not seem to be handled, at least not at runtime.
+		// There are no provisions for "failure" from the various
+		// MIOC macros, aside from the EXITs.
 	}
 
 	static public String getError() {
@@ -82,9 +94,10 @@ public class FileVolSupport {
 		nTrk = dsk.numTracks();
 		error = 0;
 		int flag = 0;
-		DiskFile volNames = DiskVolume.newVolNames(dsk, unit, false, -1, -1);
-		DiskFile volDescr = DiskVolume.newVolDescr(dsk, unit, false, -1, -1);
-		DiskFile volAlloc = DiskVolume.newVolAlloc(dsk, unit, false, -1, -1);
+		// Note, for internal users 'mode' is don't-care.
+		DiskFile volNames = DiskVolume.newVolNames(dsk, unit, 0, -1, -1);
+		DiskFile volDescr = DiskVolume.newVolDescr(dsk, unit, 0, -1, -1);
+		DiskFile volAlloc = DiskVolume.newVolAlloc(dsk, unit, 0, -1, -1);
 		if (!dsk.begin(unit)) {
 			error = dsk.getError();
 			return false;
@@ -552,6 +565,7 @@ public class FileVolSupport {
 			error = vol.getVolNames().getError();
 			return false;
 		}
+		// TODO: use setDescr() method on file... must construct first.
 		descr.writeChar(0, (byte)type);
 		vol.putOne(itmLen, descr, 1);
 		vol.putOne(recLen, descr, 3);
@@ -569,7 +583,7 @@ public class FileVolSupport {
 		ok = vol.getVolDescr().repItem(descr, 0);
 		ok = vol.getVolDescr().sync();
 		if (!ok) {
-			error = vol.getVolNames().getError();
+			error = vol.getVolDescr().getError();
 			return false;
 		}
 		int e = 0;
@@ -593,11 +607,15 @@ public class FileVolSupport {
 			alloc.zero(12, 20);
 			ok = vol.getVolAlloc().repItem(alloc, 0);
 			if (!ok) {
-				error = vol.getVolNames().getError();
+				error = vol.getVolAlloc().getError();
 				return false;
 			}
 		}
 		ok = vol.getVolAlloc().sync();
+		if (!ok) {
+			error = vol.getVolAlloc().getError();
+			return false;
+		}
 		// Now (re-)format file allocation units tracks...
 		boolean first = true;
 		int pCyl = -1;
@@ -633,27 +651,18 @@ public class FileVolSupport {
 		// Type-specific file initialization...
 		// TODO: handle other types
 		if (type == DiskFile.SEQUENTIAL) {
-			// Sequential files (or each partition of Partitioned Sequential)
-			// TODO: is there a better way?
-			CoreMemory itmBuf = new BufferMemory(itmLen);
-			DiskFile file = new SequentialFile(dsk, unit, name, false,
-					null, 0,
+			DiskFile file = new SequentialFile(dsk, unit, name,
+					DiskFile.IN_OUT, null, 0,
 					itmLen, recLen, recTrk, recBlk,
 					units);
-			ok = file.seek(units[0].sCyl, units[0].sTrk, 0, 0);
-			ok = file.getItem(itmBuf, 0);
-			vol.setEOD(itmBuf, 0);
-			ok = file.repItem(itmBuf, 0);
-			// ...compute last item of last whole block...
-			int recXXX = ((recs / recBlk) * recBlk - recBlk) % recTrk;
-			ok = file.seek(units[e].eCyl, units[e].eTrk, recXXX, itmBlk - 1);
-			ok = file.getItem(itmBuf, 0);
-			vol.setEOD(itmBuf, 0);
-			ok = file.repItem(itmBuf, 0);
+			if (!file.release()) {
+				error = file.getError();
+				return false;
+			}
 			ok = file.close();
 		} else if (type == DiskFile.PART_SEQ) {
-			DiskFile file = new PartitionedSeqFile(dsk, unit, name, false,
-					null, 0,
+			DiskFile file = new PartitionedSeqFile(dsk, unit, name,
+					DiskFile.UPDATE, null, 0,
 					itmLen, recLen, recTrk, recBlk,
 					blkIdx, mmbItm,
 					units);

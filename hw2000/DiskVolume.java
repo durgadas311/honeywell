@@ -109,18 +109,18 @@ public class DiskVolume {
 			dsk.end();
 		}
 		// Length of data may vary, but starting cyl/trk cannot.
-		volNames = newVolNames(dsk, unit, false, ct[0], ct[1]);
+		volNames = newVolNames(dsk, unit, DiskFile.IN_OUT, ct[0], ct[1]);
 		ct[1] += 1;
-		volDescr = newVolDescr(dsk, unit, false, ct[0], ct[1]);
+		volDescr = newVolDescr(dsk, unit, DiskFile.IN_OUT, ct[0], ct[1]);
 		ct[1] += 3;
-		volAlloc = newVolAlloc(dsk, unit, false, ct[0], ct[1]);
+		volAlloc = newVolAlloc(dsk, unit, DiskFile.IN_OUT, ct[0], ct[1]);
 		ct[1] += 3;
 		return true;
 	}
 
 	// Always consumes one track
 	static public DiskFile newVolNames(RandomRecordIO dsk, int unit,
-						boolean prot, int cyl, int trk) {
+						int mode, int cyl, int trk) {
 		if (cyl < 0) {
 			cyl = 0;
 		}
@@ -129,14 +129,14 @@ public class DiskVolume {
 		}
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
-		return new SequentialFile(dsk, unit, VOLNAMES, prot,
+		return new SequentialFile(dsk, unit, VOLNAMES, mode,
 					namesItmLen, def_reclen, recTrk, 3,
 					cyl, trk, cyl, trk + 0);
 	}
 
 	// Always consumes three tracks
 	static public DiskFile newVolDescr(RandomRecordIO dsk, int unit,
-						boolean prot, int cyl, int trk) {
+						int mode, int cyl, int trk) {
 		if (cyl < 0) {
 			cyl = 0;
 		}
@@ -145,14 +145,14 @@ public class DiskVolume {
 		}
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
-		return new SequentialFile(dsk, unit, VOLDESCR, prot,
+		return new SequentialFile(dsk, unit, VOLDESCR, mode,
 					descrItmLen, def_reclen, recTrk, 2,
 					cyl, trk, cyl, trk + 2);
 	}
 
 	// Always consumes three tracks
 	static public DiskFile newVolAlloc(RandomRecordIO dsk, int unit,
-						boolean prot, int cyl, int trk) {
+						int mode, int cyl, int trk) {
 		if (cyl < 0) {
 			cyl = 0;
 		}
@@ -161,7 +161,7 @@ public class DiskVolume {
 		}
 		int recTrk = dsk.numRecords(def_reclen);
 		// TODO: compute records/block... following assumes 250 char record.
-		return new SequentialFile(dsk, unit, VOLALLOC, prot,
+		return new SequentialFile(dsk, unit, VOLALLOC, mode,
 					allocItmLen, def_reclen, recTrk, 2,
 					cyl, trk, cyl, trk + 2);
 	}
@@ -179,10 +179,10 @@ public class DiskVolume {
 
 	// TODO: Support access to *VOLNAMES*, etc., here?
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
-	public DiskFile openFile(byte[] name, boolean prot) {
-		return openFile(name, prot, null, 0, null, 0);
+	public DiskFile openFile(byte[] name, int mode) {
+		return openFile(name, mode, null, 0, null, 0);
 	}
-	public DiskFile openFile(byte[] name, boolean prot,
+	public DiskFile openFile(byte[] name, int mode,
 				CoreMemory blkBuf, int blkBufAdr,
 				CoreMemory dscBuf, int dscBufAdr) {
 		// Special-case system files - only allow R/O
@@ -279,12 +279,12 @@ public class DiskVolume {
 			ctri = getSome(aItm, 12, 4);
 		}
 		if (type == DiskFile.SEQUENTIAL) {
-			return new SequentialFile(dsk, unit, name, prot,
+			return new SequentialFile(dsk, unit, name, mode,
 					blkBuf, blkBufAdr,
 					desc[0], desc[1], desc[4], desc[3],
 					units);
 		} else if (type == DiskFile.PART_SEQ) {
-			return new PartitionedSeqFile(dsk, unit, name, prot,
+			return new PartitionedSeqFile(dsk, unit, name, mode,
 					blkBuf, blkBufAdr,
 					desc[0], desc[1], desc[4], desc[3],
 					idxLen, mmbIdxLen,
