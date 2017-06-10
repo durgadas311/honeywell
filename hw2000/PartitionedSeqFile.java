@@ -36,6 +36,10 @@ public class PartitionedSeqFile extends SequentialFile {
 	int foundOff;
 	CoreMemory newMembBuf;
 	int newMembOff;
+	// For searching context
+	int curMembOff;
+	int curMembBlks;
+	int curMembMode;
 
 	// Caller locates *VOLNAMES*, etc items and passes info to this ctor.
 	public PartitionedSeqFile(RandomRecordIO dsk, int unit, byte[] name, int mode,
@@ -86,24 +90,32 @@ public class PartitionedSeqFile extends SequentialFile {
 		return true;
 	}
 
-	private boolean openMemb(CoreMemory mmb, int adr) {
-		if (!rewindIndex()) {
-			return false;
+	// 'mmb' is the member name to search for, null means
+	// "Every Index Entry" EXIT.
+	private boolean openMemb(CoreMemory mmb, int adr, int mode) {
+		boolean first = (mmb != null || mode < 010);
+		int sts;
+		if (first) {
+			if (!rewindIndex()) {
+				return false;
+			}
+			sts = blkBufMem.readChar(blkBufAdr + 24);
+			// not necessary to compare to _UNUSED_?
+			if (sts != _BEG_) {
+				error = 00434;	// actually, file not initialized
+				return false;
+			}
+			freeCCTTRR = DiskVolume.getSome(blkBufMem, blkBufAdr + 15, 3);
+			freeBlocks = DiskVolume.getNum(blkBufMem, blkBufAdr + 21, 3);
+			freeMember = null;
+			foundMember = null;
+			curMembOff = mmbIdxLen;
+			curMembBlks = 0;
+			curMembMode = mode;
 		}
-		int sts = blkBufMem.readChar(blkBufAdr + 24);
-		// not necessary to compare to _UNUSED_?
-		if (sts != _BEG_) {
-			error = 00434;	// actually, file not initialized
-			return false;
-		}
-		freeCCTTRR = DiskVolume.getSome(blkBufMem, blkBufAdr + 15, 3);
-		freeBlocks = DiskVolume.getNum(blkBufMem, blkBufAdr + 21, 3);
-		freeMember = null;
-		foundMember = null;
-		int off = mmbIdxLen;
-		int nBlks = 0;
 		while (true) {
-			while (off + mmbIdxLen <= blkLen) {
+			while (curMembOff + mmbIdxLen <= blkLen) {
+				int off = curMembOff;
 				sts = blkBufMem.readChar(blkBufAdr + off + 24);
 				// not necessary to compare to _ENDINDEX_?
 				if (sts == _END_) {	// _ENDINDEX_
@@ -111,7 +123,7 @@ public class PartitionedSeqFile extends SequentialFile {
 					// in order to declare freeMember...
 					if (freeMember == null &&
 							(off + mmbIdxLen <= blkLen ||
-							nBlks + 1 < idxLen)) {
+							curMembBlks + 1 < idxLen)) {
 						freeMember = getAddress();
 						freeOff = off;
 					}
@@ -124,18 +136,17 @@ public class PartitionedSeqFile extends SequentialFile {
 					}
 					continue;
 				}
-				// TODO: implement "Every Index Entry" callout...
-				// Do not compare name, and must be able to come
-				// back here and pickup where left off...
-				if (compare(mmb, adr, blkBufMem, blkBufAdr + off, 14)) {
+				if (mmb == null ||
+						compare(mmb, adr, blkBufMem,
+								blkBufAdr + off, 14)) {
 					foundMember = getAddress();
 					foundOff = off;
 					return true;
 				}
-				off += mmbIdxLen;
+				curMembOff += mmbIdxLen;
 			}
 			// next block...
-			if (++nBlks >= idxLen) {
+			if (++curMembBlks >= idxLen) {
 				// actually an error if we get here w/o _ENDINDEX_
 				error = 00434;	// a.k.a. file not initialized
 				return false;
@@ -146,7 +157,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			if (!cacheBlock(false, curCyl, curTrk, curRec)) {
 				return false;
 			}
-			off = 0;
+			curMembOff = 0;
 		}
 		// NOTREACHED
 	}
@@ -281,11 +292,23 @@ public class PartitionedSeqFile extends SequentialFile {
 	@Override
 	public boolean setMemb(CoreMemory memb, int adr, int mode) {
 		// Open or create member.
-		endMemb(); // probably an error...
-		boolean ok = openMemb(memb, adr);
-		if (!ok) {
-			return false;
+		// For "Every Index Entry", mode indicates "resume"
+		if (memb != null || mode < 010) {
+			endMemb(); // probably an error...
 		}
+		if (memb != null || mode != 052) {
+			boolean ok = openMemb(memb, adr, mode);
+			if (!ok) {
+				return false;
+			}
+			if (memb == null) {
+				error = 00301;
+				curOff = curMembOff; // is this OK?
+				return (foundMember != null);
+			}
+		}
+		// At this point, we know that openMemb() has been called at least once
+		mode = curMembMode;
 		// output-only requires member status 020...
 		byte req = (byte)(mode == DiskFile.OUT ? _ALL_ : _PRT_);
 		int[] beg = null;

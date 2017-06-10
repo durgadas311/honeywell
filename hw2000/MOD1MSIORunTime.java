@@ -179,7 +179,6 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	// TODO: exit may be error or informative.
 	// Need to handle no-exit case appropriately.
 	private boolean setupExit(int xiterr) {
-		xitErr = xiterr;
 		int xit = 0;
 		switch ((xiterr >> 6) & 077) {
 		case 0:	
@@ -206,6 +205,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		if (xit == 0) {
 			return false;
 		}
+		xitErr = xiterr;
 		xitRes = xit - 1;
 		putChar(xitRes, xitErr);
 		sys.BAR = base + 1;
@@ -643,20 +643,36 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	}
 
 	public void setm() {
+		int mode = parms[2];
 		if (xitMCA == null) {
 			getMCA(parms[0]);
 		} else {
-			// Any return from EXIT is "fatal"?
-			// There are some "10 continue" cases...
-			haltErr(xitErr);
-			return;
+			if (((xitErr >> 6) & 077) == 3) {
+				mode = xitAct;
+			} else {
+				haltErr(xitErr);
+				return;
+			}
 		}
 		if (xitMCA.file == null) {	// File not open
 			handleError(00510); // Write error
 			return;
 		}
-		// TODO: update mode
-		if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), parms[2])) {
+		// TODO: modify mode value
+		if (xitMCA.xitMmb != 0) {
+			boolean ok = xitMCA.file.setMemb(null, 0, mode);
+			if (ok) {
+				if (mode != 052) {
+					putAdr(xitMCA.apdAdr, xitMCA.file.getItemAdr());
+					setupExit(00301);
+					return;
+				}
+			} else {
+				// end of index...
+				handleError(00203);
+				return;
+			}
+		} else if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), parms[2])) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
