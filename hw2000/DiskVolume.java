@@ -177,7 +177,6 @@ public class DiskVolume {
 		mounted = false;
 	}
 
-	// TODO: Support access to *VOLNAMES*, etc., here?
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
 	public DiskFile openFile(byte[] name, int mode) {
 		return openFile(name, mode, null, 0, null, 0);
@@ -243,6 +242,12 @@ public class DiskVolume {
 			error = volDescr.getError();
 			return null;
 		}
+		// TODO: implement Volume Directory Exit 01...
+		// Must export dItm to caller, and allow for
+		// resumption either here or in volNames loop (find another).
+		// Unfortunately, must make this exit any time the
+		// Volume Directory Exit was specified, even if caller
+		// never uses it.
 		int type = dItm.readChar(dAdr + 0);
 		int[] desc = getSome(dItm, dAdr + 1, 5);
 		int idxLen = getNum(dItm, dAdr + 63, 2);

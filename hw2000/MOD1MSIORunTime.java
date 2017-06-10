@@ -24,6 +24,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		public int itm1;	// address of item buffer 1
 		public int xitDir;	// directory exit routine
 		public int xitIdx;	// index exit routine
+		public int xitMmb;	// every member exit routine
 		public int xitDat;	// data exit routine
 		public int xitDev;	// device exit routine
 		public int apdAdr;	// address of DSA for APD
@@ -191,6 +192,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			break;
 		case 2:
 			xit = xitMCA.xitIdx;
+			break;
+		case 3:
+			xit = xitMCA.xitMmb;
 			break;
 		case 4:
 			xit = xitMCA.xitDat;
@@ -410,6 +414,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		mca.xitDir = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
 		mca.xitIdx = fetchAdr(a); // index/indirect allowed?
+		a += sys.am_na;
+		mca.xitMmb = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
 		mca.xitDat = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;

@@ -124,6 +124,9 @@ public class PartitionedSeqFile extends SequentialFile {
 					}
 					continue;
 				}
+				// TODO: implement "Every Index Entry" callout...
+				// Do not compare name, and must be able to come
+				// back here and pickup where left off...
 				if (compare(mmb, adr, blkBufMem, blkBufAdr + off, 14)) {
 					foundMember = getAddress();
 					foundOff = off;

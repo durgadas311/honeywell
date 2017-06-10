@@ -120,7 +120,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			// EXITs
 			if (assemble(' ', "", "DSA", defParm(parms, 39, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 40, "0")) < 0) break;
-			// [41] reserved
+			if (assemble(' ', "", "DSA", defParm(parms, 41, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 42, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 43, "0")) < 0) break;
 			// Auxiliary fields (not MCA params)

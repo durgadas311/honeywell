@@ -45,6 +45,8 @@ public class FileVolSupport {
 		errmsg.put(00204, "SETM No index space");
 		errmsg.put(00214, "SETM output-only not allowed");
 		errmsg.put(00224, "MALTER can't delete");
+		// "Every Index Entry" - non-fatal/advisory
+		errmsg.put(00301, "SETM CALLOUT");
 		// "Data" errors -
 		errmsg.put(00401, "MSGET End of file");
 		errmsg.put(00411, "MSPUT No space");
