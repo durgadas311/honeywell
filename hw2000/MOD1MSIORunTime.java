@@ -16,9 +16,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	class MCA {
 		public int adr;		// address of MCA in program
 		public byte[] name;	// file name
-		public int mode;	// 1=IN, 2=OUT, 3=IN/OUT
+		public int mode;	// 1=IN, 2=OUT, 3=IN/OUT, 4=UPDATE
 		public int result;	// address of result char
 		public int prot;	// protection
+		public int deliv;	// item delivery mode
 		public int buf1;	// address of block buffer 1
 		public int itm1;	// address of item buffer 1
 		public int xitDir;	// directory exit routine
@@ -247,6 +248,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	}
 
 	// Put an address based on specified address mode (NOT current CPU mode)
+	// 'loc' points to *left* character of address field.
 	private void _putAdr(int am, int loc, int val) {
 		int a = val;
 		for (int n = am - 1; n >= 0; --n) {
@@ -256,6 +258,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	}
 
 	// This is a clone of HW2000.fetchAddr() - keep in sync!
+	// 'p' points to *left* character of address field.
 	private int fetchAdr(int p) {
 		int a = 0;
 		for (int n = 0; n < sys.am_na; ++n) {
@@ -392,6 +395,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		mca.result = a++;
 		++a;	// skip "unique char"
 		mca.prot = sys.readChar(a++);	// protection
+		mca.deliv = sys.readChar(a++);	// item delivery mode
 		int b = fetchAdr(a); // index/indirect not allowed
 		a += sys.am_na;
 		getDevTab(b, mca);
@@ -399,6 +403,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		a += sys.am_na;
 		mca.itm1 = fetchAdr(a); // index/indirect not allowed
 		a += sys.am_na;
+		// Adjust for LOCATE mode - need leftmost char of address field.
+		if (mca.deliv == 0) {
+			mca.itm1 -= (sys.am_na - 1);
+		}
 		mca.xitDir = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
 		mca.xitIdx = fetchAdr(a); // index/indirect allowed?
@@ -432,6 +440,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		a += sys.am_na;
 		xitMCA.itm1 = fetchAdr(a); // index/indirect not allowed
 		a += sys.am_na;
+		if (xitMCA.deliv == 0) {
+			xitMCA.itm1 -= (sys.am_na - 1);
+		}
 		// TODO: more data?
 		// Open file must be notified of buffer change...
 		if (xitMCA.file != null) {
@@ -462,6 +473,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		return true;
 	}
 
+	// This is broken up into segments that roughly correspond
+	// to advisory EXIT points, so that a "continue" at those
+	// points can be done.
 	private void msopen() {
 		if (xitMCA == null) {
 			getMCA(parms[0]);
@@ -478,7 +492,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 				xitMCA.vol = null;
 				xitMCA.file = null;
 			} else if (xitAct == 010) {
-				// continue. re-load MCA
+				// continue. re-load MCA (buffers)
 				updateMCA();
 			}
 		}
@@ -500,6 +514,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 				putAdr(xitMCA.apdAdr, vbuf);
 				return;
 			}
+		}
+		if (xitMCA.deliv == 0) {
+			// TODO: not for Partitioned Sequential files?
+			putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
 		}
 		// TODO: all set?
 		xitMCA = null;
@@ -528,13 +546,24 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			// theoretically can't happen?
 			// TODO: what is the right error/exit?
 			handleError(00506); // Read error
 			return;
 		}
-		if (!xitMCA.file.getItem(sys, xitMCA.itm1)) {
+		boolean ok;
+		if (xitMCA.deliv != 0) {
+			ok = xitMCA.file.getItem(sys, xitMCA.itm1);
+		} else {
+			// This only moves the pointer to next item,
+			// but that might involve reading a new block.
+			ok = xitMCA.file.getItem();
+			if (ok) {
+				putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
+			}
+		}
+		if (!ok) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
@@ -553,13 +582,20 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			// theoretically can't happen?
 			// TODO: what is the right error/exit?
 			handleError(00510); // Write error
 			return;
 		}
-		if (!xitMCA.file.repItem(sys, xitMCA.itm1)) {
+		boolean ok;
+		if (xitMCA.deliv != 0) {
+			ok = xitMCA.file.repItem(sys, xitMCA.itm1);
+		} else {
+			// itm1 address not used here
+			ok = xitMCA.file.repItem();
+		}
+		if (!ok) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
@@ -575,13 +611,23 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			// theoretically can't happen?
 			// TODO: what is the right error/exit?
 			handleError(00510); // Write error
 			return;
 		}
-		if (!xitMCA.file.putItem(sys, xitMCA.itm1)) {
+		boolean ok;
+		if (xitMCA.deliv != 0) {
+			ok = xitMCA.file.putItem(sys, xitMCA.itm1);
+		} else {
+			ok = xitMCA.file.putItem();
+			if (ok) {
+				// NOTE: this is *next* item address
+				putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
+			}
+		}
+		if (!ok) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
@@ -599,7 +645,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			handleError(00510); // Write error
 			return;
 		}
@@ -607,6 +653,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), parms[2])) {
 			handleError(xitMCA.file.getError());
 			return;
+		}
+		if (xitMCA.deliv == 0) {
+			putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
 		}
 		xitMCA = null;
 	}
@@ -620,7 +669,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			handleError(00510); // Write error
 			return;
 		}
@@ -641,7 +690,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			handleError(00510); // Write error
 			return;
 		}
@@ -662,7 +711,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {
+		if (xitMCA.file == null) {	// File not open
 			handleError(00510); // Write error
 			return;
 		}

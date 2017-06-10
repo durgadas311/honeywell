@@ -60,6 +60,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		int np = parms.length;
 		int ret = -1;
 		int x;
+		int mode = 0;
 		String mca;
 		switch (cmd) {
 		case 0:
@@ -96,28 +97,37 @@ public class MacroLibMOD1MSIO implements MacroDef {
 				asm.errsAdd("Missing required MCA parameters");
 				break;
 			}
+			mode = 0;	// LOCATE
+			if (parms[11].equals("MOVE")) {
+				mode = 1;
+			}
 			// requires tag - file tag prefix, and parms[0] - MIOC char
 			mca = "MCA" + tag;
 			if (assemble(' ', mca, "RESV", "0") < 0) break;
 			if (assemble(' ', "FID" + tag, "DCW", "#10A" + parms[19]) < 0) break;
 			if (assemble(' ', "", "DCW", "#1B0") < 0) break;  // result code
 			if (assemble(' ', "", "DCW", "#1A" + parms[0]) < 0) break;
-			if (assemble(' ', "", "DCW",
+			if (assemble(' ', "", "DCW",	// Protection
 					"#1C" + defParm(parms, 30, "00")) < 0) break;
+			if (assemble(' ', "", "DCW",	// Item delivery mode
+					String.format("#1B%d", mode)) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 1, "0")) < 0) break;
 			if (assemble(' ', "PBL" + tag, "DSA",
 						defParm(parms, 9, "0")) < 0) break;
 			// TODO: alternate buffer?
 			if (assemble(' ', "CBL" + tag, "DSA",
 						defParm(parms, 12, "0")) < 0) break;
+			// EXITs
 			if (assemble(' ', "", "DSA", defParm(parms, 39, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 40, "0")) < 0) break;
 			// [41] reserved
 			if (assemble(' ', "", "DSA", defParm(parms, 42, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 43, "0")) < 0) break;
+			// Auxiliary fields (not MCA params)
 			if (assemble(' ', "APD" + tag, "DSA", "0") < 0) break;
 			if (assemble(' ', "CAD" + tag, "DCW", "#8B0") < 0) break;
 			if (assemble(' ', "RIC" + tag, "DCW", "#10B0") < 0) break;
+			// Modern extensions
 			if (assemble(' ', "VNM" + tag, "DCW", "#6A") < 0) break;
 			if (assemble(' ', "VSN" + tag, "DCW", "#6A") < 0) break;
 			// TODO: terminate structure?
@@ -177,10 +187,10 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		if (assemble(' ', "", "DSA", mca) < 0) return false;
 		switch (cmd) {
 		case 4: // MSOPEN special handling
-			mode = DiskFile.IN;
+			mode = 0;
 			if (np >= 2 && !parms[1].isEmpty()) {
 				if (parms[1].equals("IN")) {
-					//
+					mode = DiskFile.IN;
 				} else if (parms[1].equals("IN/OUT")) {
 					mode = DiskFile.IN_OUT;
 				} else if (parms[1].equals("OUT")) {

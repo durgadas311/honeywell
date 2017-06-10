@@ -13,6 +13,9 @@ public interface DiskFile {
 
 	// Open done by ctor and caller.
 	// All types (except MSPUT on INDEXED_SEQ, DIRECT)
+	boolean getItem();
+	boolean repItem();
+	boolean putItem();
 	boolean getItem(CoreMemory itm, int adr);
 	boolean repItem(CoreMemory itm, int adr);
 	boolean putItem(CoreMemory itm, int adr);
@@ -22,6 +25,8 @@ public interface DiskFile {
 	boolean endMemb(); // close partition
 	boolean alterMemb(CoreMemory memb, int adr, int op, CoreMemory newm, int nadr);
 	boolean release(); // re-init entire file
+	// Quasi-standard
+	int getItemAdr();
 
 	// Non-standard: (Not part of MOD1 i/f)
 	void setBuffer(CoreMemory blkBuf, int blkAdr);

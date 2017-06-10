@@ -208,6 +208,15 @@ public class PartitionedSeqFile extends SequentialFile {
 	// These routines are for the MOVE item delivery mode...
 	//
 	@Override
+	public boolean getItem() {
+		if (foundMember == null) {
+			error = 00203; // TODO: what is right error?
+			return false;
+		}
+		return super.getItem();
+	}
+
+	@Override
 	public boolean getItem(CoreMemory itm, int adr) {
 		if (foundMember == null) {
 			error = 00203; // TODO: what is right error?
@@ -217,12 +226,32 @@ public class PartitionedSeqFile extends SequentialFile {
 	}
 
 	@Override
+	public boolean repItem() {
+		if (foundMember == null) {
+			error = 00203; // TODO: what is right error?
+			return false;
+		}
+		return super.repItem();
+	}
+
+	@Override
 	public boolean repItem(CoreMemory itm, int adr) {
 		if (foundMember == null) {
 			error = 00203; // TODO: what is right error?
 			return false;
 		}
 		return super.repItem(itm, adr);
+	}
+
+	@Override
+	public boolean putItem() {
+		if (foundMember == null) {
+			error = 00203; // TODO: what is right error?
+			return false;
+		}
+		// TODO: can member be extended? must detect end of space...
+		++putItms;
+		return super.putItem();
 	}
 
 	@Override
@@ -285,6 +314,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			}
 			beg = DiskVolume.getSome(blkBufMem, blkBufAdr + foundOff + 15, 3);
 		}
+		// This buffers the first block, ready for MOVE or LOCATE modes.
 		if (!super.seek(beg[0], beg[1], beg[2], 0)) {
 			return false;
 		}

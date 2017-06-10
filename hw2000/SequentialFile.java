@@ -53,6 +53,7 @@ public class SequentialFile implements DiskFile {
 		lastUnit = 0;
 		setBuffer(new BufferMemory(blkLen), 0);
 		computeSize();
+		_rewind();
 	}
 
 	// General Open of "real" file.
@@ -72,6 +73,7 @@ public class SequentialFile implements DiskFile {
 			setBuffer(blkBuf, blkAdr);
 		}
 		computeSize();
+		_rewind();
 	}
 
 	public void setBuffer(CoreMemory blkBuf, int blkAdr) {
@@ -158,6 +160,11 @@ public class SequentialFile implements DiskFile {
 		return blkLen;
 	}
 
+	// Return the address/offset of current item in block buffer
+	public int getItemAdr() {
+		return blkBufAdr + curOff;
+	}
+
 	// This is NOT an allowed MOD1 action.
 	// This will be used by Volume file search.
 	public boolean rewind() {
@@ -185,7 +192,6 @@ public class SequentialFile implements DiskFile {
 	}
 
 	private boolean _rewind() {
-		// This only works if no item is size 1.
 		return _seek(units[0].sCyl, units[0].sTrk, 0, 0);
 	}
 
@@ -395,9 +401,10 @@ public class SequentialFile implements DiskFile {
 	}
 
 	//
-	// These routines are for the MOVE item delivery mode...
+	// These routines are for the LOCATE item delivery mode...
+	// Also used by MOVE delivery mode.
 	//
-	public boolean getItem(CoreMemory itm, int adr) {
+	public boolean getItem() {
 		// Semantic protection (i.e. enforce IN) done by MIOC
 		if (!cacheNextItem(false)) {
 			return false;
@@ -407,6 +414,41 @@ public class SequentialFile implements DiskFile {
 			error = 00401;	// End of File
 			return false;
 		}
+		return true;
+	}
+
+	public boolean repItem() {
+		// Semantic protection (i.e. enforce IN/OUT) done by MIOC
+		if (curOff < 0 || eof) {
+			error = 00401;
+			return false;
+		}
+		dirty = true;
+		return true;
+	}
+
+	// Caller's item has *already* been moved into blkBuf...
+	// Register update and go to *next* item.
+	// This requires that MSOPEN/SETM be fully prepared for MSPUT
+	// *and* computed item address!
+	public boolean putItem() {
+		dirty = true;
+		put = true;
+		eof = false;	// right?
+		if (!cacheNextItem(true)) {
+			return false;
+		}
+		return true;
+	}
+
+	//
+	// These routines are for the MOVE item delivery mode...
+	//
+	public boolean getItem(CoreMemory itm, int adr) {
+		// Semantic protection (i.e. enforce IN) done by MIOC
+		if (!getItem()) {
+			return false;
+		}
 		itm.copyIn(adr, blkBufMem, blkBufAdr + curOff, itmLen);
 		return true;
 	}
@@ -414,6 +456,7 @@ public class SequentialFile implements DiskFile {
 	public boolean repItem(CoreMemory itm, int adr) {
 		// Semantic protection (i.e. enforce IN/OUT) done by MIOC
 		if (curOff < 0 || eof) {
+			error = 00401;
 			return false;
 		}
 		itm.copyOut(adr, blkBufMem, blkBufAdr + curOff, itmLen);
@@ -421,17 +464,21 @@ public class SequentialFile implements DiskFile {
 		return true;
 	}
 
+	// This routine must parallel the LOCATE item delivery mode version.
+	// move new item, flush buf, point to next item.
+	// MSOPEN/SETM must have prepared the first item!
+	// TODO: must look-ahead and prevent PUT in location
+	// reserved for _EOD_.
 	public boolean putItem(CoreMemory itm, int adr) {
 		// Semantic protection (i.e. enforce OUT) done by MIOC
-		// Techically, we don't need to read block first,
-		// But this way we catch physical end of file...
-		if (!cacheNextItem(true)) {
-			return false;
-		}
 		itm.copyOut(adr, blkBufMem, blkBufAdr + curOff, itmLen);
 		dirty = true;
 		put = true;
 		eof = false;	// right?
+		initial = false;
+		if (!cacheNextItem(true)) {
+			return false;
+		}
 		return true;
 	}
 
@@ -439,12 +486,8 @@ public class SequentialFile implements DiskFile {
 		boolean ret = true;
 		// TODO: partitioned sequential places EOD in each partition.
 		if (put) {
-			if (!cacheNextItem(true)) {
-				ret = false;
-			} else {
-				DiskVolume.setEOD(blkBufMem, blkBufAdr + curOff);
-				dirty = true;
-			}
+			DiskVolume.setEOD(blkBufMem, blkBufAdr + curOff);
+			dirty = true;
 		}
 		if (!sync()) {
 			ret = false;
