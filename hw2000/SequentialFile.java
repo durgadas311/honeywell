@@ -207,7 +207,7 @@ public class SequentialFile implements DiskFile {
 		curOff = itm * itmLen;
 		put = false;	// only if backward seek?
 		eof = false;	// only if backward seek?
-		initial = true;	// do not incr on GET/PUT...
+		initial = true;	// do not incr on GET...
 		return true;
 	}
 
@@ -380,7 +380,7 @@ public class SequentialFile implements DiskFile {
 			curCyl = units[0].sCyl;
 			curTrk = units[0].sTrk;
 			curRec = 0;
-		} else if (!initial) {
+		} else if (!inPut && !initial) {
 			curOff += itmLen;
 			if (curOff + itmLen > blkLen) {
 				curOff = 0;
@@ -472,11 +472,7 @@ public class SequentialFile implements DiskFile {
 	public boolean putItem(CoreMemory itm, int adr) {
 		// Semantic protection (i.e. enforce OUT) done by MIOC
 		itm.copyOut(adr, blkBufMem, blkBufAdr + curOff, itmLen);
-		dirty = true;
-		put = true;
-		eof = false;	// right?
-		initial = false;
-		if (!cacheNextItem(true)) {
+		if (!putItem()) {
 			return false;
 		}
 		return true;
