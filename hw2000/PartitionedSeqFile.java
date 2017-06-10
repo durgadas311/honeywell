@@ -112,6 +112,9 @@ public class PartitionedSeqFile extends SequentialFile {
 			curMembOff = mmbIdxLen;
 			curMembBlks = 0;
 			curMembMode = mode;
+		} else {
+			// Block overflow checked in loop...
+			curMembOff += mmbIdxLen;
 		}
 		while (true) {
 			while (curMembOff + mmbIdxLen <= blkLen) {
@@ -297,14 +300,23 @@ public class PartitionedSeqFile extends SequentialFile {
 			endMemb(); // probably an error...
 		}
 		if (memb != null || mode != 052) {
+			if (memb == null) {
+				foundMember = null;
+			}
 			boolean ok = openMemb(memb, adr, mode);
 			if (!ok) {
 				return false;
 			}
 			if (memb == null) {
-				error = 00301;
-				curOff = curMembOff; // is this OK?
-				return (foundMember != null);
+				if (foundMember != null) {
+					error = 00301;
+					curOff = curMembOff; // is this OK?
+					return true;
+				} else {
+					// end of index
+					error = 00203;
+					return false;
+				}
 			}
 		}
 		// At this point, we know that openMemb() has been called at least once

@@ -172,7 +172,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		_putAdr(4, 164, 131); // 4-char prog exit - B (164)...
 		_putAdr(4, 168, 130); // 4-char segm load - B (168)...
 		_putAdr(3, 187, 0777777); // memory limit
-		//sys.rawWriteMem(155, ?); // Operator mode: panel or console...
+		//sys.rawWriteChar(155, ?); // Operator mode: panel or console...
 		// other initialization?
 	}
 
@@ -256,7 +256,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	private void _putAdr(int am, int loc, int val) {
 		int a = val;
 		for (int n = am - 1; n >= 0; --n) {
-			sys.rawWriteMem(loc + n, (byte)(a & 077));
+			sys.rawWriteChar(loc + n, (byte)a);
 			a >>= 6;
 		}
 	}
@@ -344,7 +344,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 					b |= (byte)d;
 				}
 			}
-			sys.rawWriteMem(a - x, b);
+			sys.rawWriteChar(a - x, b);
 			if ((b & 0100) != 0) {
 				break;
 			}
