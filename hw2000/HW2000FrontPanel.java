@@ -105,6 +105,8 @@ public class HW2000FrontPanel extends JFrame
 	private JTextField vol_name;
 	private JTextField vol_snum;
 	private JTextField map_lun;
+	private JCheckBox cylmap_cb;
+	private JCheckBox mmblst_cb;
 	private ButtonGroup file_bg;
 	private JRadioButton file_seq;
 	private JRadioButton file_par;
@@ -310,10 +312,14 @@ public class HW2000FrontPanel extends JFrame
 		vol_pn.add(pn);
 		map_lun = new JTextField("0");
 		map_lun.setPreferredSize(new Dimension(20, 20));
+		cylmap_cb = new JCheckBox("Cylinder Map");
+		mmblst_cb = new JCheckBox("Member Lists");
 		pn = new JPanel();
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(map_lun);
 		map_pn.add(pn);
+		map_pn.add(cylmap_cb);
+		map_pn.add(mmblst_cb);
 		file_lun = new JTextField("0");
 		file_lun.setPreferredSize(new Dimension(20, 20));
 		pn = new JPanel();
@@ -2819,7 +2825,8 @@ ee.printStackTrace();
 		}
 		setActive(true);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = FileVolSupport.mapVolume(p, unit, sys);
+		boolean ok = FileVolSupport.mapVolume(p, unit, sys,
+			cylmap_cb.isSelected(), mmblst_cb.isSelected());
 		setActive(false);
 		if (!ok) {
 			warning(this, title, title + " failed: " + FileVolSupport.getError());

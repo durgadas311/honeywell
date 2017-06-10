@@ -289,8 +289,38 @@ public class FileVolSupport {
 		return tracks;
 	}
 
+	static private void mapMembers(HW2000 sys, DiskFile ps, int idxBlk) {
+		BufferMemory buf = new BufferMemory(ps.itemLen());
+		int numItms = idxBlk * (ps.blockLen() / ps.itemLen());
+		if (!ps.rewind()) {
+			return;
+		}
+		for (int x = 0; x < numItms; ++x) {
+			if (!ps.getItem(buf, 0)) {
+				return;
+			}
+			String ret = "";
+			int sts = buf.readChar(24);
+			int[] ctr = DiskVolume.getSome(buf, 15, 3);
+			int num = DiskVolume.getNum(buf, 21, 3);
+			ret += String.format("    %14s",
+					hwToString(buf, 0, 14, sys.pdc.cvt));
+			ret += String.format(" %02o", sts);
+			ret += String.format(" %3d-%3d-%3d ", ctr[0], ctr[1], ctr[2]);
+			ret += String.format(" %6d", num);
+			ret += '\n';
+			sys.listOut(ret);
+			if (sts == PartitionedSeqFile._END_) {
+				break;
+			}
+		}
+		ps.close();
+	}
+
 	// TODO: how best to deliver volume map...
-	static public boolean mapVolume(RandomRecordIO dsk, int unit, HW2000 sys) {
+	// 'sys' needed for printer output and CharConverter.
+	static public boolean mapVolume(RandomRecordIO dsk, int unit, HW2000 sys,
+				boolean cylmap, boolean mmblst) {
 		// TODO: make disk map optional.
 		nCyl = dsk.numCylinders();
 		nTrk = dsk.numTracks();
@@ -365,6 +395,7 @@ public class FileVolSupport {
 			ctri = vol.getSome(names, 22, 4);
 			vol.getVolAlloc().rewind();
 			int tracks = 0;
+			int[] psau = null;
 			for (int u = 0; u < 6; ++u) {
 				if (ctri[0] != 0 || ctri[1] != 0 ||
 						ctri[2] != 0 || ctri[3] != 0) {
@@ -374,6 +405,9 @@ public class FileVolSupport {
 				vol.getVolAlloc().getItem(alloc, 0);
 				// TODO: check errors, EOD
 				fd = vol.getSome(alloc, 4, 4);
+				if (type == DiskFile.PART_SEQ && psau == null) {
+					psau = fd;
+				}
 				tracks += (fd[2] - fd[0] + 1) * (fd[3] - fd[1] + 1);
 				mapTracks(map, total, fd[0], fd[1], fd[2], fd[3]);
 				int t = alloc.readChar(0);
@@ -390,6 +424,18 @@ public class FileVolSupport {
 				((tracks * recTrk) / recBlk) * itmBlk);
 			ret += '\n';
 			sys.listOut(ret);
+			if (mmblst && type == DiskFile.PART_SEQ) {
+				int xlen = vol.getNum(descr, 63, 2);
+				int xitm = descr.readChar(68);
+				// use a Sequential view, it's easier
+				// TODO: what if recLen < xitm?
+				byte[] nm = new byte[10];
+				names.copyOut(0, nm, 0, 10);
+				DiskFile ps = new SequentialFile(dsk, unit, nm, 0,
+					xitm, recLen, recTrk, 1,
+					psau[0], psau[1], psau[2], psau[3]);
+				mapMembers(sys, ps, xlen);
+			}
 		}
 		// Go through *VOLALLOC* looking for orphaned allocations.
 		vol.getVolAlloc().rewind();
@@ -410,13 +456,15 @@ public class FileVolSupport {
 				"  Tracks used: %d/%d %d%%\n",
 				total, free, tracks, (nCyl * nTrk),
 				(tracks * 100 + 50) / (nCyl * nTrk)));
-		sys.listOut("   " + getMapHdr() + " :    " + getMapHdr() + '\n');
-		for (int cyl = 0; cyl < nCyl / 2; ++cyl) {
-			String ret = String.format("%03d", cyl) +
-				getMap(map[cyl]) +
-				String.format(" : %03d", cyl + nCyl / 2) +
-				getMap(map[cyl + nCyl / 2]);
-			sys.listOut(ret + '\n');
+		if (cylmap) {
+			sys.listOut("   " + getMapHdr() + " :    " + getMapHdr() + '\n');
+			for (int cyl = 0; cyl < nCyl / 2; ++cyl) {
+				String ret = String.format("%03d", cyl) +
+					getMap(map[cyl]) +
+					String.format(" : %03d", cyl + nCyl / 2) +
+					getMap(map[cyl + nCyl / 2]);
+				sys.listOut(ret + '\n');
+			}
 		}
 		// TODO: look for orphaned allocations
 		return true;

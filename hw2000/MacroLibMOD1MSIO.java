@@ -111,7 +111,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			if (assemble(' ', "CBL" + tag, "DSA",
 						defParm(parms, 12, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 39, "0")) < 0) break;
-			// [40] index exit
+			if (assemble(' ', "", "DSA", defParm(parms, 40, "0")) < 0) break;
 			// [41] reserved
 			if (assemble(' ', "", "DSA", defParm(parms, 42, "0")) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 43, "0")) < 0) break;

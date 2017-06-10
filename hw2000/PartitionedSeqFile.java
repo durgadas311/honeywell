@@ -231,6 +231,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			error = 00203; // TODO: what is right error?
 			return false;
 		}
+		// TODO: can member be extended? must detect end of space...
 		++putItms;
 		return super.putItem(itm, adr);
 	}
@@ -258,6 +259,10 @@ public class PartitionedSeqFile extends SequentialFile {
 		int[] beg = null;
 		if (foundMember == null) {
 			// no match found
+			if (mode != DiskFile.OUT) {
+				error = 00203;
+				return false;
+			}
 			if (freeMember == null) {
 				error = 00204;	// no space in index
 				return false;
@@ -273,11 +278,12 @@ public class PartitionedSeqFile extends SequentialFile {
 		} else {
 			// blkBufMem has the index item at foundOff...
 			byte sts = blkBufMem.readChar(blkBufAdr + foundOff + 24);
+			// TODO: can PUT ever be allowed? what about end?
 			if (req > sts) {
 				error = 00214;
 				return false;
 			}
-			beg = DiskVolume.getSome(blkBufMem, blkBufAdr + 15, 3);
+			beg = DiskVolume.getSome(blkBufMem, blkBufAdr + foundOff + 15, 3);
 		}
 		if (!super.seek(beg[0], beg[1], beg[2], 0)) {
 			return false;
