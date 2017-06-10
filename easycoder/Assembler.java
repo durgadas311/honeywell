@@ -1201,6 +1201,9 @@ public class Assembler {
 			clear.end = currLoc + len - 1;
 			clear.fill = fill;
 		}
+		// TODO: permit special punctuation... how?
+		// Does it force a CLEAR? Must generate punctuation BRT commands...
+		// What about "RESV 0"?
 		currLoc += len;
 		setLabel(loc, !rev, len);
 		return ret;
@@ -1265,13 +1268,7 @@ public class Assembler {
 		int len = adrMode;
 		code = new byte[adrMode];
 		putAdr(code, 0, adr);
-		code[0] |= 0100;
-		if (mrk == 'L') {
-			code[0] |= 0200;
-		}
-		if (mrk == 'R') {
-			code[len - 1] |= 0200;
-		}
+		setMarks(code, mrk, true);
 		currLoc += len;
 		setLabel(loc, !rev, len);
 		// TODO: does REP apply?
