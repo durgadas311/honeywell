@@ -77,10 +77,14 @@ public class FileVolSupport {
 	}
 
 	static public String getError() {
-		if (errmsg.containsKey(error)) {
-			return errmsg.get(error);
+		return getError(error);
+	}
+
+	static public String getError(int err) {
+		if (errmsg.containsKey(err)) {
+			return errmsg.get(err);
 		} else {
-			return String.format("Unknown error %d", error);
+			return String.format("Unknown error %d", err);
 		}
 	}
 

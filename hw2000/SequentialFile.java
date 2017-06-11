@@ -380,7 +380,7 @@ public class SequentialFile implements DiskFile {
 			curCyl = units[0].sCyl;
 			curTrk = units[0].sTrk;
 			curRec = 0;
-		} else if (!inPut && !initial) {
+		} else if (inPut || !initial) {
 			curOff += itmLen;
 			if (curOff + itmLen > blkLen) {
 				curOff = 0;

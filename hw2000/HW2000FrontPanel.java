@@ -80,6 +80,7 @@ public class HW2000FrontPanel extends JFrame
 	boolean typePressed = false;
 	boolean listing = false;
 	boolean tape = false;
+	boolean disk = false;
 	boolean monitor = false;
 	boolean fortran = false;
 	boolean dumpOnHalt = false;
@@ -130,6 +131,9 @@ public class HW2000FrontPanel extends JFrame
 	private P_LinePrinter lpt;
 	private JCheckBox lst;
 	private JCheckBox mti;
+	JCheckBox dpi;
+	JTextField dpi_lun;
+	JCheckBox dpi_bsp;
 	private JPanel acc;
 
 	public HW2000FrontPanel(Properties props, HW2000 sys) {
@@ -143,12 +147,8 @@ public class HW2000FrontPanel extends JFrame
 		medFont = new Font("Sans-Serif", Font.PLAIN, 28);
 		smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 
-		lst = new JCheckBox("Listing");
-		mti = new JCheckBox("Tape Image");
-		acc = new JPanel();
-		acc.setLayout(new BoxLayout(acc, BoxLayout.Y_AXIS));
-		acc.add(lst);
-		acc.add(mti);
+		JPanel pn;
+		makeFileAccessory();
 
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
@@ -305,7 +305,6 @@ public class HW2000FrontPanel extends JFrame
 		rel_pn.setLayout(new BoxLayout(rel_pn, BoxLayout.Y_AXIS));
 		vol_lun = new JTextField("0");
 		vol_lun.setPreferredSize(new Dimension(20, 20));
-		JPanel pn;
 		pn = new JPanel();
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(vol_lun);
@@ -460,6 +459,65 @@ public class HW2000FrontPanel extends JFrame
 		setVisible(true);
 		Thread thrd = new Thread(this);
 		thrd.start();
+	}
+
+	private void makeFileAccessory() {
+		JPanel pn;
+		lst = new JCheckBox("Listing");
+		mti = new JCheckBox("Tape Image");
+		dpi = new JCheckBox("Disk Image");
+		dpi_lun = new JTextField("0");
+		dpi_lun.setPreferredSize(new Dimension(30, 20));
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel("Unit: "));
+		pn.add(dpi_lun);
+		// TODO: allow naming of file
+		dpi_bsp = new JCheckBox("Bootstrap");
+
+		acc = new JPanel();
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.WEST;
+		GridBagLayout gb = new GridBagLayout();
+		acc.setLayout(gb);
+		
+		gc.gridy = 0;
+		gb.setConstraints(lst, gc);
+		acc.add(lst);
+		++gc.gridy;
+		JSeparator sp = new JSeparator();
+		sp.setPreferredSize(new Dimension(100, 3));
+		gb.setConstraints(sp, gc);
+		acc.add(sp);
+		++gc.gridy;
+		gb.setConstraints(mti, gc);
+		acc.add(mti);
+		++gc.gridy;
+		sp = new JSeparator();
+		sp.setPreferredSize(new Dimension(100, 3));
+		gb.setConstraints(sp, gc);
+		acc.add(sp);
+		++gc.gridy;
+		gb.setConstraints(dpi, gc);
+		acc.add(dpi);
+		++gc.gridy;
+		gc.anchor = GridBagConstraints.EAST;
+		gb.setConstraints(pn, gc);
+		acc.add(pn);
+		++gc.gridy;
+		gb.setConstraints(dpi_bsp, gc);
+		acc.add(dpi_bsp);
 	}
 
 	private void fullControlPanel() {
@@ -2440,6 +2498,7 @@ public class HW2000FrontPanel extends JFrame
 		File file = null;
 		listing = false;
 		tape = false;
+		disk = false;
 		SuffFileChooser ch = new SuffFileChooser(purpose,
 			new String[]{sfx}, new String[]{typ}, prev, acc);
 		int rv = ch.showDialog(this);
@@ -2447,6 +2506,7 @@ public class HW2000FrontPanel extends JFrame
 			file = ch.getSelectedFile();
 			listing = lst.isSelected();
 			tape = mti.isSelected();
+			disk = dpi.isSelected();
 		}
 		return file;
 	}
@@ -2726,6 +2786,27 @@ ee.printStackTrace();
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.end();
+		} else if (disk) {
+			// MOD1 BRF format... TODO: select unit, file
+			byte[] file = hwString("*DRS1RES", 10);
+			int unit = 0; //Integer.valueOf(dpi_lun.getText());
+			// boolean boot = dpi_bsp.isSelected();
+			P_Disk dk = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+			DiskVolume vol = new DiskVolume(dk, unit);
+			if (!vol.mount()) {
+				warning(this, op, "Failed to mount volume");
+				return null;
+			}
+			DiskFile fi = vol.openFile(file, DiskFile.UPDATE);
+			if (fi == null) {
+				warning(this, op, FileVolSupport.getError(vol.getError()));
+				vol.unmount();
+				return null;
+			}
+			e = asm.passTwo(new BRFLoader(fi, asm.charCvt()),
+					doList ? (CoreMemory)sys : null);
+			fi.close();
+			vol.unmount();
 		} else {
 			// TODO: might try to execute from here...
 			// Need hooks back to this class...

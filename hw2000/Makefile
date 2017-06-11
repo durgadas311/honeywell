@@ -9,6 +9,7 @@ EZCLASSES =	Assembler*.class \
 		MacroDef.class \
 		Loader.class \
 		BRTLoader.class \
+		BRTDataField.class \
 		CardLoader.class \
 		TapeLoader.class
 
