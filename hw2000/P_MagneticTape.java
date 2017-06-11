@@ -66,7 +66,7 @@ public class P_MagneticTape extends JFrame
 			pn.add(bt);
 			bt = new JButton("PERMIT");
 			bt.setMargin(new Insets(2, 1, 2, 1));
-			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setBackground(Peripheral.btnWhiteOff);
 			bt.setActionCommand(String.format("P%d", x));
 			bt.addActionListener(this);
 			pn.add(bt);
@@ -445,8 +445,8 @@ public class P_MagneticTape extends JFrame
 				sts[c].permit = !sts[c].permit;
 				sts[c].perm_bt.setBackground(
 					sts[c].permit  && sts[c].wrRing ?
-					HW2000FrontPanel.btnWhiteOn :
-					HW2000FrontPanel.btnWhiteOff);
+					Peripheral.btnWhiteOn :
+					Peripheral.btnWhiteOff);
 			}
 		} else {
 			int c = a - '0';
@@ -460,7 +460,7 @@ public class P_MagneticTape extends JFrame
 				sts[c].mnt_pn.setText("No Tape");
 				sts[c].wrRing = false;
 				sts[c].permit = false;
-				sts[c].perm_bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+				sts[c].perm_bt.setBackground(Peripheral.btnWhiteOff);
 			}
 			wp.setSelected(false);
 			File f = pickFile(s);
@@ -476,11 +476,11 @@ public class P_MagneticTape extends JFrame
 				sts[c].mnt_pn.setText(f.getName());
 				sts[c].perm_bt.setBackground(
 					sts[c].permit  && sts[c].wrRing ?
-					HW2000FrontPanel.btnWhiteOn :
-					HW2000FrontPanel.btnWhiteOff);
+					Peripheral.btnWhiteOn :
+					Peripheral.btnWhiteOff);
 				return;
 			} catch (Exception ee) {
-				HW2000FrontPanel.warning(this, s, ee.toString());
+				PopupFactory.warning(this, s, ee.toString());
 			}
 		}
 	}

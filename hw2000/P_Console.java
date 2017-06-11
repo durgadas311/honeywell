@@ -86,16 +86,16 @@ public class P_Console extends JFrame
 			mb.add(pn);
 			ImageIcon icn;
 			icn = new ImageIcon(getClass().getResource("icons/fp_type2.png"));
-			LightedButton btn = new LightedButton(HW2000FrontPanel.btnWhiteOn,
-					HW2000FrontPanel.btnWhiteOff, icn);
+			LightedButton btn = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff, icn);
 			mb.add(btn);
 			type = btn;
 			pn = new JPanel();
 			pn.setPreferredSize(new Dimension(10, 30));
 			mb.add(pn);
 			icn = new ImageIcon(getClass().getResource("icons/fp_log.png"));
-			btn = new LightedButton(HW2000FrontPanel.btnWhiteOn,
-					HW2000FrontPanel.btnWhiteOff, icn);
+			btn = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff, icn);
 			mb.add(btn);
 			log = btn;
 			log.addActionListener(this);
@@ -463,7 +463,7 @@ public class P_Console extends JFrame
 					_last = sav;
 					// TODO: tear off?
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Save", ee.toString());
+					PopupFactory.warning(this, "Save", ee.toString());
 				}
 			}
 			return;

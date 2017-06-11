@@ -7,6 +7,7 @@ HWCLASSES =     CoreMemory.class \
 		RWChannel.class \
 		HW2000.class \
 		Peripheral.class \
+		PopupFactory.class \
 		PeriphLoader.class \
 		SequentialRecordIO.class \
 		P_MagneticTape*.class \

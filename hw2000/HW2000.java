@@ -802,7 +802,7 @@ public class HW2000 implements CoreMemory
 				} else {
 					if (fp != null) {
 						fp.setProgram(true);
-						HW2000FrontPanel.warning(fp.getContentPane(), "Run II",
+						PopupFactory.warning(fp.getContentPane(), "Run II",
 							String.format("II %07o: %s",
 								oSR,
 								ie.toString()));
@@ -820,7 +820,7 @@ public class HW2000 implements CoreMemory
 				} else {
 					if (fp != null) {
 						fp.setProgram(true);
-						HW2000FrontPanel.warning(fp.getContentPane(), "Run EI",
+						PopupFactory.warning(fp.getContentPane(), "Run EI",
 							String.format("EI %07o: %s",
 								oSR,
 								ee.toString()));
@@ -832,7 +832,7 @@ public class HW2000 implements CoreMemory
 			} catch (FaultException fe) {
 				if (fp != null) {
 					fp.setProgram(true);
-					HW2000FrontPanel.warning(fp.getContentPane(), "Run Fault",
+					PopupFactory.warning(fp.getContentPane(), "Run Fault",
 						String.format("Fault %07o: %s",
 								oSR,
 								fe.toString()));
@@ -844,7 +844,7 @@ public class HW2000 implements CoreMemory
 				if (fp != null) {
 					fp.setProgram(true);
 					//e.printStackTrace();
-					HW2000FrontPanel.warning(fp.getContentPane(), "Run",
+					PopupFactory.warning(fp.getContentPane(), "Run",
 						String.format("<HTML><PRE>%07o: %s</PRE></HTML>",
 							oSR,
 							e.toString()));

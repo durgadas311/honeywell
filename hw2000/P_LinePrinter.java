@@ -269,7 +269,7 @@ public class P_LinePrinter extends JFrame
 					_last = sav;
 					// TODO: tear off?
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Save", ee.toString());
+					PopupFactory.warning(this, "Save", ee.toString());
 				}
 			}
 			return;
@@ -313,7 +313,7 @@ public class P_LinePrinter extends JFrame
 					fo.close();
 					_last = sav;
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Save Form Ctl", ee.toString());
+					PopupFactory.warning(this, "Save Form Ctl", ee.toString());
 				}
 			}
 			return;
@@ -331,7 +331,7 @@ public class P_LinePrinter extends JFrame
 					_last = sav;
 					// TODO: protect against blank (channel 1) tape?
 				} catch (Exception ee) {
-					HW2000FrontPanel.warning(this, "Load Form Ctl", ee.toString());
+					PopupFactory.warning(this, "Load Form Ctl", ee.toString());
 				}
 			}
 			return;
@@ -357,7 +357,7 @@ public class P_LinePrinter extends JFrame
 		if (f instanceof FormTapeEditor) {
 			FormTapeEditor fte = (FormTapeEditor)f;
 			if (fte.isChanged()) {
-				int ans = HW2000FrontPanel.confirm("Quit", "Save Changes?");
+				int ans = PopupFactory.confirm("Quit", "Save Changes?");
 				if (ans == JOptionPane.YES_OPTION) {
 					ftape = fte.getTape();
 				}

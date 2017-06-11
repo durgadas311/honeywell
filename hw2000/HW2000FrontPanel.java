@@ -17,15 +17,6 @@ public class HW2000FrontPanel extends JFrame
 	Font medFont;
 	Font smallFont;
 
-	public static final Color btnWhiteOff = new Color(190, 190, 180);
-	public static final Color btnWhiteOn = new Color(255, 255, 200);
-	public static final Color btnRedOff = new Color(100, 0, 0);
-	public static final Color btnRedOn = new Color(255, 0, 0);
-	public static final Color btnGreenOff = new Color(0, 100, 0);
-	public static final Color btnGreenOn = new Color(0, 255, 160);
-	public static final Color indDark = new Color(50, 50, 50);
-	public static final Color indLit = new Color(180, 180, 80);
-
 	private static final byte[] _1HDR = new byte[]{ 001, 030, 024, 051, 015}; // 1HDR_
 	private static final byte[] _1EOF = new byte[]{ 001, 025, 046, 026, 015}; // 1EOF_
 	private static final byte[] _1ERI = new byte[]{ 001, 025, 051, 031, 015}; // 1ERI_
@@ -566,7 +557,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(lb);
 		// CLEAR button...
 		ImageIcon icn = new ImageIcon(getClass().getResource("icons/fp_clear.png"));
-		LightedButton btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnClear);
+		LightedButton btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnContents | btnClear);
 		btn.addActionListener(this);
 		btn.setToolTipText("Clear");
 		gc.gridx = 1;
@@ -593,7 +584,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(lb, gc);
 		lpn.add(lb);
 		// CLEAR button...
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnClear);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnAddress | btnClear);
 		btn.addActionListener(this);
 		btn.setToolTipText("Clear");
 		gc.gridx = 1;
@@ -710,7 +701,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_disp.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnDisplay);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnContents | btnDisplay);
 		btn.addActionListener(this);
 		btn.setToolTipText("Contents Display");
 		gc.gridx = 1;
@@ -729,7 +720,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_enter.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnContents | btnEnter);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnContents | btnEnter);
 		btn.addActionListener(this);
 		btn.setToolTipText("Contents Enter");
 		gc.gridx = 4;
@@ -768,7 +759,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_disp.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDisplay);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnAddress | btnDisplay);
 		btn.addActionListener(this);
 		btn.setToolTipText("Control Display");
 		gc.gridx = 1;
@@ -778,7 +769,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_plus1.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDispP1);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnAddress | btnDispP1);
 		btn.addActionListener(this);
 		btn.setToolTipText("Control Display +1");
 		gc.gridx = 2;
@@ -788,7 +779,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_minus1.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnDispM1);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnAddress | btnDispM1);
 		btn.addActionListener(this);
 		btn.setToolTipText("Control Display -1");
 		gc.gridx = 3;
@@ -798,7 +789,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		icn = new ImageIcon(getClass().getResource("icons/fp_enter.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, btnAddress | btnEnter);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, btnAddress | btnEnter);
 		btn.addActionListener(this);
 		btn.setToolTipText("Control Enter");
 		gc.gridx = 4;
@@ -835,7 +826,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridwidth = 1;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 7);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 7);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 8");
 		gc.gridx = 1;
@@ -845,7 +836,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[7] = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 6);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 6);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 7");
 		gc.gridx = 2;
@@ -855,7 +846,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[6] = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 5);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 5);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 6");
 		gc.gridx = 3;
@@ -865,7 +856,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[5] = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 4);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 4);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 5");
 		gc.gridx = 4;
@@ -892,7 +883,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridwidth = 1;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 3);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 3);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 4");
 		gc.gridx = 1;
@@ -902,7 +893,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[3] = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 2);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 2);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 3");
 		gc.gridx = 2;
@@ -912,7 +903,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[2] = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 1);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 1);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 2");
 		gc.gridx = 3;
@@ -922,7 +913,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(btn, gc);
 		rpn.add(btn);
 		sense[1] = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 0);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 1");
 		gc.gridx = 4;
@@ -998,7 +989,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_type.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1011,7 +1002,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_central.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 3;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1024,7 +1015,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_inter.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 5;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1055,7 +1046,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am2.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1068,7 +1059,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am3.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		btn.setOn(true);
 		gc.gridx = 3;
 		gb.setConstraints(btn, gc);
@@ -1082,7 +1073,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am4.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 5;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1112,7 +1103,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		lpn.add(pn);
 
-		btn = new LightedButton(btnRedOn, btnRedOff, null, 0);
+		btn = new LightedButton(Peripheral.btnRedOn, Peripheral.btnRedOff, null, 0);
 		btn.setOn(true);
 		gc.gridx = 1;
 		gb.setConstraints(btn, gc);
@@ -1126,7 +1117,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_init.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 3;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1139,7 +1130,7 @@ public class HW2000FrontPanel extends JFrame
 		lpn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_run.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 5;
 		gb.setConstraints(btn, gc);
 		lpn.add(btn);
@@ -1189,7 +1180,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 0;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 7);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 7);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 8");
 		gc.gridx = 1;
@@ -1203,7 +1194,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 2;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 6);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 6);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 7");
 		gc.gridx = 3;
@@ -1217,7 +1208,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 4;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 5);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 5);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 6");
 		gc.gridx = 5;
@@ -1231,7 +1222,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 6;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 4);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 4);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 5");
 		gc.gridx = 7;
@@ -1244,7 +1235,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.setOpaque(false);
 		active = new JLabel("<HTML><CENTER>SYSTEM<BR>ACTIVE</CENTER></HTML>");
 		active.setFont(smallFont);
-		active.setForeground(indDark);
+		active.setForeground(Peripheral.indDark);
 		active.setOpaque(false);
 		// { All this effort just to get the JLabel centered V & H...
 		GridBagLayout gb2 = new GridBagLayout();
@@ -1271,7 +1262,7 @@ public class HW2000FrontPanel extends JFrame
 		rpn.add(pn);
 		gc.gridheight = 1;
 
-		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // A/C ON
+		btn = new LightedButton(Peripheral.btnGreenOn, Peripheral.btnWhiteOff, null, -1); // A/C ON
 		btn.addActionListener(this);
 		btn.setOn(true);
 		gc.gridx = 9;
@@ -1284,7 +1275,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 		LightedButton btn2 = btn;
-		btn = new LightedButton(btnRedOn, btnRedOff, null, -1);	// A/C OFF
+		btn = new LightedButton(Peripheral.btnRedOn, Peripheral.btnRedOff, null, -1);	// A/C OFF
 		btn.addActionListener(this);
 		btn2.setNext(btn);
 		btn.setNext(btn2);
@@ -1326,7 +1317,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 0;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 3);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 3);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 4");
 		gc.gridx = 1;
@@ -1339,7 +1330,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 2;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 2);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 2);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 3");
 		gc.gridx = 3;
@@ -1352,7 +1343,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 4;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 1);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 1);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 2");
 		gc.gridx = 5;
@@ -1365,7 +1356,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridx = 6;
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, btnSense | 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, btnSense | 0);
 		btn.addActionListener(this);
 		btn.setToolTipText("SENSE 1");
 		gc.gridx = 7;
@@ -1375,7 +1366,7 @@ public class HW2000FrontPanel extends JFrame
 
 		// spacer panel done on gridy 1
 
-		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1); // DC ON
+		btn = new LightedButton(Peripheral.btnGreenOn, Peripheral.btnWhiteOff, null, -1); // DC ON
 		btn.setOn(true);
 		btn.addActionListener(this);
 		gc.gridx = 9;
@@ -1388,7 +1379,7 @@ public class HW2000FrontPanel extends JFrame
 		gb.setConstraints(pn, gc);
 		rpn.add(pn);
 		btn2 = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, -1); // DC OFF
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, -1); // DC OFF
 		btn.addActionListener(this);
 		btn2.setNext(btn);
 		btn.setNext(btn2);
@@ -1421,7 +1412,7 @@ public class HW2000FrontPanel extends JFrame
 		gc2.gridheight = 1;
 		eintr = new JLabel("EXTERNAL");
 		eintr.setFont(smallFont);
-		eintr.setForeground(indDark);
+		eintr.setForeground(Peripheral.indDark);
 		eintr.setOpaque(false);
 		eintr.setPreferredSize(new Dimension(50, 15));
 		gc2.anchor = GridBagConstraints.NORTH;
@@ -1429,7 +1420,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(eintr);
 		iintr = new JLabel("INTERNAL");
 		iintr.setFont(smallFont);
-		iintr.setForeground(indDark);
+		iintr.setForeground(Peripheral.indDark);
 		iintr.setOpaque(false);
 		iintr.setPreferredSize(new Dimension(50, 15));
 		gc2.gridy = 1;
@@ -1441,7 +1432,7 @@ public class HW2000FrontPanel extends JFrame
 		gc2.gridx = 1;
 		pgm = new JLabel("PROGRAM");
 		pgm.setFont(smallFont);
-		pgm.setForeground(indDark);
+		pgm.setForeground(Peripheral.indDark);
 		pgm.setOpaque(false);
 		pgm.setPreferredSize(new Dimension(50, 15));
 		gc2.anchor = GridBagConstraints.NORTH;
@@ -1449,7 +1440,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(pgm);
 		prot = new JLabel("PROTECT");
 		prot.setFont(smallFont);
-		prot.setForeground(indDark);
+		prot.setForeground(Peripheral.indDark);
 		prot.setOpaque(false);
 		prot.setPreferredSize(new Dimension(50, 15));
 		gc2.gridy = 1;
@@ -1461,7 +1452,7 @@ public class HW2000FrontPanel extends JFrame
 		gc2.gridx = 2;
 		voltage = new JLabel("VOLTAGE");
 		voltage.setFont(smallFont);
-		voltage.setForeground(indDark);
+		voltage.setForeground(Peripheral.indDark);
 		voltage.setOpaque(false);
 		voltage.setPreferredSize(new Dimension(50, 15));
 		gc2.anchor = GridBagConstraints.NORTH;
@@ -1469,7 +1460,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(voltage);
 		parity = new JLabel("PARITY");
 		parity.setFont(smallFont);
-		parity.setForeground(indDark);
+		parity.setForeground(Peripheral.indDark);
 		parity.setOpaque(false);
 		parity.setPreferredSize(new Dimension(50, 15));
 		gc2.gridy = 1;
@@ -1481,7 +1472,7 @@ public class HW2000FrontPanel extends JFrame
 		gc2.gridx = 3;
 		fan = new JLabel("FAN");
 		fan.setFont(smallFont);
-		fan.setForeground(indDark);
+		fan.setForeground(Peripheral.indDark);
 		fan.setOpaque(false);
 		fan.setPreferredSize(new Dimension(50, 15));
 		gc2.anchor = GridBagConstraints.NORTH;
@@ -1489,7 +1480,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(fan);
 		cb = new JLabel("CB");
 		cb.setFont(smallFont);
-		cb.setForeground(indDark);
+		cb.setForeground(Peripheral.indDark);
 		cb.setOpaque(false);
 		cb.setPreferredSize(new Dimension(50, 15));
 		gc2.gridy = 1;
@@ -1569,21 +1560,21 @@ public class HW2000FrontPanel extends JFrame
 		repaint();
 	}
 	public void setInterrupt(int type) {	// Indicator only
-		eintr.setForeground(type == HW2000CCR.EIR_EI ? indLit : indDark);
-		iintr.setForeground(type == HW2000CCR.EIR_II ? indLit : indDark);
+		eintr.setForeground(type == HW2000CCR.EIR_EI ? Peripheral.indLit : Peripheral.indDark);
+		iintr.setForeground(type == HW2000CCR.EIR_II ? Peripheral.indLit : Peripheral.indDark);
 		repaint();
 	}
 	public void setProtect(int type) {	// Indicator only
-		prot.setForeground(type != 0 ? indLit : indDark);
+		prot.setForeground(type != 0 ? Peripheral.indLit : Peripheral.indDark);
 	}
 	public void setActive(boolean on) {	// Indicator only
 		if (active != null) {
-			active.setForeground(on ? indLit : indDark);
+			active.setForeground(on ? Peripheral.indLit : Peripheral.indDark);
 		}
 	}
 	public void setProgram(boolean on) {	// Indicator only
 		// TODO: how to detect "program exception"?
-		pgm.setForeground(on ? indLit : indDark);
+		pgm.setForeground(on ? Peripheral.indLit : Peripheral.indDark);
 	}
 
 	// Actions are:
@@ -1663,14 +1654,14 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		// TODO: some of these need to be managed...
-		LightedButton btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1);
+		LightedButton btn = new LightedButton(Peripheral.btnGreenOn, Peripheral.btnWhiteOff, null, -1);
 		btn.addActionListener(this);
 		btn.setOn(true);
 		gc.gridx = 1;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		LightedButton btn2 = btn;
-		btn = new LightedButton(btnRedOn, btnRedOff, null, -1);
+		btn = new LightedButton(Peripheral.btnRedOn, Peripheral.btnRedOff, null, -1);
 		btn.addActionListener(this);
 		btn2.setNext(btn);
 		btn.setNext(btn2);
@@ -1685,14 +1676,14 @@ public class HW2000FrontPanel extends JFrame
 		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
-		btn = new LightedButton(btnGreenOn, btnWhiteOff, null, -1);
+		btn = new LightedButton(Peripheral.btnGreenOn, Peripheral.btnWhiteOff, null, -1);
 		btn.setOn(true);
 		btn.addActionListener(this);
 		gc.gridx = 4;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		btn2 = btn;
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, null, -1);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, -1);
 		btn.addActionListener(this);
 		btn2.setNext(btn);
 		btn.setNext(btn2);
@@ -1707,7 +1698,7 @@ public class HW2000FrontPanel extends JFrame
 		gbl.setConstraints(pn, gc);
 		npn.add(pn);
 
-		btn = new LightedButton(btnRedOn, btnRedOff, null, 0);
+		btn = new LightedButton(Peripheral.btnRedOn, Peripheral.btnRedOff, null, 0);
 		btn.setOn(true);
 		gc.gridx = 7;
 		gbl.setConstraints(btn, gc);
@@ -1723,7 +1714,7 @@ public class HW2000FrontPanel extends JFrame
 		ImageIcon icn;
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_init.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 9;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1736,7 +1727,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_boot.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 11;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1749,7 +1740,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_central.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 13;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1762,7 +1753,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_instr.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 15;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1775,7 +1766,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_run.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 17;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1789,7 +1780,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_inter.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 19;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1803,20 +1794,20 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pn);
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am2.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 21;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		am2 = btn;
 		icn = new ImageIcon(getClass().getResource("icons/fp_am3.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		btn.setOn(true);
 		gc.gridx = 22;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		am3 = btn;
 		icn = new ImageIcon(getClass().getResource("icons/fp_am4.png"));
-		btn = new LightedButton(btnWhiteOn, btnWhiteOff, icn, 0);
+		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
 		gc.gridx = 23;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
@@ -1832,7 +1823,7 @@ public class HW2000FrontPanel extends JFrame
 		gc.gridheight = 1;
 		eintr = new JLabel("EXTERNAL");
 		eintr.setFont(smallFont);
-		eintr.setForeground(indDark);
+		eintr.setForeground(Peripheral.indDark);
 		eintr.setOpaque(false);
 		eintr.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 0;
@@ -1842,7 +1833,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(eintr);
 		iintr = new JLabel("INTERNAL");
 		iintr.setFont(smallFont);
-		iintr.setForeground(indDark);
+		iintr.setForeground(Peripheral.indDark);
 		iintr.setOpaque(false);
 		iintr.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 1;
@@ -1852,7 +1843,7 @@ public class HW2000FrontPanel extends JFrame
 
 		pgm = new JLabel("PROGRAM");
 		pgm.setFont(smallFont);
-		pgm.setForeground(indDark);
+		pgm.setForeground(Peripheral.indDark);
 		pgm.setOpaque(false);
 		pgm.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 0;
@@ -1862,7 +1853,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(pgm);
 		prot = new JLabel("PROTECT");
 		prot.setFont(smallFont);
-		prot.setForeground(indDark);
+		prot.setForeground(Peripheral.indDark);
 		prot.setOpaque(false);
 		prot.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 1;
@@ -1872,7 +1863,7 @@ public class HW2000FrontPanel extends JFrame
 
 		parity = new JLabel("PARITY");
 		parity.setFont(smallFont);
-		parity.setForeground(indDark);
+		parity.setForeground(Peripheral.indDark);
 		parity.setOpaque(false);
 		parity.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 0;
@@ -1882,7 +1873,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(parity);
 		voltage = new JLabel("VOLTAGE");
 		voltage.setFont(smallFont);
-		voltage.setForeground(indDark);
+		voltage.setForeground(Peripheral.indDark);
 		voltage.setOpaque(false);
 		voltage.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 1;
@@ -1892,7 +1883,7 @@ public class HW2000FrontPanel extends JFrame
 
 		fan = new JLabel("FAN");
 		fan.setFont(smallFont);
-		fan.setForeground(indDark);
+		fan.setForeground(Peripheral.indDark);
 		fan.setOpaque(false);
 		fan.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 0;
@@ -1902,7 +1893,7 @@ public class HW2000FrontPanel extends JFrame
 		npn.add(fan);
 		cb = new JLabel("CB");
 		cb.setFont(smallFont);
-		cb.setForeground(indDark);
+		cb.setForeground(Peripheral.indDark);
 		cb.setOpaque(false);
 		cb.setPreferredSize(new Dimension(50, 15));
 		gc.gridy = 1;
@@ -1925,7 +1916,7 @@ public class HW2000FrontPanel extends JFrame
 		++goff;
 		int m = 0;
 		for (int x = 0; x < btns.length; ++x) {
-			btns[x] = new LightedButton(btnWhiteOn, btnWhiteOff, null, id | x);
+			btns[x] = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, null, id | x);
 			btns[x].addActionListener(this);
 			gc.gridx = gbx - x - goff;
 			gb.setConstraints(btns[x], gc);
@@ -1969,7 +1960,7 @@ public class HW2000FrontPanel extends JFrame
 		} catch (Exception ee) {
 			setRunStop(false);
 			sys.bootstrap = false;
-			warning(this, "Bootstrap", ee.toString());
+			PopupFactory.warning(this, "Bootstrap", ee.toString());
 			return;
 		}
 	}
@@ -2579,7 +2570,7 @@ public class HW2000FrontPanel extends JFrame
 				}
 			} catch (Exception ee) {
 				ee.printStackTrace();
-				warning(HW2000FrontPanel.this, op, ee.toString());
+				PopupFactory.warning(HW2000FrontPanel.this, op, ee.toString());
 			}
 			asm = null;
 		}
@@ -2603,7 +2594,7 @@ public class HW2000FrontPanel extends JFrame
 				doFortran(src);
 			} catch (Exception ee) {
 				ee.printStackTrace();
-				warning(HW2000FrontPanel.this, "FORTRAN", ee.toString());
+				PopupFactory.warning(HW2000FrontPanel.this, "FORTRAN", ee.toString());
 			}
 			ftn = null;
 		}
@@ -2630,7 +2621,7 @@ public class HW2000FrontPanel extends JFrame
 			try {
 				lstf = new FileOutputStream(lst);
 			} catch (Exception ee) {
-				warning(this, op, ee.toString());
+				PopupFactory.warning(this, op, ee.toString());
 				return;
 			}
 			getPrinter().setOutput(lstf);
@@ -2649,7 +2640,7 @@ ee.printStackTrace();
 			e = cmp.generate(ezc);
 		}
 		if (e < 0) {
-			warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");
+			PopupFactory.warning(this, op, "<HTML><PRE>" + cmp.getErrors() + "</PRE></HTML>");
 			return;
 		}
 		dumpOnHalt = listing && cmp.wantsDump();
@@ -2658,7 +2649,7 @@ ee.printStackTrace();
 			if (listing && cmp.listSymbols()) {
 				genMemoryMap(cmp.getSymTab(), ret.getSymTab());
 			}
-			inform(this, op, String.format("Compile complete. %07o %07o %07o",
+			PopupFactory.inform(this, op, String.format("Compile complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
 			if (cmp.hasData()) {
 				P_CardReaderPunch cp = (P_CardReaderPunch)sys.pdc.getPeriph(PeriphDecode.P_PP);
@@ -2695,7 +2686,7 @@ ee.printStackTrace();
 			try {
 				lst = new FileOutputStream(new File(l));
 			} catch (Exception ee) {
-				warning(this, op, ee.toString());
+				PopupFactory.warning(this, op, ee.toString());
 				return false;
 			}
 			getPrinter().setOutput(lst);
@@ -2706,7 +2697,7 @@ ee.printStackTrace();
 			try { lst.close(); } catch (Exception ee) {}
 		}
 		if (ret != null) {
-			inform(this, op, String.format("Assembly complete. %07o %07o %07o",
+			PopupFactory.inform(this, op, String.format("Assembly complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
 		}
 		return (ret != null);
@@ -2740,7 +2731,7 @@ ee.printStackTrace();
 		Assembler asm = new Assembler(src);
 		int e = asm.passOne();
 		if (e < 0) {
-			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
+			PopupFactory.warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return null;
 		}
 		Peripheral p = null;
@@ -2767,7 +2758,7 @@ ee.printStackTrace();
 			// TODO: are these ever null?
 			boolean copy = !tp.begin(unit); // always 'true' (!copy)?
 			if (!tp.rewind()) {
-				warning(this, op, "No tape mounted");
+				PopupFactory.warning(this, op, "No tape mounted");
 				return null;
 			}
 			// TODO: need option to overwrite tape
@@ -2794,12 +2785,12 @@ ee.printStackTrace();
 			P_Disk dk = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 			DiskVolume vol = new DiskVolume(dk, unit);
 			if (!vol.mount()) {
-				warning(this, op, "Failed to mount volume");
+				PopupFactory.warning(this, op, "Failed to mount volume");
 				return null;
 			}
 			DiskFile fi = vol.openFile(file, DiskFile.UPDATE);
 			if (fi == null) {
-				warning(this, op, FileVolSupport.getError(vol.getError()));
+				PopupFactory.warning(this, op, FileVolSupport.getError(vol.getError()));
 				vol.unmount();
 				return null;
 			}
@@ -2813,7 +2804,7 @@ ee.printStackTrace();
 			e = asm.passTwo(new CoreLoader(sys, this), reloc, doList);
 		}
 		if (e < 0) {
-			warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
+			PopupFactory.warning(this, op, "<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 			return null;
 		}
 		if (doList) {
@@ -2873,7 +2864,7 @@ ee.printStackTrace();
 				throw new NumberFormatException("Out of range");
 			}
 		} catch (Exception ee) {
-			warning(this, title, "Invalid Disk Unit Number");
+			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
 		setActive(true);
@@ -2883,7 +2874,7 @@ ee.printStackTrace();
 		boolean ok = FileVolSupport.initVolume(p, unit, nm, sn);
 		setActive(false);
 		if (!ok) {
-			warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2901,7 +2892,7 @@ ee.printStackTrace();
 				throw new NumberFormatException("Out of range");
 			}
 		} catch (Exception ee) {
-			warning(this, title, "Invalid Disk Unit Number");
+			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
 		setActive(true);
@@ -2910,7 +2901,7 @@ ee.printStackTrace();
 			cylmap_cb.isSelected(), mmblst_cb.isSelected());
 		setActive(false);
 		if (!ok) {
-			warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -2951,7 +2942,7 @@ ee.printStackTrace();
 				throw new NumberFormatException("Out of range");
 			}
 		} catch (Exception ee) {
-			warning(this, title, "Invalid Disk Unit Number");
+			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
 		int type = -1;
@@ -2965,7 +2956,7 @@ ee.printStackTrace();
 			type = DiskFile.DIRECT;
 		} else {
 			// Can't happen with radio buttons?
-			warning(this, title, "Invalid File Type");
+			PopupFactory.warning(this, title, "Invalid File Type");
 			return;
 		}
 		setActive(true);
@@ -3011,7 +3002,7 @@ ee.printStackTrace();
 				blkIdx = Integer.valueOf(file_bpx.getText());
 			}
 		} catch (Exception ee) {
-			warning(this, title, "Invalid File Geometry");
+			PopupFactory.warning(this, title, "Invalid File Geometry");
 			setActive(false);
 			return;
 		}
@@ -3020,7 +3011,7 @@ ee.printStackTrace();
 		DiskUnit[] units = new DiskUnit[6];
 		boolean ok = getAlloc(units, p.numCylinders(), p.numTracks());
 		if (!ok) {
-			warning(this, title, title + " Failed Invalid allocation");
+			PopupFactory.warning(this, title, title + " Failed Invalid allocation");
 			setActive(false);
 			return;
 		}
@@ -3029,7 +3020,7 @@ ee.printStackTrace();
 				blkIdx, units);
 		setActive(false);
 		if (!ok) {
-			warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -3047,7 +3038,7 @@ ee.printStackTrace();
 				throw new NumberFormatException("Out of range");
 			}
 		} catch (Exception ee) {
-			warning(this, title, "Invalid Disk Unit Number");
+			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
 			return;
 		}
 		setActive(true);
@@ -3056,7 +3047,7 @@ ee.printStackTrace();
 		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
 		setActive(false);
 		if (!ok) {
-			warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
 			return;
 		}
 	}
@@ -3175,25 +3166,6 @@ ee.printStackTrace();
 		}
 	}
 
-	public static void warning(Component top, String op, String err) {
-		JOptionPane.showMessageDialog(top,
-			new JLabel(err),
-			op + " Warning", JOptionPane.WARNING_MESSAGE);
-	}
-
-	public static void inform(Component top, String op, String err) {
-		JOptionPane.showMessageDialog(top,
-			new JLabel(err),
-			op + " Information", JOptionPane.INFORMATION_MESSAGE);
-	}
-
-	public static int confirm(String op, String err) {
-		int res = JOptionPane.showConfirmDialog(null,
-			new JLabel(err),
-			op + " Confirmation", JOptionPane.YES_NO_OPTION);
-		return res;
-	}
-
 	boolean inLampTest = false;
 	private void lampTest(boolean test) {
 		if (test == inLampTest) {
@@ -3201,7 +3173,7 @@ ee.printStackTrace();
 		}
 		inLampTest = test;
 		LightedButton.doLampTest(test);
-		Color ind = (test ? indLit : indDark);
+		Color ind = (test ? Peripheral.indLit : Peripheral.indDark);
 		eintr.setForeground(ind);
 		iintr.setForeground(ind);
 		pgm.setForeground(ind);

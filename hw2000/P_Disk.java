@@ -214,7 +214,7 @@ public class P_Disk extends JFrame
 			bt = new JButton("A");
 			bt.setActionCommand(String.format("A%d", x));
 			bt.addActionListener(this);
-			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setBackground(Peripheral.btnWhiteOff);
 			bt.setMargin(new Insets(0, 0, 0, 0));
 			bt.setPreferredSize(new Dimension(25, 25));
 			pn.add(bt);
@@ -222,7 +222,7 @@ public class P_Disk extends JFrame
 			bt = new JButton("B");
 			bt.setActionCommand(String.format("B%d", x));
 			bt.addActionListener(this);
-			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setBackground(Peripheral.btnWhiteOff);
 			bt.setMargin(new Insets(0, 0, 0, 0));
 			bt.setPreferredSize(new Dimension(25, 25));
 			pn.add(bt);
@@ -231,7 +231,7 @@ public class P_Disk extends JFrame
 			bt.setFont(smallFont);
 			bt.setActionCommand(String.format("F%d", x));
 			bt.addActionListener(this);
-			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setBackground(Peripheral.btnWhiteOff);
 			bt.setMargin(new Insets(0, 0, 0, 0));
 			bt.setPreferredSize(new Dimension(25, 25));
 			pn.add(bt);
@@ -240,7 +240,7 @@ public class P_Disk extends JFrame
 			bt.setFont(smallFont);
 			bt.setActionCommand(String.format("D%d", x));
 			bt.addActionListener(this);
-			bt.setBackground(HW2000FrontPanel.btnWhiteOff);
+			bt.setBackground(Peripheral.btnWhiteOff);
 			bt.setMargin(new Insets(0, 0, 0, 0));
 			bt.setPreferredSize(new Dimension(25, 25));
 			pn.add(bt);
@@ -1074,20 +1074,20 @@ public class P_Disk extends JFrame
 		unit.flag = (byte)flg;
 		unit.a_bt.setBackground(
 			(unit.flag & PERMIT_A) == 0 ?
-			HW2000FrontPanel.btnWhiteOff :
-			HW2000FrontPanel.btnWhiteOn);
+			Peripheral.btnWhiteOff :
+			Peripheral.btnWhiteOn);
 		unit.b_bt.setBackground(
 			(unit.flag & PERMIT_B) == 0 ?
-			HW2000FrontPanel.btnWhiteOff :
-			HW2000FrontPanel.btnWhiteOn);
+			Peripheral.btnWhiteOff :
+			Peripheral.btnWhiteOn);
 		unit.f_bt.setBackground(
 			(unit.flag & PERMIT_FMT) == 0 ?
-			HW2000FrontPanel.btnWhiteOff :
-			HW2000FrontPanel.btnWhiteOn);
+			Peripheral.btnWhiteOff :
+			Peripheral.btnWhiteOn);
 		unit.d_bt.setBackground(
 			(unit.flag & PERMIT_DAT) == 0 ?
-			HW2000FrontPanel.btnWhiteOff :
-			HW2000FrontPanel.btnWhiteOn);
+			Peripheral.btnWhiteOff :
+			Peripheral.btnWhiteOn);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -1132,7 +1132,7 @@ public class P_Disk extends JFrame
 				sts[c].mnt_pn.setText(f.getName());
 				return;
 			} catch (Exception ee) {
-				HW2000FrontPanel.warning(this, s, ee.toString());
+				PopupFactory.warning(this, s, ee.toString());
 			}
 		}
 	}

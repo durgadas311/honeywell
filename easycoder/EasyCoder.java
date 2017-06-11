@@ -295,7 +295,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 
 	private void setError(Assembler asm) {
 		inFile.setBackground(Color.pink);
-		warning(inFile.getText(),
+		PopupFactory.warning(this, inFile.getText(),
 			"<HTML><PRE>" + asm.getErrors() + "</PRE></HTML>");
 	}
 
@@ -369,12 +369,6 @@ public class EasyCoder extends JFrame implements ActionListener {
 			}
 			return;
 		}
-	}
-
-	private void warning(String op, String err) {
-		JOptionPane.showMessageDialog(this,
-			new JLabel(err),
-			op, JOptionPane.WARNING_MESSAGE);
 	}
 
 	public static void main(String[] args) {

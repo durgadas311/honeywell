@@ -503,7 +503,7 @@ public class P_CardReaderPunch extends JFrame
 			try {
 				idev = new FileInputStream(f);
 			} catch (Exception ee) {
-				HW2000FrontPanel.warning(this, s, ee.toString());
+				PopupFactory.warning(this, s, ee.toString());
 				return;
 			}
 			sts[1].deck_pn.setText(f.getName());
@@ -512,7 +512,7 @@ public class P_CardReaderPunch extends JFrame
 			try {
 				odev = new FileOutputStream(f);
 			} catch (Exception ee) {
-				HW2000FrontPanel.warning(this, s, ee.toString());
+				PopupFactory.warning(this, s, ee.toString());
 				return;
 			}
 			sts[0].deck_pn.setText(f.getName());
