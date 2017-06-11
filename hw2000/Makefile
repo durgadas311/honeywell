@@ -24,6 +24,8 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	bootstrap.ezc brtloader.ezc \
 	rdrtest.ezc puntest.ezc puntest2.ezc mtitest.ezc \
 	dsktest1.ezc dsktest2.ezc itvtest.ezc \
+	mod1test1.ezc mod1test2.ezc mod1test3.ezc \
+	mmbtest1.ezc mmbtest2.ezc mmbtest3.ezc \
 	barberpole.mti prog3.pcd
 
 SHIPS = H2000.jar hwprogs.tgz h2000.tgz

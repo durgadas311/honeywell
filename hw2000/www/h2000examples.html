@@ -80,7 +80,7 @@ expects the item size to be 80 characters.
 	<LI>NOTE: The drive FMT and DAT permit switches must be ON.
 </UL>
 <LI>Optionally, use the Disk_Util->Map_Volume menu item to print
-the files and allocation of the volume.
+the file(s) and, optionally, allocation of the volume.
 <LI>Open/raise the PunchCard window and mount a card deck, such as the
 barber pole one created in the previous example.
 <LI>Select menu File->Assemble and choose the file "mod1test1.ezc" and click "Assemble".
@@ -142,6 +142,58 @@ This will be the BRT "1HDR&#916;" record.
 Tape drive should show 361 bytes have been read.
 <LI>Press RUN. The tape drive should stop at about 3197 bytes and the line printer
 should show the output of running the mcetests program.
+</OL>
+
+<H2>PARTITIONED SEQUENTIAL FILES</H2>
+
+<P>This demo will take data from datasets on card or magnetic tape
+and write them onto a partitioned sequential file (on disk pack)
+as separate members,
+and then read back that file and print the members on the line printer.
+This example goes through all steps required to initialize a new volume,
+create a file, and use the file. If you already have a disk pack initialized,
+or files allocated, some steps may be skipped. Note, these example programs
+have the file name hard-coded, so require modification if the file name
+is to change. Also, MOD1 files have strict item/record sizes and this program
+expects the item size to be 80 characters.
+
+<OL>
+<LI>Open/raise the Disks window and mount a new file on disk drive 000.
+<LI>Select menu Disk_Util->Initialize_Volume and
+<UL>
+	<LI>Enter a volume name and serial number.
+	<LI>Click OK to initialize the volume.
+	<LI>NOTE: The drive FMT and DAT permit switches must be ON.
+</UL>
+<LI>Select menu Disk_Util->Allocate_File and
+<UL>
+	<LI>Enter the file name "PARTSEQ01" (unless the programs have been altered
+	for a different file name).
+	<LI>Enter Item Len of "80" and Rec Len of "250", Rec/Blk of "1" and Blk/Idx of "8".
+	<LI>Enter Allocation Unit(s). A minimum is enough tracks to hold the
+	datasets plus the number of blocks for the Index.
+	<LI>Click OK to create the file.
+	<LI>NOTE: The drive FMT and DAT permit switches must be ON.
+</UL>
+<LI>Optionally, use the Disk_Util->Map_Volume menu item to print
+the file(s) and, optionally, allocation of the volume.
+<LI>Select menu File->Assemble and choose the file "mmbtest1.ezc" and click "Assemble".
+<LI>Mount the first dataset on either the card reader or magnetic tape drive 000.
+If using magnetic tape, set SENSE 1 switch ON (otherwise ensure it is OFF).
+<LI>Press RUN. The selected device should show activity,
+along with the disk drive, and then the printer should
+show "FINISHED MEMBER-XXX" where "XXX" is a 3-digit number that increments each time.
+NOTE: The disk drive DAT permit switch must be ON.
+<LI>The preceding steps may be repeated for additional datasets. When the last
+dataset to be loaded is ready, set SENSE 2 switch ON to signal the last dataset
+is about to be loaded. After the last dataset, the program alo prints "END PROG".
+At this point, the file should be safely closed.
+<LI>Select menu File->Assemble and choose the file "mmbtest2.ezc" and click "Assemble".
+<LI>Press RUN. The disk drive should show activity and the printer
+should show full dumps of each file member previously created,
+each followed by "FINISHED MEMBER-XXX". After the last data member dump,
+the program should print "END PROG" and exit.
+NOTE: No drive PERMIT switches are required.
 </OL>
 
 </BODY>
