@@ -27,7 +27,7 @@ public class PartitionedSeqFile extends SequentialFile {
 
 	int putItms;	// number of items MSPUT
 
-	// The following are only valid after openMemb() returns 00203
+	// The following are only valid after findMemb() returns 00203
 	int[] freeCCTTRR;	// from *UNUSED* item
 	int freeBlocks;		// from *UNUSED* item
 	int[] freeMember;
@@ -92,7 +92,7 @@ public class PartitionedSeqFile extends SequentialFile {
 
 	// 'mmb' is the member name to search for, null means
 	// "Every Index Entry" EXIT.
-	private boolean openMemb(CoreMemory mmb, int adr, int mode) {
+	private boolean findMemb(CoreMemory mmb, int adr, int mode) {
 		boolean first = (mmb != null || mode < 010);
 		int sts;
 		if (first) {
@@ -183,7 +183,7 @@ public class PartitionedSeqFile extends SequentialFile {
 		byte sts = blkBufMem.readChar(blkBufAdr + off + 24);
 		CoreMemory tmp = null;
 		if (sts == _END_) {
-			// openMemb() does not set freeMember unless
+			// findMemb() does not set freeMember unless
 			// we have space to insert one more...
 			tmp = new BufferMemory(mmbIdxLen);
 			tmp.copyIn(0, blkBufMem, blkBufAdr + off, mmbIdxLen);
@@ -303,7 +303,7 @@ public class PartitionedSeqFile extends SequentialFile {
 			if (memb == null) {
 				foundMember = null;
 			}
-			boolean ok = openMemb(memb, adr, mode);
+			boolean ok = findMemb(memb, adr, mode);
 			if (!ok) {
 				return false;
 			}
@@ -319,7 +319,7 @@ public class PartitionedSeqFile extends SequentialFile {
 				}
 			}
 		}
-		// At this point, we know that openMemb() has been called at least once
+		// At this point, we know that findMemb() has been called at least once
 		mode = curMembMode;
 		// output-only requires member status 020...
 		byte req = (byte)(mode == DiskFile.OUT ? _ALL_ : _PRT_);
@@ -385,8 +385,32 @@ public class PartitionedSeqFile extends SequentialFile {
 	@Override
 	public boolean alterMemb(CoreMemory memb, int adr, int op,
 				CoreMemory newm, int nadr) {
-		error = 00434;
-		return false;
+		endMemb(); // probably an error...
+		if (!findMemb(memb, adr, 0)) {
+			return false;
+		}
+		if (foundMember == null) {
+			error = 00213;
+			return false;
+		}
+		int sts = blkBufMem.readChar(blkBufAdr + curMembOff + 24);
+		if (op == _DEL_ && sts != _ALL_) {
+			error = 00224;
+			return false;
+		}
+		if (op != _END_) {
+			blkBufMem.writeChar(blkBufAdr + curMembOff + 24, (byte)op);
+			dirty = true;
+		}
+		if (newm != null) {
+			blkBufMem.copyIn(blkBufAdr + curMembOff, newm, nadr, 14);
+			dirty = true;
+		}
+		// Sync now, or let it wait?
+		if (!sync()) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override

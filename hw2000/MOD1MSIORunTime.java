@@ -716,8 +716,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(00510); // Write error
 			return;
 		}
-		if (!xitMCA.file.alterMemb(sys, getStrPtr(parms[1]),
-				parms[2], sys, getStrPtr(parms[3]))) {
+		// parms[2] was already encoded
+		if (!xitMCA.file.alterMemb(sys, getStrPtr(parms[1]), parms[2],
+				parms[3] > 0 ? sys : null,
+				parms[3] > 0 ? getStrPtr(parms[3]) : 0)) {
 			handleError(xitMCA.file.getError());
 			return;
 		}

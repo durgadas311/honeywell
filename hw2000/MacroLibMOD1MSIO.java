@@ -235,13 +235,14 @@ public class MacroLibMOD1MSIO implements MacroDef {
 				asm.errsAdd("Missing required MALTER parameters");
 				break;
 			}
+			mode = PartitionedSeqFile._END_;
 			if (!parms[2].isEmpty()) {
 				if (parms[2].equals("AVAIL")) {
-					mode = 1;
+					mode = PartitionedSeqFile._ALL_;
 				} else if (parms[2].equals("UNAVAIL")) {
-					mode = 2;
+					mode = PartitionedSeqFile._PRT_;
 				} else if (parms[2].equals("DELETE")) {
-					mode = 3;
+					mode = PartitionedSeqFile._DEL_;
 				} else {
 					asm.errsAdd("Invalid MALTER status value");
 					break;
