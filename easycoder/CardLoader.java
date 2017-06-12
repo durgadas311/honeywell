@@ -3,7 +3,7 @@
 import java.util.Arrays;
 import java.io.*;
 
-public class CardLoader extends BRTLoader implements Loader {
+public class CardLoader extends BRTLoader {
 	private OutputStream targ = null;
 	private RandomAccessFile rwf = null;
 	private byte[] card;
@@ -49,5 +49,11 @@ public class CardLoader extends BRTLoader implements Loader {
 				rwf.write(card);
 			}
 		} catch (Exception ee) {}
+	}
+
+	void endSeg() {
+	}
+
+	void beginSeg(String rev, String prg, String seg, int vis) {
 	}
 }

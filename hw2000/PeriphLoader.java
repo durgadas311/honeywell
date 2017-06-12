@@ -2,7 +2,7 @@
 
 import java.io.*;
 
-public class PeriphLoader extends BRTLoader implements Loader {
+public class PeriphLoader extends BRTLoader {
 	private SequentialRecordIO targ;
 
 	public PeriphLoader(SequentialRecordIO targ, CharConverter cvt, int reclen) {
@@ -12,5 +12,11 @@ public class PeriphLoader extends BRTLoader implements Loader {
 
 	void writeRec(byte[] rec, int len) {
 		targ.appendRecord(rec, 0, len);
+	}
+
+	void endSeg() {
+	}
+
+	void beginSeg(String rev, String prg, String seg, int vis) {
 	}
 }

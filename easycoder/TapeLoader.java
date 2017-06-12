@@ -2,7 +2,7 @@
 
 import java.io.*;
 
-public class TapeLoader extends BRTLoader implements Loader {
+public class TapeLoader extends BRTLoader {
 	private OutputStream targ = null;
 	private RandomAccessFile rwf = null;
 
@@ -26,5 +26,11 @@ public class TapeLoader extends BRTLoader implements Loader {
 				rwf.write(0300); // tape record mark
 			}
 		} catch (Exception ee) {}
+	}
+
+	void endSeg() {
+	}
+
+	void beginSeg(String rev, String prg, String seg, int vis) {
 	}
 }

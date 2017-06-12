@@ -11,6 +11,8 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 	}
 
 	abstract void writeRec(byte[] rec, int len);
+	abstract void endSeg();
+	abstract void beginSeg(String rev, String prg, String seg, int vis);
 
 	void finRec(boolean last) {
 		endRec(last);
@@ -22,6 +24,9 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		}
 		writeRec(record, reccnt);
 		dirty = false;
+		if (last) {
+			endSeg();
+		}
 	}
 
 	private void putLen(int len) {
@@ -52,6 +57,7 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 	}
 
 	private void initSeg(String rev, String prg, String seg, int vis) {
+		beginSeg(rev, prg, seg, vis);
 		if (seq > 0) {
 			record[0] = (byte)054;
 		} else {
