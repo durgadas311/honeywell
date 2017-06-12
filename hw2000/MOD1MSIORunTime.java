@@ -21,7 +21,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		public int prot;	// protection
 		public int deliv;	// item delivery mode
 		public int buf1;	// address of block buffer 1
-		public int itm1;	// address of item buffer 1
+		public int itmPtr;	// address of item buffer 1
 		public int xitDir;	// directory exit routine
 		public int xitIdx;	// index exit routine
 		public int xitMmb;	// every member exit routine
@@ -405,12 +405,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		getDevTab(b, mca);
 		mca.buf1 = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
-		mca.itm1 = fetchAdr(a); // index/indirect not allowed
+		mca.itmPtr = fetchAdr(a); // index/indirect not allowed
 		a += sys.am_na;
-		// Adjust for LOCATE mode - need leftmost char of address field.
-		if (mca.deliv == 0) {
-			mca.itm1 -= (sys.am_na - 1);
-		}
+		mca.itmPtr -= (sys.am_na - 1);	// need left char
 		mca.xitDir = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
 		mca.xitIdx = fetchAdr(a); // index/indirect allowed?
@@ -444,11 +441,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		a += xitMCA.name.length + 3 + sys.am_na;
 		xitMCA.buf1 = fetchAdr(a); // index/indirect allowed?
 		a += sys.am_na;
-		xitMCA.itm1 = fetchAdr(a); // index/indirect not allowed
+		xitMCA.itmPtr = fetchAdr(a); // index/indirect not allowed
 		a += sys.am_na;
-		if (xitMCA.deliv == 0) {
-			xitMCA.itm1 -= (sys.am_na - 1);
-		}
+		mca.itmPtr -= (sys.am_na - 1);	// need left char
 		// TODO: more data?
 		// Open file must be notified of buffer change...
 		if (xitMCA.file != null) {
@@ -523,7 +518,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		if (xitMCA.deliv == 0) {
 			// TODO: not for Partitioned Sequential files?
-			putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
+			putAdr(xitMCA.itmPtr, xitMCA.file.getItemAdr());
 		}
 		// TODO: all set?
 		xitMCA = null;
@@ -560,13 +555,13 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		boolean ok;
 		if (xitMCA.deliv != 0) {
-			ok = xitMCA.file.getItem(sys, xitMCA.itm1);
+			ok = xitMCA.file.getItem(sys, fetchAdr(xitMCA.itmPtr));
 		} else {
 			// This only moves the pointer to next item,
 			// but that might involve reading a new block.
 			ok = xitMCA.file.getItem();
 			if (ok) {
-				putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
+				putAdr(xitMCA.itmPtr, xitMCA.file.getItemAdr());
 			}
 		}
 		if (!ok) {
@@ -596,9 +591,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		boolean ok;
 		if (xitMCA.deliv != 0) {
-			ok = xitMCA.file.repItem(sys, xitMCA.itm1);
+			ok = xitMCA.file.repItem(sys, fetchAdr(xitMCA.itmPtr));
 		} else {
-			// itm1 address not used here
+			// itmPtr address not used here
 			ok = xitMCA.file.repItem();
 		}
 		if (!ok) {
@@ -625,12 +620,12 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		boolean ok;
 		if (xitMCA.deliv != 0) {
-			ok = xitMCA.file.putItem(sys, xitMCA.itm1);
+			ok = xitMCA.file.putItem(sys, fetchAdr(xitMCA.itmPtr));
 		} else {
 			ok = xitMCA.file.putItem();
 			if (ok) {
 				// NOTE: this is *next* item address
-				putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
+				putAdr(xitMCA.itmPtr, xitMCA.file.getItemAdr());
 			}
 		}
 		if (!ok) {
@@ -677,7 +672,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			return;
 		}
 		if (xitMCA.deliv == 0) {
-			putAdr(xitMCA.itm1, xitMCA.file.getItemAdr());
+			putAdr(xitMCA.itmPtr, xitMCA.file.getItemAdr());
 		}
 		xitMCA = null;
 	}
