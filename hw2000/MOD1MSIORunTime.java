@@ -443,7 +443,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		a += sys.am_na;
 		xitMCA.itmPtr = fetchAdr(a); // index/indirect not allowed
 		a += sys.am_na;
-		mca.itmPtr -= (sys.am_na - 1);	// need left char
+		xitMCA.itmPtr -= (sys.am_na - 1);	// need left char
 		// TODO: more data?
 		// Open file must be notified of buffer change...
 		if (xitMCA.file != null) {
