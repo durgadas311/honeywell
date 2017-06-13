@@ -21,9 +21,9 @@ public abstract class BRTDataField implements Loader {
 	abstract void finRec(boolean last);
 
 	protected void putAdr(int adr) {
-		record[reccnt++] = (byte)((adr >> 12) & 0x3f);
-		record[reccnt++] = (byte)((adr >> 6) & 0x3f);
-		record[reccnt++] = (byte)((adr >> 0) & 0x3f);
+		record[reccnt++] = (byte)((adr >> 12) & 077);
+		record[reccnt++] = (byte)((adr >> 6) & 077);
+		record[reccnt++] = (byte)((adr >> 0) & 077);
 	}
 
 	protected void endRec(boolean last) {
@@ -41,11 +41,12 @@ public abstract class BRTDataField implements Loader {
 		}
 	}
 
-	private void setAdr(int adr) {
+	private void setAdr(int adr, int cc) {
 		mkSpace(4);
-		record[reccnt++] = 060;
+		if (cc == 060) dist = adr;
+		if (adr > 0777777) cc |= 010;
+		record[reccnt++] = (byte)cc;
 		putAdr(adr);
-		dist = adr;
 	}
 
 	private void kludge(int adr, byte[] code) {
@@ -64,7 +65,7 @@ public abstract class BRTDataField implements Loader {
 		mkSpace(len + 1);
 		record[reccnt++] = ctrl;
 		for (int y = start; y < end; ++y) {
-			record[reccnt++] = (byte)(code[y] & 0x3f);
+			record[reccnt++] = (byte)(code[y] & 077);
 		}
 		dist += (end - start);
 	}
@@ -87,7 +88,7 @@ public abstract class BRTDataField implements Loader {
 			}
 		}
 		if (dist != adr) {
-			setAdr(adr);
+			setAdr(adr, 060);
 		}
 		int n = 0;
 		while (len - n > 15) {
@@ -107,17 +108,19 @@ public abstract class BRTDataField implements Loader {
 		}
 	}
 
+	// either (start > 0777777 && end > 0777777)
+	//     or (start <= 0777777 && end <= 0777777)
+	// TODO: if spans boundary, split into two CLEARs.
 	public void clear(int start, int end, byte fill) {
 		mkSpace(8);
-		record[reccnt++] = (byte)061;
-		putAdr(start);
+		setAdr(start, 062);
 		putAdr(end);
 		record[reccnt++] = fill;
 	}
 
 	public void range(int start, int end) {
-		setAdr(start);
-		setAdr(end);
+		setAdr(start, 060);
+		setAdr(end, 060);
 	}
 
 	public void exec(int start) {
@@ -125,9 +128,7 @@ public abstract class BRTDataField implements Loader {
 	}
 
 	public void end(int start) {
-		mkSpace(4);
-		record[reccnt++] = (byte)061;
-		putAdr(start);
+		setAdr(start, 061);
 		finRec(true);
 	}
 }
