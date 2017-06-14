@@ -62,12 +62,20 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		int x;
 		int mode = 0;
 		String mca;
+		String mioc;
 		switch (cmd) {
 		case 0:
 			// Invalid. should never happen.
 			break;
 		case 1:	// MIOC
-			// Currently allows only one per program
+			if (np < 1 || parms[0].isEmpty()) {
+				asm.errsAdd("Missing required MIOC parameters");
+				break;
+			}
+			mioc = "$MIOC" + parms[0];
+			// Currently allows only one per program, but possibly
+			// several per system (supervisor, program(s)).
+			// Each MCA links back to associated MIOC.
 			// ADMODE: parms.size() >= 29 ? parms[28] : "3"
 			// Operator: parms.size() >= 30 ? parms[29] : " " // "220"/""
 			// 50-56: MPIOC call
@@ -78,11 +86,11 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			if (assemble(' ', "", "B", "0-1") < 0) break;
 			if (assemble(' ', "", "DCW",
 					"@" + MOD1MSIORunTime.name() + "@") < 0) break;
-			if (assemble(' ', "", "DSA", "$VBUF") < 0) break;
 			if (assemble('L', "", "DCW", "#1A" + parms[0]) < 0) break;
 			if (assemble(' ', "", "BS", "$MINIT") < 0) break;
 			if (assemble(' ', " $MIOCZ", "B", "0") < 0) break;
 			if (assemble(' ', "", "NOP","") < 0) break;
+			if (assemble(' ', mioc, "RESV", "0") < 0) break;
 			if (assemble(' ', " $VBUF", "RESV,",
 				String.format("%d", DiskVolume.descrItmLen)) < 0) break;
 			if (assemble('R', "", "DCW", "#1A") < 0) break;
@@ -92,7 +100,8 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			break;
 		case 3:	// MCA
 			if (tag == null || tag.isEmpty() ||
-					np < 20 || parms[19].isEmpty() ||
+					np < 20 || parms[0].isEmpty() ||
+					parms[19].isEmpty() ||
 					parms[9].isEmpty() || parms[12].isEmpty()) {
 				asm.errsAdd("Missing required MCA parameters");
 				break;
@@ -103,14 +112,15 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			}
 			// requires tag - file tag prefix, and parms[0] - MIOC char
 			mca = "MCA" + tag;
+			mioc = "$MIOC" + parms[0];
 			if (assemble(' ', mca, "RESV", "0") < 0) break;
 			if (assemble(' ', "FID" + tag, "DCW", "#10A" + parms[19]) < 0) break;
 			if (assemble(' ', "", "DCW", "#1B0") < 0) break;  // result code
-			if (assemble(' ', "", "DCW", "#1A" + parms[0]) < 0) break;
 			if (assemble(' ', "", "DCW",	// Protection
 					"#1C" + defParm(parms, 30, "00")) < 0) break;
 			if (assemble(' ', "", "DCW",	// Item delivery mode
 					String.format("#1B%d", mode)) < 0) break;
+			if (assemble(' ', "", "DSA", mioc) < 0) break;
 			if (assemble(' ', "", "DSA", defParm(parms, 1, "0")) < 0) break;
 			if (assemble(' ', "PBL" + tag, "DSA",
 						defParm(parms, 9, "0")) < 0) break;

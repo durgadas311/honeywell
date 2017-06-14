@@ -30,6 +30,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		public int prot;	// protection
 		public int deliv;	// item delivery mode
 		public int buf1;	// address of block buffer 1
+		public int mioc;	// address of assoc. MIOC
 		public int itmPtr;	// address of item buffer 1
 		public int xitDir;	// directory exit routine
 		public int xitIdx;	// index exit routine
@@ -90,7 +91,6 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		//
 		endProg(); // in case previous run was unclean
 		sys.SR += name.length();
-		vbuf = getAdr();
 		byte q = sys.readChar(sys.SR++);
 		if (q == 076) { // '[' (open lozenge) means supervisor
 			if (supervisor) { // probably never happens
@@ -447,50 +447,53 @@ public class MOD1MSIORunTime implements HW2000Trap {
 	}
 
 	private void getMCA(int adr) {
+		MCA mca;
 		if (mcas.containsKey(adr)) {
-			xitMCA = mcas.get(adr);
-			return;
+			mca = mcas.get(adr);
+		} else {
+			mca = new MCA();
+			mca.adr = adr;
+			int a = adr;
+			getChars(a, mca.name);
+			a += mca.name.length;
+			mca.result = a++;
+			mca.prot = sys.readChar(a++);	// protection
+			mca.deliv = sys.readChar(a++);	// item delivery mode
+			mca.mioc = fetchAdr(a);
+			a += sys.am_na;
+			int b = fetchAdr(a); // index/indirect not allowed
+			a += sys.am_na;
+			getDevTab(b, mca);
+			mca.buf1 = fetchAdr(a); // index/indirect allowed?
+			a += sys.am_na;
+			mca.itmPtr = fetchAdr(a); // index/indirect not allowed
+			a += sys.am_na;
+			mca.itmPtr -= (sys.am_na - 1);	// need left char
+			mca.xitDir = fetchAdr(a); // index/indirect allowed?
+			a += sys.am_na;
+			mca.xitIdx = fetchAdr(a); // index/indirect allowed?
+			a += sys.am_na;
+			mca.xitMmb = fetchAdr(a); // index/indirect allowed?
+			a += sys.am_na;
+			mca.xitDat = fetchAdr(a); // index/indirect allowed?
+			a += sys.am_na;
+			mca.xitDev = fetchAdr(a); // index/indirect allowed?
+			a += sys.am_na;
+			// could use WM to locate fields...
+			mca.apdAdr = a;
+			a += sys.am_na;
+			mca.cadAdr = a + 7; // copy R-L
+			a += 8;
+			mca.ricAdr = a + 9; // copy R-L
+			a += 10;
+			mca.vnmAdr = a; // copy L-R
+			a += 6;
+			mca.vsnAdr = a; // copy L-R
+			a += 6;
+			// TODO: more data?
+			mcas.put(adr, mca);
 		}
-		MCA mca = new MCA();
-		mca.adr = adr;
-		int a = adr;
-		getChars(a, mca.name);
-		a += mca.name.length;
-		mca.result = a++;
-		++a;	// skip "unique char"
-		mca.prot = sys.readChar(a++);	// protection
-		mca.deliv = sys.readChar(a++);	// item delivery mode
-		int b = fetchAdr(a); // index/indirect not allowed
-		a += sys.am_na;
-		getDevTab(b, mca);
-		mca.buf1 = fetchAdr(a); // index/indirect allowed?
-		a += sys.am_na;
-		mca.itmPtr = fetchAdr(a); // index/indirect not allowed
-		a += sys.am_na;
-		mca.itmPtr -= (sys.am_na - 1);	// need left char
-		mca.xitDir = fetchAdr(a); // index/indirect allowed?
-		a += sys.am_na;
-		mca.xitIdx = fetchAdr(a); // index/indirect allowed?
-		a += sys.am_na;
-		mca.xitMmb = fetchAdr(a); // index/indirect allowed?
-		a += sys.am_na;
-		mca.xitDat = fetchAdr(a); // index/indirect allowed?
-		a += sys.am_na;
-		mca.xitDev = fetchAdr(a); // index/indirect allowed?
-		a += sys.am_na;
-		// could use WM to locate fields...
-		mca.apdAdr = a;
-		a += sys.am_na;
-		mca.cadAdr = a + 7; // copy R-L
-		a += 8;
-		mca.ricAdr = a + 9; // copy R-L
-		a += 10;
-		mca.vnmAdr = a; // copy L-R
-		a += 6;
-		mca.vsnAdr = a; // copy L-R
-		a += 6;
-		// TODO: more data?
-		mcas.put(adr, mca);
+		vbuf = mca.mioc; // right now, this is vbuf...
 		xitMCA = mca;
 	}
 
