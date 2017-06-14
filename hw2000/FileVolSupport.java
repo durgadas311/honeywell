@@ -12,7 +12,7 @@ public class FileVolSupport {
 	// param 42 = not used       (03)
 	// param 43 = data exit      (04)
 	// param 44 = device exit    (05)
-	static Map<Integer, String> errmsg;
+	static private Map<Integer, String> errmsg;
 	static {
 		// This represents all documented EXITs, many are not used.
 		//
@@ -22,58 +22,54 @@ public class FileVolSupport {
 		errmsg.put(00001, "Directory full");
 		errmsg.put(00002, "Allocation conflict");
 		errmsg.put(00003, "File exists");
-		errmsg.put(00005, "Invalid operation");
+		errmsg.put(00005, "Invalid Action");	// <<<<< catch-all
 		//
 		// "Directory" errors - MSOPEN, MSCLOS
 		errmsg.put(00101, "OPEN CALLOUT 1");
-		errmsg.put(00103, "No File");
-		errmsg.put(00104, "Allocation Table overflow");
-		errmsg.put(00105, "*VOLALLOC* corrupt");
+		errmsg.put(00103, "File Not Found");
+		errmsg.put(00104, "U-A Table Too Small");
+		errmsg.put(00105, "Error in *VOLALLOC*");
 		errmsg.put(00111, "CLOSE CALLOUT");
-		errmsg.put(00113, "Out of Sequence");
-		errmsg.put(00114, "Password incorrect");
-		errmsg.put(00121, "OPEN CALLOUT 2");
-		errmsg.put(00123, "File type unknown");
-		errmsg.put(00124, "Password required");
-		errmsg.put(00133, "No More Volumes");
-		errmsg.put(00134, "No more devices");
-		errmsg.put(00143, "Not first volume");
-		errmsg.put(00153, "File empty");
+		errmsg.put(00113, "Volume Sequence Number Error");
+		errmsg.put(00114, "Password Error");	// password incorrect
+		errmsg.put(00121, "Dismount Previous Volume");	// Open callout 2
+		errmsg.put(00123, "File Type Unknown");	// NODOC
+		errmsg.put(00124, "Password Error");	// no password given
+		errmsg.put(00133, "Device Table Too Small");
+		errmsg.put(00134, "Mount Next Volumes");
+		errmsg.put(00143, "Volume Sequence Number Error");
+		errmsg.put(00153, "No Data On File-Volume");
 		// "Index" errors - Partitioned or Indexed files
-		errmsg.put(00203, "SETM No member");
-		errmsg.put(00213, "MALTER No member");
-		errmsg.put(00204, "SETM No index space");
-		errmsg.put(00214, "SETM output-only not allowed");
-		errmsg.put(00224, "MALTER can't delete");
+		errmsg.put(00203, "Member Not Found");	// SETM
+		errmsg.put(00213, "Member Not Found");	// MALTER
+		errmsg.put(00204, "Member Index Full");
+		errmsg.put(00214, "Member Cannot Be Output Only");
+		errmsg.put(00224, "Member Cannot Be Deleted");
 		// "Every Index Entry" - non-fatal/advisory
 		errmsg.put(00301, "SETM CALLOUT");
 		// "Data" errors -
-		errmsg.put(00401, "MSGET End of file");
-		errmsg.put(00411, "MSPUT No space");
+		errmsg.put(00401, "End File (Input)");
+		errmsg.put(00411, "End File (Output)");
 		errmsg.put(00412, "MSINS CALLOUT 1");
 		errmsg.put(00422, "MSINS CALLOUT 2");
-		errmsg.put(00434, "SETM No space");
-		errmsg.put(00403, "MSGET Key not found");
-		errmsg.put(00413, "MSINS No space");
-		errmsg.put(00404, "Invalid bucket");
-		errmsg.put(00423, "Indexed overflow");
-		errmsg.put(00414, "Key verification fail");
-		errmsg.put(00424, "Duplicate key");
+		errmsg.put(00434, "No Space For New Member");
+		errmsg.put(00403, "Item Not Found");
+		errmsg.put(00413, "No Space To Insert Item");
+		errmsg.put(00404, "Invalid Bucket");
+		errmsg.put(00423, "No Space For Moved Item");
+		errmsg.put(00414, "Key Verification Failure");
+		errmsg.put(00424, "Duplicate Item");
 		// "Device" (hardware) errors
-		errmsg.put(00501, "Device inoperable");
-		errmsg.put(00502, "Protection violation");
-		errmsg.put(00503, "Device error");	// seek error
-		errmsg.put(00504, "Format error");	// violation or overflow
-		errmsg.put(00505, "Record not found");
-		errmsg.put(00506, "Read error");
-		errmsg.put(00507, "Read error - no data");
-		errmsg.put(00510, "Write error");
-		errmsg.put(00511, "Track-Linking Record");
-		errmsg.put(00512, "Track-Linking error");
-		// TBD: logic errors: invalid actions, etc.
-		// These do not seem to be handled, at least not at runtime.
-		// There are no provisions for "failure" from the various
-		// MIOC macros, aside from the EXITs.
+		errmsg.put(00501, "Inoperable");
+		errmsg.put(00502, "Inoperable");	// Protection violation
+		errmsg.put(00503, "Positioning Error");	// seek error
+		errmsg.put(00504, "Write Error");	// format violation or overflow
+		errmsg.put(00505, "Positioning Error");	// record not found
+		errmsg.put(00506, "Read Error");	// data xfer
+		errmsg.put(00507, "Read Error");	// no data xfer
+		errmsg.put(00510, "Write Error");
+		errmsg.put(00511, "Miscellaneous");	// Track-linking record
+		errmsg.put(00512, "Read Error");	// Track-Linking error
 	}
 
 	static public String getError() {
@@ -84,7 +80,7 @@ public class FileVolSupport {
 		if (errmsg.containsKey(err)) {
 			return errmsg.get(err);
 		} else {
-			return String.format("Unknown error %d", err);
+			return String.format("Unknown error %04o", err);
 		}
 	}
 
@@ -200,7 +196,7 @@ public class FileVolSupport {
 		return true;
 	}
 
-	static private String hwToString(byte[] in, int start, int len,
+	static public String hwToString(byte[] in, int start, int len,
 					CharConverter cvt) {
 		String ret = "";
 		for (int x = 0; x < len; ++x) {
@@ -209,7 +205,7 @@ public class FileVolSupport {
 		return ret;
 	}
 
-	static private String hwToString(CoreMemory in, int start, int len,
+	static public String hwToString(CoreMemory in, int start, int len,
 					CharConverter cvt) {
 		String ret = "";
 		for (int x = 0; x < len; ++x) {

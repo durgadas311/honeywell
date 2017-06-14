@@ -4,6 +4,10 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Vector;
 
+// TODO: if (supervisor) then do not handle haltError() here,
+// pass control to supervisor. But... supervisor has no MIOC context...
+// Presumably the supervisor "owns" the console, so need to share it.
+
 public class MOD1MSIORunTime implements HW2000Trap {
 	static final String name = "MOD1MSIO";
 	static final int supca = 190; // Supervisor CA end, trap all < this
@@ -209,14 +213,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	// TODO: exit may be error or informative.
 	// Need to handle no-exit case appropriately.
+	// Caller must ensure A) xiterr  has valid EXIT, or B) return code is checked
 	private boolean setupExit(int xiterr) {
 		int xit = 0;
 		switch ((xiterr >> 6) & 077) {
-		case 0:	
-			// can't exit - what to do?
-			System.err.format("Untrapped error %d\n", xiterr);
-			sys.halt = true;
-			return false;
 		case 1:
 			xit = xitMCA.xitDir;
 			break;
@@ -232,6 +232,11 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		case 5:
 			xit = xitMCA.xitDev;
 			break;
+		default:
+			// can't exit - what to do?
+			System.err.format("Untrapped error %04o\n", xiterr);
+			sys.halt = true;
+			return false;
 		}
 		if (xit == 0) {
 			return false;
@@ -254,9 +259,33 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	private void haltErr(int err) {
 		// TODO: consult console mode...
-		cons.output(FileVolSupport.errmsg.get(err) + '\n');
+		// TODO: make interactive...
+		String e = sys.pdc.cvt.hwToLP((byte)err);
+		String v = "??????";
+		String f = "??????????";
+		String a = "????????????";
+		String m = FileVolSupport.getError(err);
+		String p = "??";
+		String d = "?";
+		if (xitMCA != null) {
+			p = String.format("%02o", xitMCA.pp & 037);
+			d = String.format("%o", xitMCA.dd & 007);
+			if (xitMCA.vol != null) {
+				v = FileVolSupport.hwToString(xitMCA.vol.getName(),
+								0, 6, sys.pdc.cvt);
+			}
+			if (xitMCA.file != null) {
+				f = FileVolSupport.hwToString(xitMCA.file.getName(),
+								0, 10, sys.pdc.cvt);
+				int[] c = xitMCA.file.getAddress();
+				a = String.format("%04o%04o%04o", c[0], c[1], c[2]);
+			}
+		}
+		cons.output(p + ' ' + d + ' ' + f + ' ' + m + '\n');
+		cons.output(e + ' ' + f + " 0 " + v + ' ' + p + ' ' + d + " 0 " + a + '\n');
 		sys.AAR = err;
 		sys.halt = true;
+		xitMCA = null;
 	}
 
 	private void endProg() {
@@ -552,6 +581,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			putAdr(xitMCA.itmPtr, xitMCA.file.getItemAdr());
 		}
 		// TODO: all set?
+		if (xitMCA.file.getType() == DiskFile.PART_SEQ) {
+			xitMCA.mode &= ~DiskFile.IN_OUT;
+		}
 		xitMCA = null;
 	}
 
@@ -561,11 +593,13 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		} else {
 			// do we ever call exits from close?
 			haltErr(xitErr);
+			return;
 		}
 		if (xitMCA.file != null) {
 			xitMCA.file.close();
 			xitMCA.file = null;
 		}
+		xitMCA.mode = 0;
 		xitMCA = null;
 	}
 
@@ -578,10 +612,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {	// File not open
-			// theoretically can't happen?
-			// TODO: what is the right error/exit?
-			handleError(00506); // Read error
+		if (xitMCA.file == null ||	// File not open
+				(xitMCA.mode & DiskFile.IN) == 0) {
+			haltErr(00005);
 			return;
 		}
 		boolean ok;
@@ -614,10 +647,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {	// File not open
-			// theoretically can't happen?
-			// TODO: what is the right error/exit?
-			handleError(00510); // Write error
+		if (xitMCA.file == null ||	// File not open
+				(xitMCA.mode & DiskFile.IN_OUT) != DiskFile.IN_OUT) {
+			haltErr(00005);
 			return;
 		}
 		boolean ok;
@@ -643,10 +675,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {	// File not open
-			// theoretically can't happen?
-			// TODO: what is the right error/exit?
-			handleError(00510); // Write error
+		if (xitMCA.file == null ||	// File not open
+				(xitMCA.mode & DiskFile.IN_OUT) != DiskFile.OUT) {
+			haltErr(00005);
 			return;
 		}
 		boolean ok;
@@ -672,19 +703,29 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		int mode = parms[2];
 		if (xitMCA == null) {
 			getMCA(parms[0]);
+			if ((mode & DiskFile.OUT) != 0 &&
+					(xitMCA.mode & DiskFile.UPDATE) == 0) {
+				haltErr(00005);
+				return;
+			}
+			// Need to do this here or else we lose original 'mode',
+			// But then every error path must clear it...
+			xitMCA.mode = (xitMCA.mode & ~DiskFile.IN_OUT) |
+						(mode & DiskFile.IN_OUT);
 		} else {
 			if (((xitErr >> 6) & 077) == 3) {
 				mode = xitAct;
 			} else {
+				xitMCA.mode &= ~DiskFile.IN_OUT;
 				haltErr(xitErr);
 				return;
 			}
 		}
 		if (xitMCA.file == null) {	// File not open
-			handleError(00510); // Write error
+			xitMCA.mode &= ~DiskFile.IN_OUT;
+			haltErr(00005);
 			return;
 		}
-		// TODO: modify mode value
 		if (xitMCA.xitMmb != 0) {
 			boolean ok = xitMCA.file.setMemb(null, 0, mode);
 			if (ok) {
@@ -694,11 +735,13 @@ public class MOD1MSIORunTime implements HW2000Trap {
 					return;
 				}
 			} else {
-				// end of index...
-				handleError(00203);
+				xitMCA.mode &= ~DiskFile.IN_OUT;
+				handleError(xitMCA.file.getError());
 				return;
 			}
-		} else if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), parms[2])) {
+			// TODO: restore original call 'mode'...
+		} else if (!xitMCA.file.setMemb(sys, getStrPtr(parms[1]), mode)) {
+			xitMCA.mode &= ~DiskFile.IN_OUT;
 			handleError(xitMCA.file.getError());
 			return;
 		}
@@ -718,7 +761,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			return;
 		}
 		if (xitMCA.file == null) {	// File not open
-			handleError(00510); // Write error
+			haltErr(00005);
 			return;
 		}
 		// TODO: update mode
@@ -726,6 +769,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(xitMCA.file.getError());
 			return;
 		}
+		xitMCA.mode &= ~DiskFile.IN_OUT;
 		xitMCA = null;
 	}
 
@@ -738,8 +782,9 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {	// File not open
-			handleError(00510); // Write error
+		if (xitMCA.file == null ||	// File not open
+				(xitMCA.mode & DiskFile.UPDATE) == 0) {
+			haltErr(00005);
 			return;
 		}
 		// parms[2] was already encoded
@@ -749,6 +794,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(xitMCA.file.getError());
 			return;
 		}
+		xitMCA.mode &= ~DiskFile.IN_OUT;
 		xitMCA = null;
 	}
 
@@ -761,14 +807,16 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file == null) {	// File not open
-			handleError(00510); // Write error
+		if (xitMCA.file == null ||	// File not open
+				(xitMCA.mode & DiskFile.UPDATE) == 0) {
+			haltErr(00005);
 			return;
 		}
 		if (!xitMCA.file.release()) {
 			handleError(xitMCA.file.getError());
 			return;
 		}
+		xitMCA.mode &= ~DiskFile.IN_OUT;
 		xitMCA = null;
 	}
 }

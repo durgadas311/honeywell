@@ -180,7 +180,7 @@ public class SequentialFile implements DiskFile {
 	// MUST be followed by getItem or putItem, NOT repItem!
 	public boolean seek(int[] ctri) {
 		if (ctri.length != 4) {
-			error = 00001;
+			error = 00503;
 			return false;
 		}
 		return _seek(ctri[0], ctri[1], ctri[2], ctri[3]);
@@ -495,19 +495,18 @@ public class SequentialFile implements DiskFile {
 	public int getType() { return DiskFile.SEQUENTIAL; }
 
 	public boolean setMemb(CoreMemory memb, int adr, int mode) {
-		// TODO: find correct error code/action
-		error = 00434;
+		error = 00005;
 		return false;
 	}
 
 	public boolean endMemb() {
-		error = 00434;
+		error = 00005;
 		return false;
 	}
 
 	public boolean alterMemb(CoreMemory memb, int adr, int op,
 				CoreMemory newm, int nadr) {
-		error = 00434;
+		error = 00005;
 		return false;
 	}
 
