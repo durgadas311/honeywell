@@ -71,15 +71,15 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			// ADMODE: parms.size() >= 29 ? parms[28] : "3"
 			// Operator: parms.size() >= 30 ? parms[29] : " " // "220"/""
 			// 50-56: MPIOC call
-			if (assemble(' ', "$MIOC", "DCW", "#1B0") < 0) break; // trap
-			if (assemble(' ', "", "DCW", "#1B0") < 0) break; // ret from exits
+			if (assemble(' ', "$MIOC", "EQU",
+				String.format("%d", MOD1MSIORunTime.mioc)) < 0) break;
 			if (assemble(' ', "$MINIT", "DCW", "#1B1") < 0) break;
 			if (assemble(' ', "$MIOCI", "SCR", "$MIOCZ,70") < 0) break;
 			if (assemble(' ', "", "B", "0-1") < 0) break;
 			if (assemble(' ', "", "DCW",
 					"@" + MOD1MSIORunTime.name() + "@") < 0) break;
-			if (assemble(' ', "", "DSA", "$MIOC") < 0) break;
-			if (assemble('M', "", "DSA", "$VBUF") < 0) break;
+			if (assemble(' ', "", "DSA", "$VBUF") < 0) break;
+			if (assemble('L', "", "DCW", "#1A" + parms[0]) < 0) break;
 			if (assemble(' ', "", "BS", "$MINIT") < 0) break;
 			if (assemble(' ', " $MIOCZ", "B", "0") < 0) break;
 			if (assemble(' ', "", "NOP","") < 0) break;

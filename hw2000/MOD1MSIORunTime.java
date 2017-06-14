@@ -6,10 +6,15 @@ import java.util.Vector;
 
 public class MOD1MSIORunTime implements HW2000Trap {
 	static final String name = "MOD1MSIO";
-	private int base = 0;
+	static final int supca = 190; // Supervisor CA end, trap all < this
+	static final int mioc = 148; // MIOC trap entry (< supca)
+	static final int nmioc = 2; // MIOC trap entry length
 	private int vbuf = 0;
 	private int[] parms;
 	private int nparms;
+	private int base;
+	private int top;
+	private boolean supervisor;
 
 	private HW2000 sys;
 
@@ -55,30 +60,56 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	P_Console cons;
 
+	// Must be configurable to run without "supervisor" traps...
+	// Also, must do a soft-start (?) to allow toggling between
+	// real supervisor and program(s)...
+	// Ctor will only be called once, reinit() is where the action is.
+
 	public MOD1MSIORunTime(HW2000 sys) {
 		this.sys = sys;
 		parms = new int[6];
 		mcas = new HashMap<Integer, MCA>();
 		cons = (P_Console)sys.pdc.getPeriph(PeriphDecode.P_CO);
+		// start out assuming we do supervisor, too...
+		supervisor = false;
+		base = 0;
+		top = supca;
 		reinit();
 	}
 
 	public void reinit() {
+		// TODO: probably can't call endProg() here if real supervisor...
+		// The supervisor will call here once at boot time,
+		// thereafter each program we start will call this.
+		// But, as long as the supervisor does not try to keep
+		// any files open across program runs, it should be OK.
+		//
 		endProg(); // in case previous run was unclean
 		sys.SR += name.length();
-		base = getAdr();
 		vbuf = getAdr();
-		setupCA();
+		byte q = sys.readChar(sys.SR++);
+		if (q == 076) { // '[' (open lozenge) means supervisor
+			if (supervisor) { // probably never happens
+			} else {
+				supervisor = true;
+				base = mioc;
+				top = mioc + nmioc;
+			}
+		}
+		if (!supervisor) {
+			setupCA();
+		}
 	}
 
 	public String getName() { return name; }
 	static public String name() { return name; }
 
 	public boolean doTrap() {
-		if (!(sys.SR < 190 || sys.SR == base || sys.SR == base + 1)) {
+		if (sys.SR < base || sys.SR >= top) {
 			return false;
 		}
-		if (sys.SR < 190) {
+		if (sys.SR < mioc || sys.SR >= mioc + nmioc) {
+			// only !supervisor can reach here...
 			doSupervisor();
 			return true;
 		}
@@ -88,7 +119,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			sys.fp.setActive(true);
 		}
 		try {
-			if (sys.SR == base + 1) {
+			if (sys.SR == mioc + 1) {
 				// Return from EXIT callback...
 				sys.SR = exitSR;
 				if (xitRes > 0) {
@@ -208,7 +239,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		xitErr = xiterr;
 		xitRes = xit - 1;
 		putChar(xitRes, xitErr);
-		sys.BAR = base + 1;
+		sys.BAR = mioc + 1;
 		sys.SR = xit;
 		return true;
 	}
