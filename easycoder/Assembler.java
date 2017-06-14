@@ -314,7 +314,9 @@ public class Assembler {
 	}
 
 	private void listOut(String str) {
-		str = replaceChars(str, "\001\011\006\010\007", "\u00a2\u25a1\u25a0\u00a9\u2260");
+		// first do translations of special chars
+		str = replaceChars(str.toUpperCase(), CharConverter.hwAsciiSup,
+							CharConverter.hwAsciiOut);
 		if (lst != null) {
 			try {
 				lst.write(str.getBytes());
@@ -383,8 +385,6 @@ public class Assembler {
 			// TODO: pass-thru to listing?
 			return 0;
 		}
-		// first do convenience translations of special chars
-		line = replaceChars(line.toUpperCase(), CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
 		return assemble(line, false);
 	}
 
