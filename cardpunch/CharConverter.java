@@ -535,6 +535,7 @@ class CharConverter {
 
 	public static final String hwAsciiSup = "^[]~\\";
 	public static final String hwAsciiRep = "\001\011\006\010\007";
+	public static final String hwAsciiOut = "\u00a2\u25a1\u25a0\u00a9\u2260";
 
 	public CharConverter() {
 		setup_xlate(null);
