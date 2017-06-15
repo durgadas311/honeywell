@@ -91,7 +91,7 @@ public class MacroLibMOD1MSIO implements MacroDef {
 			if (assemble(' ', " $MIOCZ", "B", "0") < 0) break;
 			if (assemble(' ', "", "NOP","") < 0) break;
 			if (assemble(' ', mioc, "RESV", "0") < 0) break;
-			if (assemble(' ', " $VBUF", "RESV,",
+			if (assemble(' ', "", "RESV,", // buf for *VOLDESCR* items
 				String.format("%d", DiskVolume.descrItmLen)) < 0) break;
 			if (assemble('R', "", "DCW", "#1A") < 0) break;
 			ret = 0;
