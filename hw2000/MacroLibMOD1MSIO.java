@@ -72,6 +72,10 @@ public class MacroLibMOD1MSIO implements MacroDef {
 				asm.errsAdd("Missing required MIOC parameters");
 				break;
 			}
+			if (parms[0].length() != 1) {
+				asm.errsAdd("MIOC unique char too long");
+				break;
+			}
 			mioc = "$MIOC" + parms[0];
 			// Currently allows only one per program, but possibly
 			// several per system (supervisor, program(s)).
@@ -104,6 +108,14 @@ public class MacroLibMOD1MSIO implements MacroDef {
 					parms[19].isEmpty() ||
 					parms[9].isEmpty() || parms[12].isEmpty()) {
 				asm.errsAdd("Missing required MCA parameters");
+				break;
+			}
+			if (tag.length() > 3) {
+				asm.errsAdd("MCA tag too long");
+				break;
+			}
+			if (parms[0].length() != 1) {
+				asm.errsAdd("MIOC unique char too long");
 				break;
 			}
 			mode = 0;	// LOCATE
@@ -188,6 +200,14 @@ public class MacroLibMOD1MSIO implements MacroDef {
 		int mode = 0; // not MSOPEN
 		int x;
 		String mca;
+		if (np < 1 || parms[0].isEmpty()) {
+			asm.errsAdd("Missing required parameters");
+			return false;
+		}
+		if (parms[0].length() > 3) {
+			asm.errsAdd("MCA tag too long");
+			return false;
+		}
 		mca = "MCA" + parms[0];
 		if (cmd == 4) { // MSOPEN must be first call ever made...
 			if (assemble(' ', tag, "BCE", "$MIOCI,$MINIT,01") < 0) return false;
