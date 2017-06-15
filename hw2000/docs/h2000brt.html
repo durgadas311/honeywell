@@ -99,6 +99,9 @@ have alternate interpretations or if there were additional control codes defined
 or possibly some 19th bit manipulation was done. As-is, BRT images may only be located
 in the first 262144 characters of memory. The loader/monitor code is currently
 being run in 4-character mode and is located high in memory (well above 262144).
+Proposed extension is to interpret the "10" bit as the 19th address bit,
+so control codes 70-72 have the same meaning as the corresponding codes 60-62
+except that the 19th bit is set to "1" (CLEAR cannot span the boundary).
 
 <H4>Banner 42 Records</H4>
 <P>Characters 2-EOR are loaded, w/o punctuation, to successive regions or memory.

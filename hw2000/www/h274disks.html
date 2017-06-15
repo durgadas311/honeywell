@@ -107,6 +107,12 @@ indicated by the data (i.e. a "&#9633;EOD&#162;" item indicated the program shou
 in which case a program that ran off the end of a file would get and error.
 </UL>
 
+<P>NOTE: The documentation for the IBM 1401, often referenced by Honeywell
+as the target market for their computers, performed disk I/O
+using a buffer containing both disk address and data. However, since the
+H200/2000 series disk control units have a load/store address register command,
+it seems unlikely they would have included the disk address with the data.
+
 <P>The description of PDT for Disk Devices shows no method of selecting a
 disk drive (C3 is used for the command, and no other control characters
 are defined). The PCB instruction does define commands that select a drive,
