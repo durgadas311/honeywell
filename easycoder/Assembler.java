@@ -263,7 +263,7 @@ public class Assembler {
 
 	private void listLine(String line) {
 		if (listing) {
-			String l = String.format("%33s%s\n", "", line);
+			String l = String.format("%37s%s\n", "", line);
 			listOut(l);
 		}
 	}
@@ -524,15 +524,15 @@ public class Assembler {
 				for (int y = 0; y < code.length; ++y) {
 					l += String.format("%02o", code[y] & 077);
 				}
-				if (l.length() > 16) {
-					l = l.substring(0, 16) + "+";
+				if (l.length() > 20) {
+					l = l.substring(0, 20) + "+";
 				}
-				l = String.format("     %07o %c%c %-17s", orgLoc, mk, mk2, l);
+				l = String.format("     %07o %c%c %-21s", orgLoc, mk, mk2, l);
 			} else if (e >= 0x100000) { // special case for some ASM directives
-				l = String.format("     %07o                     ",
+				l = String.format("     %07o                         ",
 					(e & 0x0fffff));
 			} else {
-				l = "                                 ";
+				l = "                                     ";
 			}
 			listOut(l + line + "\n");
 		}
