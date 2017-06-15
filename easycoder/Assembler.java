@@ -315,7 +315,7 @@ public class Assembler {
 
 	private void listOut(String str) {
 		// first do translations of special chars
-		str = replaceChars(str.toUpperCase(), CharConverter.hwAsciiSup,
+		str = replaceChars(str, CharConverter.hwAsciiSup,
 							CharConverter.hwAsciiOut);
 		if (lst != null) {
 			try {
@@ -740,6 +740,8 @@ public class Assembler {
 				e = opd.length();
 			}
 			byte[] bb = new byte[e - 1];
+			opd = replaceChars(opd, CharConverter.hwAsciiSup,
+						CharConverter.hwAsciiRep);
 			for (int y = 1; y < e; ++y) {
 				// TODO: check for invalid chars?
 				bb[y - 1] = cvt.asciiToHw((byte)(opd.charAt(y) & 0x7f));
@@ -776,6 +778,8 @@ public class Assembler {
 			++e;
 			if (base == 0) {
 				int f = opd.length();
+				opd = replaceChars(opd, CharConverter.hwAsciiSup,
+							CharConverter.hwAsciiRep);
 				for (int y = 0; y < n; ++y) {
 					if (y + e < f) {
 						bb[y] = cvt.asciiToHw((byte)
