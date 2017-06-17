@@ -6,13 +6,13 @@ public class TapeLoader extends BRTLoader {
 	private OutputStream targ = null;
 	private RandomAccessFile rwf = null;
 
-	public TapeLoader(OutputStream f, CharConverter cvt) {
-		super(cvt, 250);
+	public TapeLoader(OutputStream f, CharConverter cvt, long vis, int rev) {
+		super(cvt, vis, rev, 250);
 		targ = f;
 	}
 
-	public TapeLoader(RandomAccessFile f, CharConverter cvt) {
-		super(cvt, 250);
+	public TapeLoader(RandomAccessFile f, CharConverter cvt, long vis, int rev) {
+		super(cvt, vis, rev, 250);
 		rwf = f;
 	}
 

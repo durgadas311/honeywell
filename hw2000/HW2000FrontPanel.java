@@ -2752,7 +2752,9 @@ ee.printStackTrace();
 		sys.setTrace(currLow, currHi); // trace off
 		// TODO: card BRT also...
 		if (tape) {
-			// Mag Tape BRT format... TODO: select unit
+			// Mag Tape BRT format... TODO: select unit, visibility
+			long vis = 0400000000000L;
+			int rev = 0;
 			int unit = 0;
 			P_MagneticTape tp = (P_MagneticTape)sys.pdc.getPeriph(PeriphDecode.P_MT);
 			// TODO: are these ever null?
@@ -2771,14 +2773,16 @@ ee.printStackTrace();
 				posTo(copy, _1EOF, tp);
 			}
 			// TODO: Allow cards vs. tape
-			e = asm.passTwo(new PeriphLoader(tp, asm.charCvt(), 250),
+			e = asm.passTwo(new PeriphLoader(tp, asm.charCvt(), vis, rev, 250),
 					doList ? (CoreMemory)sys : null);
 			tp.appendRecord(_1EOF, 0, -1);
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.end();
 		} else if (disk) {
-			// MOD1 BRF format... TODO: select unit, file
+			// MOD1 BRF format... TODO: select unit, file, visibility
+			long vis = 0400000000000L;
+			int rev = 0;
 			byte[] file = hwString("*DRS1RES", 10);
 			int unit = 0; //Integer.valueOf(dpi_lun.getText());
 			// boolean boot = dpi_bsp.isSelected();
@@ -2794,7 +2798,7 @@ ee.printStackTrace();
 				vol.unmount();
 				return null;
 			}
-			e = asm.passTwo(new BRFLoader(fi, asm.charCvt()),
+			e = asm.passTwo(new BRFLoader(fi, asm.charCvt(), vis, rev),
 					doList ? (CoreMemory)sys : null);
 			fi.close();
 			vol.unmount();

@@ -7,8 +7,8 @@ public class BRFLoader extends BRTLoader {
 
 	// Caller opens, and closes, the file.
 	// But member open/close must be handled here...
-	public BRFLoader(DiskFile targ, CharConverter cvt) {
-		super(cvt, targ.itemLen());
+	public BRFLoader(DiskFile targ, CharConverter cvt, long vis, int rev) {
+		super(cvt, vis, rev, targ.itemLen());
 		this.targ = targ;
 		buf = new BufferMemory(record);
 		mmb = new BufferMemory(14);
@@ -32,10 +32,15 @@ System.err.format("ENDM: %s\n", FileVolSupport.getError(targ.getError()));
 	}
 
 	void beginSeg(String rev, String prg, String seg, long vis) {
-		String m = String.format("%-6s%-2s      ", prg, seg);
+		String m = String.format("%-6s%-2s", prg, seg);
 		int x = 0;
+		// We know 'mmb' is 0-based
 		for (byte c : m.getBytes()) {
 			mmb.writeChar(x++, cvt.asciiToHw(c));
+		}
+		for (int y = 13; y >= x; --y) {
+			mmb.writeChar(y, (byte)vis);
+			vis >>= 6;
 		}
 
 		// TODO: handle error - also handle duplicates

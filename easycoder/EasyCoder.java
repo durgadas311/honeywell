@@ -215,6 +215,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 	}
 
 	private void assemble() {
+		// TODO: assign visibility, revision
 		boolean errs = false;
 		boolean cards = brtCard.isSelected();
 		boolean bin = raw.isSelected();
@@ -223,6 +224,8 @@ public class EasyCoder extends JFrame implements ActionListener {
 		boolean bs = boot.isSelected();
 		boolean list = listing.isSelected();
 		boolean rawSW = swi.isSelected();
+		long vis = 0400000000000L;
+		int rev = 0;
 		File in = new File(dir, inFile.getText());
 		if (!in.exists()) {
 			System.err.format("No file: %s\n", inFile.getText());
@@ -245,18 +248,20 @@ public class EasyCoder extends JFrame implements ActionListener {
 				if (cards) {
 					int pcs = 0; // Bootstrap can't use special codes
 					setupSelfLdr(punch, punch.begin(pcs), ovr);
-					ldr = new PeriphLoader(punch, asm.charCvt(), 80);
+					ldr = new PeriphLoader(punch, asm.charCvt(),
+							vis, rev, 80);
 				} else {
 					int lun = Integer.valueOf(unit.getText());
 					setupSelfLdr(magTape, magTape.begin(lun), ovr);
-					ldr = new PeriphLoader(magTape, asm.charCvt(), 250);
+					ldr = new PeriphLoader(magTape, asm.charCvt(),
+							vis, rev, 250);
 				}
 			} else {
 				File out = new File(s + ".out");
 				FileOutputStream f = new FileOutputStream(out);
 				fo = f;
 				if (cards) {
-					ldr = new CardLoader(f, asm.charCvt());
+					ldr = new CardLoader(f, asm.charCvt(), vis, rev);
 				} else if (bs || bin) {
 					PrintStream swi =null;
 					if (rawSW) {
@@ -265,7 +270,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 					ldr = new RawLoader(f, swi,
 						rawSW ? asm : null, bin ? 250 : -1);
 				} else {
-					ldr = new TapeLoader(f, asm.charCvt());
+					ldr = new TapeLoader(f, asm.charCvt(), vis, rev);
 				}
 			}
 			if (list) {

@@ -4,9 +4,13 @@ import java.io.*;
 
 public abstract class BRTLoader extends BRTDataField implements Loader {
 	private int seq;
+	private long vis;
+	private int rev;
 
-	public BRTLoader(CharConverter cvt, int reclen) {
+	public BRTLoader(CharConverter cvt, long vis, int rev, int reclen) {
 		super(cvt, reclen);
+		this.vis = vis;
+		this.rev = rev % 1000;
 		seq = 0;
 	}
 
@@ -56,7 +60,8 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		}
 	}
 
-	private void initSeg(String rev, String prg, String seg, long vis) {
+	private void initSeg(String prg, String seg, long vis) {
+		String rev = String.format("%03d", this.rev);
 		beginSeg(rev, prg, seg, vis);
 		if (seq > 0) {
 			record[0] = (byte)054;
@@ -77,18 +82,18 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		seq = 1;
 	}
 
-	public void begin(int adr, String prg, String seg, String rev, long vis) {
-		initSeg(rev, prg, seg, vis);
+	public void begin(int adr, String prg, String seg) {
+		initSeg(prg, seg, vis);
 		// setAdr(adr); // let first setCode do this...
 		dist = -1;
 		dirty = false;
 	}
 
-	public void segment(String prg, String seg, String rev, long vis) {
+	public void segment(String prg, String seg) {
 		if (dirty) {
 			System.err.format("WARNING: SEG after code\n");
 		}
 		// only 'seg' should be different...
-		initSeg(rev, prg, seg, vis);
+		initSeg(prg, seg, vis);
 	}
 }

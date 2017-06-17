@@ -2,19 +2,22 @@
 
 import java.util.concurrent.Semaphore;
 
+//
+// TODO: IS THIS ABANDONED CODE?
+//
 public class LoaderMonitorC implements HW2000Trap {
 	Semaphore wait;
 	HW2000 sys;
 
-	public LoaderMonitorC(HW2000 sys, String prg, String seg, String rev, long vis) {
+	public LoaderMonitorC(HW2000 sys, String prg, String seg) {
 		this.sys = sys;
 		wait = new Semaphore(0);
 		// TODO: fill comm area with zero?
-		putStr(65, rev);
+		putStr(65, "000");	// revision
 		putStr(68, prg);
 		putStr(74, seg);
-		putInt(113, (int)(vis >> 18), 3);
-		putInt(116, (int)vis, 3);
+		putInt(113, 0400000, 3);// visibility, hi
+		putInt(116, 0, 3);	// visibility, lo
 		putAdr(139, 130, 3);
 		// TODO: set date? others? delineate fields with WM?
 	}

@@ -5,8 +5,9 @@ import java.io.*;
 public class PeriphLoader extends BRTLoader {
 	private SequentialRecordIO targ;
 
-	public PeriphLoader(SequentialRecordIO targ, CharConverter cvt, int reclen) {
-		super(cvt, reclen);
+	public PeriphLoader(SequentialRecordIO targ, CharConverter cvt,
+				long vis, int rev, int reclen) {
+		super(cvt, vis, rev, reclen);
 		this.targ = targ;
 	}
 

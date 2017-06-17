@@ -9,15 +9,15 @@ public class CardLoader extends BRTLoader {
 	private byte[] card;
 	private int csq;
 
-	public CardLoader(OutputStream f, CharConverter cvt) {
-		super(cvt, 80);
+	public CardLoader(OutputStream f, CharConverter cvt, long vis, int rev) {
+		super(cvt, vis, rev, 80);
 		targ = f;
 		card = new byte[2*80];
 		csq = 1;
 	}
 
-	public CardLoader(RandomAccessFile f, CharConverter cvt) {
-		super(cvt, 80);
+	public CardLoader(RandomAccessFile f, CharConverter cvt, long vis, int rev) {
+		super(cvt, vis, rev, 80);
 		rwf = f;
 		card = new byte[2*80];
 		csq = 1;

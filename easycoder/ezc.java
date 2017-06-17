@@ -45,11 +45,11 @@ public class ezc {
 		Assembler asm = new Assembler(new File(args[x]));
 		Loader ldr;
 		if (cards) {
-			ldr = new CardLoader(fo, asm.charCvt());
+			ldr = new CardLoader(fo, asm.charCvt(), 0400000000000L, 0);
 		} else if (raw || bin) {
 			ldr = new RawLoader(fo, System.err, rawSW ? asm : null, bin ? 250 : -1);
 		} else {
-			ldr = new TapeLoader(fo, asm.charCvt());
+			ldr = new TapeLoader(fo, asm.charCvt(), 0400000000000L, 0);
 		}
 		int e = asm.passOne();
 		if (e >= 0) {

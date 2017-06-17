@@ -15,11 +15,9 @@ public class CoreLoader implements Loader {
 		this.fp = fp;
 	}
 
-	public void begin(int adr, String prg, String seg, String rev, long vis) {
+	public void begin(int adr, String prg, String seg) {
 		program = prg;
 		segment = seg;
-		revision = rev;
-		visibility = vis;
 	}
 
 	public void setCode(int adr, byte[] code) {
@@ -40,7 +38,7 @@ public class CoreLoader implements Loader {
 
 	// TODO: run? or just pause?
 	public void exec(int start) {
-		mon = new LoaderMonitorC(sys, program, segment, revision, visibility);
+		mon = new LoaderMonitorC(sys, program, segment);
 		sys.addTrap(mon);
 		sys.SR = start;
 		fp.doRun();
@@ -49,11 +47,9 @@ public class CoreLoader implements Loader {
 		sys.removeTrap(mon);
 	}
 
-	public void segment(String prg, String seg, String rev, long vis) {
+	public void segment(String prg, String seg) {
 		program = prg;
 		segment = seg;
-		revision = rev;
-		visibility = vis;
 	}
 
 	public void end(int start) {

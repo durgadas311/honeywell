@@ -32,8 +32,6 @@ public class Assembler {
 	String prog;
 	String segm;
 	int segno;
-	String rev;
-	long vis;
 	int endAdr;
 	int minAdr;
 	int maxAdr;
@@ -63,8 +61,6 @@ public class Assembler {
 		prog = null; // or default to file name?
 		segm = "01";
 		segno = 1;
-		rev = "000";
-		vis = 0400000000000L;	// TODO: needs to be non-zero?
 		adrMode = 3;	// some sort of default
 		inFile = input;
 		symTab = new HashMap<String,Integer>();
@@ -172,7 +168,7 @@ public class Assembler {
 		end = false;
 		segm = "01"; // reset from pass one...
 		segno = 1;
-		loader.begin(minAdr, prog, segm, rev, vis);
+		loader.begin(minAdr, prog, segm);
 		loader.range(minAdr, maxAdr); // passOne set these...
 		while (!end && (ret = scanOne()) >= 0) {
 		}
@@ -216,7 +212,7 @@ public class Assembler {
 		end = false;
 		segm = "01"; // reset from pass one...
 		segno = 1;
-		loader.begin(minAdr, prog, segm, rev, vis);
+		loader.begin(minAdr, prog, segm);
 		loader.range(minAdr, maxAdr); // passOne set these...
 		while (!end && (ret = scanOne()) >= 0) {
 		}
@@ -543,7 +539,7 @@ public class Assembler {
 			if (segno > 0) {
 				++segno;
 				segm = String.format("%02d", segno);
-				loader.segment(prog, segm, this.rev, vis);
+				loader.segment(prog, segm);
 			}
 		}
 		return e;
@@ -1001,7 +997,7 @@ public class Assembler {
 			segm = String.format("%-2.2s", opd);
 			segno = -1;
 			if (asmPass) {
-				loader.segment(prog, segm, this.rev, vis);
+				loader.segment(prog, segm);
 			}
 			return 0;
 		} else if (opc.equals("EX")) {
