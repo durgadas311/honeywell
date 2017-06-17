@@ -19,6 +19,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 	ButtonGroup outBg;
 	JRadioButton brt;
 	JRadioButton brtCard;
+	JRadioButton brtPlain;
 	JRadioButton boot;
 	JRadioButton raw;
 	JTextField inFile;
@@ -56,12 +57,15 @@ public class EasyCoder extends JFrame implements ActionListener {
 		brt.addActionListener(this);
 		brtCard = new JRadioButton("BRT (Card)");
 		brtCard.addActionListener(this);
+		brtPlain = new JRadioButton("BRT (plain)");
+		brtPlain.addActionListener(this);
 		boot = new JRadioButton("Bootstrap");
 		boot.addActionListener(this);
 		raw = new JRadioButton("Raw Loader");
 		raw.addActionListener(this);
 		outBg.add(brt);
 		outBg.add(brtCard);
+		outBg.add(brtPlain);
 		outBg.add(boot);
 		outBg.add(raw);
 		unit = new JTextArea();
@@ -100,6 +104,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 		pn.add(new JLabel("Output Format"));
 		pn.add(brt);
 		pn.add(brtCard);
+		pn.add(brtPlain);
 		pn.add(boot);
 		pn.add(raw);
 		pn2.add(pn);
@@ -218,6 +223,7 @@ public class EasyCoder extends JFrame implements ActionListener {
 		// TODO: assign visibility, revision
 		boolean errs = false;
 		boolean cards = brtCard.isSelected();
+		boolean plain = brtPlain.isSelected();
 		boolean bin = raw.isSelected();
 		boolean slf = self.isSelected();
 		boolean ovr = ovrw.isSelected();
@@ -269,6 +275,8 @@ public class EasyCoder extends JFrame implements ActionListener {
 					}
 					ldr = new RawLoader(f, swi,
 						rawSW ? asm : null, bin ? 250 : -1);
+				} else if (plain) {
+					ldr = new PlainLoader(f, asm.charCvt(), 250);
 				} else {
 					ldr = new TapeLoader(f, asm.charCvt(), vis, rev);
 				}
