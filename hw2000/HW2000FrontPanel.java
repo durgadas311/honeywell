@@ -90,12 +90,14 @@ public class HW2000FrontPanel extends JFrame
 	private JCheckBox dump_rx;
 	private JPanel dump_pn;
 	private JPanel vol_pn;
+	private JPanel bsg_pn;
 	private JPanel map_pn;
 	private JPanel all_pn;
 	private JPanel rel_pn;
 	private JTextField vol_lun;
 	private JTextField vol_name;
 	private JTextField vol_snum;
+	private JTextField bsg_lun;
 	private JTextField map_lun;
 	private JCheckBox cylmap_cb;
 	private JCheckBox mmblst_cb;
@@ -208,6 +210,9 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Deallocate File", KeyEvent.VK_1);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Bootstrap Generator", KeyEvent.VK_2);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mb.add(mu);
 		mu = new JMenu("Debug");
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
@@ -288,6 +293,8 @@ public class HW2000FrontPanel extends JFrame
 
 		vol_pn = new JPanel();
 		vol_pn.setLayout(new BoxLayout(vol_pn, BoxLayout.Y_AXIS));
+		bsg_pn = new JPanel();
+		bsg_pn.setLayout(new BoxLayout(bsg_pn, BoxLayout.Y_AXIS));
 		map_pn = new JPanel();
 		map_pn.setLayout(new BoxLayout(map_pn, BoxLayout.Y_AXIS));
 		all_pn = new JPanel();
@@ -300,6 +307,12 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(vol_lun);
 		vol_pn.add(pn);
+		bsg_lun = new JTextField("0");
+		bsg_lun.setPreferredSize(new Dimension(20, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(bsg_lun);
+		bsg_pn.add(pn);
 		map_lun = new JTextField("0");
 		map_lun.setPreferredSize(new Dimension(20, 20));
 		cylmap_cb = new JCheckBox("Cylinder Map");
@@ -2883,6 +2896,62 @@ ee.printStackTrace();
 		}
 	}
 
+	private void volMakeBoot() {
+		String title = "Volume Bootstrap Generator";
+		int res = JOptionPane.showOptionDialog(this, bsg_pn, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
+		int unit;
+		try {
+			unit = Integer.valueOf(bsg_lun.getText());
+			if (unit < 0 || unit > 7) {
+				throw new NumberFormatException("Out of range");
+			}
+		} catch (Exception ee) {
+			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
+			return;
+		}
+		setActive(true);
+		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+		boolean ok = false;
+		if (p.begin(unit)) try {
+			InputStream r1 = getClass().getResourceAsStream("bringup/brfloader.out");
+			InputStream r2 = getClass().getResourceAsStream("bringup/mod1loader.out");
+			int n1 = r1.available();
+			int n2 = r2.available();
+			byte[] buf = new byte[n1 + n2];
+			r1.read(buf, 0, n1);
+			if ((buf[n1 - 1] & 0300) != 0) {
+				--n1;
+			}
+			r2.read(buf, n1, n2);
+			CoreMemory mb = new BufferMemory(buf);
+			int r = 0;
+			int x = 0;
+			for (x = 0; x < n1 + n2; x += 250) {
+				if (p.seekRecord(0, 0, r++) < 0) {
+					break;
+				}
+				// This writes only 250 chars (fmt rec len) each time.
+				if (!p.writeRecord(mb, x, -1)) {
+					break;
+				}
+			}
+			if (x >= n1 + n2) {
+				ok = true;
+			}
+		} catch (Exception ee) {
+		} finally {
+			p.end();
+		}
+		setActive(false);
+		if (!ok) {
+			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError(p.getError()));
+			return;
+		}
+	}
+
 	private void volMap() {
 		String title = "Map Volume";
 		int res = JOptionPane.showOptionDialog(this, map_pn, title,
@@ -3123,6 +3192,8 @@ ee.printStackTrace();
 			fileAlloc();
 		} else if (mi.getMnemonic() == KeyEvent.VK_1) {
 			fileDealloc();
+		} else if (mi.getMnemonic() == KeyEvent.VK_2) {
+			volMakeBoot();
 		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
 			sys.setTrace(currLow, currHi);
 		} else if (mi.getMnemonic() == KeyEvent.VK_L) {

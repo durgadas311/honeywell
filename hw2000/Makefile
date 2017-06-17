@@ -19,7 +19,7 @@ FONTS = $(wildcard fonts/*.ttf)
 
 ICONS = $(wildcard icons/*.png)
 
-JARES = bringup/bootmt.mti
+JARES = bringup/bootmt.mti bringup/brfloader.out bringup/mod1loader.out
 
 PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	bootstrap.ezc brtloader.ezc \
