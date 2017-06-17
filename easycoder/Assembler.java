@@ -621,6 +621,7 @@ public class Assembler {
 					errsAdd("Indexed not allowed " + opd);
 					return -1;
 				}
+				adr &= adrMask;
 				a = -a; // 2..16, 18..32
 				--a;	// 1..16, 17..31
 				if (adrMode == 3) {
@@ -635,7 +636,7 @@ public class Assembler {
 				} else {
 					adr += a;
 				}
-				adr &= adrMask;
+				adr &= 01777777;
 			}
 			ix = x;
 			if (ix >= 0) {
@@ -668,6 +669,7 @@ public class Assembler {
 			if (adr < 0) {
 				return -1;
 			}
+			adr &= adrMask;
 			if (adrMode == 3) {
 				adr |= 0700000;
 			} else { // must be 4
@@ -1255,6 +1257,8 @@ public class Assembler {
 
 	private int processEqu(String loc, String opd) {
 		rep = 0;
+		// EQU is not limited by current address mode,
+		// must mask off when actually used...
 		int adr = parseAdr(opd, true);
 		symTab.put(loc, adr);
 		int ret = adr | 0x100000;
