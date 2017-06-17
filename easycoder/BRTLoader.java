@@ -12,7 +12,7 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 
 	abstract void writeRec(byte[] rec, int len);
 	abstract void endSeg();
-	abstract void beginSeg(String rev, String prg, String seg, int vis);
+	abstract void beginSeg(String rev, String prg, String seg, long vis);
 
 	void finRec(boolean last) {
 		endRec(last);
@@ -56,7 +56,7 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		}
 	}
 
-	private void initSeg(String rev, String prg, String seg, int vis) {
+	private void initSeg(String rev, String prg, String seg, long vis) {
 		beginSeg(rev, prg, seg, vis);
 		if (seq > 0) {
 			record[0] = (byte)054;
@@ -69,22 +69,22 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		putStr(rev);
 		putStr(prg);
 		putStr(seg);
-		putAdr(vis >> 12);
-		putAdr(vis);
+		putAdr((int)(vis >> 18));
+		putAdr((int)(vis));
 		// assert reccnt == 24...
 		reccnt = 24;
 		record[6] = (byte)reccnt;
 		seq = 1;
 	}
 
-	public void begin(int adr, String prg, String seg, String rev, int vis) {
+	public void begin(int adr, String prg, String seg, String rev, long vis) {
 		initSeg(rev, prg, seg, vis);
 		// setAdr(adr); // let first setCode do this...
 		dist = -1;
 		dirty = false;
 	}
 
-	public void segment(String prg, String seg, String rev, int vis) {
+	public void segment(String prg, String seg, String rev, long vis) {
 		if (dirty) {
 			System.err.format("WARNING: SEG after code\n");
 		}

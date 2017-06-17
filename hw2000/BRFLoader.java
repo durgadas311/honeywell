@@ -31,7 +31,7 @@ System.err.format("ENDM: %s\n", FileVolSupport.getError(targ.getError()));
 		}
 	}
 
-	void beginSeg(String rev, String prg, String seg, int vis) {
+	void beginSeg(String rev, String prg, String seg, long vis) {
 		String m = String.format("%-6s%-2s      ", prg, seg);
 		int x = 0;
 		for (byte c : m.getBytes()) {

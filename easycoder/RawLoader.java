@@ -66,7 +66,7 @@ public class RawLoader implements Loader {
 		}
 	}
 
-	public void begin(int adr, String prg, String seg, String rev, int vis) {
+	public void begin(int adr, String prg, String seg, String rev, long vis) {
 		curadr = adr;
 	}
 
@@ -117,7 +117,7 @@ public class RawLoader implements Loader {
 		System.err.format("WARNING: EX/XFR with RawLoader ignored\n");
 	}
 
-	public void segment(String prg, String seg, String rev, int vis) {
+	public void segment(String prg, String seg, String rev, long vis) {
 		// really doesn't apply. should be error.
 		System.err.format("WARNING: SEG with RawLoader ignored\n");
 	}

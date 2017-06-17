@@ -31,6 +31,6 @@ public class TapeLoader extends BRTLoader {
 	void endSeg() {
 	}
 
-	void beginSeg(String rev, String prg, String seg, int vis) {
+	void beginSeg(String rev, String prg, String seg, long vis) {
 	}
 }

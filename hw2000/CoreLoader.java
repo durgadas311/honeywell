@@ -6,7 +6,7 @@ public class CoreLoader implements Loader {
 	private String program;
 	private String segment;
 	private String revision;
-	private int visibility;
+	private long visibility;
 	private LoaderMonitorC mon;
 
 	public CoreLoader(CoreMemory sys, FrontPanel fp) {
@@ -15,7 +15,7 @@ public class CoreLoader implements Loader {
 		this.fp = fp;
 	}
 
-	public void begin(int adr, String prg, String seg, String rev, int vis) {
+	public void begin(int adr, String prg, String seg, String rev, long vis) {
 		program = prg;
 		segment = seg;
 		revision = rev;
@@ -49,7 +49,7 @@ public class CoreLoader implements Loader {
 		sys.removeTrap(mon);
 	}
 
-	public void segment(String prg, String seg, String rev, int vis) {
+	public void segment(String prg, String seg, String rev, long vis) {
 		program = prg;
 		segment = seg;
 		revision = rev;

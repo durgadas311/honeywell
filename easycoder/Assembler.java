@@ -33,7 +33,7 @@ public class Assembler {
 	String segm;
 	int segno;
 	String rev;
-	int vis;
+	long vis;
 	int endAdr;
 	int minAdr;
 	int maxAdr;
@@ -64,7 +64,7 @@ public class Assembler {
 		segm = "01";
 		segno = 1;
 		rev = "000";
-		vis = 0;	// TODO: needs to be non-zero?
+		vis = 0400000000000L;	// TODO: needs to be non-zero?
 		adrMode = 3;	// some sort of default
 		inFile = input;
 		symTab = new HashMap<String,Integer>();
