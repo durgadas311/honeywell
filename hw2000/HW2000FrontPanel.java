@@ -91,6 +91,7 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel dump_pn;
 	private JPanel vol_pn;
 	private JPanel bsg_pn;
+	private JPanel xbl_pn;
 	private JPanel map_pn;
 	private JPanel all_pn;
 	private JPanel rel_pn;
@@ -127,7 +128,10 @@ public class HW2000FrontPanel extends JFrame
 	JCheckBox dpi;
 	JTextField dpi_lun;
 	JCheckBox dpi_bsp;
-	private JPanel acc;
+	ButtonGroup go_bg;
+	JRadioButton go_go;
+	JRadioButton go_res;
+	private JPanel acc; // Accessories for file chooser
 
 	public HW2000FrontPanel(Properties props, HW2000 sys) {
 		super("Honeywell Series 2000");
@@ -145,7 +149,6 @@ public class HW2000FrontPanel extends JFrame
 
 		setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
-		// TODO: different for 220-3 console...
 		String s = props.getProperty("console");
 		if (s != null && s.equals("220-3")) {
 			partControlPanel();
@@ -466,6 +469,7 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private void makeFileAccessory() {
+		// TODO: add Visibility and Revision Number (both Tape and Disk).
 		JPanel pn;
 		lst = new JCheckBox("Listing");
 		mti = new JCheckBox("Tape Image");
@@ -476,7 +480,11 @@ public class HW2000FrontPanel extends JFrame
 		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
 		pn.add(new JLabel("Unit: "));
 		pn.add(dpi_lun);
-		// TODO: allow naming of file
+		go_bg = new ButtonGroup();
+		go_go = new JRadioButton("*DRS1GO");
+		go_res = new JRadioButton("*DRS1RES");
+		go_bg.add(go_go);
+		go_bg.add(go_res);
 		dpi_bsp = new JCheckBox("Bootstrap");
 		dpi_bsp.setEnabled(false); // until we find a use for it
 
@@ -520,6 +528,12 @@ public class HW2000FrontPanel extends JFrame
 		gc.anchor = GridBagConstraints.EAST;
 		gb.setConstraints(pn, gc);
 		acc.add(pn);
+		++gc.gridy;
+		gb.setConstraints(go_go, gc);
+		acc.add(go_go);
+		++gc.gridy;
+		gb.setConstraints(go_res, gc);
+		acc.add(go_res);
 		++gc.gridy;
 		gb.setConstraints(dpi_bsp, gc);
 		acc.add(dpi_bsp);
@@ -2504,6 +2518,8 @@ public class HW2000FrontPanel extends JFrame
 		listing = false;
 		tape = false;
 		disk = false;
+		// Default to GO file, every time.
+		go_go.setSelected(true);
 		SuffFileChooser ch = new SuffFileChooser(purpose,
 			new String[]{sfx}, new String[]{typ}, prev, acc);
 		int rv = ch.showDialog(this);
@@ -2797,8 +2813,19 @@ ee.printStackTrace();
 			// MOD1 BRF format... TODO: select unit, file, visibility
 			long vis = 0400000000000L;
 			int rev = 0;
-			byte[] file = hwString("*DRS1RES", 10);
-			int unit = 0; //Integer.valueOf(dpi_lun.getText());
+			byte[] file;
+			if (go_go.isSelected()) {
+				file = hwString("*DRS1GO", 10);
+			} else {
+				file = hwString("*DRS1RES", 10);
+			}
+			int unit = 0;
+			if (!dpi_lun.getText().isEmpty()) try {
+				Integer.valueOf(dpi_lun.getText());
+			} catch (Exception ee) {
+				PopupFactory.warning(this, op, "Unit number invalid");
+				return null;
+			}
 			// boolean boot = dpi_bsp.isSelected();
 			P_Disk dk = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 			DiskVolume vol = new DiskVolume(dk, unit);
