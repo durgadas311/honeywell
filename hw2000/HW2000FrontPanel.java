@@ -89,19 +89,18 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel dump_hi_pn;
 	private JCheckBox dump_rx;
 	private JPanel dump_pn;
+	// Initialize volume
 	private JPanel vol_pn;
-	private JPanel bsg_pn;
-	private JPanel xbl_pn;
-	private JPanel map_pn;
-	private JPanel all_pn;
-	private JPanel rel_pn;
 	private JTextField vol_lun;
 	private JTextField vol_name;
 	private JTextField vol_snum;
-	private JTextField bsg_lun;
+	// Map volume
+	private JPanel map_pn;
 	private JTextField map_lun;
 	private JCheckBox cylmap_cb;
 	private JCheckBox mmblst_cb;
+	// Allocate file
+	private JPanel all_pn;
 	private ButtonGroup file_bg;
 	private JRadioButton file_seq;
 	private JRadioButton file_par;
@@ -117,8 +116,28 @@ public class HW2000FrontPanel extends JFrame
 	private JCheckBox file_a;
 	private JCheckBox file_b;
 	private JTextField[][] file_unt;
+	// Unallocate file
+	private JPanel rel_pn;
 	private JTextField rel_lun;
 	private JTextField rel_name;
+	// Bootstrap generator
+	private JPanel bsg_pn;
+	private JTextField bsg_lun;
+	// Prog Dev (Executable)
+	private JPanel xbl_pn;
+	private JTextField xbl_lun;
+	private ButtonGroup xbl_bg;
+	private JRadioButton xbl_brt;
+	private JRadioButton xbl_brf;
+	private JComboBox<String> xbl_act;
+	private String[] xbl_cbo = new String[]{ "ADD", "REP", "DEL", "REN" };
+	private JTextField xbl_pgm;
+	private JTextField xbl_seg;
+	private JTextField xbl_vis;
+	private JTextField xbl_npg;
+	private JTextField xbl_nsg;
+	private JTextField xbl_nvs;
+	//
 	int dumpLow;
 	int dumpHi;
 	private P_Console cons;
@@ -216,6 +235,9 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Bootstrap Generator", KeyEvent.VK_2);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Executable Function", KeyEvent.VK_3);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mb.add(mu);
 		mu = new JMenu("Debug");
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
@@ -296,8 +318,6 @@ public class HW2000FrontPanel extends JFrame
 
 		vol_pn = new JPanel();
 		vol_pn.setLayout(new BoxLayout(vol_pn, BoxLayout.Y_AXIS));
-		bsg_pn = new JPanel();
-		bsg_pn.setLayout(new BoxLayout(bsg_pn, BoxLayout.Y_AXIS));
 		map_pn = new JPanel();
 		map_pn.setLayout(new BoxLayout(map_pn, BoxLayout.Y_AXIS));
 		all_pn = new JPanel();
@@ -310,12 +330,6 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(new JLabel("Disk Unit:"));
 		pn.add(vol_lun);
 		vol_pn.add(pn);
-		bsg_lun = new JTextField("0");
-		bsg_lun.setPreferredSize(new Dimension(20, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Disk Unit:"));
-		pn.add(bsg_lun);
-		bsg_pn.add(pn);
 		map_lun = new JTextField("0");
 		map_lun.setPreferredSize(new Dimension(20, 20));
 		cylmap_cb = new JCheckBox("Cylinder Map");
@@ -433,6 +447,73 @@ public class HW2000FrontPanel extends JFrame
 			pn.add(file_unt[x][3]);
 			all_pn.add(pn);
 		}
+		//
+		bsg_pn = new JPanel();
+		bsg_pn.setLayout(new BoxLayout(bsg_pn, BoxLayout.Y_AXIS));
+		bsg_lun = new JTextField("0");
+		bsg_lun.setPreferredSize(new Dimension(20, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(bsg_lun);
+		bsg_pn.add(pn);
+		//
+		xbl_pn = new JPanel();
+		xbl_pn.setLayout(new BoxLayout(xbl_pn, BoxLayout.Y_AXIS));
+		xbl_lun = new JTextField("0");
+		xbl_lun.setPreferredSize(new Dimension(20, 20));
+		pn = new JPanel();
+		pn.add(new JLabel("Disk Unit:"));
+		pn.add(xbl_lun);
+		xbl_pn.add(pn);
+		// TODO: allow selection of Tape Unit for BRT...
+		xbl_bg = new ButtonGroup();
+		xbl_brt = new JRadioButton("BRT");
+		xbl_brf = new JRadioButton("BRF");
+		xbl_brf.setSelected(true);
+		xbl_bg.add(xbl_brt);
+		xbl_bg.add(xbl_brf);
+		xbl_act = new JComboBox(xbl_cbo);
+		xbl_act.addActionListener(this);
+		pn = new JPanel();
+		pn.add(new JLabel("ACTION="));
+		pn.add(xbl_act);
+		xbl_pn.add(pn);
+		pn = new JPanel();
+		pn.add(new JLabel("GO="));
+		pn.add(xbl_brt);
+		pn.add(xbl_brf);
+		xbl_pn.add(pn);
+		xbl_pgm = new JTextField();
+		xbl_pgm.setPreferredSize(new Dimension(70, 20));
+		xbl_seg = new JTextField();
+		xbl_seg.setPreferredSize(new Dimension(20, 20));
+		xbl_vis = new JTextField();
+		xbl_vis.setPreferredSize(new Dimension(40, 20));
+		xbl_npg = new JTextField();
+		xbl_npg.setPreferredSize(new Dimension(70, 20));
+		xbl_npg.setEnabled(false);
+		xbl_nsg = new JTextField();
+		xbl_nsg.setPreferredSize(new Dimension(20, 20));
+		xbl_nsg.setEnabled(false);
+		xbl_nvs = new JTextField();
+		xbl_nvs.setPreferredSize(new Dimension(40, 20));
+		xbl_nvs.setEnabled(false);
+		pn = new JPanel();
+		pn.add(new JLabel("PGM:"));
+		pn.add(xbl_pgm);
+		pn.add(new JLabel("SEG:"));
+		pn.add(xbl_seg);
+		pn.add(new JLabel("VIS:"));
+		pn.add(xbl_vis);
+		xbl_pn.add(pn);
+		pn = new JPanel();
+		pn.add(new JLabel("NEW PGM:"));
+		pn.add(xbl_npg);
+		pn.add(new JLabel("SEG:"));
+		pn.add(xbl_nsg);
+		pn.add(new JLabel("VIS:"));
+		pn.add(xbl_nvs);
+		xbl_pn.add(pn);
 
 		// Dialog for Dump Full / Trace Full
 		// for some reason, TAB doesn't traverse fields, even if setFocusTraversalKeysEnabled
@@ -2254,6 +2335,15 @@ public class HW2000FrontPanel extends JFrame
 			performMenu((JMenuItem)e.getSource());
 			return;
 		}
+		if ((e.getSource() instanceof JComboBox)) {
+			JComboBox cb = (JComboBox)e.getSource();
+			String i = (String)cb.getSelectedItem();
+			Boolean on = i.equals("REN");
+			xbl_npg.setEnabled(on);
+			xbl_nsg.setEnabled(on);
+			xbl_nvs.setEnabled(on);
+			return;
+		}
 		if (!(e.getSource() instanceof LightedButton)) {
 			return;
 		}
@@ -2984,6 +3074,37 @@ ee.printStackTrace();
 		}
 	}
 
+	private void volExecutable() {
+		String title = "Executable Function";
+		int res = JOptionPane.showOptionDialog(this, xbl_pn, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
+		int unit;
+		try {
+			unit = Integer.valueOf(xbl_lun.getText());
+			if (unit < 0 || unit > 7) {
+				throw new NumberFormatException("Out of range");
+			}
+		} catch (Exception ee) {
+			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
+			return;
+		}
+		setActive(true);
+		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
+		boolean ok = false;
+		if (p.begin(unit)) try {
+		} catch (Exception ee) {
+		} finally {
+			p.end();
+		}
+		setActive(false);
+		if (!ok) {
+			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError(p.getError()));
+			return;
+		}
+	}
+
 	private void volMap() {
 		String title = "Map Volume";
 		int res = JOptionPane.showOptionDialog(this, map_pn, title,
@@ -3226,6 +3347,8 @@ ee.printStackTrace();
 			fileDealloc();
 		} else if (mi.getMnemonic() == KeyEvent.VK_2) {
 			volMakeBoot();
+		} else if (mi.getMnemonic() == KeyEvent.VK_3) {
+			volExecutable();
 		} else if (mi.getMnemonic() == KeyEvent.VK_T) {
 			sys.setTrace(currLow, currHi);
 		} else if (mi.getMnemonic() == KeyEvent.VK_L) {
