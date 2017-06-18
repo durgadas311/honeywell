@@ -103,5 +103,36 @@ cause an EXIT call which is fatal/terminal.
 will cause a graceful end to the program, checked on line 00330.
 <P>In the case of a graceful end, the file is closed on line 00250.
 
+<H3>Bootstrap</H3>
+
+A disk volume may be made bootable using the Bootstrap Generator function.
+The images brfloader.out and mod1loader.out form the content of the
+boot track, and are included in H2000.jar.
+They may be created using the Easycoder source files
+brfloader.ezc and mod1loader.ezc, respectively (and replaced in the jar).
+Using EasyCoder.jar, brfloader.ezc is assembled using the "Bootstrap"
+output format, and mod1loader.ezc is assemble using the "BRT (plain)"
+output format. Note that brfloader.ezc requires a series of
+SW/SI instructions at the beginning in order to restore punctuation after
+bootstrap. If this code is modified, the current SW/SI instruction block should be removed
+and then assemble brfloader with both "Bootstrap" and "SW/SI" checked, then insert
+the resulting brfloader.swi file (back) into brfloader.ezc
+and assemble once again (without "SW/SI").
+
+<P>When booting, this code expects a partitioned-sequential file
+name "*DRS1RES" that contains an executable program image in the member
+named "SUPER101" (visibility is not checked). This program will be loaded
+and executed whenever the code boots or is entered again ("normal program exit").
+If SUPER1 is made resident, then it should intercept the entry calls and prevent
+mod1loader from redundantly loading SUPER1.
+
+<P>The code for SUPER1 is in superv.ezc, and may be assembled using the
+built-in H2000 Assemble function, with the "Disk Image" option (if "*DRS1RES" exists).
+The "*DRS1RES" file may be created on any volume using the "Allocate File" function.
+The file must have a item, record, and block size of 250 and an index size (and data allocation) sufficient for
+storing the desired set of programs.
+
+<P>TODO: Managing the "*DRS1RES" program library.
+
 </BODY>
 </HTML>

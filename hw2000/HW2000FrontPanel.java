@@ -478,6 +478,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(dpi_lun);
 		// TODO: allow naming of file
 		dpi_bsp = new JCheckBox("Bootstrap");
+		dpi_bsp.setEnabled(false); // until we find a use for it
 
 		acc = new JPanel();
 		GridBagConstraints gc = new GridBagConstraints();

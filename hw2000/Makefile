@@ -27,6 +27,7 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	dsktest1.ezc dsktest2.ezc itvtest.ezc \
 	mod1test1.ezc mod1test2.ezc mod1test3.ezc \
 	mmbtest1.ezc mmbtest2.ezc mmbtest3.ezc \
+	brfloader.ezc mod1loader.ezc superv.ezc \
 	barberpole.mti prog3.pcd
 
 SHIPS = H2000.jar hwprogs.tgz h2000.tgz
@@ -43,7 +44,7 @@ ship: $(SHIPS)
 		durgadas.com:/http/durgadas.com/sebhc/hw2000
 	rsync -rWuv www/downloads/. durgadas.com:/http/durgadas.com/sebhc/hw2000/.
 
-jar: H2000.jar
+jar: H2000.jar ../easycoder/EasyCoder.jar
 
 tgz: hwprogs.tgz
 
@@ -59,6 +60,7 @@ h2000.tgz: $(JAVAS) Makefile
 		*/docs \
 		*/www \
 		hw2000/bringup/bootmt.mti \
+		hw2000/bringup/*.out \
 		fortran4/progs \
 		cardpunch/PunchCard.png \
 		cardpunch/*.ttf
@@ -67,6 +69,12 @@ H2000.jar: all docs/About.html
 	/bin/echo -e "Main-Class: System2000\nClass-Path: Fortran4Embedded.jar" >Manifest.txt
 	jar cfm $@ Manifest.txt *.class icons/*.png fonts/*.ttf \
 		docs/* $(JARES)
+
+# If EasyCoder.jar was rebuilt, we need to add these classes.
+# If any of these classes get rebuilt, we need to add them also.
+# Basically, just always add them.
+../easycoder/EasyCoder.jar: __FRC__
+	jar uf $@ MacroLibMOD1MSIO.class MOD1MSIORunTime.class HW2000Trap.class
 
 docs/About.html: __FRC__
 	./mkAbout >$@

@@ -114,11 +114,13 @@ public class EasyCoder extends JFrame implements ActionListener {
 		pn3.setLayout(new BoxLayout(pn3, BoxLayout.X_AXIS));
 		pn3.add(new JLabel(" Unit:"));
 		pn3.add(unit);
-		pn.add(new JLabel(" "));
+		pn.add(new JLabel("<HTML>&nbsp;</HTML>"));
+		pn.add(new JLabel("<HTML>&nbsp;</HTML>"));
 		pn.add(pn3);
 		pn.add(self);
 		pn.add(ovrw);
 		pn.add(swi);
+		pn.add(new JLabel("<HTML>&nbsp;</HTML>"));
 		pn2.add(pn);
 		add(pn2);
 		pn2 = new JPanel();
