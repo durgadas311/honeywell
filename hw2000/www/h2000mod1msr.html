@@ -103,6 +103,22 @@ cause an EXIT call which is fatal/terminal.
 will cause a graceful end to the program, checked on line 00330.
 <P>In the case of a graceful end, the file is closed on line 00250.
 
+<H3>System Files</H3>
+
+<P>All of these system files are Partitioned Sequential files.
+Currently, "*DRS1LIB" is not used (native macros not yet supported).
+"*DRS1GO" is the default output file for the "Disk Image" option
+of the assembler. "*DRS1RES" is the only input for MOD1 executables.
+Executables are managed using the menu option "Executable Function"
+under "Disk Util".
+
+<TABLE BORDER>
+<TR><TH>File Name</TH><TH>Purpose</TH><TH>Item, Record, Block length</TH></TR>
+<TR><TD>*DRS1RES</TD><TD>Resident Executable Images</TD><TD>250, 250, 250</TD></TR>
+<TR><TD>*DRS1GO</TD><TD>Assembler Output Executables</TD><TD>250, 250, 250</TD></TR>
+<TR><TD>*DRS1LIB</TD><TD>Unspecialized Macros</TD><TD>80, 250, 250</TD></TR>
+</TABLE>
+
 <H3>Bootstrap</H3>
 
 A disk volume may be made bootable using the Bootstrap Generator function.
