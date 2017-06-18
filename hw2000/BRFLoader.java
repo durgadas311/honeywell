@@ -1,5 +1,8 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
+// Our only real option is to replace any existing member of the same name,
+// since we don't know if the new size might overrun existing area.
+// So, we always attempt to delete any member of the same name.
 public class BRFLoader extends BRTLoader {
 	private DiskFile targ;	// assumed to be Partitioned Sequential
 	private CoreMemory buf;
@@ -42,9 +45,13 @@ System.err.format("ENDM: %s\n", FileVolSupport.getError(targ.getError()));
 			mmb.writeChar(y, (byte)vis);
 			vis >>= 6;
 		}
-
-		// TODO: handle error - also handle duplicates
-		boolean ok = targ.setMemb(mmb, 0, DiskFile.OUT);
+		boolean ok;
+		// TODO: handle errors
+		ok = targ.alterMemb(mmb, 0, PartitionedSeqFile._DEL_, null, 0);
+		if (!ok && targ.getError() != 00213) {
+System.err.format("MALTER: %s\n", FileVolSupport.getError(targ.getError()));
+		}
+		ok = targ.setMemb(mmb, 0, DiskFile.OUT);
 		if (!ok) {
 System.err.format("SETM: %s\n", FileVolSupport.getError(targ.getError()));
 		}
