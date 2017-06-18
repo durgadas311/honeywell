@@ -397,6 +397,24 @@ public class HW2000 implements CoreMemory
 		buf.copyIn(start, this, adr, len);
 	}
 
+	public boolean compare(int adr, CoreMemory buf, int start, int len) {
+		for (int x = 0; x < len; ++x) {
+			if (readChar(adr++) != buf.readChar(start + x)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	public boolean compare(int adr, byte[] buf, int start, int len) {
+		int a = start;
+		for (int x = 0; x < len; ++x) {
+			if (readChar(adr++) != (buf[a++] & 077)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public void zero(int adr, int len) {
 		int a = validAdr(adr);
 		if (a >= mem.length) {

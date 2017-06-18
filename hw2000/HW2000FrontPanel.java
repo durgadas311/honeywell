@@ -124,19 +124,7 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel bsg_pn;
 	private JTextField bsg_lun;
 	// Prog Dev (Executable)
-	private JPanel xbl_pn;
-	private JTextField xbl_lun;
-	private ButtonGroup xbl_bg;
-	private JRadioButton xbl_brt;
-	private JRadioButton xbl_brf;
-	private JComboBox<String> xbl_act;
-	private String[] xbl_cbo = new String[]{ "ADD", "REP", "DEL", "REN" };
-	private JTextField xbl_pgm;
-	private JTextField xbl_seg;
-	private JTextField xbl_vis;
-	private JTextField xbl_npg;
-	private JTextField xbl_nsg;
-	private JTextField xbl_nvs;
+	private UtilExecutable xbl_pn;
 	//
 	int dumpLow;
 	int dumpHi;
@@ -457,63 +445,7 @@ public class HW2000FrontPanel extends JFrame
 		pn.add(bsg_lun);
 		bsg_pn.add(pn);
 		//
-		xbl_pn = new JPanel();
-		xbl_pn.setLayout(new BoxLayout(xbl_pn, BoxLayout.Y_AXIS));
-		xbl_lun = new JTextField("0");
-		xbl_lun.setPreferredSize(new Dimension(20, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Disk Unit:"));
-		pn.add(xbl_lun);
-		xbl_pn.add(pn);
-		// TODO: allow selection of Tape Unit for BRT...
-		xbl_bg = new ButtonGroup();
-		xbl_brt = new JRadioButton("BRT");
-		xbl_brf = new JRadioButton("BRF");
-		xbl_brf.setSelected(true);
-		xbl_bg.add(xbl_brt);
-		xbl_bg.add(xbl_brf);
-		xbl_act = new JComboBox(xbl_cbo);
-		xbl_act.addActionListener(this);
-		pn = new JPanel();
-		pn.add(new JLabel("ACTION="));
-		pn.add(xbl_act);
-		xbl_pn.add(pn);
-		pn = new JPanel();
-		pn.add(new JLabel("GO="));
-		pn.add(xbl_brt);
-		pn.add(xbl_brf);
-		xbl_pn.add(pn);
-		xbl_pgm = new JTextField();
-		xbl_pgm.setPreferredSize(new Dimension(70, 20));
-		xbl_seg = new JTextField();
-		xbl_seg.setPreferredSize(new Dimension(20, 20));
-		xbl_vis = new JTextField();
-		xbl_vis.setPreferredSize(new Dimension(40, 20));
-		xbl_npg = new JTextField();
-		xbl_npg.setPreferredSize(new Dimension(70, 20));
-		xbl_npg.setEnabled(false);
-		xbl_nsg = new JTextField();
-		xbl_nsg.setPreferredSize(new Dimension(20, 20));
-		xbl_nsg.setEnabled(false);
-		xbl_nvs = new JTextField();
-		xbl_nvs.setPreferredSize(new Dimension(40, 20));
-		xbl_nvs.setEnabled(false);
-		pn = new JPanel();
-		pn.add(new JLabel("PGM:"));
-		pn.add(xbl_pgm);
-		pn.add(new JLabel("SEG:"));
-		pn.add(xbl_seg);
-		pn.add(new JLabel("VIS:"));
-		pn.add(xbl_vis);
-		xbl_pn.add(pn);
-		pn = new JPanel();
-		pn.add(new JLabel("NEW PGM:"));
-		pn.add(xbl_npg);
-		pn.add(new JLabel("SEG:"));
-		pn.add(xbl_nsg);
-		pn.add(new JLabel("VIS:"));
-		pn.add(xbl_nvs);
-		xbl_pn.add(pn);
+		xbl_pn = new UtilExecutable(sys);
 
 		// Dialog for Dump Full / Trace Full
 		// for some reason, TAB doesn't traverse fields, even if setFocusTraversalKeysEnabled
@@ -2335,15 +2267,6 @@ public class HW2000FrontPanel extends JFrame
 			performMenu((JMenuItem)e.getSource());
 			return;
 		}
-		if ((e.getSource() instanceof JComboBox)) {
-			JComboBox cb = (JComboBox)e.getSource();
-			String i = (String)cb.getSelectedItem();
-			Boolean on = i.equals("REN");
-			xbl_npg.setEnabled(on);
-			xbl_nsg.setEnabled(on);
-			xbl_nvs.setEnabled(on);
-			return;
-		}
 		if (!(e.getSource() instanceof LightedButton)) {
 			return;
 		}
@@ -3080,27 +3003,11 @@ ee.printStackTrace();
 			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
 			null, null, null);
 		if (res != JOptionPane.OK_OPTION) return;
-		int unit;
-		try {
-			unit = Integer.valueOf(xbl_lun.getText());
-			if (unit < 0 || unit > 7) {
-				throw new NumberFormatException("Out of range");
-			}
-		} catch (Exception ee) {
-			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
-			return;
-		}
 		setActive(true);
-		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = false;
-		if (p.begin(unit)) try {
-		} catch (Exception ee) {
-		} finally {
-			p.end();
-		}
+		boolean ok = xbl_pn.perform(this, title);
 		setActive(false);
 		if (!ok) {
-			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError(p.getError()));
+			PopupFactory.warning(this, title, "Failed: " + xbl_pn.getError());
 			return;
 		}
 	}

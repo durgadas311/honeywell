@@ -15,6 +15,8 @@ public interface CoreMemory {
 	void copyOut(int adr, byte[] buf, int start, int len);
 	void copyIn(int adr, CoreMemory buf, int start, int len);
 	void copyOut(int adr, CoreMemory buf, int start, int len);
+	boolean compare(int adr, CoreMemory buf, int start, int len);
+	boolean compare(int adr, byte[] buf, int start, int len);
 	void zero(int adr, int len);
 	int size();
 
