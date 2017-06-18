@@ -405,6 +405,10 @@ public class SequentialFile implements DiskFile {
 	// Also used by MOVE delivery mode.
 	//
 	public boolean getItem() {
+		return _getItem();
+	}
+
+	private boolean _getItem() {
 		// Semantic protection (i.e. enforce IN) done by MIOC
 		if (!cacheNextItem(false)) {
 			return false;
@@ -432,6 +436,10 @@ public class SequentialFile implements DiskFile {
 	// This requires that MSOPEN/SETM be fully prepared for MSPUT
 	// *and* computed item address!
 	public boolean putItem() {
+		return _putItem();
+	}
+
+	private boolean _putItem() {
 		dirty = true;
 		put = true;
 		eof = false;	// right?
@@ -446,7 +454,7 @@ public class SequentialFile implements DiskFile {
 	//
 	public boolean getItem(CoreMemory itm, int adr) {
 		// Semantic protection (i.e. enforce IN) done by MIOC
-		if (!getItem()) {
+		if (!_getItem()) {
 			return false;
 		}
 		itm.copyIn(adr, blkBufMem, blkBufAdr + curOff, itmLen);
@@ -472,7 +480,7 @@ public class SequentialFile implements DiskFile {
 	public boolean putItem(CoreMemory itm, int adr) {
 		// Semantic protection (i.e. enforce OUT) done by MIOC
 		itm.copyOut(adr, blkBufMem, blkBufAdr + curOff, itmLen);
-		if (!putItem()) {
+		if (!_putItem()) {
 			return false;
 		}
 		return true;
