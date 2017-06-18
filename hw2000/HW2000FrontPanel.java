@@ -2707,24 +2707,28 @@ ee.printStackTrace();
 	private boolean doAsm(File src, String op) {
 		OutputStream lst = null;
 		_last = src;
-		if (listing) {
-			String l = src.getAbsolutePath();
-			if (l.endsWith(".ezc")) {
-				l = l.substring(0, l.length() - 4);
+		Assembler ret = null;
+		try {
+			if (listing) {
+				String l = src.getAbsolutePath();
+				if (l.endsWith(".ezc")) {
+					l = l.substring(0, l.length() - 4);
+				}
+				l += ".lst";
+				try {
+					lst = new FileOutputStream(new File(l));
+				} catch (Exception ee) {
+					PopupFactory.warning(this, op, ee.toString());
+					return false;
+				}
+				getPrinter().setOutput(lst);
 			}
-			l += ".lst";
-			try {
-				lst = new FileOutputStream(new File(l));
-			} catch (Exception ee) {
-				PopupFactory.warning(this, op, ee.toString());
-				return false;
+			ret = assemble(src, op, listing);
+		} finally {
+			getPrinter().setOutput(null);
+			if (lst != null) {
+				try { lst.close(); } catch (Exception ee) {}
 			}
-			getPrinter().setOutput(lst);
-		}
-		Assembler ret = assemble(src, op, listing);
-		getPrinter().setOutput(null);
-		if (lst != null) {
-			try { lst.close(); } catch (Exception ee) {}
 		}
 		if (ret != null) {
 			PopupFactory.inform(this, op, String.format("Assembly complete. %07o %07o %07o",

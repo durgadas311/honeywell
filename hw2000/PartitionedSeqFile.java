@@ -137,6 +137,7 @@ public class PartitionedSeqFile extends SequentialFile {
 						freeMember = getAddress();
 						freeOff = off;
 					}
+					curMembOff += mmbIdxLen;
 					continue;
 				}
 				if (mmb == null ||
