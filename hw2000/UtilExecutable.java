@@ -130,12 +130,8 @@ public class UtilExecutable extends JPanel
 		return h;
 	}
 
-	public boolean perform(Component top, String title) {
+	public boolean perform() {
 		error = 0;
-		int res = JOptionPane.showOptionDialog(top, this, title,
-			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
-			null, null, null);
-		if (res != JOptionPane.OK_OPTION) return true;
 		int unit = 0;
 		if (!xbl_lun.getText().isEmpty()) try {
 			unit = Integer.valueOf(xbl_lun.getText());
