@@ -655,4 +655,24 @@ class CharConverter {
 		byte b = ascii2hw[c];
 		return b;
 	}
+
+	public byte[] hwString(String str, int len) {
+		byte[] ret = new byte[len];
+		int x;
+		for (x = 0; x < str.length() && x < len; ++x) {
+			ret[x] = ascii2hw[Character.toUpperCase(str.charAt(x)) & 0x7f];
+		}
+		while (x < len) {
+			ret[x++] = 015;
+		}
+		return ret;
+	}
+
+	public String hwToString(byte[] in, int start, int len) {
+		String ret = "";
+		for (int x = 0; x < len; ++x) {
+			ret += hwToLP(in[start + x]);
+		}
+		return ret;
+	}
 }
