@@ -89,26 +89,12 @@ public class HW2000FrontPanel extends JFrame
 	private JPanel dump_hi_pn;
 	private JCheckBox dump_rx;
 	private JPanel dump_pn;
-	// Initialize volume
-	private JPanel vol_pn;
-	private JTextField vol_lun;
-	private JTextField vol_name;
-	private JTextField vol_snum;
-	// Map volume
-	private JPanel map_pn;
-	private JTextField map_lun;
-	private JCheckBox cylmap_cb;
-	private JCheckBox mmblst_cb;
-	// Allocate file
+	//
+	private UtilInitialize vol_pn;
+	private UtilMapVolume map_pn;
 	private UtilAllocate all_pn;
-	// Unallocate file
-	private JPanel rel_pn;
-	private JTextField rel_lun;
-	private JTextField rel_name;
-	// Bootstrap generator
-	private JPanel bsg_pn;
-	private JTextField bsg_lun;
-	// Prog Dev (Executable)
+	private UtilDeallocate rel_pn;
+	private UtilBootstrapGen bsg_pn;
 	private UtilExecutable xbl_pn;
 	//
 	int dumpLow;
@@ -289,63 +275,11 @@ public class HW2000FrontPanel extends JFrame
 			type.addChangeListener(this);
 		}
 
-		vol_pn = new JPanel();
-		vol_pn.setLayout(new BoxLayout(vol_pn, BoxLayout.Y_AXIS));
-		map_pn = new JPanel();
-		map_pn.setLayout(new BoxLayout(map_pn, BoxLayout.Y_AXIS));
+		vol_pn = new UtilInitialize(sys);
+		map_pn = new UtilMapVolume(sys);
 		all_pn = new UtilAllocate(sys);
-		rel_pn = new JPanel();
-		rel_pn.setLayout(new BoxLayout(rel_pn, BoxLayout.Y_AXIS));
-		vol_lun = new JTextField("0");
-		vol_lun.setPreferredSize(new Dimension(20, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Disk Unit:"));
-		pn.add(vol_lun);
-		vol_pn.add(pn);
-		map_lun = new JTextField("0");
-		map_lun.setPreferredSize(new Dimension(20, 20));
-		cylmap_cb = new JCheckBox("Cylinder Map");
-		mmblst_cb = new JCheckBox("Member Lists");
-		pn = new JPanel();
-		pn.add(new JLabel("Disk Unit:"));
-		pn.add(map_lun);
-		map_pn.add(pn);
-		map_pn.add(cylmap_cb);
-		map_pn.add(mmblst_cb);
-		rel_lun = new JTextField("0");
-		rel_lun.setPreferredSize(new Dimension(20, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Disk Unit:"));
-		pn.add(rel_lun);
-		rel_pn.add(pn);
-		vol_name = new JTextField();
-		vol_name.setPreferredSize(new Dimension(60, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Name:"));
-		pn.add(vol_name);
-		vol_pn.add(pn);
-		rel_name = new JTextField();
-		rel_name.setPreferredSize(new Dimension(120, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Name:"));
-		pn.add(rel_name);
-		rel_pn.add(pn);
-		vol_snum = new JTextField();
-		vol_snum.setPreferredSize(new Dimension(60, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Serial:"));
-		pn.add(vol_snum);
-		vol_pn.add(pn);
-		//
-		bsg_pn = new JPanel();
-		bsg_pn.setLayout(new BoxLayout(bsg_pn, BoxLayout.Y_AXIS));
-		bsg_lun = new JTextField("0");
-		bsg_lun.setPreferredSize(new Dimension(20, 20));
-		pn = new JPanel();
-		pn.add(new JLabel("Disk Unit:"));
-		pn.add(bsg_lun);
-		bsg_pn.add(pn);
-		//
+		rel_pn = new UtilDeallocate(sys);
+		bsg_pn = new UtilBootstrapGen(sys);
 		xbl_pn = new UtilExecutable(sys);
 
 		// Dialog for Dump Full / Trace Full
@@ -2733,9 +2667,9 @@ ee.printStackTrace();
 			int rev = 0;
 			byte[] file;
 			if (go_go.isSelected()) {
-				file = hwString("*DRS1GO", 10);
+				file = asm.charCvt().hwString("*DRS1GO", 10);
 			} else {
-				file = hwString("*DRS1RES", 10);
+				file = asm.charCvt().hwString("*DRS1RES", 10);
 			}
 			int unit = 0;
 			if (!dpi_lun.getText().isEmpty()) try {
@@ -2801,43 +2735,17 @@ ee.printStackTrace();
 		getPrinter().output(str);
 	}
 
-	private byte[] hwString(String str, int len) {
-		byte[] ret = new byte[len];
-		int x;
-		for (x = 0; x < str.length() && x < len; ++x) {
-			ret[x] = sys.pdc.cvt.asciiToHw((byte)
-					(Character.toUpperCase(str.charAt(x)) & 0x7f));
-		}
-		for (; x < len; ++x) {
-			ret[x] = 015;	// HW blank
-		}
-		return ret;
-	}
-
 	private void volInit() {
 		String title = "Initialize Volume";
 		int res = JOptionPane.showOptionDialog(this, vol_pn, title,
 			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
 			null, null, null);
 		if (res != JOptionPane.OK_OPTION) return;
-		int unit;
-		try {
-			unit = Integer.valueOf(vol_lun.getText());
-			if (unit < 0 || unit > 7) {
-				throw new NumberFormatException("Out of range");
-			}
-		} catch (Exception ee) {
-			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
-			return;
-		}
 		setActive(true);
-		byte[] nm = hwString(vol_name.getText(), 6);
-		byte[] sn = hwString(vol_snum.getText(), 6);
-		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = FileVolSupport.initVolume(p, unit, nm, sn);
+		boolean ok = vol_pn.perform();
 		setActive(false);
 		if (!ok) {
-			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, "Failed: " + vol_pn.getError());
 			return;
 		}
 	}
@@ -2848,52 +2756,11 @@ ee.printStackTrace();
 			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
 			null, null, null);
 		if (res != JOptionPane.OK_OPTION) return;
-		int unit;
-		try {
-			unit = Integer.valueOf(bsg_lun.getText());
-			if (unit < 0 || unit > 7) {
-				throw new NumberFormatException("Out of range");
-			}
-		} catch (Exception ee) {
-			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
-			return;
-		}
 		setActive(true);
-		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = false;
-		if (p.begin(unit)) try {
-			InputStream r1 = getClass().getResourceAsStream("bringup/brfloader.out");
-			InputStream r2 = getClass().getResourceAsStream("bringup/mod1loader.out");
-			int n1 = r1.available();
-			int n2 = r2.available();
-			byte[] buf = new byte[n1 + n2];
-			r1.read(buf, 0, n1);
-			if ((buf[n1 - 1] & 0300) != 0) {
-				--n1;
-			}
-			r2.read(buf, n1, n2);
-			CoreMemory mb = new BufferMemory(buf);
-			int r = 0;
-			int x = 0;
-			for (x = 0; x < n1 + n2; x += 250) {
-				if (p.seekRecord(0, 0, r++) < 0) {
-					break;
-				}
-				// This writes only 250 chars (fmt rec len) each time.
-				if (!p.writeRecord(mb, x, -1)) {
-					break;
-				}
-			}
-			if (x >= n1 + n2) {
-				ok = true;
-			}
-		} catch (Exception ee) {
-		} finally {
-			p.end();
-		}
+		boolean ok = bsg_pn.perform();
 		setActive(false);
 		if (!ok) {
-			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError(p.getError()));
+			PopupFactory.warning(this, title, "Failed: " + bsg_pn.getError());
 			return;
 		}
 	}
@@ -2919,23 +2786,11 @@ ee.printStackTrace();
 			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
 			null, null, null);
 		if (res != JOptionPane.OK_OPTION) return;
-		int unit;
-		try {
-			unit = Integer.valueOf(map_lun.getText());
-			if (unit < 0 || unit > 7) {
-				throw new NumberFormatException("Out of range");
-			}
-		} catch (Exception ee) {
-			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
-			return;
-		}
 		setActive(true);
-		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = FileVolSupport.mapVolume(p, unit, sys,
-			cylmap_cb.isSelected(), mmblst_cb.isSelected());
+		boolean ok = map_pn.perform();
 		setActive(false);
 		if (!ok) {
-			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, "Failed: " + map_pn.getError());
 			return;
 		}
 	}
@@ -2961,23 +2816,11 @@ ee.printStackTrace();
 			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
 			null, null, null);
 		if (res != JOptionPane.OK_OPTION) return;
-		int unit;
-		try {
-			unit = Integer.valueOf(rel_lun.getText());
-			if (unit < 0 || unit > 7) {
-				throw new NumberFormatException("Out of range");
-			}
-		} catch (Exception ee) {
-			PopupFactory.warning(this, title, "Invalid Disk Unit Number");
-			return;
-		}
 		setActive(true);
-		byte[] nm = hwString(rel_name.getText(), 10);
-		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
+		boolean ok = rel_pn.perform();
 		setActive(false);
 		if (!ok) {
-			PopupFactory.warning(this, title, title + " failed: " + FileVolSupport.getError());
+			PopupFactory.warning(this, title, "Failed: " + rel_pn.getError());
 			return;
 		}
 	}

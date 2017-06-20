@@ -19,10 +19,13 @@ public class FileVolSupport {
 		// These are errors outside of MIOC (MOD1MSIO never uses).
 		// Mainly used between FileVolSupport and HW2000FrontPanel.
 		errmsg = new HashMap<Integer, String>();
-		errmsg.put(00001, "Directory full");
-		errmsg.put(00002, "Allocation conflict");
-		errmsg.put(00003, "File exists");
 		errmsg.put(00005, "Invalid Action");	// <<<<< catch-all
+		errmsg.put(00011, "Directory full");
+		errmsg.put(00012, "Allocation conflict");
+		errmsg.put(00013, "File exists");
+		errmsg.put(00015, "Invalid Unit Number");
+		errmsg.put(00016, "Invalid Allocation Unit");
+		errmsg.put(00017, "Invalid File Parameters");
 		//
 		// "Directory" errors - MSOPEN, MSCLOS
 		errmsg.put(00101, "OPEN CALLOUT 1");
@@ -70,6 +73,10 @@ public class FileVolSupport {
 		errmsg.put(00510, "Write Error");
 		errmsg.put(00511, "Miscellaneous");	// Track-linking record
 		errmsg.put(00512, "Read Error");	// Track-Linking error
+	}
+
+	static public int getErrno() {
+		return error;
 	}
 
 	static public String getError() {
@@ -196,22 +203,11 @@ public class FileVolSupport {
 		return true;
 	}
 
-	static public String hwToString(byte[] in, int start, int len,
-					CharConverter cvt) {
-		String ret = "";
-		for (int x = 0; x < len; ++x) {
-			ret += cvt.hwToLP(in[start + x]);
-		}
-		return ret;
-	}
-
 	static public String hwToString(CoreMemory in, int start, int len,
 					CharConverter cvt) {
-		String ret = "";
-		for (int x = 0; x < len; ++x) {
-			ret += cvt.hwToLP(in.readChar(start + x));
-		}
-		return ret;
+		byte[] buf = new byte[len];
+		in.copyOut(start, buf, 0, len);
+		return cvt.hwToString(buf, 0, len);
 	}
 
 	static private void mapTracks(int[][] map, int fno, DiskUnit[] units) {
@@ -333,8 +329,8 @@ public class FileVolSupport {
 			return false;
 		}
 		sys.listOut(String.format("Volume name %s serial %s\n",
-					hwToString(vol.getName(), 0, 6, sys.pdc.cvt),
-					hwToString(vol.getSerial(), 0, 6, sys.pdc.cvt)));
+					sys.pdc.cvt.hwToString(vol.getName(), 0, 6),
+					sys.pdc.cvt.hwToString(vol.getSerial(), 0, 6)));
 		int free = 0;
 		int total = 0;
 		CoreMemory names = new BufferMemory(vol.getVolNames().itemLen());
@@ -500,7 +496,7 @@ public class FileVolSupport {
 		while (true) {
 			if (!file.getItem(buf, 0)) {
 				if (file.isEOF()) {
-					error = 00001;
+					error = 00011;
 				} else {
 					error = file.getError();
 				}
@@ -538,7 +534,7 @@ public class FileVolSupport {
 					if (free != null) {
 						break;
 					}
-					error = 00001; // no space
+					error = 00011; // no space
 				} else {
 					error = file.getError();
 				}
@@ -555,7 +551,7 @@ public class FileVolSupport {
 			case 060:
 				ctct = vol.getSome(buf, 4, 4);
 				if (chkAlloc(units, ctct)) {
-					error = 00002;	// space already used
+					error = 00012;	// space already used
 					return null;
 				}
 				break;
@@ -581,7 +577,7 @@ public class FileVolSupport {
 		}
 		CoreMemory names = findName(vol, vol.getVolNames(), name);
 		if (names != null) {
-			error = 00003;	// File exists
+			error = 00013;	// File exists
 			return false;
 		}
 		names = findFree(vol, vol.getVolNames());

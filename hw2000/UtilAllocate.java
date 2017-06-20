@@ -145,30 +145,17 @@ public class UtilAllocate extends JPanel
 		return true;
 	}
 
-	private byte[] hwString(String str, int len) {
-		byte[] h = new byte[len];
-		int x = 0;
-		for (byte c : str.getBytes()) {
-			h[x++] = cvt.asciiToHw(c);
-			if (x >= len) break;
-		}
-		while (x < len) {
-			h[x++] = 015;
-		}
-		return h;
-	}
-
 	public boolean perform() {
 		error = 0;
 		int unit = 0;
 		if (!file_lun.getText().isEmpty()) try {
 			unit = Integer.valueOf(file_lun.getText());
 			if (unit < 0 || unit > 7) {
-				error = 00501;
+				error = 00015;
 				return false;
 			}
 		} catch (Exception ee) {
-			error = 00501;
+			error = 00015;
 			return false;
 		}
 		int type = -1;
@@ -186,7 +173,7 @@ public class UtilAllocate extends JPanel
 			return false;
 		}
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		byte[] nm = hwString(file_name.getText(), 10);
+		byte[] nm = cvt.hwString(file_name.getText(), 10);
 		int itmLen = -1;
 		int recLen = -1;
 		int recTrk = -1;
@@ -227,7 +214,7 @@ public class UtilAllocate extends JPanel
 				blkIdx = Integer.valueOf(file_bpx.getText());
 			}
 		} catch (Exception ee) {
-			error = 00105;
+			error = 00017;
 			return false;
 		}
 		int flag = (file_a.isSelected() ? p.PERMIT_A : 0) |
@@ -235,12 +222,13 @@ public class UtilAllocate extends JPanel
 		DiskUnit[] units = new DiskUnit[6];
 		boolean ok = getAlloc(units, p.numCylinders(), p.numTracks());
 		if (!ok) {
-			error = 00105;
+			error = 00016;
 			return false;
 		}
 		ok = FileVolSupport.initFile(p, unit, flag, nm, type,
 				itmLen, recLen, recTrk, recBlk,
 				blkIdx, units);
+		error = FileVolSupport.getErrno();
 		return ok;
 	}
 

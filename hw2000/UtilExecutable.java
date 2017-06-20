@@ -117,30 +117,17 @@ public class UtilExecutable extends JPanel
 		return vv;
 	}
 
-	private byte[] hwString(String str, int len) {
-		byte[] h = new byte[len];
-		int x = 0;
-		for (byte c : str.getBytes()) {
-			h[x++] = cvt.asciiToHw(c);
-			if (x >= len) break;
-		}
-		while (x < len) {
-			h[x++] = 015;
-		}
-		return h;
-	}
-
 	public boolean perform() {
 		error = 0;
 		int unit = 0;
 		if (!xbl_lun.getText().isEmpty()) try {
 			unit = Integer.valueOf(xbl_lun.getText());
 			if (unit < 0 || unit > 7) {
-				error = 00501;
+				error = 00015;
 				return false;
 			}
 		} catch (Exception ee) {
-			error = 00501;
+			error = 00015;
 			return false;
 		}
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
@@ -151,9 +138,9 @@ public class UtilExecutable extends JPanel
 		byte[] pgm = null;
 		byte[] seg = null;
 		byte[] vis = null;
-		pgm = hwString(xbl_pgm.getText(), 6);
+		pgm = cvt.hwString(xbl_pgm.getText(), 6);
 		if (!xbl_seg.getText().isEmpty()) {
-			seg = hwString(xbl_seg.getText(), 2);
+			seg = cvt.hwString(xbl_seg.getText(), 2);
 		}
 		if (!xbl_vis.getText().isEmpty()) {
 			vis = visibility(xbl_vis.getText());
@@ -162,7 +149,7 @@ public class UtilExecutable extends JPanel
 			if (!vol.mount()) {
 				return false;
 			}
-			fi = vol.openFile(hwString("*DRS1RES", 10), DiskFile.UPDATE,
+			fi = vol.openFile(cvt.hwString("*DRS1RES", 10), DiskFile.UPDATE,
 							blk, 0, null, 0);
 			if (fi == null) {
 				return false;

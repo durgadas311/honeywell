@@ -271,12 +271,10 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			p = String.format("%02o", xitMCA.pp & 037);
 			d = String.format("%o", xitMCA.dd & 007);
 			if (xitMCA.vol != null) {
-				v = FileVolSupport.hwToString(xitMCA.vol.getName(),
-								0, 6, sys.pdc.cvt);
+				v = sys.pdc.cvt.hwToString(xitMCA.vol.getName(), 0, 6);
 			}
 			if (xitMCA.file != null) {
-				f = FileVolSupport.hwToString(xitMCA.file.getName(),
-								0, 10, sys.pdc.cvt);
+				f = sys.pdc.cvt.hwToString(xitMCA.file.getName(), 0, 10);
 				int[] c = xitMCA.file.getAddress();
 				a = String.format("%04o%04o%04o", c[0], c[1], c[2]);
 			}
