@@ -21,6 +21,8 @@ public class GenericHelp extends JFrame
 
 	public GenericHelp(String title, java.net.URL url) {
 		super(title);
+		setIconImage(Toolkit.getDefaultToolkit().
+			getImage(getClass().getResource("icons/hlp-96.png")));
 		_history = new Stack<java.net.URL>();
 		_home = url;
 		JMenuBar mb = new JMenuBar();

@@ -113,6 +113,8 @@ public class HW2000FrontPanel extends JFrame
 
 	public HW2000FrontPanel(Properties props, HW2000 sys) {
 		super("Honeywell Series 2000");
+		setIconImage(Toolkit.getDefaultToolkit().
+			getImage(getClass().getResource("icons/sys-96.png")));
 		LightedButton.init(64);
 		this.sys = sys; // may be null
 		_last = new File(System.getProperty("user.dir"));

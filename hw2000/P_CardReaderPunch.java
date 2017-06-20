@@ -57,6 +57,8 @@ public class P_CardReaderPunch extends JFrame
 
 	public P_CardReaderPunch(CharConverter cvt) {
 		super("H214-2 Card Reader/Punch");
+		setIconImage(Toolkit.getDefaultToolkit().
+			getImage(getClass().getResource("icons/pcd-96.png")));
 		this.cvt = cvt;
 		_last = new File(System.getProperty("user.dir"));
 		sts = new PunchCardStatus[2];
