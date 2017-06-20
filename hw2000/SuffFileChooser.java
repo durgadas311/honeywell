@@ -27,6 +27,7 @@ class SuffFileChooser extends JFileChooser {
 		if (opts != null) {
 			setAccessory(opts);
 		}
+		setFileView(new HW2000FileView());
 	}
 	public int showDialog(Component frame) {
 		int rv = super.showDialog(frame, _btn);
