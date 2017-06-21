@@ -12,9 +12,12 @@ public class UtilExecutable extends JPanel
 	int error = 0;
 
 	private JTextField xbl_lun;
-	private ButtonGroup xbl_bg;
+	private ButtonGroup xbl_bg1;
 	private JRadioButton xbl_brt;
 	private JRadioButton xbl_brf;
+	private ButtonGroup xbl_bg2;
+	private JRadioButton xbl_res;
+	private JRadioButton xbl_go;
 	private JComboBox<String> xbl_act;
 	private String[] xbl_cbo = new String[]{ "ADD", "REP", "DEL", "REN" };
 	private JTextField xbl_pgm;
@@ -23,6 +26,17 @@ public class UtilExecutable extends JPanel
 	private JTextField xbl_npg;
 	private JTextField xbl_nsg;
 	private JTextField xbl_nvs;
+
+	CoreMemory blk;
+	DiskVolume vol;
+	byte[] pgm;
+	byte[] seg;
+	byte[] vis;
+	byte[] npg;
+	byte[] nsg;
+	byte[] nvs;
+	byte[] dst;
+	byte[] src;
 
 	public UtilExecutable(HW2000 sys) {
 		super();
@@ -38,12 +52,18 @@ public class UtilExecutable extends JPanel
 		pn.add(xbl_lun);
 		add(pn);
 		// TODO: allow selection of Tape Unit for BRT...
-		xbl_bg = new ButtonGroup();
+		xbl_bg1 = new ButtonGroup();
 		xbl_brt = new JRadioButton("BRT");
 		xbl_brf = new JRadioButton("BRF");
 		xbl_brf.setSelected(true);
-		xbl_bg.add(xbl_brt);
-		xbl_bg.add(xbl_brf);
+		xbl_bg1.add(xbl_brt);
+		xbl_bg1.add(xbl_brf);
+		xbl_bg2 = new ButtonGroup();
+		xbl_res = new JRadioButton("RES");
+		xbl_go = new JRadioButton("GO");
+		xbl_res.setSelected(true);
+		xbl_bg2.add(xbl_res);
+		xbl_bg2.add(xbl_go);
 		xbl_act = new JComboBox<String>(xbl_cbo);
 		xbl_act.addActionListener(this);
 		pn = new JPanel();
@@ -54,6 +74,11 @@ public class UtilExecutable extends JPanel
 		pn.add(new JLabel("GO="));
 		pn.add(xbl_brt);
 		pn.add(xbl_brf);
+		add(pn);
+		pn = new JPanel();
+		pn.add(new JLabel("DST="));
+		pn.add(xbl_res);
+		pn.add(xbl_go);
 		add(pn);
 		xbl_pgm = new JTextField();
 		xbl_pgm.setPreferredSize(new Dimension(70, 20));
@@ -88,6 +113,51 @@ public class UtilExecutable extends JPanel
 		add(pn);
 	}
 
+	// ADD - Locate specific member/segment in source, create new in dest,
+	//	copy.
+	// REP - Locate specific member/segment in source, locate or create
+	//	member in dest, copy.
+	// REN - locate matching members in dest, rename each.
+	// DEL - locate matching members in dest, delete each.
+
+	private boolean isMatch(int a) {
+		if (!blk.compare(a, pgm, 0, 6)) {
+			return false;
+		}
+		if (seg != null && !blk.compare(a + 6, seg, 0, 2)) {
+			return false;
+		}
+		// TODO: compare, or mask?
+		if (vis != null && !checkVis(blk, a + 8, vis)) {
+			return false;
+		}
+		return true;
+	}
+
+	// TODO: src might be Tape...
+	private boolean doAdd(DiskFile dst) {
+		DiskFile fi = vol.openFile(src, 0, blk, 0, null, 0);
+		if (fi == null) {
+			return false;
+		}
+		boolean found = false;
+		while (fi.setMemb(null, 0, 011)) {
+			int a = fi.getItemAdr();
+			if (isMatch(a)) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			return false;
+		}
+		// don't accept this member yet, need to use 'blk' for other things...
+
+		// right now, 'blk' has first block, but need to get dst ready...
+		boolean ok = fi.setMemb(null, 0, 052);
+		return false;
+	}
+
 	private byte[] visibility(String vis) {
 		byte[] vv = new byte[6];
 		if (vis.equals("*")){
@@ -117,6 +187,15 @@ public class UtilExecutable extends JPanel
 		return vv;
 	}
 
+	private boolean checkVis(CoreMemory blk, int adr, byte[] vis) {
+		for (int x = 0; x < 6; ++x) {
+			if ((blk.readMem(adr) & vis[x] & 077) != 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public boolean perform() {
 		error = 0;
 		int unit = 0;
@@ -132,12 +211,28 @@ public class UtilExecutable extends JPanel
 		}
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = false;
-		CoreMemory blk = new BufferMemory(250);
-		DiskVolume vol = new DiskVolume(p, unit);
+		blk = new BufferMemory(250);
+		vol = new DiskVolume(p, unit);
 		DiskFile fi = null;
-		byte[] pgm = null;
-		byte[] seg = null;
-		byte[] vis = null;
+		pgm = null;
+		seg = null;
+		vis = null;
+		npg = null;
+		nsg = null;
+		nvs = null;
+		dst = cvt.hwString("*DRS1RES", 10);
+		src = cvt.hwString("*DRS1GO", 10);
+		if (xbl_go.isSelected()) {
+			byte[] tmp = dst;
+			dst = src;
+			src = tmp;
+		}
+		String i = (String)xbl_act.getSelectedItem();
+		if (xbl_pgm.getText().isEmpty() ||
+				(i.equals("REN") && xbl_npg.getText().isEmpty())) {
+			error = 00020;
+			return false;
+		}
 		pgm = cvt.hwString(xbl_pgm.getText(), 6);
 		if (!xbl_seg.getText().isEmpty()) {
 			seg = cvt.hwString(xbl_seg.getText(), 2);
@@ -145,30 +240,44 @@ public class UtilExecutable extends JPanel
 		if (!xbl_vis.getText().isEmpty()) {
 			vis = visibility(xbl_vis.getText());
 		}
+		if (i.equals("REN")) {
+			npg = cvt.hwString(xbl_npg.getText(), 6);
+			if (!xbl_seg.getText().isEmpty()) {
+				nsg = cvt.hwString(xbl_nsg.getText(), 2);
+			}
+			if (!xbl_vis.getText().isEmpty()) {
+				nvs = visibility(xbl_nvs.getText());
+			}
+		}
 		try {
 			if (!vol.mount()) {
 				return false;
 			}
-			fi = vol.openFile(cvt.hwString("*DRS1RES", 10), DiskFile.UPDATE,
-							blk, 0, null, 0);
+			fi = vol.openFile(dst, DiskFile.UPDATE, blk, 0, null, 0);
 			if (fi == null) {
 				return false;
 			}
-			// TODO: ADD is different...
+			if (i.equals("ADD") || i.equals("REP")) {
+				return doAdd(fi);
+			}
 			while (fi.setMemb(null, 0, 011)) {
 				int a = fi.getItemAdr();
-				if (!blk.compare(a, pgm, 0, 6)) {
+				if (!isMatch(a)) {
 					continue;
 				}
-				if (seg != null &&
-					!blk.compare(a + 6, seg, 0, 2)) {
-					continue;
+				if (i.equals("DEL")) {
+					blk.writeChar(a + 24, PartitionedSeqFile._DEL_);
+				} else { // REN
+					blk.copyIn(a, npg, 0, 6);
+					if (nsg != null) {
+						blk.copyIn(a + 6, nsg, 0, 2);
+					}
+					if (nvs != null) {
+						blk.copyIn(a + 8, nvs, 0, 6);
+					}
 				}
-				// TODO: compare, or mask?
-				if (vis != null &&
-					!blk.compare(a + 8, vis, 0, 6)) {
-					continue;
-				}
+				fi.repItem(); // notify about dirty item
+				ok = true; // TODO: still detect errors?
 			}
 		} finally {
 			if (fi != null) {

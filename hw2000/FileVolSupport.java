@@ -26,6 +26,7 @@ public class FileVolSupport {
 		errmsg.put(00015, "Invalid Unit Number");
 		errmsg.put(00016, "Invalid Allocation Unit");
 		errmsg.put(00017, "Invalid File Parameters");
+		errmsg.put(00020, "Missing Required Parameters");
 		//
 		// "Directory" errors - MSOPEN, MSCLOS
 		errmsg.put(00101, "OPEN CALLOUT 1");
