@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.util.Arrays;
+import java.util.Vector;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -134,28 +135,71 @@ public class UtilExecutable extends JPanel
 		return true;
 	}
 
+	private CoreMemory copyKey(int a) {
+		CoreMemory k = new BufferMemory(14);
+		blk.copyOut(a, k, 0, 14);
+		return k;
+	}
+
+	private Vector<CoreMemory> allMatch(DiskFile f) {
+		Vector<CoreMemory> found = new Vector<CoreMemory>();
+		int mode = DiskFile.IN; 
+		while (f.setMemb(null, 0, mode)) {
+			int a = f.getItemAdr();
+			if (isMatch(a)) {
+				found.add(copyKey(a));
+			}
+			mode = 011;	// continue
+		}
+		return found;
+	}
+
 	// TODO: src might be Tape...
-	private boolean doAdd(DiskFile dst) {
+	private boolean doAdd(DiskFile dst, boolean add) {
 		DiskFile fi = vol.openFile(src, 0, blk, 0, null, 0);
 		if (fi == null) {
 			return false;
 		}
-		boolean found = false;
-		while (fi.setMemb(null, 0, 011)) {
-			int a = fi.getItemAdr();
-			if (isMatch(a)) {
-				found = true;
-				break;
+		try {
+			Vector<CoreMemory> keys = allMatch(fi);
+			if (keys.size() == 0) {
+				error = 00403;
+				return false;
 			}
+			for (CoreMemory key : keys) {
+				if (!fi.setMemb(key, 0, DiskFile.IN)) {
+					// should not be possible...
+					return false;
+				}
+				if (add) {
+					// fail if exists?
+					if (dst.setMemb(key, 0, DiskFile.IN)) {
+						dst.endMemb();
+						error = 00424;
+						return false;
+					}
+				} else { // i.e. REP
+					// ignore error? or fail if didn't exist?
+					dst.alterMemb(key, 0, PartitionedSeqFile._DEL_,
+								null, 0);
+				}
+				if (!dst.setMemb(key, 0, DiskFile.OUT)) {
+					return false;
+				}
+				// This works for 1 item/block only...
+				while (fi.getItem()) {
+					if (!dst.putItem()) {
+						return false;
+					}
+				}
+				fi.endMemb();
+				dst.endMemb();
+			}
+		} finally {
+			fi.close();
+			dst.close();
 		}
-		if (!found) {
-			return false;
-		}
-		// don't accept this member yet, need to use 'blk' for other things...
-
-		// right now, 'blk' has first block, but need to get dst ready...
-		boolean ok = fi.setMemb(null, 0, 052);
-		return false;
+		return true;
 	}
 
 	private byte[] visibility(String vis) {
@@ -228,8 +272,7 @@ public class UtilExecutable extends JPanel
 			src = tmp;
 		}
 		String i = (String)xbl_act.getSelectedItem();
-		if (xbl_pgm.getText().isEmpty() ||
-				(i.equals("REN") && xbl_npg.getText().isEmpty())) {
+		if (xbl_pgm.getText().isEmpty()) {
 			error = 00020;
 			return false;
 		}
@@ -241,12 +284,29 @@ public class UtilExecutable extends JPanel
 			vis = visibility(xbl_vis.getText());
 		}
 		if (i.equals("REN")) {
-			npg = cvt.hwString(xbl_npg.getText(), 6);
-			if (!xbl_seg.getText().isEmpty()) {
+			if (!xbl_npg.getText().isEmpty()) {
+				npg = cvt.hwString(xbl_npg.getText(), 6);
+			}
+			if (!xbl_nsg.getText().isEmpty()) {
 				nsg = cvt.hwString(xbl_nsg.getText(), 2);
 			}
-			if (!xbl_vis.getText().isEmpty()) {
+			if (!xbl_nvs.getText().isEmpty()) {
 				nvs = visibility(xbl_nvs.getText());
+			}
+			// Validate REN params...
+			// program unit (pgm && !seg), then require npg && !nsg.
+			// segment unit (pgm && seg), then require !npg && (nsg || nvs).
+			//                                         (or ignore npg...)
+			if (seg == null) { // program unit, all segments
+				if (npg == null || nsg != null) {
+					error = 00020;
+					return false;
+				}
+			} else {	// segment unit, one segment only
+				if (npg != null || (nsg == null && nvs == null)) {
+					error = 00020;
+					return false;
+				}
 			}
 		}
 		try {
@@ -258,19 +318,23 @@ public class UtilExecutable extends JPanel
 				return false;
 			}
 			if (i.equals("ADD") || i.equals("REP")) {
-				return doAdd(fi);
+				return doAdd(fi, i.equals("ADD"));
 			}
 			while (fi.setMemb(null, 0, 011)) {
 				int a = fi.getItemAdr();
 				if (!isMatch(a)) {
 					continue;
 				}
+				// TODO: required permissions?
+				//if (blk.readChar(a + 24) != PartitionedSeqFile._ALL_) {
+				//}
 				if (i.equals("DEL")) {
 					blk.writeChar(a + 24, PartitionedSeqFile._DEL_);
 				} else { // REN
-					blk.copyIn(a, npg, 0, 6);
 					if (nsg != null) {
 						blk.copyIn(a + 6, nsg, 0, 2);
+					} else if (npg != null) {
+						blk.copyIn(a, npg, 0, 6);
 					}
 					if (nvs != null) {
 						blk.copyIn(a + 8, nvs, 0, 6);
