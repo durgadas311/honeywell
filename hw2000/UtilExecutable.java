@@ -188,17 +188,44 @@ public class UtilExecutable extends JPanel
 				}
 				// This works for 1 item/block only...
 				while (fi.getItem()) {
-					if (!dst.putItem()) {
+					if (!dst.putItem() || !dst.sync()) {
 						return false;
 					}
 				}
+				// TODO: check fi error != 00401
 				fi.endMemb();
 				dst.endMemb();
 			}
 		} finally {
 			fi.close();
-			dst.close();
 		}
+		return true;
+	}
+
+	private boolean doRen(DiskFile f, boolean ren) {
+		while (f.setMemb(null, 0, 011)) {
+			int a = f.getItemAdr();
+			if (!isMatch(a)) {
+				continue;
+			}
+			// TODO: required permissions?
+			//if (blk.readChar(a + 24) != PartitionedSeqFile._ALL_) {
+			//}
+			if (!ren) {
+				blk.writeChar(a + 24, PartitionedSeqFile._DEL_);
+			} else { // REN
+				if (nsg != null) {
+					blk.copyIn(a + 6, nsg, 0, 2);
+				} else if (npg != null) {
+					blk.copyIn(a, npg, 0, 6);
+				}
+				if (nvs != null) {
+					blk.copyIn(a + 8, nvs, 0, 6);
+				}
+			}
+			f.repItem(); // notify about dirty item
+		}
+		// TODO: error if none found?
 		return true;
 	}
 
@@ -319,29 +346,8 @@ public class UtilExecutable extends JPanel
 			}
 			if (i.equals("ADD") || i.equals("REP")) {
 				return doAdd(fi, i.equals("ADD"));
-			}
-			while (fi.setMemb(null, 0, 011)) {
-				int a = fi.getItemAdr();
-				if (!isMatch(a)) {
-					continue;
-				}
-				// TODO: required permissions?
-				//if (blk.readChar(a + 24) != PartitionedSeqFile._ALL_) {
-				//}
-				if (i.equals("DEL")) {
-					blk.writeChar(a + 24, PartitionedSeqFile._DEL_);
-				} else { // REN
-					if (nsg != null) {
-						blk.copyIn(a + 6, nsg, 0, 2);
-					} else if (npg != null) {
-						blk.copyIn(a, npg, 0, 6);
-					}
-					if (nvs != null) {
-						blk.copyIn(a + 8, nvs, 0, 6);
-					}
-				}
-				fi.repItem(); // notify about dirty item
-				ok = true; // TODO: still detect errors?
+			} else {
+				return doRen(fi, i.equals("REN"));
 			}
 		} finally {
 			if (fi != null) {
@@ -352,7 +358,6 @@ public class UtilExecutable extends JPanel
 			}
 			vol.unmount();
 		}
-		return ok;
 	}
 
 	public String getError() {
