@@ -11,7 +11,7 @@ jar: CardPunch.jar
 CardPunch.jar: all docs/About.html
 	echo "Main-Class: CardPunch" >Manifest.txt
 	jar cfm $@ Manifest.txt *.ttf PunchCard.png *.class \
-		docs/*
+		icons/*.png docs/*
 
 docs/About.html: __FRC__
 	./mkAbout >$@

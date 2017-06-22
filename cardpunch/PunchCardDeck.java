@@ -21,6 +21,7 @@ class PunchCardDeck extends PunchCard
 	java.util.concurrent.LinkedBlockingDeque<Integer> _keyQue;
 	boolean _codeCard;
 
+	Font labels;
 	File _progFile;
 	File _cwd;
 	FileOutputStream _outDeck = null;
@@ -39,6 +40,9 @@ class PunchCardDeck extends PunchCard
 	boolean _saveImage;
 	boolean _endOfCard;
 
+	GridBagLayout pn_gb;
+	GridBagConstraints pn_gc;
+	JPanel pn_pn;
 	JCheckBox _interp_cb;
 	JCheckBox _autoSD_cb;
 	JCheckBox _progSel_cb;
@@ -58,6 +62,12 @@ class PunchCardDeck extends PunchCard
 	static final int DUP   = 0x0200;
 	static final int ALPHA = 0x0100; // not needed?
 
+	ImageIcon icn_on;
+	ImageIcon icn_off;
+	ImageIcon icn_pr;
+	ImageIcon pgm_on;
+	ImageIcon pgm_off;
+
 	public JMenu[] getMenu() { return _menus; }
 
 	public Color getBg() { return hole; }
@@ -66,7 +76,7 @@ class PunchCardDeck extends PunchCard
 		int c = 0;
 		if (_prog_cb.isSelected()) {
 			c = getCode(card, x);
-			if (_progSel_cb.isSelected()) {
+			if (!_progSel_cb.isSelected()) {
 				c <<= 6;
 			}
 		}
@@ -75,6 +85,18 @@ class PunchCardDeck extends PunchCard
 
 	public PunchCardDeck(JFrame frame, CardPunchOptions opts) {
 		super(opts);
+		labels = new Font("Monospaced", Font.PLAIN, 10);
+		pgm_on = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-on.png"));
+		pgm_off = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-off.png"));
+		if (opts.ibm026) {
+			icn_on = new ImageIcon(getClass().getResource("icons/ibm026-30-on.png"));
+			icn_off = new ImageIcon(getClass().getResource("icons/ibm026-30-off.png"));
+			icn_pr = new ImageIcon(getClass().getResource("icons/ibm026-30-pr.png"));
+		} else { // IBM029
+			icn_on = new ImageIcon(getClass().getResource("icons/ibm029-30-on.png"));
+			icn_off = new ImageIcon(getClass().getResource("icons/ibm029-30-off.png"));
+			icn_pr = new ImageIcon(getClass().getResource("icons/ibm029-30-pr.png"));
+		}
 		_saveImage = opts.images;
 		_frame = frame;
 		bb = new byte[1];
@@ -146,6 +168,7 @@ class PunchCardDeck extends PunchCard
 		_autoSD_cb.setFocusable(false);
 		_progSel_cb = new JCheckBox("Prog 2 (1)");
 		_progSel_cb.setFocusable(false);
+		_progSel_cb.setSelected(true);
 		_autoFeed_cb = new JCheckBox("Auto Feed");
 		_autoFeed_cb.setFocusable(false);
 		_print_cb = new JCheckBox("Print");
@@ -155,35 +178,34 @@ class PunchCardDeck extends PunchCard
 		_lzprint_cb.setFocusable(false);
 		_prog_cb = new JCheckBox("Prog");
 		_prog_cb.setFocusable(false);
+		_prog_cb.setIcon(pgm_off);
+		_prog_cb.setSelectedIcon(pgm_on);
+		_prog_cb.setHorizontalTextPosition(SwingConstants.LEFT);
 		_clear_bn = new JButton("Clear");
 		_clear_bn.addActionListener(this);
 		_clear_bn.setFocusable(false);
 
-		JPanel pn = new JPanel();
-		pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 35));
-		pn.add(_col_lb);
-		pn.add(_prog_cb);
-		JPanel spc = new JPanel();
-		spc.setPreferredSize(new Dimension(35, 20));
-		pn.add(spc);
-		if (!opts.ibm026) {
-			pn.add(_interp_cb);
-		}
-		pn.add(_autoSD_cb);
-		if (!opts.ibm026) {
-			spc = new JPanel();
-			spc.setPreferredSize(new Dimension(35, 20));
-			pn.add(spc);
-			pn.add(_progSel_cb);
-		}
-		pn.add(_autoFeed_cb);
-		pn.add(_print_cb);
-		if (!opts.ibm026) {
-			pn.add(_lzprint_cb);
-			spc = new JPanel();
-			spc.setPreferredSize(new Dimension(35, 20));
-			pn.add(spc);
-			pn.add(_clear_bn);
+		pn_gb = new GridBagLayout();
+		pn_gc = new GridBagConstraints();
+		pn_gc.fill = GridBagConstraints.NONE;
+		pn_gc.gridx = 0;
+		pn_gc.gridy = 0;
+		pn_gc.weightx = 0;
+		pn_gc.weighty = 0;
+		pn_gc.gridwidth = 1;
+		pn_gc.gridheight = 1;
+		pn_gc.insets.bottom = 0;
+		pn_gc.insets.top = 0;
+		pn_gc.insets.left = 0;
+		pn_gc.insets.right = 0;
+		pn_gc.anchor = GridBagConstraints.CENTER;
+		pn_pn = new JPanel();
+		pn_pn.setLayout(pn_gb);
+		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
+		if (opts.ibm026) {
+			ibm026Panel(opts);
+		} else {
+			ibm029Panel(opts);
 		}
 		GridBagLayout gridbag = new GridBagLayout();
 		frame.setLayout(gridbag);
@@ -201,9 +223,9 @@ class PunchCardDeck extends PunchCard
 		gc.insets.right = 0;
 		gc.anchor = GridBagConstraints.NORTH;
 
-		pn.setFocusable(false);
-		gridbag.setConstraints(pn, gc);
-		frame.add(pn);
+		pn_pn.setFocusable(false);
+		gridbag.setConstraints(pn_pn, gc);
+		frame.add(pn_pn);
 		++gc.gridy;
 		gc.insets.bottom = _inset;
 		gc.insets.top = _inset;
@@ -217,6 +239,147 @@ class PunchCardDeck extends PunchCard
 		if (opts.output != null) {
 			setupFile(new File(opts.output));
 		}
+	}
+
+	private void labeledToggle(AbstractButton sw, String top, String bot) {
+		pn_gc.gridheight = 1;
+		sw.setText("");
+		sw.setIcon(icn_off);
+		if (sw instanceof JButton) {
+			sw.setPressedIcon(icn_on);
+			sw.setBorderPainted(false);
+			sw.setContentAreaFilled(false);
+			sw.setFocusPainted(false);
+		} else {
+			// must be JCheckBox...
+			sw.setSelectedIcon(icn_on);
+			sw.setPressedIcon(icn_pr);
+		}
+		JLabel lb = new JLabel(top);
+		lb.setFont(labels);
+		pn_gc.anchor = GridBagConstraints.SOUTH;
+		pn_gb.setConstraints(lb, pn_gc);
+		pn_pn.add(lb);
+		++pn_gc.gridy;
+		pn_gc.anchor = GridBagConstraints.CENTER;
+		pn_gb.setConstraints(sw, pn_gc);
+		pn_pn.add(sw);
+		++pn_gc.gridy;
+		lb = new JLabel(bot);
+		lb.setFont(labels);
+		pn_gc.anchor = GridBagConstraints.NORTH;
+		pn_gb.setConstraints(lb, pn_gc);
+		pn_pn.add(lb);
+		++pn_gc.gridx;
+		// cleanup
+		pn_gc.anchor = GridBagConstraints.CENTER;
+		pn_gc.gridheight = 3;
+		pn_gc.gridy = 0;
+		//
+		JPanel spc = new JPanel();
+		spc.setPreferredSize(new Dimension(15, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+	}
+
+	private void ibm026Panel(CardPunchOptions opts) {
+		JPanel spc = new JPanel();
+		spc.setPreferredSize(new Dimension(100, 20));
+		pn_gc.gridheight = 3;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		pn_gc.gridheight = 1;
+		pn_gc.gridy = 1;
+		pn_gb.setConstraints(_col_lb, pn_gc);
+		pn_pn.add(_col_lb);
+		++pn_gc.gridy;
+		pn_gb.setConstraints(_prog_cb, pn_gc);
+		pn_pn.add(_prog_cb);
+		pn_gc.gridy = 0;
+		pn_gc.gridheight = 3;
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(240, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		labeledToggle(_autoSD_cb, "ON", "<HTML>AUTO<BR>SKIP<BR>DUP</HTML>");
+		labeledToggle(_autoFeed_cb, "ON", "<HTML>AUTO<BR>FEED</HTML>");
+		labeledToggle(_print_cb, "ON", "PRINT");
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(240, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+	}
+
+	private void ibm029Panel(CardPunchOptions opts) {
+		JPanel spc = new JPanel();
+		spc.setPreferredSize(new Dimension(100, 20));
+		pn_gc.gridheight = 3;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		pn_gc.gridheight = 1;
+		pn_gc.gridy = 1;
+		pn_gb.setConstraints(_col_lb, pn_gc);
+		pn_pn.add(_col_lb);
+		++pn_gc.gridy;
+		pn_gb.setConstraints(_prog_cb, pn_gc);
+		pn_pn.add(_prog_cb);
+		pn_gc.gridy = 0;
+		pn_gc.gridheight = 3;
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(120, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		labeledToggle(_interp_cb, "INTERP", "PUNCH");
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(35, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		labeledToggle(_autoSD_cb, "ON", "<HTML>AUTO<BR>SKIP<BR>DUP</HTML>");
+		JSeparator sp = new JSeparator(SwingConstants.VERTICAL);
+		sp.setPreferredSize(new Dimension(3, 90));
+		sp.setForeground(Color.black);
+		pn_gb.setConstraints(sp, pn_gc);
+		pn_pn.add(sp);
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(120, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		labeledToggle(_progSel_cb, "ONE", "<HTML>TWO<BR>PROG<BR>SEL</HTML>");
+		labeledToggle(_autoFeed_cb, "ON", "<HTML>AUTO<BR>FEED</HTML>");
+		labeledToggle(_print_cb, "ON", "PRINT");
+		labeledToggle(_lzprint_cb, "ON", "<HTML>&nbsp;LZ<BR>PRINT</HTML>");
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(100, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		sp = new JSeparator(SwingConstants.VERTICAL);
+		sp.setPreferredSize(new Dimension(3, 90));
+		sp.setForeground(Color.black);
+		pn_gb.setConstraints(sp, pn_gc);
+		pn_pn.add(sp);
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(40, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		labeledToggle(_clear_bn, "ON", "CLEAR");
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(40, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
 	}
 
 	public void start() {
@@ -759,8 +922,8 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void showAbout() {
-	       java.net.URL url = this.getClass().getResource("docs/About.html");
-	       try {
+		java.net.URL url = this.getClass().getResource("docs/About.html");
+		try {
 			JEditorPane about = new JEditorPane(url);
 			about.setEditable(false);
 			Dimension dim = new Dimension(300, 230);
