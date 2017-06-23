@@ -81,10 +81,7 @@ public class PartitionedSeqFile extends SequentialFile {
 	}
 
 	private boolean rewindIndex() {
-		curCyl = units[0].sCyl;
-		curTrk = units[0].sTrk;
-		curRec = 0;
-		if (!cacheBlock(false, curCyl, curTrk, curRec)) {
+		if (!super.rewind()) {
 			return false;
 		}
 		return true;

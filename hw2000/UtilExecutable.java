@@ -121,7 +121,7 @@ public class UtilExecutable extends JPanel
 	// REN - locate matching members in dest, rename each.
 	// DEL - locate matching members in dest, delete each.
 
-	private boolean isMatch(int a) {
+	private boolean isMatch(CoreMemory blk, int a) {
 		if (!blk.compare(a, pgm, 0, 6)) {
 			return false;
 		}
@@ -135,33 +135,35 @@ public class UtilExecutable extends JPanel
 		return true;
 	}
 
-	private CoreMemory copyKey(int a) {
+	private CoreMemory copyKey(CoreMemory blk, int a) {
 		CoreMemory k = new BufferMemory(14);
 		blk.copyOut(a, k, 0, 14);
 		return k;
 	}
 
-	private Vector<CoreMemory> allMatch(DiskFile f) {
+	private Vector<CoreMemory> allMatch(CoreMemory blk, DiskFile f) {
 		Vector<CoreMemory> found = new Vector<CoreMemory>();
 		int mode = DiskFile.IN; 
 		while (f.setMemb(null, 0, mode)) {
 			int a = f.getItemAdr();
-			if (isMatch(a)) {
-				found.add(copyKey(a));
+			if (isMatch(blk, a)) {
+				found.add(copyKey(blk, a));
 			}
 			mode = 011;	// continue
 		}
+		f.endMemb();
 		return found;
 	}
 
 	// TODO: src might be Tape...
 	private boolean doAdd(DiskFile dst, boolean add) {
-		DiskFile fi = vol.openFile(src, 0, blk, 0, null, 0);
+		CoreMemory blk2 = new BufferMemory(250);
+		DiskFile fi = vol.openFile(src, 0, blk2, 0, null, 0);
 		if (fi == null) {
 			return false;
 		}
 		try {
-			Vector<CoreMemory> keys = allMatch(fi);
+			Vector<CoreMemory> keys = allMatch(blk2, fi);
 			if (keys.size() == 0) {
 				error = 00403;
 				return false;
@@ -172,23 +174,26 @@ public class UtilExecutable extends JPanel
 					return false;
 				}
 				if (add) {
-					// fail if exists?
+					// fail if error != 00203?
 					if (dst.setMemb(key, 0, DiskFile.IN)) {
 						dst.endMemb();
 						error = 00424;
 						return false;
 					}
+					dst.endMemb();
 				} else { // i.e. REP
 					// ignore error? or fail if didn't exist?
 					dst.alterMemb(key, 0, PartitionedSeqFile._DEL_,
 								null, 0);
 				}
 				if (!dst.setMemb(key, 0, DiskFile.OUT)) {
+					error = dst.getError();
 					return false;
 				}
 				// This works for 1 item/block only...
 				while (fi.getItem()) {
-					if (!dst.putItem() || !dst.sync()) {
+					if (!dst.putItem(blk2, 0)) {
+						error = dst.getError();
 						return false;
 					}
 				}
@@ -205,7 +210,7 @@ public class UtilExecutable extends JPanel
 	private boolean doRen(DiskFile f, boolean ren) {
 		while (f.setMemb(null, 0, 011)) {
 			int a = f.getItemAdr();
-			if (!isMatch(a)) {
+			if (!isMatch(blk, a)) {
 				continue;
 			}
 			// TODO: required permissions?
@@ -351,10 +356,14 @@ public class UtilExecutable extends JPanel
 			}
 		} finally {
 			if (fi != null) {
-				error = fi.getError();
+				if (error == 0) {
+					error = fi.getError();
+				}
 				fi.close();
 			} else {
-				error = vol.getError();
+				if (error == 0) {
+					error = vol.getError();
+				}
 			}
 			vol.unmount();
 		}
