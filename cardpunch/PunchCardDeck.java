@@ -241,6 +241,32 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
+	private JPanel centeredLabel(String lab) {
+		// 'lab' is assumed to have "<BR>"(s) in it...
+		JPanel pn = new JPanel();
+		pn.setOpaque(false);
+		GridBagLayout gb2 = new GridBagLayout();
+		pn.setLayout(gb2);
+		GridBagConstraints gc2 = new GridBagConstraints();
+		gc2.fill = GridBagConstraints.NONE;
+		gc2.gridx = 0;
+		gc2.gridy = 0;
+		gc2.weightx = 0;
+		gc2.weighty = 0;
+		gc2.gridwidth = 1;
+		gc2.gridheight = 1;
+		gc2.insets.bottom = 0;
+		gc2.insets.top = 0;
+		gc2.insets.left = 0;
+		gc2.insets.right = 0;
+		gc2.anchor = GridBagConstraints.NORTH;
+		JLabel lb = new JLabel("<HTML><CENTER>" + lab + "</CENTER></HTML>");
+		lb.setFont(labels);
+		gb2.setConstraints(lb, gc2);
+		pn.add(lb);
+		return pn;
+	}
+
 	private void iconToggle(AbstractButton sw) {
 		sw.setOpaque(false);
 		sw.setText("");
@@ -259,8 +285,10 @@ class PunchCardDeck extends PunchCard
 
 	private void labeledToggle(AbstractButton sw, String top, String bot,
 					boolean gap) {
+		JPanel spc;
 		pn_gc.gridheight = 1;
 		iconToggle(sw);
+		// For now, 'top' is never multi-line
 		JLabel lb = new JLabel(top);
 		lb.setFont(labels);
 		pn_gc.anchor = GridBagConstraints.SOUTH;
@@ -271,11 +299,17 @@ class PunchCardDeck extends PunchCard
 		pn_gb.setConstraints(sw, pn_gc);
 		pn_pn.add(sw);
 		++pn_gc.gridy;
-		lb = new JLabel(bot);
-		lb.setFont(labels);
 		pn_gc.anchor = GridBagConstraints.NORTH;
-		pn_gb.setConstraints(lb, pn_gc);
-		pn_pn.add(lb);
+		if (bot.matches(".*<BR>.*")) {
+			spc = centeredLabel(bot);
+			pn_gb.setConstraints(spc, pn_gc);
+			pn_pn.add(spc);
+		} else {
+			lb = new JLabel(bot);
+			lb.setFont(labels);
+			pn_gb.setConstraints(lb, pn_gc);
+			pn_pn.add(lb);
+		}
 		++pn_gc.gridx;
 		// cleanup
 		pn_gc.anchor = GridBagConstraints.CENTER;
@@ -283,7 +317,7 @@ class PunchCardDeck extends PunchCard
 		pn_gc.gridy = 0;
 		//
 		if (gap) {
-			JPanel spc = new JPanel();
+			spc = new JPanel();
 			spc.setPreferredSize(new Dimension(15, 20));
 			pn_gb.setConstraints(spc, pn_gc);
 			pn_pn.add(spc);
@@ -352,19 +386,18 @@ class PunchCardDeck extends PunchCard
 		gb.setConstraints(_autoFeed_cb, gc);
 		pan.add(_autoFeed_cb);
 		++gc.gridx;
-		lb = new JLabel("<HTML>&nbsp;&#8239;ON&nbsp;<BR>&nbsp;OFF&nbsp;</HTML>");
-		lb.setFont(labels);
-		gb.setConstraints(lb, gc);
-		pan.add(lb);
+		JPanel pn = centeredLabel("&nbsp;&nbsp;ON&nbsp;&nbsp;<BR>OFF");
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
 		++gc.gridx;
 		iconToggle(_autoSD_cb);
 		gb.setConstraints(_autoSD_cb, gc);
 		pan.add(_autoSD_cb);
 		++gc.gridx;
-		lb = new JLabel("<HTML>&nbsp;&#8239;ON&nbsp;<BR>&nbsp;OFF&nbsp;</HTML>");
-		lb.setFont(labels);
-		gb.setConstraints(lb, gc);
-		pan.add(lb);
+		//pn = centeredLabel("ON<BR>OFF");
+		pn = centeredLabel("&nbsp;&nbsp;ON&nbsp;&nbsp;<BR>OFF");
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
 		++gc.gridx;
 		iconToggle(_print_cb);
 		gb.setConstraints(_print_cb, gc);
@@ -374,17 +407,14 @@ class PunchCardDeck extends PunchCard
 		gc.gridx = savex;
 		++gc.gridy;
 		gc.anchor = GridBagConstraints.NORTH;
-		lb = new JLabel("<HTML>AUTO<BR>FEED</HTML>");
-		lb.setFont(labels);
-		gb.setConstraints(lb, gc);
-		pan.add(lb);
+		pn = centeredLabel("AUTO<BR>FEED");
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
 		++gc.gridx;
 		gc.gridwidth = 3;
-		lb = new JLabel("<HTML>AUTO SKIP<BR>" +
-				"AUTO DUP</HTML>");
-		lb.setFont(labels);
-		gb.setConstraints(lb, gc);
-		pan.add(lb);
+		pn = centeredLabel("AUTO SKIP<BR>AUTO DUP");
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
 		gc.gridx += 3;
 		gc.gridwidth = 1;
 		lb = new JLabel("PRINT");
@@ -469,7 +499,7 @@ class PunchCardDeck extends PunchCard
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
-		labeledToggle(_autoSD_cb, "ON", "<HTML>AUTO<BR>&#8239;SKIP<BR>&#8239;DUP</HTML>", true);
+		labeledToggle(_autoSD_cb, "ON", "AUTO<BR>SKIP<BR>DUP", true);
 		JSeparator sp = new JSeparator(SwingConstants.VERTICAL);
 		sp.setPreferredSize(new Dimension(3, 90));
 		sp.setForeground(Color.black);
@@ -481,10 +511,10 @@ class PunchCardDeck extends PunchCard
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
-		labeledToggle(_progSel_cb, "ONE", "<HTML>&nbsp;&#8239;TWO<BR>PROG<BR>&nbsp;&#8239;SEL</HTML>", true);
-		labeledToggle(_autoFeed_cb, "ON", "<HTML>AUTO<BR>FEED</HTML>", true);
+		labeledToggle(_progSel_cb, "ONE", "TWO<BR>PROG<BR>SEL", true);
+		labeledToggle(_autoFeed_cb, "ON", "AUTO<BR>FEED", true);
 		labeledToggle(_print_cb, "ON", "PRINT", true);
-		labeledToggle(_lzprint_cb, "ON", "<HTML>&nbsp;&nbsp;&#8239;LZ<BR>PRINT</HTML>", true);
+		labeledToggle(_lzprint_cb, "ON", "LZ<BR>PRINT", true);
 		spc = new JPanel();
 		spc.setPreferredSize(new Dimension(100, 20));
 		pn_gb.setConstraints(spc, pn_gc);
