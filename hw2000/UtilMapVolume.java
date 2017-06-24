@@ -51,6 +51,6 @@ public class UtilMapVolume extends JPanel {
 	}
 
 	public String getError() {
-		return FileVolSupport.getError(error);
+		return Errors.getError(error);
 	}
 }

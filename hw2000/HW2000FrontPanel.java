@@ -2689,7 +2689,7 @@ ee.printStackTrace();
 			}
 			DiskFile fi = vol.openFile(file, DiskFile.UPDATE);
 			if (fi == null) {
-				PopupFactory.warning(this, op, FileVolSupport.getError(vol.getError()));
+				PopupFactory.warning(this, op, Errors.getError(vol.getError()));
 				vol.unmount();
 				return null;
 			}

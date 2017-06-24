@@ -370,7 +370,7 @@ public class UtilExecutable extends JPanel
 	}
 
 	public String getError() {
-		return FileVolSupport.getError(error);
+		return Errors.getError(error);
 	}
 
 	public void actionPerformed(ActionEvent e) {

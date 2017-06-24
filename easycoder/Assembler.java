@@ -376,8 +376,8 @@ public class Assembler {
 	}
 
 	private void ldrError() {
-		// TODO: get descriptive string
-		errsAdd(String.format("Loader error %04o", loader.getError()));
+		errsAdd(String.format("Loader error %04o: %s", loader.getError(),
+				Errors.getError(loader.getError())));
 	}
 
 	private int scanOne() {
