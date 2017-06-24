@@ -662,7 +662,11 @@ public class Assembler {
 				} else {
 					adr += a;
 				}
-				adr &= 01777777;
+				if (indexed) {
+					adr &= adrMask;
+				} else {
+					adr &= 01777777;
+				}
 			}
 			ix = x;
 			if (ix >= 0) {
