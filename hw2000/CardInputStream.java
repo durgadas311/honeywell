@@ -51,38 +51,30 @@ public class CardInputStream extends InputStream {
 		if (line == null) {
 			return -1;
 		}
-		if (line.length() < 80) {
-			line = String.format("%-80s", line);
-		} else if (line.length() > 80) {
-			line = line.substring(0, 80);
-		}
-		line = replaceChars(line.toUpperCase(),
-			CharConverter.hwAsciiSup, CharConverter.hwAsciiRep);
-		for (int x = 0; x < 80; ++x) {
-			byte a = cvt.asciiToHw((byte)(line.charAt(x) & 0x7f));
+		int n = line.length();
+		int x;
+		for (x = 0; x < 80 && x < n; ++x) {
+			char c = Character.toUpperCase(line.charAt(x));
+			int ix = CharConverter.hwAsciiSup.indexOf(c);
+			if (ix >= 0) {
+				c = CharConverter.hwAsciiRep.charAt(ix);
+			}
+			byte a = cvt.asciiToHw((byte)(c & 0x7f));
 			// TODO: support alternate codes
 			int p = cvt.hwToPun(a, false);
 			putCol(card, x, p);
 		}
+		while (x < 80) {
+			// no punches == 0 == "blank"
+			putCol(card, x++, 0);
+		}
 		return 160;
 	}
 
+	// This must use same endianess as P_CardReaderPunch, et al.
+	// (PunchCard, CardLoader, ?)
 	private void putCol(byte[] card, int ix, int p) {
 		card[ix * 2] = (byte)(p & 0x0ff);
 		card[ix * 2 + 1] = (byte)((p >> 8) & 0x0ff);
-	}
-
-	private String replaceChars(String in, String srch, String repl) {
-		char[] inc = in.toCharArray();
-		char[] out = new char[inc.length];
-		for (int x = 0; x < inc.length; ++x) {
-			int i = srch.indexOf(inc[x]);
-			if (i >= 0) {
-				out[x] = repl.charAt(i);
-			} else {
-				out[x] = inc[x];
-			}
-		}
-		return new String(out);
 	}
 }
