@@ -17,9 +17,13 @@ public class I_A implements Instruction {
 		a &= 017;
 		b &= 017;
 		boolean trueAdd = (negA == negB);
-		byte s = (byte)(negB ? 040 : 020);
+		byte s;
 		byte cy = 0;
-		if (!trueAdd) {
+		if (trueAdd) {
+			// preserve "unsigned" if we can
+			s = (byte)(negB ? 040 : (b & 0060));
+		} else {
+			s = (byte)(negB ? 040 : 020);
 			cy = 1;
 		}
 		boolean aDone = false;
@@ -66,12 +70,14 @@ public class I_A implements Instruction {
 		}
 		if (!trueAdd && cy != 0) {
 			b = sys.readChar(bar);
+			// sign was already normalized
 			b ^= 060;
 			sys.writeChar(bar, b);
 			cy = 0;
 		} else if (!trueAdd && cy == 0) {
 			b = sys.readMem(bar);
 			bw = (byte)(b & 0100);
+			// sign was already normalized
 			s = (byte)(b & 060);
 			b &= 017;
 			cy = 1;
