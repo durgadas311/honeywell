@@ -225,7 +225,7 @@ public class UtilAllocate extends JPanel
 			error = 00016;
 			return false;
 		}
-		ok = FileVolSupport.initFile(p, unit, flag, nm, type,
+		ok = FileVolSupport.initFile(p, unit, sys, flag, nm, type,
 				itmLen, recLen, recTrk, recBlk,
 				blkIdx, units);
 		error = FileVolSupport.getErrno();

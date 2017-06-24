@@ -1,6 +1,8 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 import java.util.Arrays;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class DiskVolume {
 	public static final int namesItmLen = 30;
@@ -16,6 +18,7 @@ public class DiskVolume {
 		{ 054, 065, 046, 043, 021, 043, 043, 046, 023, 054 }; // "*VOLALLOC*"
 	RandomRecordIO dsk = null;
 	int unit;
+	CharConverter cvt;
 	boolean mounted = false;
 	int error = 0;
 	byte[] name;	// a.k.a. volume name (i.e. label - may change)
@@ -25,6 +28,7 @@ public class DiskVolume {
 	DiskFile volNames;
 	DiskFile volDescr;
 	DiskFile volAlloc;
+	static SimpleDateFormat _timestamp = new java.text.SimpleDateFormat("yyDDD");
 
 	// Each operation must be atomic, i.e. bounded by dsk.begin()/dsk.end().
 	// This is because the peripheral cannot operate on multiple units
@@ -40,9 +44,10 @@ public class DiskVolume {
 	// Or...
 	// Volume Header specifies beginning CCTT of *VOLNAMES* (*VOLDESCR*... follow?)
 	//
-	public DiskVolume(RandomRecordIO dsk, int unit) {
+	public DiskVolume(RandomRecordIO dsk, int unit, CharConverter cvt) {
 		this.dsk = dsk;
 		this.unit= unit;
+		this.cvt= cvt;
 		// Both of these appear to be strings (characters, not binary)
 		name = new byte[6];
 		snum = new byte[6];
@@ -177,6 +182,11 @@ public class DiskVolume {
 		mounted = false;
 	}
 
+	public byte[] timestamp() {
+		String now = _timestamp.format(new Date());
+		return cvt.hwString(now, 5);
+	}
+
 	// TODO: name, blockBuffer, workBuffer, moveLocate, inOut,
 	public DiskFile openFile(byte[] name, int mode) {
 		return openFile(name, mode, null, 0, null, 0);
@@ -253,6 +263,12 @@ public class DiskVolume {
 		int idxLen = getNum(dItm, dAdr + 63, 2);
 		int mmbIdxLen = dItm.readChar(dAdr + 68);
 		// TODO: overflow, etc.
+		if ((mode & (DiskFile.OUT | DiskFile.UPDATE)) != 0) {
+			dItm.copyIn(dAdr + 29, timestamp(), 0, 5);
+			// TODO: increment modification number...
+			volDescr.repItem();
+			volDescr.sync();
+		}
 		DiskUnit[] units = new DiskUnit[6];
 		ctri = getSome(nItm, 22, 4);
 		// get *VOLALLOC* item(s)...

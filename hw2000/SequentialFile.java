@@ -115,7 +115,7 @@ public class SequentialFile implements DiskFile {
 
 	public int getMode() { return mode; }
 
-	// Setup a *VOLDESCR* item based on this file
+	// Setup a "fake" *VOLDESCR* item based on this file
 	public void setDescr(CoreMemory dscBuf, int dscAdr) {
 		dscBuf.zero(dscAdr + 0, DiskVolume.descrItmLen); // clean slate
 		dscBuf.rawWriteMem(dscAdr + 0, (byte)001); // type = Sequential
@@ -125,7 +125,7 @@ public class SequentialFile implements DiskFile {
 		DiskVolume.putOne(recBlk, dscBuf, dscAdr + 7);
 		DiskVolume.putOne(recTrk, dscBuf, dscAdr + 9);
 		DiskVolume.putNum(numBlks, dscBuf, dscAdr + 65, 3);
-		// TODO: populate other fields...
+		// TODO: populate other fields... datestamps???
 	}
 
 	// Create a R/O clone of this file.
@@ -521,6 +521,7 @@ public class SequentialFile implements DiskFile {
 	// NOTE: this is not part of the Sequential File protocol,
 	// but is used to hide initialization code.
 	public boolean release() {
+		// TODO: creation time/number?
 		if (!_rewind()) {
 			return false;
 		}

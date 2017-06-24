@@ -288,7 +288,7 @@ public class UtilExecutable extends JPanel
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
 		boolean ok = false;
 		blk = new BufferMemory(250);
-		vol = new DiskVolume(p, unit);
+		vol = new DiskVolume(p, unit, cvt);
 		DiskFile fi = null;
 		pgm = null;
 		seg = null;

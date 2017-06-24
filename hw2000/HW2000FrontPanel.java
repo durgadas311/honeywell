@@ -2682,7 +2682,7 @@ ee.printStackTrace();
 			}
 			// boolean boot = dpi_bsp.isSelected();
 			P_Disk dk = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-			DiskVolume vol = new DiskVolume(dk, unit);
+			DiskVolume vol = new DiskVolume(dk, unit, asm.charCvt());
 			if (!vol.mount()) {
 				PopupFactory.warning(this, op, "Failed to mount volume");
 				return null;

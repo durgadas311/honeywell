@@ -47,7 +47,7 @@ public class UtilDeallocate extends JPanel {
 		}
 		byte[] nm = cvt.hwString(rel_name.getText(), 10);
 		P_Disk p = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
-		boolean ok = FileVolSupport.releaseFile(p, unit, nm);
+		boolean ok = FileVolSupport.releaseFile(p, unit, sys, nm);
 		error = FileVolSupport.getErrno();
 		return ok;
 	}

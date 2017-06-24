@@ -324,7 +324,7 @@ public class FileVolSupport {
 		nCyl = dsk.numCylinders();
 		nTrk = dsk.numTracks();
 		error = 0;
-		DiskVolume vol = new DiskVolume(dsk, unit);
+		DiskVolume vol = new DiskVolume(dsk, unit, sys.pdc.cvt);
 		if (!vol.mount()) {
 			error = vol.getError();
 			return false;
@@ -563,15 +563,15 @@ public class FileVolSupport {
 		return buf;
 	}
 
-	static public boolean initFile(RandomRecordIO dsk, int unit, int flag,
-			byte[] name, int type,
+	static public boolean initFile(RandomRecordIO dsk, int unit, HW2000 sys,
+			int flag, byte[] name, int type,
 			int itmLen, int recLen, int recTrk, int recBlk,
 			int blkIdx, DiskUnit[] units) {
 		error = 0;
 		boolean ok;
 		int itmBlk = (recBlk * recLen) / itmLen;
 		int mmbItm = 25; // Hard-coded for Part. Seq. files
-		DiskVolume vol = new DiskVolume(dsk, unit);
+		DiskVolume vol = new DiskVolume(dsk, unit, sys.pdc.cvt);
 		if (!vol.mount()) {
 			error = vol.getError();
 			return false;
@@ -626,7 +626,13 @@ public class FileVolSupport {
 			vol.putOne(blkIdx, descr, 63);
 			descr.writeChar(68, (byte)mmbItm);
 		}
-		// TODO: populate other fields...
+		byte[] ts = vol.timestamp();
+		descr.copyIn(21, ts, 0, 5);
+		// TODO: "creation number" a.k.a. reorg number...
+		vol.putNum(0, descr, 26, 3);
+		descr.copyIn(29, ts, 0, 5);
+		vol.putNum(0, descr, 34, 3);
+		// TODO: populate other fields... expiration?
 		ok = vol.getVolDescr().repItem(descr, 0);
 		ok = vol.getVolDescr().sync();
 		if (!ok) {
@@ -722,9 +728,10 @@ public class FileVolSupport {
 		return true;
 	}
 
-	static public boolean releaseFile(RandomRecordIO dsk, int unit, byte[] name) {
+	static public boolean releaseFile(RandomRecordIO dsk, int unit, HW2000 sys,
+						byte[] name) {
 		error = 0;
-		DiskVolume vol = new DiskVolume(dsk, unit);
+		DiskVolume vol = new DiskVolume(dsk, unit, sys.pdc.cvt);
 		if (!vol.mount()) {
 			// Volume not initialized or other error
 			error = vol.getError();

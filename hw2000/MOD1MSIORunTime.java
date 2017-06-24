@@ -524,7 +524,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		RandomRecordIO dsk = (RandomRecordIO)p;
 		// TODO: share volume mounts between files...
-		mca.vol = new DiskVolume(dsk, mca.dd);
+		mca.vol = new DiskVolume(dsk, mca.dd, sys.pdc.cvt);
 		if (!mca.vol.mount()) {
 			handleError(mca.vol.getError());
 			mca.vol = null;
@@ -817,6 +817,12 @@ public class MOD1MSIORunTime implements HW2000Trap {
 			handleError(xitMCA.file.getError());
 			return;
 		}
+		// TODO: update creation date, number...
+		// vol.getDescr(file);
+		// descr.copyIn(21, vol.timestamp(), 0, 5);
+		// increment creation number
+		// vol.putDescr(???);
+		// ...or... vol.setCreation(file);
 		xitMCA.mode &= ~DiskFile.IN_OUT;
 		xitMCA = null;
 	}
