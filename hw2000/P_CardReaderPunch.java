@@ -539,7 +539,9 @@ public class P_CardReaderPunch extends JFrame
 		return false; // input != output
 	}
 	public boolean ready() {
-		return (odev != null);
+		// Don't know if input or output,
+		// so only report the obvious case.
+		return (odev != null || idev != null);
 	}
 	public boolean empty() {
 		return (idev == null);
