@@ -23,7 +23,7 @@ public class CardLoader extends BRTLoader {
 		csq = 1;
 	}
 
-	void writeRec(byte[] rec, int len) {
+	boolean writeRec(byte[] rec, int len) {
 		int x;
 		rec[1] = (byte)((csq / 100) % 10);
 		rec[2] = (byte)((csq / 10) % 10);
@@ -48,12 +48,18 @@ public class CardLoader extends BRTLoader {
 			} else {
 				rwf.write(card);
 			}
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			error = 00501;
+			return false;
+		}
+		return true;
 	}
 
-	void endSeg() {
+	boolean endSeg() {
+		return true;
 	}
 
-	void beginSeg(String rev, String prg, String seg, long vis) {
+	boolean beginSeg(String rev, String prg, String seg, long vis) {
+		return true;
 	}
 }

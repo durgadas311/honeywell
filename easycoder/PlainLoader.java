@@ -14,28 +14,33 @@ public class PlainLoader extends BRTDataField implements Loader {
 		this.targ = targ;
 	}
 
-	void finRec(boolean last) {
+	boolean finRec(boolean last) {
 		endRec(last);
 		try {
 			targ.write(record, 0, reccnt);
 		} catch (Exception ee) {
-			ee.printStackTrace();
+			//ee.printStackTrace();
+			error = 00501;
+			return false;
 		}
 		dirty = false;
+		return true;
 	}
 
 	void initRec() {
 		reccnt = 0;
 	}
 
-	public void begin(int adr, String prg, String seg) {
+	public boolean begin(int adr, String prg, String seg) {
 		dist = -1;
 		dirty = false;
+		return true;
 	}
 
-	public void segment(String prg, String seg) {
+	public boolean segment(String prg, String seg) {
 		if (dirty) {
 			System.err.format("WARNING: SEG after code\n");
 		}
+		return true;
 	}
 }

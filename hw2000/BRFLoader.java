@@ -18,23 +18,27 @@ public class BRFLoader extends BRTLoader {
 		targ.endMemb();
 	}
 
-	void writeRec(byte[] rec, int len) {
+	boolean writeRec(byte[] rec, int len) {
 		// TODO: how to report errors?
 		buf.zero(reccnt, reclen - reccnt);
 		boolean ok = targ.putItem(buf, 0);
 		if (!ok) {
-System.err.format("MSPUT: %s\n", FileVolSupport.getError(targ.getError()));
+			error = targ.getError();
+			return false;
 		}
+		return true;
 	}
 
-	void endSeg() {
+	boolean endSeg() {
 		boolean ok = targ.endMemb();
 		if (!ok) {
-System.err.format("ENDM: %s\n", FileVolSupport.getError(targ.getError()));
+			error = targ.getError();
+			return false;
 		}
+		return true;
 	}
 
-	void beginSeg(String rev, String prg, String seg, long vis) {
+	boolean beginSeg(String rev, String prg, String seg, long vis) {
 		String m = String.format("%-6s%-2s", prg, seg);
 		int x = 0;
 		// We know 'mmb' is 0-based
@@ -49,11 +53,14 @@ System.err.format("ENDM: %s\n", FileVolSupport.getError(targ.getError()));
 		// TODO: handle errors
 		ok = targ.alterMemb(mmb, 0, PartitionedSeqFile._DEL_, null, 0);
 		if (!ok && targ.getError() != 00213) {
-System.err.format("MALTER: %s\n", FileVolSupport.getError(targ.getError()));
+			error = targ.getError();
+			return false;
 		}
 		ok = targ.setMemb(mmb, 0, DiskFile.OUT);
 		if (!ok) {
-System.err.format("SETM: %s\n", FileVolSupport.getError(targ.getError()));
+			error = targ.getError();
+			return false;
 		}
+		return true;
 	}
 }

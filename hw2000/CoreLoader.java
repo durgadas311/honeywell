@@ -15,29 +15,33 @@ public class CoreLoader implements Loader {
 		this.fp = fp;
 	}
 
-	public void begin(int adr, String prg, String seg) {
+	public boolean begin(int adr, String prg, String seg) {
 		program = prg;
 		segment = seg;
+		return true;
 	}
 
-	public void setCode(int adr, byte[] code) {
+	public boolean setCode(int adr, byte[] code) {
 		for (int y = 0; y < code.length; ++y) {
 			sys.rawWriteMem(adr + y, code[y]);
 		}
+		return true;
 	}
 
-	public void clear(int start, int end, byte fill) {
+	public boolean clear(int start, int end, byte fill) {
 		for (int y = start; y <= end; ++y) {
 			sys.rawWriteMem(y, fill);
 		}
+		return true;
 	}
 
-	public void range(int start, int end) {
+	public boolean range(int start, int end) {
 		// Nothing for us. Assembler already tracks.
+		return true;
 	}
 
 	// TODO: run? or just pause?
-	public void exec(int start) {
+	public boolean exec(int start) {
 		mon = new LoaderMonitorC(sys, program, segment);
 		sys.addTrap(mon);
 		sys.SR = start;
@@ -45,15 +49,20 @@ public class CoreLoader implements Loader {
 		mon.waitReturn(0); // TODO: choose a timeout
 		fp.doStop(); // 'mon' should have already done this
 		sys.removeTrap(mon);
+		return true;
 	}
 
-	public void segment(String prg, String seg) {
+	public boolean segment(String prg, String seg) {
 		program = prg;
 		segment = seg;
+		return true;
 	}
 
-	public void end(int start) {
+	public boolean end(int start) {
+		return true;
 	}
+
+	public int getError() { return 0; }
 
 	// A public service...
 	public void listOut(String str) {

@@ -14,11 +14,11 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		seq = 0;
 	}
 
-	abstract void writeRec(byte[] rec, int len);
-	abstract void endSeg();
-	abstract void beginSeg(String rev, String prg, String seg, long vis);
+	abstract boolean writeRec(byte[] rec, int len);
+	abstract boolean endSeg();
+	abstract boolean beginSeg(String rev, String prg, String seg, long vis);
 
-	void finRec(boolean last) {
+	boolean finRec(boolean last) {
 		endRec(last);
 		++seq;
 		putLen(reccnt);
@@ -26,11 +26,14 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 			record[0] &= ~07;
 			record[0] |= (byte)04;
 		}
-		writeRec(record, reccnt);
-		dirty = false;
-		if (last) {
-			endSeg();
+		if (!writeRec(record, reccnt)) {
+			return false;
 		}
+		dirty = false;
+		if (last && !endSeg()) {
+			return false;
+		}
+		return true;
 	}
 
 	private void putLen(int len) {
@@ -46,7 +49,7 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 
 	void initRec() {
 		reccnt = 0;
-		record[0] = (byte)041;
+		record[0] = (byte)041; // modified to 044 at end if last
 		putLen(0);	// updated later...
 		putSeq(seq);
 		reccnt = 7;
@@ -60,14 +63,12 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		}
 	}
 
-	private void initSeg(String prg, String seg, long vis) {
+	private boolean initSeg(String prg, String seg, long vis) {
 		String rev = String.format("%03d", this.rev);
-		beginSeg(rev, prg, seg, vis);
-		if (seq > 0) {
-			record[0] = (byte)054;
-		} else {
-			record[0] = (byte)050;
+		if (!beginSeg(rev, prg, seg, vis)) {
+			return false;
 		}
+		record[0] = (byte)050; // modified to 054 at end if last
 		putLen(0);	// updated later...
 		putSeq(seq);	//
 		reccnt = 7;
@@ -80,20 +81,24 @@ public abstract class BRTLoader extends BRTDataField implements Loader {
 		reccnt = 24;
 		record[6] = (byte)reccnt;
 		seq = 1;
+		return true;
 	}
 
-	public void begin(int adr, String prg, String seg) {
-		initSeg(prg, seg, vis);
+	public boolean begin(int adr, String prg, String seg) {
+		if (!initSeg(prg, seg, vis)) {
+			return false;
+		}
 		// setAdr(adr); // let first setCode do this...
 		dist = -1;
 		dirty = false;
+		return true;
 	}
 
-	public void segment(String prg, String seg) {
+	public boolean segment(String prg, String seg) {
 		if (dirty) {
 			System.err.format("WARNING: SEG after code\n");
 		}
 		// only 'seg' should be different...
-		initSeg(prg, seg, vis);
+		return initSeg(prg, seg, vis);
 	}
 }

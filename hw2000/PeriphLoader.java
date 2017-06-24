@@ -11,13 +11,15 @@ public class PeriphLoader extends BRTLoader {
 		this.targ = targ;
 	}
 
-	void writeRec(byte[] rec, int len) {
-		targ.appendRecord(rec, 0, len);
+	boolean writeRec(byte[] rec, int len) {
+		return targ.appendRecord(rec, 0, len);
 	}
 
-	void endSeg() {
+	boolean endSeg() {
+		return true;
 	}
 
-	void beginSeg(String rev, String prg, String seg, long vis) {
+	boolean beginSeg(String rev, String prg, String seg, long vis) {
+		return true;
 	}
 }

@@ -168,11 +168,17 @@ public class Assembler {
 		end = false;
 		segm = "01"; // reset from pass one...
 		segno = 1;
-		loader.begin(minAdr, prog, segm);
-		loader.range(minAdr, maxAdr); // passOne set these...
+		if (!loader.begin(minAdr, prog, segm) ||
+			!loader.range(minAdr, maxAdr)) { // passOne set these...
+			ldrError();
+			return -1;
+		}
 		while (!end && (ret = scanOne()) >= 0) {
 		}
-		loader.end(endAdr);
+		if (!loader.end(endAdr)) {
+			ldrError();
+			return -1;
+		}
 		try { in.close(); } catch (Exception ee) {}
 		if (errs.size() > 0) {
 			ret = -1;
@@ -212,11 +218,17 @@ public class Assembler {
 		end = false;
 		segm = "01"; // reset from pass one...
 		segno = 1;
-		loader.begin(minAdr, prog, segm);
-		loader.range(minAdr, maxAdr); // passOne set these...
+		if (!loader.begin(minAdr, prog, segm) ||
+			!loader.range(minAdr, maxAdr)) { // passOne set these...
+			ldrError();
+			return -1;
+		}
 		while (!end && (ret = scanOne()) >= 0) {
 		}
-		loader.end(endAdr);
+		if (!loader.end(endAdr)) {
+			ldrError();
+			return -1;
+		}
 		//System.err.format("END OF PASS 2 - %07o %07o %07o\n", minAdr, maxAdr, endAdr);
 		if (errs.size() > 0) {
 			ret = -1;
@@ -363,6 +375,11 @@ public class Assembler {
 		return sym;
 	}
 
+	private void ldrError() {
+		// TODO: get descriptive string
+		errsAdd(String.format("Loader error %04o", loader.getError()));
+	}
+
 	private int scanOne() {
 		// TODO: tolerate "illegal" TAB characters
 		// TODO: input from punchcard vs ASCII file (vs MagTape?)
@@ -497,16 +514,21 @@ public class Assembler {
 			rep = repSet;
 			return e;
 		}
+		boolean ok = true;
 		if (code != null) {
 			// TODO: disallow any number of interviening statements?
 			int repadd = 0;
 			do {
-				loader.setCode(reloc + orgLoc + repadd, code);
+				ok = loader.setCode(reloc + orgLoc + repadd, code);
 				repadd += code.length;
 			} while (rep > 0 && --rep > 0);
 		} else if (clear != null) {
-			loader.clear(clear.start, clear.end, (byte)clear.fill);
+			ok = loader.clear(clear.start, clear.end, (byte)clear.fill);
 			clear = null;
+		}
+		if (!ok) {
+			ldrError();
+			return -1;
 		}
 		rep = repSet;
 		if (listing) {
@@ -534,13 +556,17 @@ public class Assembler {
 		}
 		if (e >= 0x200000) { // special case for EX/XFR directives
 			// TODO: further annotate listing?
-			loader.exec(e & 0x0fffff);
+			ok = loader.exec(e & 0x0fffff);
 			// generate default segment...
-			if (segno > 0) {
+			if (ok && segno > 0) {
 				++segno;
 				segm = String.format("%02d", segno);
-				loader.segment(prog, segm);
+				ok = loader.segment(prog, segm);
 			}
+		}
+		if (!ok) {
+			ldrError();
+			return -1;
 		}
 		return e;
 	}
@@ -999,7 +1025,10 @@ public class Assembler {
 			segm = String.format("%-2.2s", opd);
 			segno = -1;
 			if (asmPass) {
-				loader.segment(prog, segm);
+				if (!loader.segment(prog, segm)) {
+					ldrError();
+					return -1;
+				}
 			}
 			return 0;
 		} else if (opc.equals("EX")) {

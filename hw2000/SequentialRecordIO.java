@@ -17,7 +17,8 @@ public interface SequentialRecordIO {
 	boolean rewind();	// 'false' if no media mounted. may be no-op otherwise
 	boolean backspace();	// 'false' if no media mounted. may be no-op otherwise
 	byte[] nextRecord();	// HW codes. null on EOF
-	void appendBulk(byte[] buf, int start, int len); // HW codes
-	void appendRecord(byte[] buf, int start, int len); // HW codes
+	boolean appendBulk(byte[] buf, int start, int len); // HW codes
+	boolean appendRecord(byte[] buf, int start, int len); // HW codes
 	void end();
+	int getError();
 }

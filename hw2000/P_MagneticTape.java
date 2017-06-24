@@ -5,6 +5,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
+// TODO: should we be using the same error codes as Disk?
 public class P_MagneticTape extends JFrame
 		implements Peripheral, SequentialRecordIO,
 			ActionListener, WindowListener {
@@ -22,6 +23,7 @@ public class P_MagneticTape extends JFrame
 		boolean backspace;
 		boolean erase;
 		boolean error;
+		int errno;
 		boolean fwdspace;
 		JButton perm_bt;
 		JLabel stat_pn;
@@ -299,6 +301,7 @@ public class P_MagneticTape extends JFrame
 	public void doOut(RWChannel rwc, MagTapeStatus unit) {
 		rwc.startCLC();
 		if (!unit.wrRing || !unit.permit) {
+			unit.errno = 00502;
 			unit.error = true;
 			return;
 		}
@@ -502,6 +505,7 @@ public class P_MagneticTape extends JFrame
 	public boolean begin(int unit) {
 		vUnit = unit & 07;
 		vWritten = false;
+		sts[vUnit].errno = 0;
 		return true;
 	}
 	public boolean ready() {
@@ -509,25 +513,33 @@ public class P_MagneticTape extends JFrame
 	}
 	public boolean empty() {
 		if (sts[vUnit].dev == null) {
+			sts[vUnit].errno = 00501;
 			return false; // error, actually
 		}
 		try {
 			return (sts[vUnit].dev.length() == 0);
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			sts[vUnit].errno = 00501;
+		}
 		return false; // error, actually
 	}
 	public boolean rewind() {
 		if (sts[vUnit].dev == null) {
+			sts[vUnit].errno = 00501;
 			return false;
 		}
 		try {
 			sts[vUnit].dev.seek(0);
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			sts[vUnit].errno = 00501;
+			return false;
+		}
 		updateDisp(vUnit);
 		return true;
 	}
 	public boolean backspace() {
 		if (sts[vUnit].dev == null) {
+			sts[vUnit].errno = 00501;
 			return false;
 		}
 		try {
@@ -556,12 +568,16 @@ public class P_MagneticTape extends JFrame
 				// assume we did not start here...
 				sts[vUnit].dev.seek(fp);
 			}
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			sts[vUnit].errno = 00501;
+			return false;
+		}
 		updateDisp(vUnit);
 		return true;
 	}
 	public byte[] nextRecord() {
 		if (sts[vUnit].dev == null) {
+			sts[vUnit].errno = 00501;
 			return null;
 		}
 		byte[] ret = null;
@@ -581,41 +597,58 @@ public class P_MagneticTape extends JFrame
 			}
 			ret = new byte[n];
 			System.arraycopy(vBuf, 0, ret, 0, n);
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			sts[vUnit].errno = 00501;
+			return null;
+		}
 		updateDisp(vUnit);
 		return ret;
 	}
-	public void appendBulk(byte[] buf, int start, int len) {
+	public boolean appendBulk(byte[] buf, int start, int len) {
 		if (sts[vUnit].dev == null) {
-			return;
+			sts[vUnit].errno = 00501;
+			return false;
 		}
 		if (!sts[vUnit].wrRing || !sts[vUnit].permit) {
-			return;
+			sts[vUnit].errno = 00502;
+			return false;
 		}
 		vWritten = true;
 		if (len < 0) {
 			len = buf.length - start;
 		}
 		if (len == 0) {
-			return;
+			return true;
 		}
 		try {
 			sts[vUnit].dev.write(buf, start, len);
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			sts[vUnit].errno = 00501;
+			return false;
+		}
 		updateDisp(vUnit);
+		return true;
 	}
-	public void appendRecord(byte[] buf, int start, int len) {
+	public boolean appendRecord(byte[] buf, int start, int len) {
 		if (sts[vUnit].dev == null) {
-			return;
+			sts[vUnit].errno = 00501;
+			return false;
 		}
 		if (!sts[vUnit].wrRing || !sts[vUnit].permit) {
-			return;
+			sts[vUnit].errno = 00502;
+			return false;
 		}
-		appendBulk(buf, start, len);
+		if (!appendBulk(buf, start, len)) {
+			return false;
+		}
 		try {
 			sts[vUnit].dev.write((byte)0300);
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			sts[vUnit].errno = 00501;
+			return false;
+		}
 		updateDisp(vUnit);
+		return true;
 	}
 	public void end() {
 		if (sts[vUnit].dev == null) {
@@ -628,4 +661,5 @@ public class P_MagneticTape extends JFrame
 		} catch (Exception ee) {}
 		updateDisp(vUnit);
 	}
+	public int getError() { return sts[vUnit].errno; }
 }

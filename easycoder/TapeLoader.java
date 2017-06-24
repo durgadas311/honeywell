@@ -16,7 +16,7 @@ public class TapeLoader extends BRTLoader {
 		rwf = f;
 	}
 
-	void writeRec(byte[] rec, int len) {
+	boolean writeRec(byte[] rec, int len) {
 		try {
 			if (targ != null) {
 				targ.write(rec, 0, len);
@@ -25,12 +25,18 @@ public class TapeLoader extends BRTLoader {
 				rwf.write(rec, 0, len);
 				rwf.write(0300); // tape record mark
 			}
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			error = 00501;
+			return false;
+		}
+		return true;
 	}
 
-	void endSeg() {
+	boolean endSeg() {
+		return true;
 	}
 
-	void beginSeg(String rev, String prg, String seg, long vis) {
+	boolean beginSeg(String rev, String prg, String seg, long vis) {
+		return true;
 	}
 }

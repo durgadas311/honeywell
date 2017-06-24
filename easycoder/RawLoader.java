@@ -66,11 +66,12 @@ public class RawLoader implements Loader {
 		}
 	}
 
-	public void begin(int adr, String prg, String seg) {
+	public boolean begin(int adr, String prg, String seg) {
 		curadr = adr;
+		return true;
 	}
 
-	public void setCode(int adr, byte[] code) {
+	public boolean setCode(int adr, byte[] code) {
 		if (asm != null) {
 			// Very simplistic, examines only punc at start of block
 			// Since this is intended for bootstrap programs,
@@ -99,30 +100,35 @@ public class RawLoader implements Loader {
 			oneChar((byte)(code[y] & 077));
 		}
 		curadr += code.length;
+		return true;
 	}
 
 	// TODO: is this correct?
-	public void clear(int start, int end, byte fill) {
+	public boolean clear(int start, int end, byte fill) {
 		for (int y = start; y <= end; ++y) {
 			oneChar(fill);
 		}
+		return true;
 	}
 
-	public void range(int start, int end) {
+	public boolean range(int start, int end) {
 		// TODO: nothing for us?
+		return true;
 	}
 
-	public void exec(int start) {
+	public boolean exec(int start) {
 		// really doesn't apply. should be error.
 		System.err.format("WARNING: EX/XFR with RawLoader ignored\n");
+		return true;
 	}
 
-	public void segment(String prg, String seg) {
+	public boolean segment(String prg, String seg) {
 		// really doesn't apply. should be error.
 		System.err.format("WARNING: SEG with RawLoader ignored\n");
+		return true;
 	}
 
-	public void end(int start) {
+	public boolean end(int start) {
 		// Single-address SW/SI cannot be used w/o WM (in bootstrap)
 		if (lastw != null) {
 			swi.format("%05d         SW    %s,%s\n",
@@ -138,6 +144,11 @@ public class RawLoader implements Loader {
 			if (cnt > 0) {
 				out.write(0300);
 			}
-		} catch (Exception ee) {}
+		} catch (Exception ee) {
+			return false;
+		}
+		return true;
 	}
+
+	public int getError() { return 00501; }
 }

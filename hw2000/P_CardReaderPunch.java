@@ -573,7 +573,7 @@ public class P_CardReaderPunch extends JFrame
 		}
 		return b;
 	}
-	public void appendBulk(byte[] buf, int start, int len) {
+	public boolean appendBulk(byte[] buf, int start, int len) {
 		for (int x = 0; x < 80; ++x) {
 			int p = 0;
 			if (vUnit == 2) {
@@ -587,11 +587,13 @@ public class P_CardReaderPunch extends JFrame
 			putCol(sts[0], x, p);
 		}
 		putCard(sts[0]);
+		return true;
 	}
-	public void appendRecord(byte[] buf, int start, int len) {
-		appendBulk(buf, start, len);
+	public boolean appendRecord(byte[] buf, int start, int len) {
+		return appendBulk(buf, start, len);
 	}
 	public void end() {
 		// No need to truncate output... by definition output is new file.
 	}
+	public int getError() { return 0; }
 }
