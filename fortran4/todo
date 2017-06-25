@@ -1,11 +1,13 @@
+April 20, 2017
+
 TODO:
 
 * Unformatted (binary) READ/WRITE (NAMELIST too?)
 * COMMON
-* DATA (need to make into pre-run code...)
+* DATA (need to make into pre-run code...) [is this done?]
 * CHARACTER data type?
 * auto convert - data type promotion
-* complex list implied DO loops
+* complex list implied DO loops [is this done?]
 
 Lesser importance:
 
