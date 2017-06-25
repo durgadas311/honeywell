@@ -28,7 +28,7 @@ public class DiskVolume {
 	DiskFile volNames;
 	DiskFile volDescr;
 	DiskFile volAlloc;
-	static SimpleDateFormat _timestamp = new java.text.SimpleDateFormat("yyDDD");
+	static SimpleDateFormat _datestamp = new java.text.SimpleDateFormat("yyDDD");
 
 	// Each operation must be atomic, i.e. bounded by dsk.begin()/dsk.end().
 	// This is because the peripheral cannot operate on multiple units
@@ -182,8 +182,12 @@ public class DiskVolume {
 		mounted = false;
 	}
 
-	public byte[] timestamp() {
-		String now = _timestamp.format(new Date());
+	public byte[] datestamp() {
+		return datestamp(cvt);
+	}
+
+	static public byte[] datestamp(CharConverter cvt) {
+		String now = _datestamp.format(new Date());
 		return cvt.hwString(now, 5);
 	}
 
@@ -264,7 +268,7 @@ public class DiskVolume {
 		int mmbIdxLen = dItm.readChar(dAdr + 68);
 		// TODO: overflow, etc.
 		if ((mode & (DiskFile.OUT | DiskFile.UPDATE)) != 0) {
-			dItm.copyIn(dAdr + 29, timestamp(), 0, 5);
+			dItm.copyIn(dAdr + 29, datestamp(), 0, 5);
 			// TODO: increment modification number...
 			volDescr.repItem();
 			volDescr.sync();

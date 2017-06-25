@@ -93,6 +93,8 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		sys.SR += name.length();
 		byte q = sys.readChar(sys.SR++);
 		if (q == 076) { // '[' (open lozenge) means supervisor
+			sys.copyIn(142, DiskVolume.datestamp(sys.pdc.cvt), 0, 5);
+			sys.setWord(142);
 			if (supervisor) { // probably never happens
 			} else {
 				supervisor = true;
@@ -204,9 +206,15 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	private void setupCA() {
 		_putAdr(3, 139, 131); // 3-char prog exit - B (139)...
+		sys.setWord(139);
 		_putAdr(4, 164, 131); // 4-char prog exit - B (164)...
+		sys.setWord(164);
 		_putAdr(4, 168, 130); // 4-char segm load - B (168)...
+		sys.setWord(168);
 		_putAdr(3, 187, 0777777); // memory limit
+		sys.setWord(187);
+		sys.copyIn(142, DiskVolume.datestamp(sys.pdc.cvt), 0, 5);
+		sys.setWord(142);
 		//sys.rawWriteChar(155, ?); // Operator mode: panel or console...
 		// other initialization?
 	}
@@ -819,7 +827,7 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 		// TODO: update creation date, number...
 		// vol.getDescr(file);
-		// descr.copyIn(21, vol.timestamp(), 0, 5);
+		// descr.copyIn(21, vol.datestamp(), 0, 5);
 		// increment creation number
 		// vol.putDescr(???);
 		// ...or... vol.setCreation(file);

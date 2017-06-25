@@ -547,7 +547,7 @@ public class FileVolSupport {
 			vol.putOne(blkIdx, descr, 63);
 			descr.writeChar(68, (byte)mmbItm);
 		}
-		byte[] ts = vol.timestamp();
+		byte[] ts = vol.datestamp();
 		descr.copyIn(21, ts, 0, 5);
 		// TODO: "creation number" a.k.a. reorg number...
 		vol.putNum(0, descr, 26, 3);
