@@ -21,11 +21,14 @@ and raised to the top, using the Front Panel menu "I/O" and selecting PunchCard.
 Closing the window only hides it, having no effect on the operation of the devices.
 
 <P>
-The "Read Hopper" button selects a file to be used to supply "cards" to the
-reader. With no file selected, an infinite supply of blank cards is available.
-The "Punch Stacker" button selects a file to be used to store punched "cards",
-or output cards will be discarded.
-Active reader or punch will show the number of cards processed for the given file.
+The "Input Hopper" button selects a file to be used to supply "cards" to the
+reader. With no file selected, an finite supply of blank cards is available.
+The "Output Stacker" button selects a file to be used to store punched
+(or read) "cards",
+otherwise output cards will be discarded.
+Note that an input file is not altered, so having output set to "Discard"
+will not affect a punch card deck being read.
+Active reader or punch will show the number of cards reamining/punched for the given file.
 File format consists of two bytes representing each card column. The two bytes form
 a 16-bit word, where only the low-order 12 bits are used. These 12 bits are
 interpreted as the punch card zones, with bit 11 being zone 12, bit 10 being
