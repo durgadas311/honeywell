@@ -234,11 +234,9 @@ public class UtilExecutable extends JPanel
 		return true;
 	}
 
-	private byte[] visibility(String vis) {
-		byte[] vv = new byte[6];
+	static public long visibility(String vis) {
 		if (vis.equals("*")){
-			Arrays.fill(vv, (byte)077);
-			return vv;
+			return 0777777777777L;
 		}
 		long v = 0L;
 		for (int x = 0; x < vis.length(); ++x) {
@@ -253,12 +251,20 @@ public class UtilExecutable extends JPanel
 				c -= '0';
 				v |= (1L << (9 - c));
 			} else {
-				return null;
+				return -1;
 			}
 		}
+		return v;
+	}
+
+	private byte[] visibility(long vis) {
+		if (vis < 0) {
+			return null;
+		}
+		byte[] vv = new byte[6];
 		for (int y = 5; y >= 0; --y) {
-			vv[y] = (byte)v;
-			v >>= 6;
+			vv[y] = (byte)vis;
+			vis >>= 6;
 		}
 		return vv;
 	}
@@ -313,7 +319,7 @@ public class UtilExecutable extends JPanel
 			seg = cvt.hwString(xbl_seg.getText(), 2);
 		}
 		if (!xbl_vis.getText().isEmpty()) {
-			vis = visibility(xbl_vis.getText());
+			vis = visibility(visibility(xbl_vis.getText()));
 		}
 		if (i.equals("REN")) {
 			if (!xbl_npg.getText().isEmpty()) {
@@ -323,7 +329,7 @@ public class UtilExecutable extends JPanel
 				nsg = cvt.hwString(xbl_nsg.getText(), 2);
 			}
 			if (!xbl_nvs.getText().isEmpty()) {
-				nvs = visibility(xbl_nvs.getText());
+				nvs = visibility(visibility(xbl_nvs.getText()));
 			}
 			// Validate REN params...
 			// program unit (pgm && !seg), then require npg && !nsg.

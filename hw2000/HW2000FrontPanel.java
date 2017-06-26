@@ -105,6 +105,8 @@ public class HW2000FrontPanel extends JFrame
 	private JCheckBox mti;
 	JCheckBox dpi;
 	JTextField dpi_lun;
+	JTextField dpi_rev;
+	JTextField dpi_vis;
 	JCheckBox dpi_bsp;
 	ButtonGroup go_bg;
 	JRadioButton go_go;
@@ -326,10 +328,10 @@ public class HW2000FrontPanel extends JFrame
 		dpi = new JCheckBox("Disk Image");
 		dpi_lun = new JTextField("0");
 		dpi_lun.setPreferredSize(new Dimension(30, 20));
-		pn = new JPanel();
-		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
-		pn.add(new JLabel("Unit: "));
-		pn.add(dpi_lun);
+		dpi_rev = new JTextField("0");
+		dpi_rev.setPreferredSize(new Dimension(30, 20));
+		dpi_vis = new JTextField("A");
+		dpi_vis.setPreferredSize(new Dimension(50, 20));
 		go_bg = new ButtonGroup();
 		go_go = new JRadioButton("*DRS1GO");
 		go_res = new JRadioButton("*DRS1RES");
@@ -354,12 +356,38 @@ public class HW2000FrontPanel extends JFrame
 		gc.anchor = GridBagConstraints.WEST;
 		GridBagLayout gb = new GridBagLayout();
 		acc.setLayout(gb);
-		
+
 		gc.gridy = 0;
 		gb.setConstraints(lst, gc);
 		acc.add(lst);
 		++gc.gridy;
 		JSeparator sp = new JSeparator();
+		sp.setPreferredSize(new Dimension(100, 3));
+		gb.setConstraints(sp, gc);
+		acc.add(sp);
+		++gc.gridy;
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel("Unit: "));
+		pn.add(dpi_lun);
+		gb.setConstraints(pn, gc);
+		acc.add(pn);
+		++gc.gridy;
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel("Rev: "));
+		pn.add(dpi_rev);
+		gb.setConstraints(pn, gc);
+		acc.add(pn);
+		++gc.gridy;
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel("Vis: "));
+		pn.add(dpi_vis);
+		gb.setConstraints(pn, gc);
+		acc.add(pn);
+		++gc.gridy;
+		sp = new JSeparator();
 		sp.setPreferredSize(new Dimension(100, 3));
 		gb.setConstraints(sp, gc);
 		acc.add(sp);
@@ -376,9 +404,6 @@ public class HW2000FrontPanel extends JFrame
 		acc.add(dpi);
 		++gc.gridy;
 		gc.anchor = GridBagConstraints.EAST;
-		gb.setConstraints(pn, gc);
-		acc.add(pn);
-		++gc.gridy;
 		gb.setConstraints(go_go, gc);
 		acc.add(go_go);
 		++gc.gridy;
@@ -2485,11 +2510,30 @@ public class HW2000FrontPanel extends JFrame
 		}
 	}
 
+	private int lineCount(File src) {
+		BufferedReader in = null;
+		try {
+			in = new BufferedReader(new FileReader(src));
+			int l = 0;
+			while (in.readLine() != null) {
+				++l;
+			}
+			return l;
+		} catch (Exception ee) {
+			return 0;
+		} finally {
+			if (in != null) try {
+				in.close();
+			} catch (Exception ee) {}
+		}
+	}
+
 	private void doFortran(File src) {
 		String op = "FORTRAN IV";
 		File lst = null;
 		File ezc = null;
 		_last = src;
+		int lc = lineCount(src); // TODO: error if "0"?
 		String l = src.getAbsolutePath();
 		if (l.endsWith(".f4")) {
 			l = l.substring(0, l.length() - 3);
@@ -2534,7 +2578,7 @@ ee.printStackTrace();
 			if (cmp.hasData()) {
 				P_CardReaderPunch cp = (P_CardReaderPunch)sys.pdc.getPeriph(PeriphDecode.P_PP);
 				cp.addInput(new CardInputStream(cmp.getData(), sys.pdc.cvt),
-						src.getName(), cmp.lineCount());
+						src.getName(), lc - cmp.lineCount());
 				cp.visible(true);
 			}
 		}
@@ -2634,12 +2678,31 @@ ee.printStackTrace();
 		currLow = 0;
 		currHi = 0;
 		sys.setTrace(currLow, currHi); // trace off
-		// TODO: card BRT also...
+		int unit = 0;
+		long vis = 0400000000000L;
+		int rev = 0;
+		if (tape || disk) {
+			if (!dpi_lun.getText().isEmpty()) try {
+				unit = Integer.valueOf(dpi_lun.getText());
+			} catch (Exception ee) {
+				PopupFactory.warning(this, op, "Unit number invalid");
+				return null;
+			}
+			if (!dpi_rev.getText().isEmpty()) try {
+				rev = Integer.valueOf(dpi_rev.getText());
+			} catch (Exception ee) {
+				PopupFactory.warning(this, op, "Revision number invalid");
+				return null;
+			}
+			if (!dpi_vis.getText().isEmpty()) try {
+				vis = UtilExecutable.visibility(dpi_rev.getText());
+			} catch (Exception ee) {
+				PopupFactory.warning(this, op, "Visibility invalid");
+				return null;
+			}
+		}
 		if (tape) {
-			// Mag Tape BRT format... TODO: select unit, visibility
-			long vis = 0400000000000L;
-			int rev = 0;
-			int unit = 0;
+			// Mag Tape BRT format...
 			P_MagneticTape tp = (P_MagneticTape)sys.pdc.getPeriph(PeriphDecode.P_MT);
 			// TODO: are these ever null?
 			boolean copy = !tp.begin(unit); // always 'true' (!copy)?
@@ -2654,6 +2717,7 @@ ee.printStackTrace();
 			} else {
 				// Find "1EOF " (or EOT)
 				// TODO: fail-safe "1ERI "?
+				// TODO: detect dup and delete/update? ++rev?
 				posTo(copy, _1EOF, tp);
 			}
 			// TODO: Allow cards vs. tape
@@ -2664,21 +2728,12 @@ ee.printStackTrace();
 			tp.appendRecord(_1ERI, 0, -1);
 			tp.end();
 		} else if (disk) {
-			// MOD1 BRF format... TODO: select unit, file, visibility
-			long vis = 0400000000000L;
-			int rev = 0;
+			// MOD1 BRF format...
 			byte[] file;
 			if (go_go.isSelected()) {
 				file = asm.charCvt().hwString("*DRS1GO", 10);
 			} else {
 				file = asm.charCvt().hwString("*DRS1RES", 10);
-			}
-			int unit = 0;
-			if (!dpi_lun.getText().isEmpty()) try {
-				Integer.valueOf(dpi_lun.getText());
-			} catch (Exception ee) {
-				PopupFactory.warning(this, op, "Unit number invalid");
-				return null;
 			}
 			// boolean boot = dpi_bsp.isSelected();
 			P_Disk dk = (P_Disk)sys.pdc.getPeriph(PeriphDecode.P_DK);
