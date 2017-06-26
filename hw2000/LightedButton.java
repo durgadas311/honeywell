@@ -7,6 +7,18 @@ public class LightedButton extends JButton {
 	boolean isOn;
 	int id;
 	LightedButton next;
+	public LightedButton(Color on, Color off) {
+		super();
+		next = null;
+		this.id = 0;
+		setPreferredSize(new Dimension(30, 40));
+		setBackground(off);
+		setOpaque(true);
+		_on = on;
+		_off = off;
+		isOn = false;
+	}
+
 	public LightedButton(Color on, Color off, ImageIcon icon, int id) {
 		super();
 		next = null;

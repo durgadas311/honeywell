@@ -6,6 +6,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.border.*;
+import java.util.concurrent.Semaphore;
 
 // True single-path Reader-Punch:
 //
@@ -25,6 +26,7 @@ import javax.swing.border.*;
 
 public class P_CardReaderPunch extends JFrame
 		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
+	Semaphore stall;
 
 	class CardStack extends JPanel {
 		private PunchCardStatus pcs;
@@ -35,11 +37,11 @@ public class P_CardReaderPunch extends JFrame
 			super();
 			this.pcs = pcs;
 			this.topDown = topDown;
-			setPreferredSize(new Dimension(26, 86));
+			setPreferredSize(new Dimension(26, 106));
 			setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 			setBackground(Color.white);
 			cards = new Color(215,215,154);
-			scale = 6;
+			scale = 5;
 		}
 		@Override
 		public void paint(Graphics g) {
@@ -49,15 +51,15 @@ public class P_CardReaderPunch extends JFrame
 			g2d.setColor(cards);
 			int n = (pcs.cards + scale - 1) / scale;
 			boolean max = false;
-			if (n > 80) {
+			if (n > 100) {
 				max = true;
-				n = 80;
+				n = 100;
 			}
 			if (n > 0) {
 				if (topDown) {
 					g2d.fillRect(0, 0, 21, n + 1);
 				} else {
-					g2d.fillRect(0, 80 - n, 21, n + 1);
+					g2d.fillRect(0, 100 - n, 21, n + 1);
 				}
 				if (max) {
 					g2d.setColor(Color.red);
@@ -99,12 +101,17 @@ public class P_CardReaderPunch extends JFrame
 	int vUnit;
 	JPanel acc; // Accessories for file chooser
 	JTextField acc_nb;
+	LightedButton start;
+	LightedButton stop;
+	LightedButton runout;
+	boolean ready;
 
 	public P_CardReaderPunch(CharConverter cvt) {
 		super("H214-2 Card Reader/Punch");
 		setIconImage(Toolkit.getDefaultToolkit().
 			getImage(getClass().getResource("icons/pcd-96.png")));
 		this.cvt = cvt;
+		stall = new Semaphore(0);
 		_last = new File(System.getProperty("user.dir"));
 		GridBagLayout gb;
 		GridBagConstraints gc = new GridBagConstraints();
@@ -161,7 +168,6 @@ public class P_CardReaderPunch extends JFrame
 		sts[1].deck_pn.setBackground(Color.white);
 		sts[1].deck_pn.setOpaque(true);
 		sts[1].hopr_pn = new CardStack(sts[1], false);
-		setBlank(100);
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
@@ -169,7 +175,7 @@ public class P_CardReaderPunch extends JFrame
 		setLayout(gb);
 
 		JPanel pn;
-		gc.gridwidth = 3;
+		gc.gridwidth = 15;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 5));
 		gb.setConstraints(pn, gc);
@@ -177,7 +183,7 @@ public class P_CardReaderPunch extends JFrame
 		++gc.gridy;
 		int top = gc.gridy;
 		gc.gridwidth = 1;
-		gc.gridheight = 3;
+		gc.gridheight = 4;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 20));
 		gb.setConstraints(pn, gc);
@@ -186,7 +192,10 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(sts[1].hopr_pn, gc);
 		add(sts[1].hopr_pn);
 		++gc.gridx;
+		int left = gc.gridx;
 		gc.gridheight = 1;
+		gc.gridwidth = 11;
+
 		pn = new JPanel();
 		pn.setLayout(new FlowLayout());
 		JButton bt = new JButton("Input Hopper");
@@ -202,23 +211,121 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(pn, gc);
 		add(pn);
 		++gc.gridy;
+		gc.gridwidth = 1;
 
+		gc.gridx = left;
 		pn = new JPanel();
-		pn.setLayout(new FlowLayout());
-		bt = new JButton("Runout");
-		bt.setPreferredSize(new Dimension(75, 20));
-		bt.setMargin(new Insets(5, 5, 5, 5));
-		bt.setActionCommand("runout");
-		bt.addActionListener(this);
-		pn.add(new JLabel("Hopper"));
-		pn.add(sts[1].count_pn);
-		pn.add(bt);
-		pn.add(sts[0].count_pn);
-		pn.add(new JLabel("Stacker"));
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("Hopper");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("START");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(15, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("STOP");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("RUNOUT");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("Stacker");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
 		gb.setConstraints(pn, gc);
 		add(pn);
 		++gc.gridy;
+		//////////////////////////
+		gc.gridx = left;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		gb.setConstraints(sts[1].count_pn, gc);
+		add(sts[1].count_pn);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		start = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff);
+		start.setActionCommand("start");
+		start.addActionListener(this);
+		gb.setConstraints(start, gc);
+		add(start);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		stop = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff);
+		stop.setActionCommand("stop");
+		stop.addActionListener(this);
+		gb.setConstraints(stop, gc);
+		add(stop);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		runout = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff);
+		runout.setActionCommand("runout");
+		runout.addActionListener(this);
+		gb.setConstraints(runout, gc);
+		add(runout);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		gb.setConstraints(sts[0].count_pn, gc);
+		add(sts[0].count_pn);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridy;
+		gc.gridx = left;
 
+		gc.gridwidth = 11;
 		pn = new JPanel();
 		pn.setLayout(new FlowLayout());
 		bt = new JButton("Output Stacker");
@@ -230,9 +337,11 @@ public class P_CardReaderPunch extends JFrame
 		pn.add(sts[0].deck_pn);
 		gb.setConstraints(pn, gc);
 		add(pn);
+		gc.gridx += 11;
+
+		gc.gridwidth = 1;
 		gc.gridy = top;
-		++gc.gridx;
-		gc.gridheight = 3;
+		gc.gridheight = 4;
 		gb.setConstraints(sts[0].hopr_pn, gc);
 		add(sts[0].hopr_pn);
 		++gc.gridx;
@@ -241,8 +350,8 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(pn, gc);
 		add(pn);
 		gc.gridx = 0;
-		gc.gridy += 3;
-		gc.gridwidth = 3;
+		gc.gridy += 4;
+		gc.gridwidth = 15;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 5));
 		gb.setConstraints(pn, gc);
@@ -250,9 +359,13 @@ public class P_CardReaderPunch extends JFrame
 
 		addWindowListener(this);
 		pack();
+
+		setBlank(100);
+		setReady(true);
 	}
 
 	public void reset() {
+		unStall(true);
 	}
 
 	public void setInterrupt(HW2000 sys) {
@@ -279,6 +392,7 @@ public class P_CardReaderPunch extends JFrame
 		sts[1].cards = count > 0 ? count : 0;
 		sts[1].count_pn.setText(String.format("%d", sts[1].cards));
 		sts[1].hopr_pn.repaint();
+		unStall(false);
 	}
 
 	private int getCol(PunchCardStatus pcs, int ix) {
@@ -293,11 +407,8 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public void io(RWChannel rwc) {
-		if (rwc.isInput() && idev == null) {
-			// set error? how to handle?
-			// same as EOF: no cards available...
-			return;
-		}
+		// can't abort input if idev == null: means blank cards.
+		// need to stall anyway.
 		if (rwc.isInput()) {
 			sts[1].busy = true;
 		} else {
@@ -318,6 +429,10 @@ public class P_CardReaderPunch extends JFrame
 			}
 			doOut(rwc, sts[0]);
 			sts[0].busy = false;
+		}
+		if (!ready) {
+			stop.setOn(!ready);
+			start.setOn(ready);
 		}
 	}
 
@@ -343,29 +458,39 @@ public class P_CardReaderPunch extends JFrame
 
 	private boolean getCard(PunchCardStatus pcs) {
 		// 'pcs' must be sts[1]...
-		int a = -1;
-		if (idev != null) {
-			try {
-				// only one card read at a time... (?)
-				a = idev.read(pcs.card);
-			} catch (Exception ee) {
-				// TODO: pass along EI/II exceptions
+		int a;
+		while (true) {
+			if (pcs.cards == 0 || !ready) {
+				// Not an error, just stall...
+				doStall();
+				if (pcs.cards == 0) { // implied abort
+					// assumed to be INITIALIZE - abort I/O
+					//pcs.error = true; // is this an error?
+					return false;
+				}
 			}
-		} else if (pcs.cards > 0) {
-			// assume a *finite* stack of BLANK cards...
-			Arrays.fill(pcs.card, (byte)0);
-			a = pcs.card.length;
-		}
-		if (a < 0) {
-			pcs.empty = true;
+			a = -1;
+			if (idev != null) {
+				try {
+					// only one card read at a time... (?)
+					a = idev.read(pcs.card);
+				} catch (Exception ee) {
+					// TODO: pass along EI/II exceptions
+				}
+			} else if (pcs.cards > 0) {
+				// assume a *finite* stack of BLANK cards...
+				Arrays.fill(pcs.card, (byte)0);
+				a = pcs.card.length;
+			}
+			pcs.empty = !(a > 0);
+			if (!pcs.empty) {
+				break;
+			}
 			pcs.cards = 0;
 			// what status to set?
-			pcs.count_pn.setText(String.format("%d END", pcs.cards));
+			pcs.count_pn.setText("0");
 			pcs.hopr_pn.repaint();
-			pcs.error = true;
-			return false;
 		}
-		pcs.empty = false;
 		if (pcs.cards > 0) {
 			--pcs.cards;
 			pcs.count_pn.setText(String.format("%d", pcs.cards));
@@ -376,7 +501,22 @@ public class P_CardReaderPunch extends JFrame
 		return true;
 	}
 
+	private void setReady(boolean rdy) {
+		ready = rdy;
+		if (sts[0].busy || sts[1].busy) {
+			if (ready) {
+				unStall(false);
+			}
+			return;
+		}
+		stop.setOn(!ready);
+		start.setOn(ready);
+	}
+
 	private void runout() {
+		if (ready) {
+			return;
+		}
 		while (!sts[0].empty) {
 			putCard(sts[0]);
 			if (!sts[1].empty) {
@@ -598,6 +738,28 @@ public class P_CardReaderPunch extends JFrame
 		return file;
 	}
 
+	private void doStall() {
+		ready = false;
+		stop.setOn(!ready);
+		start.setOn(ready);
+		try {
+			stall.drainPermits();
+			stall.acquire();
+		} catch (Exception ee) {}
+	}
+
+	private void unStall(boolean abort) {
+		// TODO: implement abort option
+		// TODO: prevent count > 0 ?
+		if (abort) { // cleanup display
+			sts[1].count_pn.setText(String.format("%d", sts[1].cards));
+			sts[1].hopr_pn.repaint();
+		}
+		if (sts[1].cards > 0) {
+			stall.release();
+		}
+	}
+
 	private void setBlank(int num) {
 		sts[1].deck_pn.setText("Blank");
 		sts[1].cards = num;
@@ -613,6 +775,12 @@ public class P_CardReaderPunch extends JFrame
 		String c = b.getActionCommand();
 		if (c.equals("runout")) {
 			runout();
+			return;
+		} else if (c.equals("start")) {
+			setReady(true);
+			return;
+		} else if (c.equals("stop")) {
+			setReady(false);
 			return;
 		}
 		String s = "";
@@ -647,6 +815,7 @@ public class P_CardReaderPunch extends JFrame
 					num = Integer.valueOf(acc_nb.getText());
 				} catch (Exception ee) {}
 				setBlank(num);
+				// do not unStall() until operator presses START
 			}
 			return;
 		}
@@ -661,6 +830,7 @@ public class P_CardReaderPunch extends JFrame
 			sts[1].cards = (int)((f.length() + 159) / 160);
 			sts[1].count_pn.setText(String.format("%d", sts[1].cards));
 			sts[1].hopr_pn.repaint();
+			// do not unStall() until operator presses START
 		} else if (c.equals("punch")) {
 			try {
 				odev = new FileOutputStream(f);
@@ -707,6 +877,7 @@ public class P_CardReaderPunch extends JFrame
 		return true;
 	}
 	public byte[] nextRecord() {
+		// TODO: is it safe to stall here?
 		if (!getCard(sts[1])) {
 			return new byte[0]; // like MagTape EOF mark...
 		}
@@ -728,6 +899,7 @@ public class P_CardReaderPunch extends JFrame
 		return b;
 	}
 	public boolean appendBulk(byte[] buf, int start, int len) {
+		// TODO: fillPunch() (and stall) here?
 		for (int x = 0; x < 80; ++x) {
 			int p = 0;
 			if (vUnit == 2) {
