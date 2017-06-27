@@ -1,0 +1,19 @@
+*JOBID,LIST
+*DUMP
+       PROGRAM HTEST
+       WRITE(3,298)
+100    READ(2,200,END=300,ERR=300) II,B,D
+       WRITE(3,200) II,B,D
+       GOTO 100
+200    FORMAT (14H                 ,I2,2(1H , F8.2)  )
+298    FORMAT (//' STARTING PROGRAM')
+299    FORMAT (' END OF DATA')
+300    WRITE(3,299)
+       END
+*DATA
+...A..........00 123.4567 12.34567
+...B..........01 1234.567 123.4567
+...C..........02 12345.67 1234.567
+...D..........03 123456.7 12345.67
+...E..........04 1234567. 123456.7
+*ENDATA

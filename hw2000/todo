@@ -1,18 +1,14 @@
 June 25, 2017
 
 + CardReaderPunch:
-	* Implement "out of cards" stall for CardReaderPunch, and auto-resume.
-		o How to manage stall in SequentialRecordIO interface.
-
-	* Solve issue for CardInputStream trying to predict number of cards left.
-
-+ FORTRANRunTime:
-	* Detect *ENDATA card and produce END condition.
+	* Allow "stacking" of card deck in Input Hopper.
+	* Allow save of output "deck" after-the-fact.
 
 + SUPERV use "execute" command format:
 	Read > 6 chars, parse:
 		EX____ = run from *DRS1RES
 		TEST__ = run from *DRS1GO (non-Honeywell)
+		????__ = run from BRT tape?
 	If < 6 chars (i.e. RETURN pressed) or 7th != space, ignore (loop).
 	If bad, print "WHAT?" and loop.
 	If good, read next N (54) chars (or till RETURN), parse

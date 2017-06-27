@@ -6,6 +6,7 @@ HWCLASSES =     CoreMemory.class \
 		CoreLoader.class \
 		RWChannel.class \
 		HW2000.class \
+		LightedButton.class \
 		Errors.class \
 		Peripheral.class \
 		PopupFactory.class \

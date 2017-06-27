@@ -34,8 +34,10 @@ public class P_Console extends JFrame
 
 	public P_Console(Properties props) {
 		super("H220 Console");
-		setIconImage(Toolkit.getDefaultToolkit().
-			getImage(getClass().getResource("icons/con-96.png")));
+		java.net.URL url = getClass().getResource("icons/con-96.png");
+		if (url != null) {
+			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
+		}
 		kq = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 		_last = new File(System.getProperty("user.dir"));
 		odev = null;

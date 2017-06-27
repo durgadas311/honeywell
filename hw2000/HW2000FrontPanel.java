@@ -17,10 +17,6 @@ public class HW2000FrontPanel extends JFrame
 	Font medFont;
 	Font smallFont;
 
-	private static final byte[] _1HDR = new byte[]{ 001, 030, 024, 051, 015}; // 1HDR_
-	private static final byte[] _1EOF = new byte[]{ 001, 025, 046, 026, 015}; // 1EOF_
-	private static final byte[] _1ERI = new byte[]{ 001, 025, 051, 031, 015}; // 1ERI_
-
 	static final int btnContents = 0x1000;
 	static final int btnAddress = 0x2000;
 	static final int btnControl = 0x3000;
@@ -2712,20 +2708,20 @@ ee.printStackTrace();
 			}
 			// TODO: need option to overwrite tape
 			if (tp.empty()) {
-				tp.appendRecord(_1HDR, 0, -1);
+				tp.appendRecord(SequentialRecordIO._1HDR, 0, -1);
 				resCopy("bringup/bootmt.mti", tp);
 			} else {
 				// Find "1EOF " (or EOT)
 				// TODO: fail-safe "1ERI "?
 				// TODO: detect dup and delete/update? ++rev?
-				posTo(copy, _1EOF, tp);
+				posTo(copy, SequentialRecordIO._1EOF, tp);
 			}
 			// TODO: Allow cards vs. tape
 			e = asm.passTwo(new PeriphLoader(tp, asm.charCvt(), vis, rev, 250),
 					doList ? (CoreMemory)sys : null);
-			tp.appendRecord(_1EOF, 0, -1);
-			tp.appendRecord(_1ERI, 0, -1);
-			tp.appendRecord(_1ERI, 0, -1);
+			tp.appendRecord(SequentialRecordIO._1EOF, 0, -1);
+			tp.appendRecord(SequentialRecordIO._1ERI, 0, -1);
+			tp.appendRecord(SequentialRecordIO._1ERI, 0, -1);
 			tp.end();
 		} else if (disk) {
 			// MOD1 BRF format...

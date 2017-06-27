@@ -47,8 +47,10 @@ public class P_MagneticTape extends JFrame
 
 	public P_MagneticTape() {
 		super("H204B Magnetic Tape Unit");
-		setIconImage(Toolkit.getDefaultToolkit().
-			getImage(getClass().getResource("icons/mti-96.png")));
+		java.net.URL url = getClass().getResource("icons/mti-96.png");
+		if (url != null) {
+			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
+		}
 		_last = new File(System.getProperty("user.dir"));
 		sts = new MagTapeStatus[8];
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));

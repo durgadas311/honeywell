@@ -190,8 +190,10 @@ public class P_Disk extends JFrame
 	// 10400 char/trk
 	public P_Disk() {
 		super("H278 Disk Pack Devices");
-		setIconImage(Toolkit.getDefaultToolkit().
-			getImage(getClass().getResource("icons/dpi-96.png")));
+		java.net.URL url = getClass().getResource("icons/dpi-96.png");
+		if (url != null) {
+			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
+		}
 		Font smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 		_last = new File(System.getProperty("user.dir"));
 		busy = false;

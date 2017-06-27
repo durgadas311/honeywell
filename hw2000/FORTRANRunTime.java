@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Vector;
 
 public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
+	private static final byte[] _ENDATA = new byte[]{ 054, 025, 045,
+					024, 021, 063, 021, 015 }; // *ENDATA_
 	private int base = 0;
 	private int numOps = 0;
 	private int comm = 0;
@@ -20,6 +22,7 @@ public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 	private Peripheral perph;
 	SequentialRecordIO sqio = null;
 	private boolean input;
+	private boolean cards;
 	private FormatSpec[] fmt;
 	private int fmtAdr;
 	private HW2000 sys;
@@ -146,7 +149,7 @@ public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 			}
 			if (perph instanceof SequentialRecordIO) {
 				sqio = (SequentialRecordIO)perph;
-				sqio.begin(unit);
+				cards = !sqio.begin(unit);
 			}
 			getFormat(fmtAdr);
 			if (input) {
@@ -899,6 +902,15 @@ public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 		}
 	}
 
+	private boolean compare(byte[] v, byte[] c, int n) {
+		for (int x = 0; x < n && x <v.length && x < c.length; ++x) {
+			if ((v[x] & 077) != (c[x] & 077)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private void dispatchInput() {
 		if (sqio == null) {
 			System.err.format("Input on unsupported device %02o %o\n", dev, unit);
@@ -918,6 +930,11 @@ public class FORTRANRunTime extends FortranLibrary implements HW2000Trap {
 			return;
 		}
 		if (b.length == 0) {
+			ioflgs |= 001;
+			sys.rawWriteChar(comm + 0, (byte)ioflgs);
+			return;
+		}
+		if (cards && compare(b, _ENDATA, _ENDATA.length)) {
 			ioflgs |= 001;
 			sys.rawWriteChar(comm + 0, (byte)ioflgs);
 			return;

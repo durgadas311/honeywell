@@ -23,8 +23,10 @@ public class P_LinePrinter extends JFrame
 
 	public P_LinePrinter() {
 		super("H222 Line Printer");
-		setIconImage(Toolkit.getDefaultToolkit().
-			getImage(getClass().getResource("icons/prt-96.png")));
+		java.net.URL url = getClass().getResource("icons/prt-96.png");
+		if (url != null) {
+			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
+		}
 		_last = new File(System.getProperty("user.dir"));
 		ftape = new byte[66];
 		Arrays.fill(ftape, (byte)0);

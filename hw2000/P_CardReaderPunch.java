@@ -108,8 +108,10 @@ public class P_CardReaderPunch extends JFrame
 
 	public P_CardReaderPunch(CharConverter cvt) {
 		super("H214-2 Card Reader/Punch");
-		setIconImage(Toolkit.getDefaultToolkit().
-			getImage(getClass().getResource("icons/pcd-96.png")));
+		java.net.URL url = getClass().getResource("icons/pcd-96.png");
+		if (url != null) {
+			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
+		}
 		this.cvt = cvt;
 		stall = new Semaphore(0);
 		_last = new File(System.getProperty("user.dir"));
@@ -856,8 +858,7 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public boolean begin(int unit) {
-		// use unit for PCS code... TBD...
-		vUnit = unit;
+		vUnit = unit;	// PCS code, not unit number
 		return false; // input != output
 	}
 	public boolean ready() {
@@ -878,11 +879,11 @@ public class P_CardReaderPunch extends JFrame
 	}
 	public byte[] nextRecord() {
 		// TODO: is it safe to stall here?
+		vacateReader();	// just in case - should be no-op
 		if (!getCard(sts[1])) {
-			return new byte[0]; // like MagTape EOF mark...
+			return null;	// should only be abort...
 		}
 		byte[] b = new byte[vUnit == 2 ? 160 : 80];
-		// TODO: conversion modes...
 		for (int x = 0; x < 80; ++x) {
 			int p = getCol(sts[1], x);
 			if (vUnit == 2) { // raw mode...
@@ -896,10 +897,12 @@ public class P_CardReaderPunch extends JFrame
 				b[x] = (byte)c;
 			}
 		}
+		// make sure we don't read same card twice
+		vacateReader();
 		return b;
 	}
 	public boolean appendBulk(byte[] buf, int start, int len) {
-		// TODO: fillPunch() (and stall) here?
+		fillPunch();	// may stall if no cards
 		for (int x = 0; x < 80; ++x) {
 			int p = 0;
 			if (vUnit == 2) {
@@ -912,7 +915,8 @@ public class P_CardReaderPunch extends JFrame
 			}
 			putCol(sts[0], x, p);
 		}
-		putCard(sts[0]);
+		// make sure we don't punch same card twice
+		vacatePunch();
 		return true;
 	}
 	public boolean appendRecord(byte[] buf, int start, int len) {
