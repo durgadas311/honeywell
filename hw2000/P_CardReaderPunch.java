@@ -26,6 +26,8 @@ import java.util.concurrent.Semaphore;
 
 public class P_CardReaderPunch extends JFrame
 		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
+	static final int defBlank = 100;
+
 	Semaphore stall;
 
 	class CardStack extends JPanel {
@@ -40,7 +42,7 @@ public class P_CardReaderPunch extends JFrame
 			setPreferredSize(new Dimension(26, 106));
 			setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 			setBackground(Color.white);
-			cards = new Color(215,215,154);
+			cards = new Color(215,205,154);
 			scale = 5;
 		}
 		@Override
@@ -92,6 +94,7 @@ public class P_CardReaderPunch extends JFrame
 
 	PunchCardStatus[] sts;
 
+	SuffFileChooser ch;
 	boolean readPunch = false;
 	File _last = null;
 	boolean isOn = false;
@@ -115,6 +118,7 @@ public class P_CardReaderPunch extends JFrame
 		this.cvt = cvt;
 		stall = new Semaphore(0);
 		_last = new File(System.getProperty("user.dir"));
+		JButton bt;
 		GridBagLayout gb;
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.fill = GridBagConstraints.NONE;
@@ -132,16 +136,18 @@ public class P_CardReaderPunch extends JFrame
 		acc = new JPanel();
 		gb = new GridBagLayout();
 		acc.setLayout(gb);
+		bt = new JButton("BLANK");
+		bt.addActionListener(this);
+		bt.setActionCommand("blank");
+		gb.setConstraints(bt, gc);
+		acc.add(bt);
+		++gc.gridy;
 		JLabel lb = new JLabel("Num Blank");
 		gb.setConstraints(lb, gc);
 		acc.add(lb);
 		++gc.gridy;
-		lb = new JLabel("(use Cancel)");
-		gb.setConstraints(lb, gc);
-		acc.add(lb);
-		++gc.gridy;
 		acc_nb = new JTextField();
-		acc_nb.setPreferredSize(new Dimension(40, 20));
+		acc_nb.setPreferredSize(new Dimension(50, 20));
 		gb.setConstraints(acc_nb, gc);
 		acc.add(acc_nb);
 		gc.gridy = 0;
@@ -200,7 +206,7 @@ public class P_CardReaderPunch extends JFrame
 
 		pn = new JPanel();
 		pn.setLayout(new FlowLayout());
-		JButton bt = new JButton("Input Hopper");
+		bt = new JButton("Input Hopper");
 		bt.setPreferredSize(new Dimension(125, 20));
 		bt.setMargin(new Insets(5, 5, 5, 5));
 		bt.setActionCommand("reader");
@@ -362,7 +368,7 @@ public class P_CardReaderPunch extends JFrame
 		addWindowListener(this);
 		pack();
 
-		setBlank(100);
+		setBlank(defBlank);
 		setReady(true);
 	}
 
@@ -727,16 +733,24 @@ public class P_CardReaderPunch extends JFrame
 		return branch;
 	}
 
-	private File pickFile(String purpose) {
+	private File pickFile(String purpose, boolean input) {
 		File file = null;
-		SuffFileChooser ch = new SuffFileChooser(purpose,
+		ch = new SuffFileChooser(purpose,
 			new String[]{"pcd"}, new String[]{"Punch Card Deck"}, _last,
-			purpose.startsWith("Input") ? acc : null);
+				input ? acc: null);
 		int rv = ch.showDialog(this);
-		if (rv == JFileChooser.APPROVE_OPTION) {
-			file = ch.getSelectedFile();
-			_last = file; // or use dev[unit]?
+		if (rv != JFileChooser.APPROVE_OPTION) {
+			if (input) {
+				throw new RuntimeException("Cancel");
+			} else {
+				return null;
+			}
 		}
+		file = ch.getSelectedFile();
+		if (input && file.getName().equals("~BLANK~.pcd")) {
+			return null;
+		}
+		_last = file;
 		return file;
 	}
 
@@ -763,6 +777,12 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	private void setBlank(int num) {
+		if (idev != null) {
+			try {
+				idev.close();
+			} catch (Exception ee) {}
+			idev = null;
+		}
 		sts[1].deck_pn.setText("Blank");
 		sts[1].cards = num;
 		sts[1].count_pn.setText(String.format("%d", sts[1].cards));
@@ -784,18 +804,15 @@ public class P_CardReaderPunch extends JFrame
 		} else if (c.equals("stop")) {
 			setReady(false);
 			return;
+		} else if (c.equals("blank")) {
+			// must be in file chooser dialog...
+			ch.setSelectedFile(new File("~BLANK~"));
+			return;
 		}
 		String s = "";
 		if (c.equals("reader")) {
 			s = "Input Hopper";
-			if (idev != null) {
-				try {
-					idev.close();
-				} catch (Exception ee) {}
-				idev = null;
-			}
-			acc_nb.setText("100");
-			setBlank(100);
+			acc_nb.setText(Integer.toString(defBlank));
 		} else if (c.equals("punch")) {
 			s = "Output Stacker";
 			if (odev != null) {
@@ -809,19 +826,28 @@ public class P_CardReaderPunch extends JFrame
 			sts[0].count_pn.setText(String.format("%d", sts[0].cards));
 			sts[0].hopr_pn.repaint();
 		}
-		File f = pickFile(s);
-		if (f == null) {
-			if (c.equals("reader")) {
-				int num = 100;
+		boolean reader = c.equals("reader");
+		if (!reader && !c.equals("punch")) {
+			// ignore unknown buttons
+			return;
+		}
+		File f;
+		try {
+			f = pickFile(s, reader);
+		} catch (Exception ee) {
+			// Cancel - no change
+			return;
+		}
+		if (reader) {
+			if (f == null) { // BLANK deck
+				int num = defBlank;
 				if (!acc_nb.getText().isEmpty()) try {
 					num = Integer.valueOf(acc_nb.getText());
 				} catch (Exception ee) {}
 				setBlank(num);
 				// do not unStall() until operator presses START
+				return;
 			}
-			return;
-		}
-		if (c.equals("reader")) {
 			try {
 				idev = new FileInputStream(f);
 			} catch (Exception ee) {
@@ -833,7 +859,10 @@ public class P_CardReaderPunch extends JFrame
 			sts[1].count_pn.setText(String.format("%d", sts[1].cards));
 			sts[1].hopr_pn.repaint();
 			// do not unStall() until operator presses START
-		} else if (c.equals("punch")) {
+		} else {
+			if (f == null) {
+				return;
+			}
 			try {
 				odev = new FileOutputStream(f);
 			} catch (Exception ee) {
