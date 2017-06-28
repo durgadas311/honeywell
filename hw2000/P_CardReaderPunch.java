@@ -1,6 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 import java.io.*;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -29,6 +30,18 @@ public class P_CardReaderPunch extends JFrame
 	static final int defBlank = 100;
 
 	Semaphore stall;
+	LinkedList<NamedInputStream> hopper;
+
+	class NamedInputStream {
+		InputStream real;
+		String name;
+		int count;
+		public NamedInputStream(InputStream in, String nm, int num) {
+			real = in;
+			name = nm;
+			count = num;
+		}
+	}
 
 	class CardStack extends JPanel {
 		private PunchCardStatus pcs;
@@ -51,7 +64,7 @@ public class P_CardReaderPunch extends JFrame
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.translate(3, 3);
 			g2d.setColor(cards);
-			int n = (pcs.cards + scale - 1) / scale;
+			int n = (pcs.rest + pcs.cards + scale - 1) / scale;
 			boolean max = false;
 			if (n > 100) {
 				max = true;
@@ -84,6 +97,7 @@ public class P_CardReaderPunch extends JFrame
 		boolean interrupt = false;
 		int code = 0;
 		int cards = 0;
+		int rest = 0;
 		byte[] card;
 		JLabel count_pn;
 		JLabel deck_pn;
@@ -103,6 +117,8 @@ public class P_CardReaderPunch extends JFrame
 	CharConverter cvt;
 	int vUnit;
 	JPanel acc; // Accessories for file chooser
+	JCheckBox acc_cb;
+	JTextArea acc_stk;
 	JTextField acc_nb;
 	LightedButton start;
 	LightedButton stop;
@@ -117,8 +133,12 @@ public class P_CardReaderPunch extends JFrame
 		}
 		this.cvt = cvt;
 		stall = new Semaphore(0);
+		// First element is *current* deck...
+		hopper = new LinkedList<NamedInputStream>();
 		_last = new File(System.getProperty("user.dir"));
 		JButton bt;
+		JPanel pn;
+		JLabel lb;
 		GridBagLayout gb;
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.fill = GridBagConstraints.NONE;
@@ -136,13 +156,40 @@ public class P_CardReaderPunch extends JFrame
 		acc = new JPanel();
 		gb = new GridBagLayout();
 		acc.setLayout(gb);
+		gc.anchor = GridBagConstraints.WEST;
+		lb = new JLabel("Input Hopper:");
+		gb.setConstraints(lb, gc);
+		acc.add(lb);
+		++gc.gridy;
+		acc_cb = new JCheckBox("Remove All");
+		gb.setConstraints(acc_cb, gc);
+		acc.add(acc_cb);
+		++gc.gridy;
+		acc_stk = new JTextArea(4, 15);
+		//acc_stk.setFont();
+		acc_stk.setEditable(false);
+		gb.setConstraints(acc_stk, gc);
+		acc.add(acc_stk);
+		++gc.gridy;
+		gc.anchor = GridBagConstraints.CENTER;
+		// Can't seem to get separator to be vertically centered...
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 10));
+		gb.setConstraints(pn, gc);
+		acc.add(pn);
+		++gc.gridy;
+		JSeparator sp = new JSeparator();
+		sp.setPreferredSize(new Dimension(120, 10));
+		gb.setConstraints(sp, gc);
+		acc.add(sp);
+		++gc.gridy;
 		bt = new JButton("BLANK");
 		bt.addActionListener(this);
 		bt.setActionCommand("blank");
 		gb.setConstraints(bt, gc);
 		acc.add(bt);
 		++gc.gridy;
-		JLabel lb = new JLabel("Num Blank");
+		lb = new JLabel("Num Blank");
 		gb.setConstraints(lb, gc);
 		acc.add(lb);
 		++gc.gridy;
@@ -182,7 +229,6 @@ public class P_CardReaderPunch extends JFrame
 		gb = new GridBagLayout();
 		setLayout(gb);
 
-		JPanel pn;
 		gc.gridwidth = 15;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 5));
@@ -395,12 +441,8 @@ public class P_CardReaderPunch extends JFrame
 
 	public void addInput(InputStream deck, String src, int count) {
 		// TODO: reject if idev != null? close it? stack after?
-		idev = deck;
-		sts[1].deck_pn.setText(src == null ? "Program" : src);
-		sts[1].cards = count > 0 ? count : 0;
-		sts[1].count_pn.setText(String.format("%d", sts[1].cards));
-		sts[1].hopr_pn.repaint();
-		unStall(false);
+		if (src == null) src = "Program";
+		addDeck(new NamedInputStream(deck, src, count));
 	}
 
 	private int getCol(PunchCardStatus pcs, int ix) {
@@ -464,6 +506,62 @@ public class P_CardReaderPunch extends JFrame
 		sts[0].empty = false;
 	}
 
+	// 'idev' is at EOF... regardless of whether 'null'
+	private boolean finishDeck() {
+		if (idev != null) {
+			try {
+				idev.close();
+			} catch (Exception ee) {}
+			idev = null;
+		}
+		hopper.remove();
+		return nextDeck();
+	}
+
+	// Caller confirms "idev == null" before calling
+	private boolean nextDeck() {
+		if (hopper.isEmpty()) {
+			// NOTE: this is not BLANK cards...
+			sts[1].deck_pn.setText("");
+			sts[1].cards = 0;
+			sts[1].rest = 0;
+			sts[1].count_pn.setText("0");
+			sts[1].hopr_pn.repaint();
+			return false;
+		}
+		NamedInputStream nis = hopper.peek();
+		idev = nis.real;
+		String tag = nis.name;
+		if (hopper.size() > 1) {
+			tag += String.format("(+%d)", hopper.size() - 1);
+		}
+		sts[1].deck_pn.setText(tag);
+		sts[1].cards = nis.count;
+		sts[1].rest = stackCount() - nis.count;
+		sts[1].count_pn.setText(String.format("%d", sts[1].rest + sts[1].cards));
+		sts[1].hopr_pn.repaint();
+		return true;
+	}
+
+	private void addDeck(NamedInputStream nis) {
+		hopper.add(nis);
+		if (idev == null) {
+			nextDeck(); // updates display
+			return;
+		}
+		// update display... might be partway through
+		// current deck, so must be surgical...
+		String tag = hopper.peek().name;
+		if (hopper.size() > 1) {
+			tag += String.format("(+%d)", hopper.size() - 1);
+		}
+		// leave sts[1].cards alone...
+		sts[1].deck_pn.setText(tag);
+		sts[1].rest = stackCount() - hopper.peek().count;
+		sts[1].count_pn.setText(String.format("%d", sts[1].rest + sts[1].cards));
+		sts[1].hopr_pn.repaint();
+	}
+
 	private boolean getCard(PunchCardStatus pcs) {
 		// 'pcs' must be sts[1]...
 		int a;
@@ -485,6 +583,10 @@ public class P_CardReaderPunch extends JFrame
 				} catch (Exception ee) {
 					// TODO: pass along EI/II exceptions
 				}
+				// Should not normally reach "a < 0", but...
+				if (a < 0 && finishDeck()) {
+					continue;
+				}
 			} else if (pcs.cards > 0) {
 				// assume a *finite* stack of BLANK cards...
 				Arrays.fill(pcs.card, (byte)0);
@@ -495,16 +597,17 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			}
 			pcs.cards = 0;
+			pcs.rest = 0;
 			// what status to set?
 			pcs.count_pn.setText("0");
 			pcs.hopr_pn.repaint();
 		}
-		if (pcs.cards > 0) {
-			--pcs.cards;
-			pcs.count_pn.setText(String.format("%d", pcs.cards));
-			pcs.hopr_pn.repaint();
+		--pcs.cards;
+		if (pcs.cards <= 0) {
+			finishDeck();
 		} else {
-			pcs.count_pn.setText("?");
+			pcs.count_pn.setText(String.format("%d", pcs.rest + pcs.cards));
+			pcs.hopr_pn.repaint();
 		}
 		return true;
 	}
@@ -768,7 +871,8 @@ public class P_CardReaderPunch extends JFrame
 		// TODO: implement abort option
 		// TODO: prevent count > 0 ?
 		if (abort) { // cleanup display
-			sts[1].count_pn.setText(String.format("%d", sts[1].cards));
+			sts[1].count_pn.setText(String.format("%d",
+						sts[1].rest + sts[1].cards));
 			sts[1].hopr_pn.repaint();
 		}
 		if (sts[1].cards > 0) {
@@ -776,17 +880,47 @@ public class P_CardReaderPunch extends JFrame
 		}
 	}
 
-	private void setBlank(int num) {
+	// does not update any display elements
+	private void clearHopper() {
+		hopper.clear();	// TODO: need to close all?
 		if (idev != null) {
 			try {
 				idev.close();
 			} catch (Exception ee) {}
 			idev = null;
 		}
-		sts[1].deck_pn.setText("Blank");
+		sts[1].cards = 0;
+		sts[1].rest = 0;
+	}
+
+	private void setBlank(int num) {
+		clearHopper();
+		sts[1].deck_pn.setText("BLANK");
 		sts[1].cards = num;
 		sts[1].count_pn.setText(String.format("%d", sts[1].cards));
 		sts[1].hopr_pn.repaint();
+	}
+
+	private String stackList() {
+		if (idev == null && sts[1].cards > 0) {
+			return "BLANK";
+		}
+		String ret = "";
+		for (NamedInputStream nis : hopper) {
+			if (!ret.isEmpty()) {
+				ret += '\n';
+			}
+			ret += nis.name;
+		}
+		return ret;
+	}
+
+	private int stackCount() {
+		int ret = 0;
+		for (NamedInputStream nis : hopper) {
+			ret += nis.count;
+		}
+		return ret;
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -810,10 +944,18 @@ public class P_CardReaderPunch extends JFrame
 			return;
 		}
 		String s = "";
-		if (c.equals("reader")) {
+		boolean reader = c.equals("reader");
+		if (!reader && !c.equals("punch")) {
+			// ignore unknown buttons
+			return;
+		}
+		// Nothing but reader/punch buttons here
+		if (reader) {
 			s = "Input Hopper";
 			acc_nb.setText(Integer.toString(defBlank));
-		} else if (c.equals("punch")) {
+			acc_stk.setText(stackList());
+			acc_cb.setSelected(false);
+		} else {
 			s = "Output Stacker";
 			if (odev != null) {
 				try {
@@ -825,11 +967,6 @@ public class P_CardReaderPunch extends JFrame
 			sts[0].cards = 0;
 			sts[0].count_pn.setText(String.format("%d", sts[0].cards));
 			sts[0].hopr_pn.repaint();
-		}
-		boolean reader = c.equals("reader");
-		if (!reader && !c.equals("punch")) {
-			// ignore unknown buttons
-			return;
 		}
 		File f;
 		try {
@@ -844,21 +981,24 @@ public class P_CardReaderPunch extends JFrame
 				if (!acc_nb.getText().isEmpty()) try {
 					num = Integer.valueOf(acc_nb.getText());
 				} catch (Exception ee) {}
-				setBlank(num);
+				setBlank(num); // removes all existing decks
 				// do not unStall() until operator presses START
 				return;
 			}
+			InputStream in;
 			try {
-				idev = new FileInputStream(f);
+				in = new FileInputStream(f);
 			} catch (Exception ee) {
 				PopupFactory.warning(this, s, ee.toString());
 				return;
 			}
-			sts[1].deck_pn.setText(f.getName());
-			sts[1].cards = (int)((f.length() + 159) / 160);
-			sts[1].count_pn.setText(String.format("%d", sts[1].cards));
-			sts[1].hopr_pn.repaint();
-			// do not unStall() until operator presses START
+			if (acc_cb.isSelected()) {
+				clearHopper();
+			}
+			int count = (int)((f.length() + 159) / 160);
+			NamedInputStream nis = new NamedInputStream(in,
+								f.getName(), count);
+			addDeck(nis);
 		} else {
 			if (f == null) {
 				return;

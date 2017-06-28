@@ -26,27 +26,37 @@ If a program wants to detect the end of a card desk, there must be
 a special card to indicate the end, such as "1EOF&#916;", and the
 program must recognize the card and stop reading.
 
-<P>
-The "Input Hopper" button selects a file to be used to supply "cards" to the
-reader. With no file selected (e.g. "Cancel" from the selection dialog),
-a finite supply of blank cards is available.
-The "Output Stacker" button selects a file to be used to store punched
-(or read) "cards",
-otherwise output cards will be discarded.
-Note that an input file is not altered, so having output set to "Discard"
-will not affect a punch card deck being read.
-An active reader or punch will show the number
-of cards remaining/punched for the given file.
-The START, STOP, and RUNOUT buttons should behave similar to original
-equipment.
+<P>The "Input Hopper" button selects a file to be used to supply "cards" to the
+reader. Card files may be "stacked" much the way punch card decks could be
+stacked in the hopper. The current set of card decks may be removed/replaced
+by clicking the "Remove All" checkbox before accepting the next file.
+Blank cards may be selected by clicking the BLANK button and optionally
+entering the number of blank cards to add.
+Clicking "Cancel" will make no changes to the input hopper.
+
+<P>The "Output Stacker" button selects a file to be used to store punched
+(or read) "cards", otherwise output cards will be discarded.
+Any cards in the output stacker prior to selecting a file will be lost.
+In other words, the output stacker file must be set before passing any cards
+through the device that need to be saved.
+Note that input file(s) are never altered, so having output set to "Discard"
+will not affect a punch card deck (file) on the input hopper.
+
+<P>The number of cards in the input hopper and output stacker is shown,
+along with a visual representation of the respective card stacks.
+A red line on top of a stack indicates more cards than can be shown,
+however there are no physical limitations on the number of cards
+on the input hopper or output stacker - unlike original equipment.
+
+<P>The START, STOP, and RUNOUT buttons should behave similar to the original
+equipment.  The RUNOUT button may be necessary under
+certain conditions to flush all cards through the device, especially
+when an output stacker file is set.
 
 <P>File format consists of two bytes representing each card column. The two bytes form
 a 16-bit word, where only the low-order 12 bits are used. These 12 bits are
 interpreted as the punch card zones, with bit 11 being zone 12, bit 10 being
 zone 11, bit 9 being zone 0, and so forth with bit 0 being zone 9.
-
-<P>The "Runout" button may be necessary under
-certain conditions to flush all cards through the device.
 
 <P>The is also an application "CardPunch.jar" which may be used to create
 decks of cards, using an interface similar to original keypunch equipment.
