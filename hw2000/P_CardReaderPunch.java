@@ -617,8 +617,10 @@ public class P_CardReaderPunch extends JFrame
 		if (sts[0].busy || sts[1].busy) {
 			if (ready) {
 				unStall(false);
+				// fallthrough and update display now
+			} else {
+				return;
 			}
-			return;
 		}
 		stop.setOn(!ready);
 		start.setOn(ready);
