@@ -2133,11 +2133,15 @@ public class HW2000FrontPanel extends JFrame
 		if (id == -1) {
 			lb.setOn(true);
 		} else if (id != 0) {
+			int cls = id & ~0x0fff;
+			int idx = id & 0x0fff;
+			if (cls == btnSense) {
+				setSense(senseReg ^ (1 << idx));
+				return;
+			}
 			if (run.isOn()) {
 				return;
 			}
-			int cls = id & ~0x0fff;
-			int idx = id & 0x0fff;
 			if (cls == btnContents) {
 				if (idx == btnClear) {
 					setContents(0);
@@ -2167,8 +2171,6 @@ public class HW2000FrontPanel extends JFrame
 				}
 			} else if (cls == btnControl) {
 				setControl(controlReg ^ (1 << idx));
-			} else if (cls == btnSense) {
-				setSense(senseReg ^ (1 << idx));
 			}
 		} else {
 			String a = lb.getActionCommand();
