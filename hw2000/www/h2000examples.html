@@ -40,30 +40,39 @@ tape drive 000.
 <LI>Open/raise the PunchCard window and mount a new file in the Output Stacker.
 Ensure that a supply of blanks cards are available in the Input Hopper.
 If necessary, click Input Hopper, enter a larger number of blank cards
-(at least 311 are needed here), then click <B>Cancel</B>.
+(at least 311 are needed here), then click <B>BLANK</B> and accept ("Output Stacker").
 Press START if needed.
 <LI>Select menu File->Assemble and choose the file "puntest2.ezc" and click "Assemble".
-<LI>Press RUN.  The card punch should show 311 cards punched (maybe 1 or 2 less).
+<LI>Set SENSE switch 3 "on" to enable punching of an EOF card.
+<LI>Press RUN.
+The card punch should show 311 cards punched plus 1 for EOF (maybe 1 or 2 less).
 It may be necessary to press STOP and RUNOUT on the card punch to ensure
 all cards get saved.
 The tape drive will show about 25192,
 which is the number of bytes used in the image for records and record marks.
 <LI>Unmount the punch card deck from the Punch Stacker (click Output Stacker, then
 click Cancel).
-<LI>Mount the newly-punched deck of cards in the Input Hopper. Press START.
+<LI>Mount the newly-punched deck of cards in the Input Hopper.
+If necessary, select the "Remove All" option to remove any existing cards.
+Press START.
 <LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Set SENSE switch 3 "on" to enable detecting of the EOF card.
 <LI>Press RUN. The card reader should show to indicate that it read all
 cards and then ran out of cards (STOP is illuminated).
-The line printer should show 311 lines of the barber pole pattern.
+The line printer should show 311 lines of the barber pole pattern
+followed by "END PROG".
 </OL>
 
 <P>NOTE: Both programs use SENSE switches to change behavior. SENSE 3 will
 enable end of deck detection using a "1EOF" card (or add an EOF card when punching).
-There is also an EOF card punched in the file 1eof.pcd,
+There is also an EOF card pre-punched in the file 1eof.pcd,
 which may be used to cause program termination
 for programs that look for it (e.g. rdrtest with SENSE 3 on).
 SENSE 2 controls use of "special codes" (alphabetic), in contrast to the numeric
 punch card data processing codes for '+0' and '-0' vs. '&' and '-'.
+This switch shold be set according to the option used when the cards
+were punched. SENSE switch 1 is described in the FORTRAN CHARACTER CONVERSION
+example.
 
 <H2>MOD1 MASS STORAGE FILES</H2>
 
@@ -118,21 +127,46 @@ not the Honeywell symbols.
 <A HREF="h2000keypunch.html">Details</A> for those interested.
 This program consults the SENSE 1 switch to
 see whether or not to convert those special characters (using a MAT instruction).
+The first version of this example uses EOF detection, with SENSE switch 3 "on".
 
 <OL>
 <LI>Open/raise the PunchCards window and mount the file "prog3.pcd" in
-the Read Hopper. Press START if needed.
+the Read Hopper. Also mount the file "1eof.pcd" to add an EOF card.
+Press START if needed.
 <LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Set SENSE switch 3 "on".
 <LI>Press RUN. The short program-segment should be printed on the line printer -
 although many of the special characters will appear wrong for FORTRAN program
 syntax.
 <LI>It will be necessary to re-mount the card deck, in order to start over for
-the next step.
-<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+the next step. Also remember to add the "1eof.pcd" card.
 <LI>Press the SENSE 1 switch (it should now be lighted).
+This is in addition to the SENSE 3 switch.
 <LI>Press RUN. The short program-segment should be printed again,
 this time the FORTRAN special characters should appear as expected.
 </OL>
+
+<P>For comparison, this would be the procedure when not using an EOF card:
+
+<OL>
+<LI>Open/raise the PunchCards window and mount the file "prog3.pcd" in
+the Read Hopper.
+Press START if needed.
+<LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
+<LI>Press RUN. The short program-segment should be printed on the line printer -
+although many of the special characters will appear wrong for FORTRAN program
+syntax. The card reader will stall the processor, and the STOP indicator
+on the reader will be illuminated. The processor will still show running.
+<LI>It will be necessary to re-mount the card deck, in order to start over for
+the next step.
+<LI>Press the SENSE 1 switch (it should now be lighted).
+<LI>Press START on the card reader. The short program-segment should be printed again,
+this time the FORTRAN special characters should appear as expected.
+</OL>
+
+<P>NOTE: This second version will leave the processor running, stalled
+on the PDT instruction for the card reader.
+It will be necessary to STOP the processor and also INITIALIZE it.
 
 <H2>BINARY RUN TAPE</H2>
 
