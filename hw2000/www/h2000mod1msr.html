@@ -144,6 +144,21 @@ The "*DRS1RES" file may be created on any volume using the "Allocate File" funct
 The file must have a item, record, and block size of 250 and an index size (and data allocation) sufficient for
 storing the desired set of programs.
 
+<P>SUPER1 (as implemented by superv.ezc) will print READY on the console typewriter
+and wait for a 6-character command. The command must be either
+"EX&#916;&#916;&#916;&#916;" or "TEST&#916;&#916;".
+After entering the 6th character, enter one more space to
+confirm the command or any other character to abort and return to READY.
+If the command is not recognized, "WHAT?" will be printed.
+After the command is accepted, enter the 8 character program and segment name
+of a program on the resident ("EX") or go ("TEST") file, then press RETURN.
+If the program can be found and loaded, it will be executed.
+If the program exits by a standard monitor method, then the supervisor will
+be reloaded and the READY state reached. If the program does not exit using
+a standard monitor method, and has not corrupted the communications area,
+then setting the SR to 86 decimal (126 octal) and pressing RUN should restore
+the READY state. Otherwise, it will be necessary to boot from the disk pack again.
+
 <P>TODO: Managing the "*DRS1RES" program library.
 
 </BODY>

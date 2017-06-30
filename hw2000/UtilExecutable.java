@@ -271,7 +271,7 @@ public class UtilExecutable extends JPanel
 
 	private boolean checkVis(CoreMemory blk, int adr, byte[] vis) {
 		for (int x = 0; x < 6; ++x) {
-			if ((blk.readMem(adr) & vis[x] & 077) != 0) {
+			if ((blk.readMem(adr + x) & vis[x] & 077) != 0) {
 				return true;
 			}
 		}

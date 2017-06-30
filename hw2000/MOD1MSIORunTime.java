@@ -452,6 +452,20 @@ public class MOD1MSIORunTime implements HW2000Trap {
 		}
 	}
 
+	// TODO: better caching.  also cache open volumes.
+	private void putMCA(int adr) {
+		if (!mcas.containsKey(adr)) {
+			return;
+		}
+		MCA mca = mcas.remove(adr);
+		if (mca.file != null) {
+			mca.file.close();
+		}
+		if (mca.vol != null) {
+			mca.vol.unmount();
+		}
+	}
+
 	private void getMCA(int adr) {
 		MCA mca;
 		if (mcas.containsKey(adr)) {
@@ -598,18 +612,12 @@ public class MOD1MSIORunTime implements HW2000Trap {
 
 	private void msclos() {
 		if (xitMCA == null) {
-			getMCA(parms[0]);
+			putMCA(parms[0]);
 		} else {
 			// do we ever call exits from close?
 			haltErr(xitErr);
 			return;
 		}
-		if (xitMCA.file != null) {
-			xitMCA.file.close();
-			xitMCA.file = null;
-		}
-		xitMCA.mode = 0;
-		xitMCA = null;
 	}
 
 	private void msget() {

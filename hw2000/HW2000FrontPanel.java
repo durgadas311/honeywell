@@ -2693,7 +2693,7 @@ ee.printStackTrace();
 				return null;
 			}
 			if (!dpi_vis.getText().isEmpty()) try {
-				vis = UtilExecutable.visibility(dpi_rev.getText());
+				vis = UtilExecutable.visibility(dpi_vis.getText());
 			} catch (Exception ee) {
 				PopupFactory.warning(this, op, "Visibility invalid");
 				return null;
