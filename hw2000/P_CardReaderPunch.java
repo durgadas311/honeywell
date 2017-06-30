@@ -974,8 +974,11 @@ public class P_CardReaderPunch extends JFrame
 			clearHopper();
 		}
 		int count = (int)((f.length() + 159) / 160);
-		NamedInputStream nis = new NamedInputStream(in,
-						f.getName(), count);
+		String n = f.getName();
+		if (n.endsWith(".pcd")) {
+			n = n.substring(0, n.length() - 4);
+		}
+		NamedInputStream nis = new NamedInputStream(in, n, count);
 		addDeck(nis);
 	}
 
