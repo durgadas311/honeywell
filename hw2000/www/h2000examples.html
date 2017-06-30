@@ -39,7 +39,7 @@ and then read those cards and print them on the line printer.
 tape drive 000.
 <LI>Open/raise the PunchCard window and 
 ensure that a supply of blanks cards are available in the Input Hopper.
-If necessary, right-click on the input hopperto add more blank cards
+If necessary, right-click on the input hopper to add more blank cards
 (at least 311 are needed here).
 Clear the output stacker, if needed, by right-clicking on it.
 Press START if needed.
@@ -58,8 +58,7 @@ If necessary, select the "Remove All" option to remove any existing cards.
 Press START.
 <LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
 <LI>Set SENSE switch 3 "on" to enable detecting of the EOF card.
-<LI>Press RUN. The card reader should show to indicate that it read all
-cards and then ran out of cards (STOP is illuminated).
+<LI>Press RUN. The card reader should show 312 cards read.
 The line printer should show 311 lines of the barber pole pattern
 followed by "END PROG".
 </OL>
@@ -71,7 +70,7 @@ which may be used to cause program termination
 for programs that look for it (e.g. rdrtest with SENSE 3 on).
 SENSE 2 controls use of "special codes" (alphabetic), in contrast to the numeric
 punch card data processing codes for '+0' and '-0' vs. '&' and '-'.
-This switch shold be set according to the option used when the cards
+This switch should be set according to the option used when the cards
 were punched. SENSE switch 1 is described in the FORTRAN CHARACTER CONVERSION
 example.
 
