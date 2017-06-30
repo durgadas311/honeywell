@@ -26,21 +26,23 @@ If a program wants to detect the end of a card desk, there must be
 a special card to indicate the end, such as "1EOF&#916;", and the
 program must recognize the card and stop reading.
 
-<P>The "Input Hopper" button selects a file to be used to supply "cards" to the
-reader. Card files may be "stacked" much the way punch card decks could be
+<P>The window shows a picture of the input hopper on the left,
+and the output stacker on the right.
+Left clicking on the input hopper will pop-up a dialog to select
+punch card deck files to add to the hopper.
+Card files may be "stacked" much the way punch card decks could be
 stacked in the hopper. The current set of card decks may be removed/replaced
 by clicking the "Remove All" checkbox before accepting the next file.
-Blank cards may be selected by clicking the BLANK button and optionally
-entering the number of blank cards to add.
 Clicking "Cancel" will make no changes to the input hopper.
+Right clicking on the input hopper will replace any card decks with
+100 blank cards, and add 100 cards each subsequent click.
 
-<P>The "Output Stacker" button selects a file to be used to store punched
-(or read) "cards", otherwise output cards will be discarded.
-Any cards in the output stacker prior to selecting a file will be lost.
-In other words, the output stacker file must be set before passing any cards
-through the device that need to be saved.
-Note that input file(s) are never altered, so having output set to "Discard"
-will not affect a punch card deck (file) on the input hopper.
+<P>Left clicking on the output stacker will pop-up a dialog to save
+the current contents of the stacker to a file (leaving stacker empty).
+Clicking "Cancel" will make no changes to the output stacker.
+Right clicking on the output stacker will discard (delete) the current contents.
+Note that input file(s) are never altered, so discarding the output stacker
+after reading a deck of cards will not destroy the deck.
 
 <P>The number of cards in the input hopper and output stacker is shown,
 along with a visual representation of the respective card stacks.
@@ -52,6 +54,16 @@ on the input hopper or output stacker - unlike original equipment.
 equipment.  The RUNOUT button may be necessary under
 certain conditions to flush all cards through the device, especially
 when an output stacker file is set.
+
+<P>NOTE: Punch cards are virtual objects in this implementation, and are
+not required to exist in only one place. Reading a deck of cards results in
+two copies existing, one in the original file and one in the output stacker.
+The same deck of cards may be loaded into the input hopper again without
+removing (the copy) from the output stacker, so repeated reading of a deck
+of cards (without clearing the stacker) results in multiple copies of the
+deck in the stacker. It will be necessary to keep track of the output stacker
+contents if you plan on saving it, or else unwanted card decks may be present
+in your saved file.
 
 <P>File format consists of two bytes representing each card column. The two bytes form
 a 16-bit word, where only the low-order 12 bits are used. These 12 bits are

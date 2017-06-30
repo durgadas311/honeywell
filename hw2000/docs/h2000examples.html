@@ -37,10 +37,11 @@ and then read those cards and print them on the line printer.
 <OL>
 <LI>Open/raise the MagTape window and mount the file "barberpole.mti" on
 tape drive 000.
-<LI>Open/raise the PunchCard window and mount a new file in the Output Stacker.
-Ensure that a supply of blanks cards are available in the Input Hopper.
-If necessary, click Input Hopper, enter a larger number of blank cards
-(at least 311 are needed here), then click <B>BLANK</B> and accept ("Output Stacker").
+<LI>Open/raise the PunchCard window and 
+ensure that a supply of blanks cards are available in the Input Hopper.
+If necessary, right-click on the input hopperto add more blank cards
+(at least 311 are needed here).
+Clear the output stacker, if needed, by right-clicking on it.
 Press START if needed.
 <LI>Select menu File->Assemble and choose the file "puntest2.ezc" and click "Assemble".
 <LI>Set SENSE switch 3 "on" to enable punching of an EOF card.
@@ -50,8 +51,8 @@ It may be necessary to press STOP and RUNOUT on the card punch to ensure
 all cards get saved.
 The tape drive will show about 25192,
 which is the number of bytes used in the image for records and record marks.
-<LI>Unmount the punch card deck from the Punch Stacker (click Output Stacker, then
-click Cancel).
+<LI>Save the punch card deck from the output stacker
+(left-click the output stacker, then enter/select a file and click Save).
 <LI>Mount the newly-punched deck of cards in the Input Hopper.
 If necessary, select the "Remove All" option to remove any existing cards.
 Press START.
@@ -131,7 +132,7 @@ The first version of this example uses EOF detection, with SENSE switch 3 "on".
 
 <OL>
 <LI>Open/raise the PunchCards window and mount the file "prog3.pcd" in
-the Read Hopper. Also mount the file "1eof.pcd" to add an EOF card.
+the Input Hopper. Also mount the file "1eof.pcd" to add an EOF card.
 Press START if needed.
 <LI>Select menu File->Assemble and choose the file "rdrtest.ezc" and click "Assemble".
 <LI>Set SENSE switch 3 "on".
@@ -140,6 +141,7 @@ although many of the special characters will appear wrong for FORTRAN program
 syntax.
 <LI>It will be necessary to re-mount the card deck, in order to start over for
 the next step. Also remember to add the "1eof.pcd" card.
+Optionally clear the output stacker.
 <LI>Press the SENSE 1 switch (it should now be lighted).
 This is in addition to the SENSE 3 switch.
 <LI>Press RUN. The short program-segment should be printed again,
@@ -159,6 +161,7 @@ syntax. The card reader will stall the processor, and the STOP indicator
 on the reader will be illuminated. The processor will still show running.
 <LI>It will be necessary to re-mount the card deck, in order to start over for
 the next step.
+Optionally clear the output stacker.
 <LI>Press the SENSE 1 switch (it should now be lighted).
 <LI>Press START on the card reader. The short program-segment should be printed again,
 this time the FORTRAN special characters should appear as expected.
