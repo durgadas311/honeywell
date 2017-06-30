@@ -318,6 +318,7 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(pn, gc);
 		add(pn);
 		++gc.gridx;
+		gc.anchor = GridBagConstraints.SOUTH;
 		lb = new JLabel("START");
 		gb.setConstraints(lb, gc);
 		add(lb);
@@ -340,6 +341,7 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(lb, gc);
 		add(lb);
 		++gc.gridx;
+		gc.anchor = GridBagConstraints.CENTER;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(50, 5));
 		gb.setConstraints(pn, gc);
@@ -362,6 +364,7 @@ public class P_CardReaderPunch extends JFrame
 		add(pn);
 		gc.gridx += 3;
 		gc.gridwidth = 1;
+		gc.anchor = GridBagConstraints.NORTH;
 		start = new LightedButton(Peripheral.btnWhiteOn,
 					Peripheral.btnWhiteOff);
 		start.setActionCommand("start");
@@ -393,6 +396,7 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(runout, gc);
 		add(runout);
 		++gc.gridx;
+		gc.anchor = GridBagConstraints.CENTER;
 		gc.gridwidth = 3;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(50, 5));
@@ -448,7 +452,8 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public void addInput(InputStream deck, String src, int count) {
-		// TODO: reject if idev != null? close it? stack after?
+		// TODO: reject if hopper not empty? close it?
+		// stack after? stack before?
 		if (src == null) src = "Program";
 		addDeck(new NamedInputStream(deck, src, count));
 	}
@@ -526,7 +531,32 @@ public class P_CardReaderPunch extends JFrame
 		return nextDeck();
 	}
 
-	// Caller confirms "idev == null" before calling
+	// Consistency:
+	//	ASSERT if !hopper.isEmpty() then idev != null
+	//	ASSERT if idev == null then hopper.isEmpty()
+	//	if idev == null && cards > 0 then BLANK CARDS are loaded
+	//	if idev == null && cards == 0 then NO CARDS at all are loaded
+
+	// Hopper contains no cards at all.
+	// Cannot be used during transitions (when idev or cards are inconsistent).
+	private boolean hopperIsEmpty() {
+		return idev == null && sts[1].cards == 0;
+	}
+
+	// Hopper contains BLANK cards (only)
+	// Cannot be used during transitions (when idev or cards are inconsistent).
+	private boolean hopperHasBlank() {
+		return  idev == null && sts[1].cards > 0;
+	}
+
+	// Hopper contains non-BLANK cards
+	private boolean hopperHasDeck() {
+		return  idev != null;
+	}
+
+	// Caller confirms "idev == null" before calling.
+	// Note, this is transition code: idev and cards are not consistent.
+	// Upon return, the state should be consistent.
 	private boolean nextDeck() {
 		if (hopper.isEmpty()) {
 			// NOTE: this is not BLANK cards...
@@ -549,7 +579,7 @@ public class P_CardReaderPunch extends JFrame
 
 	private void addDeck(NamedInputStream nis) {
 		hopper.add(nis);
-		if (idev == null) {
+		if (!hopperHasDeck()) {
 			nextDeck(); // updates display
 			return;
 		}
@@ -571,12 +601,15 @@ public class P_CardReaderPunch extends JFrame
 				doStall();
 				if (pcs.cards == 0) { // implied abort
 					// assumed to be INITIALIZE - abort I/O
-					//pcs.error = true; // is this an error?
+					// processor should not be running.
 					return false;
 				}
 			}
 			a = -1;
-			if (idev != null) {
+			if (hopperHasBlank()) {
+				Arrays.fill(pcs.card, (byte)0);
+				a = pcs.card.length;
+			} else if (!hopperIsEmpty()) {
 				try {
 					// only one card read at a time... (?)
 					a = idev.read(pcs.card);
@@ -587,10 +620,6 @@ public class P_CardReaderPunch extends JFrame
 				if (a < 0 && finishDeck()) {
 					continue;
 				}
-			} else if (pcs.cards > 0) {
-				// assume a *finite* stack of BLANK cards...
-				Arrays.fill(pcs.card, (byte)0);
-				a = pcs.card.length;
 			}
 			pcs.empty = !(a > 0);
 			if (!pcs.empty) {
@@ -897,7 +926,7 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	private String stackList(char delim, boolean blanks) {
-		if (idev == null && sts[1].cards > 0 && blanks) {
+		if (hopperHasBlank() && blanks) {
 			return "BLANK";
 		}
 		String ret = "";
@@ -920,7 +949,7 @@ public class P_CardReaderPunch extends JFrame
 
 	private void doInputHopperRight() {
 		// Set/Add BLANK cards
-		if (idev != null) {
+		if (hopperHasDeck()) {
 			clearHopper();
 		}
 		setBlank(sts[1].cards + defBlank);
@@ -1063,6 +1092,7 @@ public class P_CardReaderPunch extends JFrame
 		vUnit = unit;	// PCS code, not unit number
 		return false; // input != output
 	}
+	// TODO: clean all this up...
 	public boolean ready() {
 		// Don't know if input or output,
 		// so only report the obvious case.
@@ -1126,6 +1156,7 @@ public class P_CardReaderPunch extends JFrame
 	}
 	public void end() {
 		// No need to truncate output... by definition output is new file.
+		// User must save the output...
 	}
 	public int getError() { return 0; }
 }
