@@ -1,8 +1,4 @@
-June 25, 2017
-
-+ CardReaderPunch:
-	* Allow "stacking" of card deck in Input Hopper.
-	* Allow save of output "deck" after-the-fact.
+June 30, 2017
 
 + SUPERV use "execute" command format:
 	Read > 6 chars, parse:
