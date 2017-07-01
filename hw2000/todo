@@ -1,11 +1,16 @@
-June 30, 2017
+July 1, 2017
 
-+ SUPERV use "execute" command format:
-	Read > 6 chars, parse:
-		EX____ = run from *DRS1RES
-		TEST__ = run from *DRS1GO (non-Honeywell)
-		????__ = run from BRT tape?
-	If < 6 chars (i.e. RETURN pressed) or 7th != space, ignore (loop).
-	If bad, print "WHAT?" and loop.
-	If good, read next N (54) chars (or till RETURN), parse
-		prog+seg (ignore halt name), load/run.
++ SUPERV:
+	implement HALT name
+	implement alt search modes:
+		01 = ++seg, search and load (decimal add only)
+		X2 = no load, return MS adr only
+		07 = load from prev MS adr
+	impl card reader for EX
+	imple reloc augment?
+	impl special start adr
+
+	Undoc/extensions:
+		load from alt disk unit
+		load from GO file (done, 'G' in loc 110)
+		BRR/IBR and relocation (progs not compatible with mon)
