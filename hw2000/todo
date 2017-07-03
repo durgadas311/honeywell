@@ -1,5 +1,41 @@
 July 1, 2017
 
++ Formats:
+	1HDR_:
+		1-5 = "1HDR "
+		6-10 = tape serial number
+		11-15 = file serial number (not used)
+		16 = "-"
+		17-19 = reel sequence number
+		20 = " "
+		21-30 = file name
+		31-35 = creation data (date?) (not used)
+		36 = "-"
+		37-39 = retention cycle (not used)
+		40 = " "
+		41-50 = (reserved)
+		51-64 = member name (part. seq. only)
+		65-80 = (reserved)
+
+	Card 1HDR_:
+		1-5 = "1HDR "
+		21-30 = file name (optional)
+		51-64 = member name (part. seq. only)
+
+	SEQUENTIAL      PARTITONED
+	1HDR ...	1HDR ...
+	date records	data...
+	1EOF (*)	1EOF
+			1HDR ... (next member)
+			date...
+			...etc...
+			1EOF (*)
+	1ERI		1ERI
+	1ERI		1ERI	(not for cards)
+	(*) (Tape) May be 1EOR to indicate another reel follows (multi-reel)
+		1-5 = 1EOF or 1EOR
+		6-10 = record count (not used)
+
 + SUPERV:
 	implement HALT name
 	implement alt search modes:
@@ -13,4 +49,11 @@ July 1, 2017
 	Undoc/extensions:
 		load from alt disk unit
 		load from GO file (done, 'G' in loc 110)
-		BRR/IBR and relocation (progs not compatible with mon)
+		BRR/IBR and relocation (incompatible progs - reloc aug?)
+
++ Util:
+	BRT map
+	Executables source from BRT
+
++ AAAMONS1
+	implement Tape Loader/monitor

@@ -64,7 +64,7 @@ followed by "END PROG".
 </OL>
 
 <P>NOTE: Both programs use SENSE switches to change behavior. SENSE 3 will
-enable end of deck detection using a "1EOF" card (or add an EOF card when punching).
+enable end of deck detection using a "1EOF&#916;" card (or add an EOF card when punching).
 There is also an EOF card pre-punched in the file 1eof.pcd,
 which may be used to cause program termination
 for programs that look for it (e.g. rdrtest with SENSE 3 on).
@@ -85,6 +85,7 @@ or files allocated, some steps may be skipped. Note, these example programs
 have the file name hard-coded, so require modification if the file name
 is to change. Also, MOD1 files have strict item/record sizes and this program
 expects the item size to be 80 characters.
+This example expects the card input to terminate with a "1EOF&#916;" card.
 
 <OL>
 <LI>Open/raise the Disks window and mount a new file on disk drive 000.
@@ -106,16 +107,27 @@ expects the item size to be 80 characters.
 </UL>
 <LI>Optionally, use the Disk_Util->Map_Volume menu item to print
 the file(s) and, optionally, allocation of the volume.
-<LI>Open/raise the PunchCard window and mount a card deck, such as the
-barber pole one created in the previous example.
+<LI>Open/raise the PunchCard window and mount one or more card decks, such as the
+barber pole one created in the previous example (311 cards of the "barberpole" pattern).
+Add the deck "1eof.pcd" to provide the EOF card.
 <LI>Select menu File->Assemble and choose the file "mod1test1.ezc" and click "Assemble".
-<LI>Press RUN. The card reader should show 311 cards read, and "END".
-The disk drive should show current position on the third track allocated.
+<LI>Set SENSE switch 3 to "on". If the card deck(s) were punched with "special code",
+set SENSE switch 2 to "on".
+<LI>Press RUN. The card reader should show the number of cards read.
+The disk drive should show current (final) position in cylinder and track.
 NOTE: The drive DAT permit switch must be ON.
+<UL>
+	<LI>To avoid complications later, press STOP and RUNOUT on the card
+	reader/punch.
+	<LI>If the input hopper was not terminated with an EOF card,
+	the card reader will stall the processor. It will be necessary to
+	end the program before continuing. Press STOP and INITIALIZE.
+</UL>
 <LI>Select menu File->Assemble and choose the file "mod1test2.ezc" and click "Assemble".
 <LI>Press RUN. The disk drive should momentarily show activity and then
 advance to final position of the previous step. The line printer 
-should have printed the 311-line barber pole pattern and "FINISHED".
+should have printed the 311-line barber pole pattern (or whatever data
+was previously used) and "FINISHED".
 NOTE: No drive PERMIT switches are required.
 </OL>
 
@@ -180,7 +192,7 @@ and then use BOOTSTRAP to run it.
 <LI>Open/raise the MagTape window and mount a "blank tape" (new file) on tape drive 000.
 <LI>Select menu File->Assemble and choose the file "mcetests.ezc",
 check the "Tape Image" box, and click "Assemble".
-This will create a BRT image on the new file.
+This will create a self-loading BRT image on the "tape".
 <LI>Rewind the tape on tape drive 000.
 <LI>For the 220-3 console, enter the bootstrap command "B 40 0000000".
 For the full control panel:
@@ -188,10 +200,10 @@ For the full control panel:
 <LI>Ensure Address is 0 (use the clear button as needed).
 <LI>Press BOOTSTRAP.
 </OL>
-The tape drive should indicate that about 6 bytes were read.
+The tape drive should indicate that about 6-80 bytes were read.
 This will be the BRT "1HDR&#916;" record.
 <LI>Repeat the bootstrap step to load the actual bootstrap record.
-Tape drive should show 361 bytes have been read.
+Tape drive should show approximately 354 additional bytes have been read.
 <LI>Press RUN. The tape drive should stop at about 3197 bytes and the line printer
 should show the output of running the mcetests program.
 </OL>
@@ -232,12 +244,15 @@ the file(s) and, optionally, allocation of the volume.
 <LI>Select menu File->Assemble and choose the file "mmbtest1.ezc" and click "Assemble".
 <LI>Mount the first dataset on either the card reader or magnetic tape drive 000.
 If using magnetic tape, set SENSE 1 switch ON (otherwise ensure it is OFF).
+If using cards (SENSE 1 switch OFF), set SENSE 2 switch ON if cards were punched
+with "special code", and set SENSE 3 switch ON to detect EOF cards.
+Ensure cards terminate with "1EOF&#916;" (add "1eof.pcd" as needed).
 <LI>Press RUN. The selected device should show activity,
 along with the disk drive, and then the printer should
 show "FINISHED MEMBER-XXX" where "XXX" is a 3-digit number that increments each time.
 NOTE: The disk drive DAT permit switch must be ON.
 <LI>The preceding steps may be repeated for additional datasets. When the last
-dataset to be loaded is ready, set SENSE 2 switch ON to signal the last dataset
+dataset to be loaded is ready, set SENSE 4 switch ON to signal the last dataset
 is about to be loaded. After the last dataset, the program alo prints "END PROG".
 At this point, the file should be safely closed.
 <LI>Select menu File->Assemble and choose the file "mmbtest2.ezc" and click "Assemble".
@@ -247,6 +262,15 @@ each followed by "FINISHED MEMBER-XXX". After the last data member dump,
 the program should print "END PROG" and exit.
 NOTE: No drive PERMIT switches are required.
 </OL>
+
+<P>NOTE: If card decks are not terminated with an EOF card, the card reader
+will stall the processor in the PDT instruction. The only clean way to resolve
+this is to add an EOF card and press START on the reader. Otherwise, the processor
+STOP and INITIALIZE buittons must be used which will leave the disk file in
+an unknown state (file and last member were not cleanly closed).
+Note that the SENSE 3 switch is checked after reading <U>every</U> card,
+so it can be turned on at any point, although generally the processor should
+be stopped or stalled (or basically quiesced).
 
 </BODY>
 </HTML>
