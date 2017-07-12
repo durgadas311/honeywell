@@ -23,16 +23,42 @@ DAT allows writing of data records on tracks. A and B allow
 finer-grained control over writing of records that were formatted
 with A/B flags.
 
+<P>Disk geometry is set as for Model 278 drives:
+203 cylinders of 20 tracks (heads, surfaces) with 10400 raw characters per track.
+Each record consumes 11 additional characters to the record length.
+Raw capacity of a disk pack is 42 million characters.
+The image file format consists of 4060 blocks of 10000 bytes each, representing
+the tracks. The first 20 blocks (tracks) represent the first cylinder. 
+Within a track, data is laid out starting with a 1-byte Address Mark followed
+by the header (FCCTTRRDL) followed by a 1-byte Data Mark, then DL bytes of
+data followed by either another Address Mark or an "end of track mark".
+Bytes from the End Mark to 10000th byte are ignored, although format commands
+can write there. The file size grows as tracks get formatted, with "non-existent"
+data effectively being "unformatted".
+
+<P>Each drive has a mount/unmount button that is labeled for the
+drive number (000 - 007). Clicking this button opens a file dialog window
+for selecting the disk image to be mounted (clicking Cancel will leave no
+image mounted).
+Additionally, "FMT" and "DAT" buttons permit writing of track format
+and record data, respectively.
+In addition, "A" and "B" buttons exist to provide values to match
+against the A-File and B-File bits in record headers.
+These bits are treated as a mask, and "0" is always writeable (if "DAT" permit is on).
+So, if a record header has AB as "10", then that record can be written (only)
+if "A" is ON, but "B" may be ON or OFF (don't-care).
+<P>Active drives will show current head position/selection
+as Cylinder-Track, e.g. "000-06" for cylinder 0 head 6.
+
 <P>Due to lack of detailed information about these devices,
 the following has been assumed until more information is available:
 <UL>
 <LI>The ADDRESS REGISTER is loaded/stored from 12 characters in memory,
-referred to as "DPCCTTRRSWDL".
+referred to here as "DPCCTTRRSWDL".
 This register is closely-related to the record header on disk, which
-is FCCTTRRDL ("F" is the flag, which includes A/B bits from "W").
-MOD1 MPIOC documentation describes only the first 10 characters,
-in a field that is said to "reflect the address register".
-The address register is defined as:
+is FCCTTRRDL ("F" is the flag, which includes A/B bits from "W"
+plus a TLR bit from unknown source).
+The address register is defined here as:
 <UL>
 <LI>"D" is the drive/unit number (00-07)
 <LI>"P" is the disk pack number (not used - 00)
@@ -43,6 +69,8 @@ The address register is defined as:
 <LI>"DL" is the record data length
 </UL>
 Some of these values are only used during formatting commands.
+MOD1 MPIOC documentation describes only the first 10 characters,
+in a field that is said to "reflect the address register".
 This implementation honors an RM to limit
 the amount of the address register that is stored/loaded.
 Formatting, not described in any documentation available, requires
@@ -124,59 +152,6 @@ seek/restore operations on different drives could be active.
 The PCB instructions to test busy can select different drives,
 allow for multiple head-movement operations to be started and then
 polled to see what drive is ready to do I/O.
-
-<P>Disk geometry is set as for Model 278 drives:
-203 cylinders of 20 tracks (heads, surfaces) with 10400 raw characters per track.
-Each record consumes 11 additional characters to the record length.
-Raw capacity of a disk pack is 42 million characters.
-The image file format consists of 4060 blocks of 10000 bytes each, representing
-the tracks. The first 20 blocks (tracks) represent the first cylinder. 
-Within a track, data is laid out starting with a 1-byte Address Mark followed
-by the header (FCCTTRRDL) followed by a 1-byte Data Mark, then DL bytes of
-data followed by either another Address Mark or an "end of track mark".
-Bytes from the End Mark to 10000th byte are ignored, although format commands
-can write there. The file size grows as tracks get formatted, with "non-existent"
-data effectively being "unformatted".
-
-<P>Each drive has a mount/unmount button that is labeled for the
-drive number (000 - 007). Clicking this button opens a file dialog window
-for selecting the disk image to be mounted (clicking Cancel will leave no
-image mounted).
-Additionally, "FMT" and "DAT" buttons permit writing of track format
-and record data, respectively.
-In addition, "A" and "B" buttons exist to provide values to match
-against the A-File and B-File bits in record headers.
-These bits are treated as a mask, and "0" is always writeable (if "DAT" permit is on).
-So, if a record header has AB as "10", then that record can be written (only)
-if "A" is ON, but "B" may be ON or OFF (don't-care).
-<P>Active drives will show current head position/selection
-as Cylinder-Track, e.g. "000-06" for cylinder 0 head 6.
-
-<P>There is mention in the documentation of status bits in the control
-address register:
-
-<UL>"...in protect mode, an attempt to write results in a
-protect violation status in the disk control address register."</UL>
-
-However, there is no definition of the address register. It is assumed to be
-similar to the disk record header and TLR data, i.e. CCTTRR, but some  of those bits
-are not used:
-<UL>
-<LI>cylinder max (known) value 0312
-<LI>track max 0023 (20 surfaces on 11-platter disk packs)
-<LI>record max 0733 (practical limit for 10400 character tracks,
-record length equals header length)
-</UL>
-Uncertain which bits were status
-(or if an addition character existed in the address register),
-and what statuses were provided. It would be logical
-to choose the high-order character of the track (TT), since no known disk technology
-of the time had more than 11 platter disk packs (except Models 260/261?).
-Cylinder and record values are based on recording/stepping technology
-and are not tied (as much) to physical characteristics of disk packs,
-and thus could (and did) increase over time as technology advanced (limited
-only by magnetic surface quality of the disk packs).
-
 
 </BODY>
 </HTML>
