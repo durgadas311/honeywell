@@ -24,6 +24,12 @@ import java.util.concurrent.Semaphore;
 //	4. Read tape (optionally modify data) and punch new cards
 //
 // It does, however, permit punching additional data on existing cards.
+//
+// NOTE: H800 documentation describes "transcription mode" as storing
+// punch zones 9-4 for columns 1-80 in the first memory block, and
+// then punch zones 3-0,X,R for columns 1-80 in the second memory block.
+// Unknown if H200 transcription mode follows the same format.
+// The zone-bit positions are reversed from that of the PCD file format.
 
 public class P_CardReaderPunch extends JFrame
 		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
