@@ -26,14 +26,29 @@ import java.util.concurrent.Semaphore;
 // It does, however, permit punching additional data on existing cards.
 //
 // NOTE: H800 documentation describes "transcription mode" as storing
-// punch zones 9-4 for columns 1-80 in the first memory block, and
-// then punch zones 3-0,X,R for columns 1-80 in the second memory block.
-// Unknown if H200 transcription mode follows the same format.
+// punch zones 9-4 for columns 1-80 in the first 10-word (80-char) memory block,
+// and then punch zones 3-0,X,R for columns 1-80 in the second memory block.
 // The zone-bit positions are reversed from that of the PCD file format.
+//
+// Manual for H214-1 Punch describes option 064 (direct transcription mode) as
+// using pairs of adjacent characters in memory for each column, with the first
+// character containing 9-4 and the second 3-0,X,R. This is still bit-reversed
+// from the PCD file format.
+//
+// It appears that the H8200 follows the H200 memory pattern for direct transcription,
+// with the high 6 bits of the word being the first character of the 8-char block.
+// It also appears as though the H8200 uses only Series 200 peripherals, with the
+// exception of the 8200-1 console. In general, the H8200 uses H200-style peripheral
+// instructions, adapted to Word mode (i.e. same control chars).
 
 public class P_CardReaderPunch extends JFrame
 		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
 	static final int defBlank = 100;
+
+	static final byte[] rev4 = new byte[]{
+		0b0000, 0b1000, 0b0100, 0b1100, 0b0010, 0b1010, 0b0110, 0b1110,
+		0b0001, 0b1001, 0b0101, 0b1101, 0b0011, 0b1011, 0b0111, 0b1111,
+	};
 
 	Semaphore stall;
 	LinkedList<NamedInputStream> hopper;
@@ -691,6 +706,14 @@ public class P_CardReaderPunch extends JFrame
 		passCard();
 	}
 
+	// Reverse the low 12 bits
+	private int reversePunch(int p) {
+		int pp = rev4[(p >> 8) & 0x0f];
+		pp |= rev4[(p >> 4) & 0x0f] << 4;
+		pp |= rev4[p & 0x0f] << 8;
+		return pp;
+	}
+
 	private void fillPunch() {
 		if (!sts[0].empty) {
 			return;
@@ -717,7 +740,7 @@ public class P_CardReaderPunch extends JFrame
 			// Must not disturb punctuation...
 			int p = getCol(pcs, x);
 			if (pcs.code == 2) {
-				// TODO: what is proper order...
+				p = reversePunch(p);
 				m = rwc.writeChar((byte)((p >> 6) & 077));
 				// this would probably be an error...
 				stop = ((m & 0300) == 0300);
@@ -754,6 +777,7 @@ public class P_CardReaderPunch extends JFrame
 					return;
 				}
 				p |= (rwc.readChar() & 077);
+				p = reversePunch(p);
 			} else {
 				byte a = rwc.readChar();
 				p = cvt.hwToPun(a, (pcs.code == 1));
@@ -1128,8 +1152,9 @@ public class P_CardReaderPunch extends JFrame
 		for (int x = 0; x < 80; ++x) {
 			int p = getCol(sts[1], x);
 			if (vUnit == 2) { // raw mode...
+				p = reversePunch(p);
 				b[x * 2] = (byte)((p >> 6) & 077);
-				b[x * 2 + 1] = (byte)p;
+				b[x * 2 + 1] = (byte)(p & 077);
 			} else {
 				int c = cvt.punToHW(p, (vUnit == 1));
 				if (c < 0) {
@@ -1150,6 +1175,7 @@ public class P_CardReaderPunch extends JFrame
 				if (x * 2 + 1 < buf.length) {
 					p = (buf[x * 2] & 077) << 6;
 					p |= (buf[x * 2 + 1] & 077);
+					p = reversePunch(p);
 				}
 			} else if (x < buf.length) {
 				p = cvt.hwToPun(buf[x], (vUnit == 1));
