@@ -1,0 +1,88 @@
+Evolution of Honeywell character codes (vs. IBM Punch Card codes)
+(Datamatic1000 represents joint-venture with Raytheon)
+Includes common printer interpretation(s)
+
+R = 12-punch
+X = 11-punch
+dia = A diamond symbol
+delta = Greek delta symbol, "visible space"
+sol = Solid lozenge symbol
+loz = Open lozenge symbol
+ne = Not-equal symbol
+down = Downward pointing arrow symbol
+not = IBM logical not symbol
+exo = Circle with inscribed X symbol
+[sym] = IBM-029 symbol
+sym|sym... = Alternate options (e.g. optional printers or periph. instr. codes)
+
+H200/2000 printer options use 1/2 instead of !,
+and might not include >, ?, ne, <, loz, cent, and 1/2|!.
+
+----Punch-----	Datamatic1000	----H800-----	----H1800----	----H200/----
+-----	------	-------------	-------------	-------------	-------------
+none	space	20	blank	15	blank	15	blank	15	blank
+1	1	01	1	01	1	01	1	01	1
+2	2	02	2	02	2	02	2	02	2
+3	3	03	3	03	3	03	3	03	3
+4	4	04	4	04	4	04	4	04	4
+5	5	05	5	05	5	05	5	05	5
+6	6	06	6	06	6	06	6	06	6
+7	7	07	7	07	7	07	7	07	7
+8	8	10	8	10	8	10	8	10	8
+9	9	11	9	11	9	11	9	11	9
+8,2	[:]	12	'	12	|'|'	12	|'|'	12	'
+8,3	#	13	#	13	=	13	=	13	=
+8,4	@	14	@	14	-|:|:	14	-|:|:	14	:
+8,5	[']	15	+	60	||CR	60	||dia	60	<
+8,6	[=]	16		16	||cent	16	||cent	16	>
+8,7	["]	17		17	|&|&	17	|&|&	17	&
+R	&	60	&	20	+	20	+	20|37	+|?
+R,0	...			37	||delta	37	||delta	37|20	?|+
+R,1	A	21	A	21	A	21	A	21	A
+R,2	B	22	B	22	B	22	B	22	B
+R,3	C	23	C	23	C	23	C	23	C
+R,4	D	24	D	24	D	24	D	24	D
+R,5	E	25	E	25	E	25	E	25	E
+R,6	F	26	F	26	F	26	F	26	F
+R,7	G	27	G	27	G	27	G	27	G
+R,8	H	30	H	30	H	30	H	30	H
+R,9	I	31	I	31	I	31	I	31	I
+R,8,2	[cent]	32	CR	32	|;|;	32	|;|;	32	;
+R,8,3	.	33	.	33	.	33	.	33	.
+R,8,4	loz[<]	34	loz	34	)	34	)	34	)
+R,8,5	[(]	35	(	35	|%|%	35	|%|%	35	%
+R,8,6	[+]	36	)	36	|sol	36	|sol	36	sol
+R,8,7	[|]	37							
+X	-	40	-	40	-	40	-	40|57	-|!
+X,0	...			57	||?	57	||?	57|40	!|-
+X,1	J	41	J	41	J	41	J	41	J
+X,2	K	42	K	42	K	42	K	42	K
+X,3	L	43	L	43	L	43	L	43	L
+X,4	M	44	M	44	M	44	M	44	M
+X,5	N	45	N	45	N	45	N	45	N
+X,6	O	46	O	46	O	46	O	46	O
+X,7	P	47	P	47	P	47	P	47	P
+X,8	Q	50	Q	50	Q	50	Q	50	Q
+X,9	R	51	R	51	R	51	R	51	R
+X,8,2	[!]	52	=	52	|#|#	52	|#|#	52	#
+X,8,3	$	53	$	53	$	53	$	53	$
+X,8,4	*	54	*	54	*	54	*	54	*
+X,8,5	[)]	55	cent	55	|"|"	55	|"|"	55	"
+X,8,6	[;]	56		56	||down	56	||down	56	ne
+X,8,7	[not]	57							
+0	0	00	0	00	0	00	0	00	0
+0,1	/	61	/	61	/	61	/	61	/
+0,2	S	62	S	62	S	62	S	62	S
+0,3	T	63	T	63	T	63	T	63	T
+0,4	U	64	U	64	U	64	U	64	U
+0,5	V	65	V	65	V	65	V	65	V
+0,6	W	66	W	66	W	66	W	66	W
+0,7	X	67	X	67	X	67	X	67	X
+0,8	Y	70	Y	70	Y	70	Y	70	Y
+0,9	Z	71	Z	71	Z	71	Z	71	Z
+0,8,2	...	72	:	72	|@|@	72	|@|@	72	@
+0,8,3	,	73	,	73	,	73	,	73	,
+0,8,4	%	74	%	74	(	74	(	74	(
+0,8,5	[_]	75	1/2	75	|1/2	75	|CR	75	CR
+0,8,6	[>]	76		76	||loz	76	||loz	76	loz
+0,8,7	[?]	77	space	77	||exo	77	||exo	77	cent
