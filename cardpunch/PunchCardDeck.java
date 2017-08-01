@@ -24,10 +24,12 @@ class PunchCardDeck extends PunchCard
 	Font labels;
 	File _progFile;
 	File _cwd;
-	FileOutputStream _outDeck = null;
-	FileInputStream _inDeck = null;
-	int _pgix;
-	boolean _changed;
+	CardHopper hopper;
+	CardStacker stacker;
+	JPanel acc;
+	JCheckBox acc_cb;
+	JTextArea acc_stk;
+	int _pgix = 0;
 	JMenu[] _menus;
 	Rectangle _top, _bottom;
 	byte[] bb;
@@ -114,6 +116,13 @@ class PunchCardDeck extends PunchCard
 		// TODO: initialize program card from file...
 		Arrays.fill(_prog, (byte)0);
 		_progFile = null;
+		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);
+		stacker = new CardStacker("Output Stacker", 125, 90, 1, false);
+		hopper.addBlank(50);
+		hopper.setListener(this);
+		stacker.setListener(this);
+		deckUpdate(hopper);
+		deckUpdate(stacker);
 
 		_menus = new JMenu[3];
 		JMenu mu;
@@ -236,9 +245,28 @@ class PunchCardDeck extends PunchCard
 
 		_keyQue = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 
-		if (opts.output != null) {
-			setupFile(new File(opts.output));
-		}
+		// Accessory panel for Input Deck chooser...
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		acc = new JPanel();
+		GridBagLayout gb = new GridBagLayout();
+		acc.setLayout(gb);
+		gc.anchor = GridBagConstraints.WEST;
+		JLabel lb = new JLabel("Input Hopper:");
+		gb.setConstraints(lb, gc);
+		acc.add(lb);
+		++gc.gridy;
+		acc_cb = new JCheckBox("Remove All");
+		gb.setConstraints(acc_cb, gc);
+		acc.add(acc_cb);
+		++gc.gridy;
+		acc_stk = new JTextArea(4, 15);
+		acc_stk.setEditable(false);
+		gb.setConstraints(acc_stk, gc);
+		acc.add(acc_stk);
+		++gc.gridy;
 	}
 
 	private JPanel centeredLabel(String lab) {
@@ -436,8 +464,17 @@ class PunchCardDeck extends PunchCard
 
 	private void ibm026Panel(CardPunchOptions opts) {
 		JPanel spc = new JPanel();
-		spc.setPreferredSize(new Dimension(100, 20));
+		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gc.gridheight = 3;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = stacker;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(40, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -456,7 +493,7 @@ class PunchCardDeck extends PunchCard
 		pn_gc.gridheight = 3;
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(240, 90));
+		spc.setPreferredSize(new Dimension(200, 90));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -465,7 +502,16 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(240, 20));
+		spc.setPreferredSize(new Dimension(220, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = hopper;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -473,8 +519,12 @@ class PunchCardDeck extends PunchCard
 
 	private void ibm029Panel(CardPunchOptions opts) {
 		JPanel spc = new JPanel();
-		spc.setPreferredSize(new Dimension(100, 20));
+		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gc.gridheight = 3;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = stacker;
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -489,7 +539,14 @@ class PunchCardDeck extends PunchCard
 		pn_gc.gridheight = 3;
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(120, 20));
+		spc.setPreferredSize(new Dimension(60, 100));
+		//spc.setOpaque(true);
+		//spc.setBackground(Color.gray);
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(15, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -531,8 +588,12 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		labeledToggle(_clear_bn, "ON", "CLEAR", true);
+		spc = hopper;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(40, 20));
+		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -573,21 +634,11 @@ class PunchCardDeck extends PunchCard
 		_curr = _code;
 		Arrays.fill(_code, (byte)0);
 		_noCard = false;
-		if (_inDeck != null && !blank) {
-			try {
-				int n = _inDeck.read(_code);
-				if (n <= 0) {
-					_noCard = true;
-				}
-			} catch (Exception ee) {
-				ee.printStackTrace();
-				_noCard = true;
-			}
-		} else {
+		if (hopper.getCard(_code) < 0) {
+			_noCard = true;
 		}
 		++_pgix;
 		setCursor(1);
-		_changed = false;
 		repaint();
 	}
 
@@ -744,13 +795,7 @@ class PunchCardDeck extends PunchCard
 					System.err.println("error writing " + fn);
 				}
 			}
-			if (_outDeck != null) {
-				try {
-					_outDeck.write(_curr);
-				} catch (Exception ee) {
-					ee.printStackTrace();
-				}
-			}
+			stacker.putCard(_curr);
 		}
 		if (!_noCard) {
 			_cursor = 0;
@@ -974,10 +1019,12 @@ class PunchCardDeck extends PunchCard
 
 	public void keyReleased(KeyEvent e) { }
 
-	private File pickFile(String purpose, String sfx, String typ, File prev) {
+	private File pickFile(String purpose, boolean input,
+				String sfx, String typ, File prev) {
 		File file;
 		SuffFileChooser ch = new SuffFileChooser(purpose,
-			new String[]{sfx}, new String[]{typ}, prev, null);
+			new String[]{sfx}, new String[]{typ}, prev,
+			input ? acc : null);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -985,56 +1032,6 @@ class PunchCardDeck extends PunchCard
 			file = null;
 		}
 		return file;
-	}
-
-	private void setupFile(File file) {
-		if (_outDeck != null) {
-			try {
-				_outDeck.close();
-			} catch (Exception ee) {}
-			_outDeck = null;
-		}
-		if (file == null) {
-			return;
-		}
-		try {
-			_outDeck = new FileOutputStream(file);
-		} catch (Exception ee) {
-			ee.printStackTrace();
-		}
-	}
-
-	private void inputFile(File file) {
-		if (file == null) {
-			// change nothing in this case...
-			return;
-		}
-		setInputFile(file);
-	}
-
-	private void setInputFile(File file) {
-		if (_inDeck != null) {
-			try {
-				_inDeck.close();
-			} catch (Exception ee) {}
-			_inDeck = null;
-		}
-		// TODO: handle non-existent file as empty deck, not blanks
-		if (file != null && file.exists()) {
-			try {
-				_inDeck = new FileInputStream(file);
-			} catch (Exception ee) {
-				ee.printStackTrace();
-			}
-			_changed = false;
-			_pgix = 0;
-		} else {
-			// just blank cards... infinite supply
-			_pgix = 0;
-			_changed = false;
-		}
-		// cannot execute finishCard() in this thread.
-		_keyQue.add((int)'\n');
 	}
 
 	private void loadProg(File file) {
@@ -1093,6 +1090,70 @@ class PunchCardDeck extends PunchCard
 		_help.setVisible(true);
 	}
 
+	private void deckAdd() {
+		acc_stk.setText(hopper.stackList('\n', false));
+		acc_cb.setSelected(false);
+		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", _cwd);
+		if (fi == null) {
+			return;
+		}
+		if (fi.exists()) {
+			try {
+				InputStream f = new FileInputStream(fi);
+				String n = fi.getName();
+				if (n.endsWith(".pcd")) {
+					n = n.substring(0, n.length() - 4);
+				}
+				int c = (int)((fi.length() + 159) / 160);
+				hopper.addInput(f, n, c, acc_cb.isSelected());
+			} catch (Exception ee) {
+				// TODO: PopupFactory
+				ee.printStackTrace();
+			}
+		} else {
+			// TODO: PopupFactory
+			System.err.format("Internal error: chosen file does not exist\n");
+		}
+	}
+
+	private void deckSave() {
+		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", _cwd);
+		if (fi == null) {
+			return;
+		}
+		if (!stacker.saveDeck(fi)) {
+			// TODO: PopupFactory
+		}
+	}
+
+	private void deckChange(CardHandler obj, String act) {
+		if (act.equals("right")) {
+			if (obj == hopper) {
+				hopper.addBlank(50);
+			} else {
+				stacker.discardDeck();
+			}
+		} else if (act.equals("left")) {
+			if (obj == hopper) {
+				deckAdd();
+			} else {
+				deckSave();
+			}
+		}
+	}
+
+	private void deckUpdate(CardHandler obj) {
+		String tip = obj.getLabel();
+		tip += String.format(": %d", obj.stackCount());
+		String lst = obj.stackList(',', true);
+		if (lst != null) {
+			tip += '(';
+			tip += lst;
+			tip += ')';
+		}
+		obj.setToolTipText(tip);
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JButton) {
 			JButton butt = (JButton)e.getSource();
@@ -1101,36 +1162,34 @@ class PunchCardDeck extends PunchCard
 			}
 			_keyQue.add(0x3000);
 			return;
+		} else if (e.getSource() instanceof CardHandler) {
+			// hopper or stacker, mouse or repaint...
+			CardHandler ch = (CardHandler)e.getSource();
+			String a = e.getActionCommand();
+			if (a.equals("repaint")) {
+				deckUpdate(ch);
+			} else {
+				deckChange(ch, a);
+			}
+			return;
 		} else if (!(e.getSource() instanceof JMenuItem)) {
 			return;
 		}
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_O) {
-			setupFile(pickFile("Set Output Card Deck",
-					"pcd", "Punch Card Deck", _cwd));
+			deckSave();
 		} else if (m.getMnemonic() == KeyEvent.VK_D) {
-			setupFile(null);
+			stacker.discardDeck();
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
-			inputFile(pickFile("Set Input Card Desk",
-					"pcd", "Punch Card Deck", _cwd));
+			deckAdd();
 		} else if (m.getMnemonic() == KeyEvent.VK_B) {
-			setInputFile(null);
+			hopper.addBlank(50);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
-			if (_inDeck != null) {
-				try {
-					_inDeck.close();
-				} catch (Exception ee) {}
-				_inDeck = null;
-			}
-			if (_outDeck != null) {
-				try {
-					_outDeck.close();
-				} catch (Exception ee) {}
-				_outDeck = null;
-			}
+			hopper.addBlank(0); // close any input... we hope.
+			// stacker.discardDeck(); // file should get removed
 			System.exit(0);
 		} else if (m.getMnemonic() == KeyEvent.VK_L) {
-			File nu = pickFile("Load Prog Card",
+			File nu = pickFile("Load Prog Card", false,
 				"prc", "Program Card",
 				_progFile == null ? _cwd : _progFile);
 			if (nu != null) {
@@ -1139,7 +1198,7 @@ class PunchCardDeck extends PunchCard
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
 			if (_progFile == null) {
-				File nu = pickFile("Save Prog Card As",
+				File nu = pickFile("Save Prog Card As", false,
 					"prc", "Program Card", _cwd);
 				if (nu != null) {
 					_progFile = nu;
