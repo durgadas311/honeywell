@@ -61,6 +61,8 @@ class CardSorter implements ActionListener, Runnable
 	JPanel acc2;
 	JCheckBox acc_cb;
 	JTextArea acc_stk;
+	JCheckBox[] inhibits;
+	JCheckBox alphabetic;
 	JCheckBox[] pickers;
 	JCheckBox rev_pick;
 	JMenu[] _menus;
@@ -84,9 +86,16 @@ class CardSorter implements ActionListener, Runnable
 		9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 10, 11, 12
 	};
 
+	ImageIcon blk;
+	ImageIcon red;
+	ImageIcon gry;
+
 	public CardSorter(JFrame frame) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
+		blk = new ImageIcon(getClass().getResource("icons/black-box.png"));
+		red = new ImageIcon(getClass().getResource("icons/red-box.png"));
+		gry = new ImageIcon(getClass().getResource("icons/gray-box.png"));
 
 		_cwd = new File(System.getProperty("user.dir"));
 
@@ -97,6 +106,7 @@ class CardSorter implements ActionListener, Runnable
 		deckUpdate(hopper);
 		stackers = new CardStacker[13];
 		pickers = new JCheckBox[13];
+		inhibits = new JCheckBox[12];
 		String t;
 		for (int x = 0; x < 13; ++x) {
 			if (x < 10) {
@@ -113,8 +123,20 @@ class CardSorter implements ActionListener, Runnable
 			if (x < 10) {
 				pickers[x].setSelected(true);
 			}
+			if (x < 12) {
+				inhibits[x] = new JCheckBox(t);
+				inhibits[x].setOpaque(false);
+				inhibits[x].setIcon(gry);
+				inhibits[x].setSelectedIcon(blk);
+				inhibits[x].setPressedIcon(blk);
+			}
 		}
 		rev_pick = new JCheckBox("Pick L-R");
+		alphabetic = new JCheckBox("ALPHA");
+		alphabetic.setOpaque(false);
+		alphabetic.setIcon(gry);
+		alphabetic.setSelectedIcon(red);
+		alphabetic.setPressedIcon(red);
 		start = new JButton("START");
 		start.setActionCommand("start");
 		start.addActionListener(this);
@@ -239,15 +261,27 @@ class CardSorter implements ActionListener, Runnable
 		for (int x = 0; x < stackers.length; ++x) {
 			setPocket(order[x]);
 		}
-		gc.gridy = 4;
-		gc.gridx = 27;
 		gc.gridheight = 1;
+		pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.Y_AXIS));
+		pn.setOpaque(false);
+		pn.add(ibm082ctl());
+		pn.add(alphabetic);
+		gc.anchor = GridBagConstraints.NORTH;
+		gc.gridy = 1;
+		gc.gridx = 15;
+		gc.gridwidth = 11;
+		gb.setConstraints(pn, gc);
+		_frame.add(pn);
+		gc.gridwidth = 1;
+		gc.gridy = 3;
+		gc.gridx = 27;
 		gb.setConstraints(start, gc);
 		_frame.add(start);
 		gc.gridx = 29;
 		gb.setConstraints(stop, gc);
 		_frame.add(stop);
-		
+
 		// -----------------------------------------
 		// Accessory panel for Input Deck chooser...
 		// Must be finished with _frame...
@@ -290,6 +324,16 @@ class CardSorter implements ActionListener, Runnable
 		acc2.add(pickers[11]);
 		acc2.add(pickers[12]);
 		acc2.add(rev_pick);
+	}
+
+	private JPanel ibm082ctl() {
+		JPanel pn = new JPanel();
+		pn.setLayout(new GridLayout(3, 4));
+		pn.setOpaque(false);
+		for (int x = 0; x < 12; ++x) {
+			pn.add(inhibits[order[x]]);
+		}
+		return pn;
 	}
 
 	private void setPocket(int x) {
@@ -345,14 +389,29 @@ class CardSorter implements ActionListener, Runnable
 		return p;
 	}
 
+	private int getMask() {
+		if (alphabetic.isSelected()) {
+			return 0x0e00;
+		}
+		int m = 0;
+		for (int x = 0; x < 12; ++x) {
+			if (inhibits[order[x]].isSelected()) {
+				m |= (1 << x);
+			}
+		}
+		return m ^ 0x0fff;
+	}
+
 	public void run() {
+		int col = _col_lb.column;
+		int msk = getMask();
 		while (!stopped) {
 			int c = hopper.getCard(_card);
 			if (c < 0) {
 				stopped = true;
 				break;
 			}
-			int p = getCol(_col_lb.column);
+			int p = getCol(col) & msk;
 			int n = Integer.numberOfTrailingZeros(p);
 			if (n < 10) {
 				n = 9 - n;
