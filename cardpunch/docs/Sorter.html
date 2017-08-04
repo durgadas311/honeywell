@@ -1,0 +1,52 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<H3>Punch Card Sorter Help</H3>
+
+<P>The input hopper is located in the upper right.
+The card "pockets" (output stackers) are located on the lower left,
+and arranged in the traditional order starting with the "9" punch.
+"R" indicates the reject pocket.
+The column selector/indicator is located immediately left of the input hopper.
+Selection switches for digits/zones are located to the left of the
+input hopper and column selector.
+The START and STOP buttons should function as on original equipment.
+The run rate is set to 100 cards per second.
+
+<P>The hoppers/stackers are set to show 100 cards, with each card represented
+by a line of pixels. More cards may be in the hopper/stackers, in fact
+there is no practical limit (unlike original equipment). When a hopper/stacker
+has exceeded its display limit, there will be a red line on top of the stack.
+
+<P>Clicking on the input hopper will start a dialog to add a PCD file to the hopper.
+By default, this will add the new file after all existing files in the hopper,
+but the option "Remove All" may be used to clear the hopper first.
+
+<P>Clicking on any pocket will start a dialog to save multiple pockets into
+and single PCD file. The dialog presents checkboxes for each pocket, plus one
+for a "Pick L-R" option that reverse the order of pockets in the file.
+By default, the order will be R-L for all selected pockets,
+which means that the right-most selected pocket will be first in the file
+(on top of the deck). Pockets that are not selected will be left un-changed
+after the save, but all saved pockets will be cleared.
+
+<P>Individual pockets may be cleared (discarding any cards) by right-clicking
+on the desired pocket. Note, discarding cards from a pocket has no effect on
+the original file from which the cards originated.
+
+<P>The column selector may be operated using mouse clicks. Left click will
+decrease the column by one. Right click will increase. Using SHIFT with
+either will jump to the next (higher or lower) multiple of 10.
+The middle mouse button will jump to column 40.
+
+<P>Selection switches are used to suppress the indicated rows during sorting.
+The ALPHA switch overrides the others and suppresses (only) digit rows 1-9.
+These switches effectively form a "mask" on the column data, causing suppressed
+rows to be seen as "not punched". Thus, a card that has no punches except in
+suppressed rows will appear as blank and be sent to the reject pocket.
+Details in the manual are a little fuzzy, so this implementation may need revision
+as new information arises.
+
+</BODY>
+</HTML>

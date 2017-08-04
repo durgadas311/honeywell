@@ -1,0 +1,14 @@
+#!/bin/bash
+
+cat <<EOF
+<HTML><CENTER>
+Punch Card Sorter Simulator<BR>
+Build: $(date)<BR>
+<BR>
+<IMG SRC="ibm083-sm.png">
+<BR>
+Developed by Douglas Miller<BR>
+http://sims.durgadas.com/<BR>
+<BR>
+</CENTER></HTML>
+EOF

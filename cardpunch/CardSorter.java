@@ -182,7 +182,7 @@ class CardSorter implements ActionListener, Runnable
 		mu.add(mi);
 		_menus[1] = mu;
 
-		java.net.URL url = this.getClass().getResource("docs/CardPunch.html");
+		java.net.URL url = this.getClass().getResource("docs/Sorter.html");
 		_help = new GenericHelp(frame.getTitle() + " Help", url);
 
 		_col_lb = new ColumnSelector();
@@ -450,11 +450,11 @@ class CardSorter implements ActionListener, Runnable
 	}
 
 	private void showAbout() {
-		java.net.URL url = this.getClass().getResource("docs/About.html");
+		java.net.URL url = this.getClass().getResource("docs/About2.html");
 		try {
 			JEditorPane about = new JEditorPane(url);
 			about.setEditable(false);
-			Dimension dim = new Dimension(300, 230);
+			Dimension dim = new Dimension(300, 260);
 			about.setPreferredSize(dim);
 			JOptionPane.showMessageDialog(_frame, about,
 				"About: Card Punch Simulator", JOptionPane.PLAIN_MESSAGE);
