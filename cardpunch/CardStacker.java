@@ -117,6 +117,34 @@ public class CardStacker extends CardHandler implements MouseListener {
 		initStacker();
 	}
 
+	public boolean saveDeck(OutputStream dest) {
+		if (odev != null) {
+			try {
+				odev.close();
+			} catch (Exception ee) {}
+			odev = null;
+		}
+		boolean ok = false;
+		try {
+			InputStream i = new FileInputStream(ofil);
+			byte[] buf = new byte[(int)ofil.length()];
+			if (i.read(buf) > 0) {
+				dest.write(buf);
+			}
+			i.close();
+			ok = true;
+		} catch (Exception ee) {
+			ok = false;
+		}
+		if (!ok) {
+			// Restore output deck...
+			restoreStacker();
+			return false;
+		}
+		initStacker();
+		return true;
+	}
+
 	public boolean saveDeck(File dest) {
 		if (odev != null) {
 			try {
