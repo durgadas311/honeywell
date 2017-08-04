@@ -24,14 +24,20 @@ class Punch
 			System.err.println("Usage: Punch outfile [< infile]");
 			System.exit(1);
 		}
-		Punch pun = new Punch(args[0]);
+		Punch pun = new Punch(args);
 		pun.run();
 	}
 
-	public Punch(String out) {
+	public Punch(String[] args) {
+		String out = args[0];
 		CardPunchOptions opts = new CardPunchOptions();
-		opts.ibm026 = true;
-		opts.fortran = true;
+		for (int x = 1; x < args.length; ++x) {
+			if (args[x].equals("-r")) {
+				opts.ibm026 = true;
+			} else if (args[x].equals("-H")) {
+				opts.fortran = true;
+			}
+		}
 		_cvt = new CharConverter(opts);
 		bb = new byte[1];
 		_code = new byte[2*80];
@@ -64,7 +70,7 @@ class Punch
 			c = Character.toUpperCase(c);
 			p = _cvt.asciiToPun((int)c);
 			if (p < 0) {
-				continue;
+				p = 0;
 			}
 			punch(p, false);
 			if (_cursor > 80) {
