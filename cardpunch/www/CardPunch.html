@@ -1,0 +1,58 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<H3>Card Punch Help</H3>
+
+<H4>Keyboard Meanings</H4>
+<TABLE BORDER>
+<TR><TH>Key</TH><TH>Keypunch Function</TH></TR>
+<TR><TD>Enter</TD><TD>Release</TD></TR>
+<TR><TD>Tab</TD><TD>Skip</TD></TR>
+<TR><TD>Ctrl-D</TD><TD>Dup</TD></TR>
+<TR><TD>Ctrl-E</TD><TD>Interpret</TD></TR>
+<TR><TD>Backspace</TD><TD>Backup one column</TD></TR>
+<TR><TD>Alt</TD><TD>Multi-Punch</TD></TR>
+<TR><TD>Delete</TD><TD>Un-punch column (magic punch-card white-out)</TD></TR>
+<TR><TD>Ctrl-B</TD><TD>Jump to column 1</TD></TR>
+<TR><TD>Ctrl-X</TD><TD>Discard current card. Leaves punch station empty.</TD></TR>
+<TR><TD>Ctrl-N</TD><TD>Release current card, insert new blank card.</TD></TR>
+<TR><TD>Ctrl-A</TD><TD>Toggle between Program Card and current data card.
+The column indicator is highlighted yellow when the program card is
+in the punch station.
+</TD></TR>
+</TABLE>
+
+<P>Note, there is no "Feed" key. Pressing "Release" will feed a new card.
+"Auto Feed" affects handling at the end of a card after manually punching,
+or "Skip" or "Dup".
+
+<H4>Menus</H4>
+<DL>
+<DT>File->Output</DT>
+<DD>Select a file to receive punched cards</DD>
+<DT>File->Discard (default)</DT>
+<DD>Set output hopper to disard all punched cards</DD>
+<DT>File->Input</DT>
+<DD>Select file to use as input (pre-punched cards)</DD>
+<DT>File->Blank (default)</DT>
+<DD>Set input to an (endless) stack of blank cards</DD>
+<DT>Prog->Load</DT>
+<DD>Load program card from previously saved file</DD>
+<DT>Prog->Save</DT>
+<DD>Save current program card into file</DD>
+</DL>
+
+<H4>Internals</H4>
+<P>Punched cards are saved as 80 16-bit integers, with bits 11-0 having
+the punched rows (bit 11 = 12-Punch, bit 10 = 11-Punch, bit 9 = Zero-Punch,
+... bit 0 = Nine-Punch). Bit 12 indicates whether the column should be printed
+(printer was on when the column was punched, or the column was later run through
+the interpreter).
+
+<P>Note that printing does not overstrike. When a column is multi-punched, 
+the printed symbol changes as punches are added. Invalid (unknown) punch
+combinations are shown as blank.
+
+</BODY>
+</HTML>

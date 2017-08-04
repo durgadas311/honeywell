@@ -28,7 +28,7 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	mod1test1.ezc mod1test2.ezc mod1test3.ezc \
 	mmbtest1.ezc mmbtest2.ezc mmbtest3.ezc \
 	brfloader.ezc mod1loader.ezc superv.ezc \
-	barberpole.mti prog3.pcd 1eof.pcd
+	barberpole.mti prog3.pcd 1eof.pcd example.pcd
 
 SHIPS = H2000.jar hwprogs.tgz h2000.tgz
 
@@ -38,7 +38,7 @@ www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/hw2000
 
 ship: $(SHIPS)
-	rsync -Wuv $(SHIPS) ../cardpunch/CardPunch.jar \
+	rsync -Wuv $(SHIPS) ../cardpunch/*.jar \
 		../fortran4/Fortran4Embedded.jar \
 		../easycoder/EasyCoder.jar \
 		durgadas.com:/http/durgadas.com/sebhc/hw2000
