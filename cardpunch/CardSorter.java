@@ -127,9 +127,6 @@ class CardSorter implements ActionListener, Runnable
 			stackers[x].setListener(this);
 			deckUpdate(stackers[x]);
 			pickers[x] = new JCheckBox(t);
-			if (x < 10) {
-				pickers[x].setSelected(true);
-			}
 			if (x < 12) {
 				inhibits[x] = new JCheckBox(t);
 				inhibits[x].setOpaque(false);
@@ -146,6 +143,7 @@ class CardSorter implements ActionListener, Runnable
 		alphabetic.setIcon(gry);
 		alphabetic.setSelectedIcon(red);
 		alphabetic.setPressedIcon(red);
+		alphabetic.addActionListener(this);
 		start = new JButton("START");
 		start.setActionCommand("start");
 		start.addActionListener(this);
@@ -349,6 +347,8 @@ class CardSorter implements ActionListener, Runnable
 		++gc.gridy;
 		gb.setConstraints(recycle, gc);
 		acc2.add(recycle);
+
+		setAlphabetic(false);
 	}
 
 	private void addPicker(JCheckBox pk, int x, int y) {
@@ -415,6 +415,17 @@ class CardSorter implements ActionListener, Runnable
 		return pn;
 	}
 
+	private void setAlphabetic(boolean alpha) {
+		pickers[0].setSelected(true);
+		for (int x = 1; x < 13; ++x) {
+			if (x < 10) {
+				pickers[x].setSelected(!alpha);
+			} else {
+				pickers[x].setSelected(alpha);
+			}
+		}
+	}
+
 	private int getCol(int ix) {
 		int p = _card[ix * 2] & 0x0ff;
 		p |= (_card[ix * 2 + 1] & 0x0ff) << 8;
@@ -443,7 +454,7 @@ class CardSorter implements ActionListener, Runnable
 				stopped = true;
 				break;
 			}
-			int p = getCol(col) & msk;
+			int p = getCol(col - 1) & msk;
 			int n = Integer.numberOfTrailingZeros(p);
 			if (n < 10) {
 				n = 9 - n;
@@ -528,6 +539,7 @@ class CardSorter implements ActionListener, Runnable
 	}
 
 	private void deckSave() {
+		recycle.setSelected(false);
 		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", _cwd);
 		if (recycle.isSelected()) {
 			fi = tmp;
@@ -631,6 +643,8 @@ class CardSorter implements ActionListener, Runnable
 				ch.setSelectedFile(recycle.isSelected() ?
 					new File("dont-care") :
 					new File(""));
+			} else if (cb == alphabetic) {
+				setAlphabetic(alphabetic.isSelected());
 			}
 			return;
 		} else if (!(e.getSource() instanceof JMenuItem)) {
