@@ -51,6 +51,7 @@ class CardSorter implements ActionListener, Runnable
 	JFrame _frame;
 	Font labels;
 	File _cwd;
+	File tmp;
 	CardHopper hopper;
 	CardStacker[] stackers;
 	JButton start;
@@ -65,6 +66,7 @@ class CardSorter implements ActionListener, Runnable
 	JCheckBox alphabetic;
 	JCheckBox[] pickers;
 	JCheckBox rev_pick;
+	JCheckBox recycle;
 	JMenu[] _menus;
 	Rectangle _top, _bottom;
 	static final int _inset = 2;
@@ -78,6 +80,7 @@ class CardSorter implements ActionListener, Runnable
 	JPanel pn_pn;
 
 	GenericHelp _help;
+	SuffFileChooser ch;
 
 	public JMenu[] getMenu() { return _menus; }
 
@@ -98,6 +101,10 @@ class CardSorter implements ActionListener, Runnable
 		gry = new ImageIcon(getClass().getResource("icons/gray-box.png"));
 
 		_cwd = new File(System.getProperty("user.dir"));
+		try {
+			tmp = File.createTempFile("PCD-", ".pcd");
+			tmp.deleteOnExit();
+		} catch (Exception ee) {}
 
 		_card = new byte[2*80];
 		stopped = true;
@@ -132,6 +139,8 @@ class CardSorter implements ActionListener, Runnable
 			}
 		}
 		rev_pick = new JCheckBox("Pick L-R");
+		recycle = new JCheckBox("Recycle");
+		recycle.addActionListener(this);
 		alphabetic = new JCheckBox("ALPHA");
 		alphabetic.setOpaque(false);
 		alphabetic.setIcon(gry);
@@ -289,8 +298,8 @@ class CardSorter implements ActionListener, Runnable
 		gc.gridy = 0;
 		gc.gridwidth = 1;
 		gc.gridheight = 1;
-		acc = new JPanel();
 		gb = new GridBagLayout();
+		acc = new JPanel();
 		acc.setLayout(gb);
 		gc.anchor = GridBagConstraints.WEST;
 		JLabel lb = new JLabel("Input Hopper:");
@@ -307,23 +316,46 @@ class CardSorter implements ActionListener, Runnable
 		acc.add(acc_stk);
 		++gc.gridy;
 		// Accessory panel for Save Output...
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gb = new GridBagLayout();
 		acc2 = new JPanel();
-		acc2.setLayout(new BoxLayout(acc2, BoxLayout.Y_AXIS));
-		acc2.add(new JLabel("Save Pockets"));
-		acc2.add(pickers[9]);
-		acc2.add(pickers[8]);
-		acc2.add(pickers[7]);
-		acc2.add(pickers[6]);
-		acc2.add(pickers[5]);
-		acc2.add(pickers[4]);
-		acc2.add(pickers[3]);
-		acc2.add(pickers[2]);
-		acc2.add(pickers[1]);
-		acc2.add(pickers[0]);
-		acc2.add(pickers[10]);
-		acc2.add(pickers[11]);
-		acc2.add(pickers[12]);
+		acc2.setLayout(gb);
+		lb = new JLabel("Save Pockets");
+		gc.gridwidth = 2;
+		gb.setConstraints(lb, gc);
+		acc2.add(lb);
+		gc.gridwidth = 1;
+		addPicker(pickers[9], 0, 1);
+		addPicker(pickers[8], 0, 2);
+		addPicker(pickers[7], 0, 3);
+		addPicker(pickers[6], 0, 4);
+		addPicker(pickers[5], 0, 5);
+		addPicker(pickers[4], 0, 6);
+		addPicker(pickers[3], 1, 1);
+		addPicker(pickers[2], 1, 2);
+		addPicker(pickers[1], 1, 3);
+		addPicker(pickers[0], 1, 4);
+		addPicker(pickers[10], 1, 5);
+		addPicker(pickers[11], 1, 6);
+		addPicker(pickers[12], 1, 7);
+		gc.gridwidth = 2;
+		gc.gridx = 0;
+		gc.gridy = 8;
+		gb.setConstraints(rev_pick, gc);
 		acc2.add(rev_pick);
+		++gc.gridy;
+		gb.setConstraints(recycle, gc);
+		acc2.add(recycle);
+	}
+
+	private void addPicker(JCheckBox pk, int x, int y) {
+		gc.gridx = x;
+		gc.gridy = y;
+		gb.setConstraints(pk, gc);
+		acc2.add(pk);
 	}
 
 	private JPanel ibm082ctl() {
@@ -428,7 +460,7 @@ class CardSorter implements ActionListener, Runnable
 	private File pickFile(String purpose, boolean input,
 				String sfx, String typ, File prev) {
 		File file;
-		SuffFileChooser ch = new SuffFileChooser(purpose,
+		ch = new SuffFileChooser(purpose,
 			new String[]{sfx}, new String[]{typ}, prev,
 			input ? acc : acc2);
 		int rv = ch.showDialog(_frame);
@@ -472,6 +504,10 @@ class CardSorter implements ActionListener, Runnable
 		if (fi == null) {
 			return;
 		}
+		deckAdd(fi, acc_cb.isSelected());
+	}
+
+	private void deckAdd(File fi, boolean empty) {
 		if (fi.exists()) {
 			try {
 				InputStream f = new FileInputStream(fi);
@@ -480,7 +516,7 @@ class CardSorter implements ActionListener, Runnable
 					n = n.substring(0, n.length() - 4);
 				}
 				int c = (int)((fi.length() + 159) / 160);
-				hopper.addInput(f, n, c, acc_cb.isSelected());
+				hopper.addInput(f, n, c, empty);
 			} catch (Exception ee) {
 				// TODO: PopupFactory
 				ee.printStackTrace();
@@ -493,6 +529,9 @@ class CardSorter implements ActionListener, Runnable
 
 	private void deckSave() {
 		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", _cwd);
+		if (recycle.isSelected()) {
+			fi = tmp;
+		}
 		if (fi == null) {
 			return;
 		}
@@ -521,8 +560,15 @@ class CardSorter implements ActionListener, Runnable
 				}
 			}
 		}
+		try {
+			os.close();
+		} catch (Exception ee) {}
 		if (!ok) {
 			// TODO: pop-up error
+			return;
+		}
+		if (recycle.isSelected()) {
+			deckAdd(fi, true);
 		}
 	}
 
@@ -577,6 +623,14 @@ class CardSorter implements ActionListener, Runnable
 				deckUpdate(ch);
 			} else {
 				deckChange(ch, a);
+			}
+			return;
+		} else if (e.getSource() instanceof JCheckBox) {
+			JCheckBox cb = (JCheckBox)e.getSource();
+			if (cb == recycle) {
+				ch.setSelectedFile(recycle.isSelected() ?
+					new File("dont-care") :
+					new File(""));
 			}
 			return;
 		} else if (!(e.getSource() instanceof JMenuItem)) {
