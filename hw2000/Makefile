@@ -62,7 +62,7 @@ h2000.tgz: $(JAVAS) Makefile
 		hw2000/bringup/bootmt.mti \
 		hw2000/bringup/*.out \
 		fortran4/progs \
-		cardpunch/PunchCard.png \
+		cardpunch/PunchCard*.png \
 		cardpunch/*.ttf
 
 H2000.jar: all docs/About.html

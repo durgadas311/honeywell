@@ -29,6 +29,11 @@ class CardViewer implements ActionListener
 	JTextArea text;
 	JScrollPane scroll;
 	CharConverter cvt;
+	CharConverter cvt026;
+	CharConverter cvt026h;
+	Font f222;
+	Font f029;
+	Font f026;
 
 	public JMenu[] getMenu() { return _menus; }
 
@@ -36,7 +41,18 @@ class CardViewer implements ActionListener
 		_frame = frame;
 
 		_cwd = new File(System.getProperty("user.dir"));
+		CardPunchOptions opts = new CardPunchOptions();
 		cvt = new CharConverter(); // ugh, need 029/026/026-H here...
+		opts.ibm026 = true;
+		cvt026 = new CharConverter(opts);
+		opts.fortran = true;
+		cvt026h = new CharConverter(opts);
+		//f222 = new Font("Monospaced", Font.PLAIN, 12);
+		// font size must be multiple of artifact geometry
+		// for best appearance. For keypunch fonts that is 8.
+		f222 = loadFont("HW222.ttf", 16);
+		f029 = loadFont("IBM029.ttf", 16);
+		f026 = loadFont("IBM026.ttf", 16);
 
 		_card = new byte[2*80];
 		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);
@@ -45,11 +61,11 @@ class CardViewer implements ActionListener
 		text = new JTextArea(10, 80);
 		text.setEditable(false);
 		text.setBackground(Color.white);
-		// TODO: select font... or at load time?
-		text.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		text.setFont(f222);
 		scroll = new JScrollPane(text);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		scroll.setViewportBorder(new LineBorder(Color.white, 3));
 		_frame.add(scroll);
 
 		_menus = new JMenu[1];
@@ -75,7 +91,7 @@ class CardViewer implements ActionListener
 		bg.add(ibm029);
 		bg.add(hw200);
 		bg.add(hw200spc);
-		ibm029.setSelected(true);
+		hw200.setSelected(true);
 
 		acc = new JPanel();
 		acc.setLayout(new BoxLayout(acc, BoxLayout.Y_AXIS));
@@ -85,6 +101,15 @@ class CardViewer implements ActionListener
 		acc.add(ibm029);
 		acc.add(hw200);
 		acc.add(hw200spc);
+	}
+
+	private Font loadFont(String fn, int fz) {
+		java.io.InputStream ttf = this.getClass().getResourceAsStream(fn);
+		if (ttf != null) try {
+			Font font = Font.createFont(Font.TRUETYPE_FONT, ttf);
+			return font.deriveFont((float)fz);
+		} catch (Exception ee) {}
+		return null;
 	}
 
 	private File pickFile(String purpose,
@@ -107,7 +132,7 @@ class CardViewer implements ActionListener
 		return p;
 	}
 
-	private void addCard029(byte[] card) {
+	private void addCard029(byte[] card, CharConverter cvt) {
 		String s = "";
 		for (int x = 0; x < 80; ++x) {
 			int p = getCol(x);
@@ -137,11 +162,23 @@ class CardViewer implements ActionListener
 		text.append(s);
 	}
 
+	private void reFont(Font f) {
+		text.setFont(f);
+		_frame.validate();
+		_frame.pack();
+		_frame.repaint();
+	}
+
 	private void addCard(byte[] card) {
 		if (hw200.isSelected() || hw200spc.isSelected()) {
+			reFont(f222);
 			addCardHW(card);
-		} else { // TODO: implement 026 options...
-			addCard029(card);
+		} else if (ibm026.isSelected() || ibm026h.isSelected()) {
+			reFont(f026);
+			addCard029(card, ibm026h.isSelected() ? cvt026h : cvt026);
+		} else {
+			reFont(f029);
+			addCard029(card, cvt);
 		}
 	}
 
