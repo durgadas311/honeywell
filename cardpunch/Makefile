@@ -6,7 +6,7 @@ all: $(CLASSES)
 %.class: %.java
 	javac -source 1.7 -target 1.7 $?
 
-jar: CardPunch.jar Sorter.jar Viewer.jar
+jar: CardPunch.jar Sorter.jar Accounting.jar Viewer.jar
 
 CardPunch.jar: all docs/About.html
 	echo "Main-Class: CardPunch" >Manifest.txt
@@ -15,6 +15,11 @@ CardPunch.jar: all docs/About.html
 
 Sorter.jar: all docs/About2.html
 	echo "Main-Class: Sorter" >Manifest.txt
+	jar cfm $@ Manifest.txt *.ttf *.class \
+		icons/*.png docs/*
+
+Accounting.jar: all docs/About2.html
+	echo "Main-Class: Accounting" >Manifest.txt
 	jar cfm $@ Manifest.txt *.ttf *.class \
 		icons/*.png docs/*
 

@@ -42,7 +42,7 @@ class CardViewer implements ActionListener
 
 		_cwd = new File(System.getProperty("user.dir"));
 		CardPunchOptions opts = new CardPunchOptions();
-		cvt = new CharConverter(); // ugh, need 029/026/026-H here...
+		cvt = new CharConverter();
 		opts.ibm026 = true;
 		cvt026 = new CharConverter(opts);
 		opts.fortran = true;
