@@ -136,7 +136,7 @@ class PunchCard extends JLabel
 				font1 = new Font("Monospaced", Font.PLAIN, 14);
 			}
 		}
-		_image = new ImageIcon(getClass().getResource("PunchCard.png"));
+		_image = new ImageIcon(getClass().getResource("PunchCard2.png"));
 		setIcon(_image);
 		hole = Color.gray;
 		setBackground(hole);

@@ -10,7 +10,7 @@ jar: CardPunch.jar Sorter.jar Viewer.jar
 
 CardPunch.jar: all docs/About.html
 	echo "Main-Class: CardPunch" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf PunchCard.png *.class \
+	jar cfm $@ Manifest.txt *.ttf PunchCard*.png *.class \
 		icons/*.png docs/*
 
 Sorter.jar: all docs/About2.html

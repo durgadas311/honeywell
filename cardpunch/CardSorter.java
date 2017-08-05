@@ -194,7 +194,7 @@ class CardSorter implements ActionListener, Runnable
 
 		_col_lb = new ColumnSelector();
 		_col_lb.setPreferredSize(new Dimension(20, 20));
-		_col_lb.setBackground(new Color(255,255,200));
+		_col_lb.setBackground(new Color(200,200,200));
 		_col_lb.setOpaque(true);
 		_col_lb.setFocusable(false);
 		_col_lb.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));

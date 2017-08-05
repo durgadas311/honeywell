@@ -43,7 +43,7 @@ public class CardStacker extends CardHandler implements MouseListener {
 		setPreferredSize(new Dimension(wid + 2 * bdw, hit + 2 * bdw));
 		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		setBackground(Color.white);
-		clr = new Color(215,205,154);
+		clr = buff1;
 		listener = null;
 		addMouseListener(this);
 		try {
