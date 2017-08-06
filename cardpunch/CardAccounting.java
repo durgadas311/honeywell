@@ -26,6 +26,61 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
+	class CounterEntry extends Entry {
+		int ctr;
+		public CounterEntry(int ctr, byte col) {
+			super((byte)(ctr + 8), col);
+			this.ctr = ctr;
+		}
+	}
+
+	// TODO: restrict counters to num digits
+	class Counter {
+		int width;
+		int sum;
+		Entry[] ents;
+		public Counter(int wid) {
+			width = wid;
+			ents = new Entry[wid];
+			sum = 0;
+		}
+
+		public void setEntry(byte t, int d0, byte c0, int n) {
+			while (n > 0) {
+				ents[d0++] = new Entry(t, c0++);
+				--n;
+			}
+		}
+
+		// first column is "0" = MSD
+		public int getCol(int col) {
+			int x = width - col - 1;
+			if (x < 0 || x >= width) {
+				return 0x000; // blank
+			}
+			int f = (int)Math.pow(10, x);
+			int d = (sum / f) % 10;
+			return (1 << (9 - d));	// digit punch
+		}
+
+		public void processRead(int num, byte[] card) {
+			int f = 0;
+			for (int x = 0; x < ents.length; ++x) {
+				f *= 10;
+				if (ents[x] == null || !ents[x].enabled(num)) {
+					continue;
+				}
+				int c = ents[x].colm;
+				int p = CardAccounting.getCol(card, c);
+				int n = Integer.numberOfTrailingZeros(p);
+				if (n < 9) {	// exclude "0"...
+					f += 9 - n; // 9..0 => 0..9
+				}
+			}
+			sum += f;
+		}
+	}
+
 	JFrame _frame;
 	Font labels;
 	File _cwd;
@@ -60,6 +115,7 @@ class CardAccounting implements ActionListener, Runnable
 	Properties props;
 	Entry[] aprint;
 	Entry[] nprint;
+	Counter[] counter;
 	int caret;
 
 	public JMenu[] getMenu() { return _menus; }
@@ -72,8 +128,10 @@ class CardAccounting implements ActionListener, Runnable
 		// TODO: allow inital properties but also load from file.
 		aprint = new Entry[43];
 		nprint = new Entry[45];
+		counter = new Counter[16];
 		Arrays.fill(aprint, null);
 		Arrays.fill(nprint, null);
+		Arrays.fill(counter, null);
 		loadProgram("ibm402.1");
 
 		_cwd = new File(System.getProperty("user.dir"));
@@ -186,7 +244,7 @@ class CardAccounting implements ActionListener, Runnable
 		_frame.add(pn);
 		gc.gridx = 2;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(5, 5));
+		pn.setPreferredSize(new Dimension(40, 5));
 		pn.setOpaque(false);
 		gb.setConstraints(pn, gc);
 		_frame.add(pn);
@@ -198,7 +256,7 @@ class CardAccounting implements ActionListener, Runnable
 		_frame.add(pn);
 		gc.gridx = 19;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(5, 5));
+		pn.setPreferredSize(new Dimension(40, 5));
 		pn.setOpaque(false);
 		gb.setConstraints(pn, gc);
 		_frame.add(pn);
@@ -219,7 +277,7 @@ class CardAccounting implements ActionListener, Runnable
 		gb.setConstraints(stacker, gc);
 		_frame.add(stacker);
 
-		gc.gridwidth = 4;
+		gc.gridwidth = 16;
 		gc.gridheight = 3;
 		gc.gridy = 1;
 		gc.gridx = 3;
@@ -231,7 +289,7 @@ class CardAccounting implements ActionListener, Runnable
 		gc.gridy = 5;
 		gc.gridx = 3;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(475, 5));
+		pn.setPreferredSize(new Dimension(200, 5));
 		pn.setOpaque(false);
 		gb.setConstraints(pn, gc);
 		_frame.add(pn);
@@ -330,27 +388,71 @@ class CardAccounting implements ActionListener, Runnable
 		idle.setBackground(Color.red);
 	}
 
-	private Entry setEntry(Entry[] xts, int idx, String p) {
+	private void setPrintEntry(Entry[] xts, int idx, String p) {
 		byte c = (byte)-1;
 		byte t = (byte)-1;
 		int n = 1;
 		try {
-			if (p.charAt(1) != '.') return null;
-			int i = p.indexOf('*');
-			if (i > 0) {
-				n = Integer.valueOf(p.substring(i + 1));
+			int ctr = getCounter(p);
+			int j = p.indexOf('*');
+			if (j > 3) {
+				n = Integer.valueOf(p.substring(j + 1));
 			} else {
-				i = p.length();
+				j = p.length();
 			}
-			t = Byte.valueOf(p.substring(0, 1));
-			c = Byte.valueOf(p.substring(2, i));
-			c -= 1;
-			while (n > 0) {
-				xts[idx++] = new Entry(t, c++);
-				--n;
+			if (ctr >= 0) {
+				// Use output of counter...
+				c = (byte)(p.charAt(2) - '0');
+				c -= 1;
+				while (n > 0) {
+					xts[idx++] = new CounterEntry(ctr, c++);
+					--n;
+				}
+			} else {
+				int i = p.indexOf('.');
+				if (i < 0) return;
+				c = Byte.valueOf(p.substring(i + 1, j));
+				t = Byte.valueOf(p.substring(0, i));
+				c -= 1;
+				while (n > 0) {
+					xts[idx++] = new Entry(t, c++);
+					--n;
+				}
 			}
 		} catch (Exception ee) {}
-		return null;
+	}
+
+	private void setCounter(int ctr, int dig, String p) {
+		String[] pp = p.split("\\s");
+		// pp[0] ~~ [123]\.[0-9]+(\*[0-9])
+		// pp[1..] are args
+		int i = pp[0].indexOf('.');
+		if (i < 0) return;
+		int j = pp[0].indexOf('*');
+		int n = 1;
+		if (j > 3) {
+			n = Integer.valueOf(pp[0].substring(j + 1));
+		} else {
+			j = pp[0].length();
+		}
+		byte c = Byte.valueOf(pp[0].substring(i + 1, j));
+		byte t = Byte.valueOf(pp[0].substring(0, i));
+		c -= 1;
+		dig -= 1;
+		counter[ctr].setEntry(t, dig, c, n);
+	}
+
+	private int getCounter(String p) {
+		if (!p.matches("[2468][abcd].*")) {
+			return -1;
+		}
+		int w = p.charAt(0) - '0';
+		int ctr = (w - 2) << 1;		// 0, 4, 8, 12
+		ctr |= (p.charAt(1) - 'a');	// 0..15
+		if (counter[ctr] == null) {
+			counter[ctr] = new Counter(w);
+		}
+		return ctr;
 	}
 
 	private void loadProgram(String prog) {
@@ -363,23 +465,25 @@ class CardAccounting implements ActionListener, Runnable
 		} catch (Exception ee) {
 			return;
 		}
-		// TODO: short-hand for fields (ranges)
 		// TODO: multiple sources?
-		// [an]N = [123].M[*L] :: route first/second/third reading col M
-		//	to alpha/num print col N, optionally L columns wide.
 		// TODO: aN=3.x requires zN=2.x, produce erroneous output if not wired.
 		// TODO: printing requires "all" -> "list"
-		for (int x = 0; x < aprint.length; ++x) {
-			String p = String.format("a%d", x + 1);
-			p = props.getProperty(p);
-			if (p == null) continue;
-			setEntry(aprint, x, p);
-		}
-		for (int x = 0; x < nprint.length; ++x) {
-			String p = String.format("n%d", x + 1);
-			p = props.getProperty(p);
-			if (p == null) continue;
-			setEntry(nprint, x, p);
+		for (String prop : props.stringPropertyNames()) {
+			String p = props.getProperty(prop);
+			int ctr;
+			if (prop.matches("a[0-9]+")) {
+				// Alphameric Print Entry
+				int col = Integer.valueOf(prop.substring(1));
+				setPrintEntry(aprint, col, p);
+			} else if (prop.matches("n[0-9]+")) {
+				// Numeric Print Entry
+				int col = Integer.valueOf(prop.substring(1));
+				setPrintEntry(nprint, col, p);
+			} else if ((ctr = getCounter(prop)) >= 0) {
+				// Counters - all entries
+				int dig = (byte)(prop.charAt(2) - '0');
+				setCounter(ctr, dig, p);
+			}
 		}
 	}
 
@@ -399,19 +503,26 @@ class CardAccounting implements ActionListener, Runnable
 		return btn;
 	}
 
-	private int getCol(byte[] card, int ix) {
+	static private int getCol(byte[] card, int ix) {
 		int p = card[ix * 2] & 0x0ff;
 		p |= (card[ix * 2 + 1] & 0x0ff) << 8;
 		return p;
 	}
 
-	private char printCol(byte[] card, int col) {
+	private char printCol(byte[] card, Entry ent) {
+		int col = ent.colm;
 		// TODO: alphameric vs. numeric character sets...
 		//	alphameric = A-Z,0-9,&
 		//	odd numeric = 0-9,*
 		//	even numeric = 0-9,CR
 		char c = ' ';
-		int p = getCol(card, col);
+		int p;
+		if (ent instanceof CounterEntry) {
+			int ctr = ((CounterEntry)ent).ctr;
+			p = counter[ctr].getCol(col);
+		} else {
+			p = getCol(card, col);
+		}
 		String t = cvt.punToAscii(p);
 		if (t != null) {
 			c = t.charAt(0);
@@ -423,13 +534,21 @@ class CardAccounting implements ActionListener, Runnable
 		if (card == null) {
 			return;
 		}
+		// Should only be third reading...
+		for (int x = 0; x < counter.length; ++x) {
+			if (counter[x] == null) {
+				continue;
+			}
+			counter[x].processRead(num, card);
+			
+		}
 		String s = "";
 		int n = 0;
 		for (int x = 0; x < aprint.length; ++x) {
 			if (aprint[x] == null || !aprint[x].enabled(num)) {
 				s += ' ';
 			} else {
-				s += printCol(card, aprint[x].colm);
+				s += printCol(card, aprint[x]);
 				++n;
 			}
 		}
@@ -438,7 +557,7 @@ class CardAccounting implements ActionListener, Runnable
 			if (nprint[x] == null || !nprint[x].enabled(num)) {
 				s += ' ';
 			} else {
-				s += printCol(card, nprint[x].colm);
+				s += printCol(card, nprint[x]);
 				++n;
 			}
 		}
@@ -451,6 +570,15 @@ class CardAccounting implements ActionListener, Runnable
 		//	stopd.setBackground(Color.red);
 		//	stopped = true;
 		// }
+	}
+
+	private void processFinalTotal() {
+		for (int x = 0; x < counter.length; ++x) {
+			if (counter[x] == null) {
+				continue;
+			}
+System.err.format("Counter %d = %d\n", x, counter[x].sum);
+		}
 	}
 
 	public void run() {
@@ -595,7 +723,7 @@ class CardAccounting implements ActionListener, Runnable
 				stopped = true;
 			} else if (act.equals("total")) {
 				stopd.setBackground(Color.white);
-				// TODO: final total processing...
+				processFinalTotal();
 			}
 			return;
 		} else if (e.getSource() instanceof CardHandler) {
