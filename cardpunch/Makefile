@@ -18,7 +18,7 @@ Sorter.jar: all docs/About2.html
 	jar cfm $@ Manifest.txt *.ttf *.class \
 		icons/*.png docs/*
 
-Accounting.jar: all docs/About2.html
+Accounting.jar: all docs/About3.html
 	echo "Main-Class: Accounting" >Manifest.txt
 	jar cfm $@ Manifest.txt *.ttf *.class \
 		icons/*.png docs/*
@@ -33,6 +33,9 @@ docs/About.html: __FRC__
 
 docs/About2.html: __FRC__
 	./mkAbout2 >$@
+
+docs/About3.html: __FRC__
+	./mkAbout3 >$@
 
 www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/sims/punchcards

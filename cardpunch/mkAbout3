@@ -1,0 +1,14 @@
+#!/bin/bash
+
+cat <<EOF
+<HTML><CENTER>
+Punch Card Accounting Machine Simulator<BR>
+Build: $(date)<BR>
+<BR>
+<IMG SRC="ibm402-sm.png">
+<BR>
+Developed by Douglas Miller<BR>
+http://sims.durgadas.com/<BR>
+<BR>
+</CENTER></HTML>
+EOF

@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Douglas Miller
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 import java.awt.*;
 import javax.swing.*;
@@ -10,74 +10,24 @@ import java.util.Properties;
 
 class CardAccounting implements ActionListener, Runnable
 {
-	class Entry {
-		byte mask;
-		byte colm;
-		public Entry(byte type, byte col) {
-			colm = col;
-			if (type < 0) {
-				mask = (byte)-1;
-			} else {
-				mask = (byte)(1 << type);
+	static final Color red = new Color(255, 120, 120);
+	static final Color off = new Color(190, 190, 180);
+
+	class PrintExit extends ProgExit {
+		public PrintExit() {}
+
+		public void processExits() {
+			// TOD: do not print if nothing was printed?
+			String s = new String(aprint);
+			s += ' ';
+			s += new String(nprint);
+			s += '\n';
+			text.append(s);
+			caret += s.length();
+			text.setCaretPosition(caret);
+			if (_next != null) {
+				_next.processExits();
 			}
-		}
-		public boolean enabled(int type) {
-			return ((mask & (1 << type)) != 0);
-		}
-	}
-
-	class CounterEntry extends Entry {
-		int ctr;
-		public CounterEntry(int ctr, byte col) {
-			super((byte)(ctr + 8), col);
-			this.ctr = ctr;
-		}
-	}
-
-	// TODO: restrict counters to num digits
-	class Counter {
-		int width;
-		int sum;
-		Entry[] ents;
-		public Counter(int wid) {
-			width = wid;
-			ents = new Entry[wid];
-			sum = 0;
-		}
-
-		public void setEntry(byte t, int d0, byte c0, int n) {
-			while (n > 0) {
-				ents[d0++] = new Entry(t, c0++);
-				--n;
-			}
-		}
-
-		// first column is "0" = MSD
-		public int getCol(int col) {
-			int x = width - col - 1;
-			if (x < 0 || x >= width) {
-				return 0x000; // blank
-			}
-			int f = (int)Math.pow(10, x);
-			int d = (sum / f) % 10;
-			return (1 << (9 - d));	// digit punch
-		}
-
-		public void processRead(int num, byte[] card) {
-			int f = 0;
-			for (int x = 0; x < ents.length; ++x) {
-				f *= 10;
-				if (ents[x] == null || !ents[x].enabled(num)) {
-					continue;
-				}
-				int c = ents[x].colm;
-				int p = CardAccounting.getCol(card, c);
-				int n = Integer.numberOfTrailingZeros(p);
-				if (n < 9) {	// exclude "0"...
-					f += 9 - n; // 9..0 => 0..9
-				}
-			}
-			sum += f;
 		}
 	}
 
@@ -113,8 +63,17 @@ class CardAccounting implements ActionListener, Runnable
 	GenericHelp _help;
 	SuffFileChooser ch;
 	Properties props;
-	Entry[] aprint;
-	Entry[] nprint;
+	ProgEntry[] read1;
+	ProgEntry[] read2;
+	ProgEntry[] read3;
+	ProgExit minor;
+	ProgExit interm;
+	ProgExit major;
+	ProgExit special;
+	ProgExit finalTotal;
+	ProgExit allCards;
+	char[] aprint;
+	char[] nprint;
 	Counter[] counter;
 	int caret;
 
@@ -125,34 +84,32 @@ class CardAccounting implements ActionListener, Runnable
 		_frame = frame;
 		ibm403 = false;	// TODO: configure
 
-		// TODO: allow inital properties but also load from file.
-		aprint = new Entry[43];
-		nprint = new Entry[45];
+		read1 = new ProgEntry[80];
+		read2 = new ProgEntry[80];
+		read3 = new ProgEntry[80];
+		aprint = new char[43];
+		nprint = new char[45];
 		counter = new Counter[16];
-		Arrays.fill(aprint, null);
-		Arrays.fill(nprint, null);
-		Arrays.fill(counter, null);
-		loadProgram("ibm402.1");
 
 		_cwd = new File(System.getProperty("user.dir"));
 		cvt = new CharConverter();
 
 		stopped = true;
-		hopper = new CardHopper("Input Hopper", 20, 100, 1, false);
+		hopper = new CardHopper("Input Hopper", 60, 100, 1, false);
 		hopper.setListener(this);
 		deckUpdate(hopper);
-		stacker = new CardStacker("Stacker", 20, 100, 1, true);
+		stacker = new CardStacker("Stacker", 60, 100, 1, true);
 		stacker.setListener(this);
 		deckUpdate(stacker);
 		start = makeButton("START", "start", Color.black, Color.white);
 		stop = makeButton("STOP", "stop", Color.black, Color.white);
 		total = makeButton("FINAL<BR>TOTAL", "total", Color.black, Color.white);
 		// TODO: make indicators...
-		idle = makeButton("", null, Color.white, Color.black);
-		stopd = makeButton("STOP", null, Color.white, Color.black);
-		fuse = makeButton("FUSE", null, Color.white, Color.black);
-		form = makeButton("FORM", null, Color.white, Color.black);
-		feed = makeButton("CARD<BR>FEED<BR>STOP", null, Color.white, Color.black);
+		idle = makeButton("", null, off, Color.black);
+		stopd = makeButton("STOP", null, off, Color.black);
+		fuse = makeButton("FUSE", null, off, Color.black);
+		form = makeButton("FORM", null, off, Color.black);
+		feed = makeButton("CARD<BR>FEED<BR>STOP", null, off, Color.black);
 
 		text = new JTextArea(20, 89);
 		text.setEditable(false);
@@ -168,6 +125,9 @@ class CardAccounting implements ActionListener, Runnable
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
+		mi = new JMenuItem("Prog", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Discard", KeyEvent.VK_D);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -195,7 +155,7 @@ class CardAccounting implements ActionListener, Runnable
 		mu.add(mi);
 		_menus[2] = mu;
 
-		java.net.URL url = this.getClass().getResource("docs/Sorter.html");
+		java.net.URL url = this.getClass().getResource("docs/Accounting.html");
 		_help = new GenericHelp(frame.getTitle() + " Help", url);
 
 		gb = new GridBagLayout();
@@ -244,7 +204,7 @@ class CardAccounting implements ActionListener, Runnable
 		_frame.add(pn);
 		gc.gridx = 2;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(40, 5));
+		pn.setPreferredSize(new Dimension(10, 5));
 		pn.setOpaque(false);
 		gb.setConstraints(pn, gc);
 		_frame.add(pn);
@@ -385,17 +345,27 @@ class CardAccounting implements ActionListener, Runnable
 		acc.add(acc_stk);
 		++gc.gridy;
 
-		idle.setBackground(Color.red);
+		idle.setBackground(red);
 	}
 
-	private void setPrintEntry(Entry[] xts, int idx, String p) {
+	private ProgEntry[] getReadCycle(char t) {
+		switch (t) {
+		case '1': return read1;
+		case '2': return read2;
+		case '3': return read3;
+		default: return null;
+		}
+	}
+
+	// 'idx' is 1-based...
+	private void setPrintEntry(char[] xts, int idx, String p) {
+		--idx;	// 0-based
 		byte c = (byte)-1;
-		byte t = (byte)-1;
 		int n = 1;
 		try {
 			int ctr = getCounter(p);
 			int j = p.indexOf('*');
-			if (j > 3) {
+			if (j > 2) {
 				n = Integer.valueOf(p.substring(j + 1));
 			} else {
 				j = p.length();
@@ -405,41 +375,97 @@ class CardAccounting implements ActionListener, Runnable
 				c = (byte)(p.charAt(2) - '0');
 				c -= 1;
 				while (n > 0) {
-					xts[idx++] = new CounterEntry(ctr, c++);
+					counter[ctr].setEntry(c, new PrintEntry(xts, idx));
+					++idx;
+					++c;
 					--n;
 				}
 			} else {
 				int i = p.indexOf('.');
 				if (i < 0) return;
 				c = Byte.valueOf(p.substring(i + 1, j));
-				t = Byte.valueOf(p.substring(0, i));
 				c -= 1;
+				ProgEntry[] rd = getReadCycle(p.charAt(0));
 				while (n > 0) {
-					xts[idx++] = new Entry(t, c++);
+					rd[c] = new PrintEntry(xts, idx, rd[c]);
+					++idx;
+					++c;
 					--n;
 				}
 			}
 		} catch (Exception ee) {}
 	}
 
-	private void setCounter(int ctr, int dig, String p) {
+	// 'dig' is 1-based...
+	private void setCounterEntry(int ctr, int dig, String p) {
+		--dig;	// 0-based
 		String[] pp = p.split("\\s");
-		// pp[0] ~~ [123]\.[0-9]+(\*[0-9])
-		// pp[1..] are args
-		int i = pp[0].indexOf('.');
-		if (i < 0) return;
-		int j = pp[0].indexOf('*');
-		int n = 1;
-		if (j > 3) {
-			n = Integer.valueOf(pp[0].substring(j + 1));
-		} else {
-			j = pp[0].length();
+		int cc = getCounter(pp[0]);
+		if (cc < 0 && !pp[0].matches("[123]\\.[0-9]+.*")) {
+			return;	// TODO: error
 		}
-		byte c = Byte.valueOf(pp[0].substring(i + 1, j));
-		byte t = Byte.valueOf(pp[0].substring(0, i));
-		c -= 1;
-		dig -= 1;
-		counter[ctr].setEntry(t, dig, c, n);
+		for (int x = 1; x < pp.length; ++x) {
+			if (pp[x].equals("plus")) counter[ctr].setMinus(false);
+			else if (pp[x].equals("minus")) counter[ctr].setMinus(true);
+			else if (pp[x].startsWith("total=")) {
+				String pm = pp[x].substring(6);
+				// Also cause print...
+				ProgExit xt = new PrintExit();
+				counter[ctr].setNext(xt);
+				// TODO: reject duplicates...
+				if (pm.equals("final")) {
+					xt.setNext(finalTotal);
+					finalTotal = counter[ctr];
+				} else if (pm.equals("major")) {
+					xt.setNext(major);
+					major = counter[ctr];
+				} else if (pm.equals("inter")) {
+					xt.setNext(interm);
+					interm = counter[ctr];
+				} else if (pm.equals("minor")) {
+					xt.setNext(minor);
+					minor = counter[ctr];
+				} else if (pm.equals("special")) {
+					xt.setNext(special);
+					special = counter[ctr];
+				}
+			}
+			// TODO: other params...
+		}
+		byte c = (byte)-1;
+		int n = 1;
+		try {
+			int j = pp[0].indexOf('*');
+			if (j > 2) {
+				n = Integer.valueOf(pp[0].substring(j + 1));
+			} else {
+				j = pp[0].length();
+			}
+			if (cc >= 0) {
+				// Use output of counter...
+				c = (byte)(pp[0].charAt(2) - '0');
+				c -= 1;
+				while (n > 0) {
+					counter[cc].setEntry(c,
+						new CounterEntry(counter[ctr], dig));
+					++dig;
+					++c;
+					--n;
+				}
+			} else {
+				int i = pp[0].indexOf('.');
+				if (i < 0) return;
+				c = Byte.valueOf(pp[0].substring(i + 1, j));
+				c -= 1;
+				ProgEntry[] rd = getReadCycle(pp[0].charAt(0));
+				while (n > 0) {
+					rd[c] = new CounterEntry(counter[ctr], dig, rd[c]);
+					++dig;
+					++c;
+					--n;
+				}
+			}
+		} catch (Exception ee) {}
 	}
 
 	private int getCounter(String p) {
@@ -456,8 +482,16 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private void loadProgram(String prog) {
-		Arrays.fill(aprint, null);
-		Arrays.fill(nprint, null);
+		Arrays.fill(read1, null);
+		Arrays.fill(read2, null);
+		Arrays.fill(read3, null);
+		Arrays.fill(counter, null);
+		minor = null;
+		interm = null;
+		major = null;
+		special = null;
+		finalTotal = null;
+		allCards = null;
 		props = new Properties();
 		try {
 			InputStream is = new FileInputStream(prog);
@@ -465,24 +499,29 @@ class CardAccounting implements ActionListener, Runnable
 		} catch (Exception ee) {
 			return;
 		}
-		// TODO: multiple sources?
 		// TODO: aN=3.x requires zN=2.x, produce erroneous output if not wired.
 		// TODO: printing requires "all" -> "list"
 		for (String prop : props.stringPropertyNames()) {
 			String p = props.getProperty(prop);
 			int ctr;
-			if (prop.matches("a[0-9]+")) {
-				// Alphameric Print Entry
+			if (prop.matches("[an][0-9]+")) {
+				// Alphameric/Numeric Print Entry
 				int col = Integer.valueOf(prop.substring(1));
-				setPrintEntry(aprint, col, p);
-			} else if (prop.matches("n[0-9]+")) {
-				// Numeric Print Entry
-				int col = Integer.valueOf(prop.substring(1));
-				setPrintEntry(nprint, col, p);
+				char[] prt = (prop.charAt(0) == 'n' ? nprint : aprint);
+				String[] pa = p.split("\\s");
+				for (String pp : pa) {
+					setPrintEntry(prt, col, pp);
+				}
 			} else if ((ctr = getCounter(prop)) >= 0) {
 				// Counters - all entries
 				int dig = (byte)(prop.charAt(2) - '0');
-				setCounter(ctr, dig, p);
+				setCounterEntry(ctr, dig, p);
+			} else if (prop.equals("list")) {
+				if (p.equals("all")) {
+					ProgExit xt = new PrintExit();
+					xt.setNext(allCards);
+					allCards = xt;
+				}
 			}
 		}
 	}
@@ -493,6 +532,9 @@ class CardAccounting implements ActionListener, Runnable
 		if (act != null) {
 			btn.setActionCommand(act);
 			btn.addActionListener(this);
+		} else {
+			btn.setBorderPainted(false);
+			btn.setFocusPainted(false);
 		}
 		btn.setFont(labels);
 		btn.setPreferredSize(new Dimension(40, 40));
@@ -509,81 +551,33 @@ class CardAccounting implements ActionListener, Runnable
 		return p;
 	}
 
-	private char printCol(byte[] card, Entry ent) {
-		int col = ent.colm;
-		// TODO: alphameric vs. numeric character sets...
-		//	alphameric = A-Z,0-9,&
-		//	odd numeric = 0-9,*
-		//	even numeric = 0-9,CR
-		char c = ' ';
-		int p;
-		if (ent instanceof CounterEntry) {
-			int ctr = ((CounterEntry)ent).ctr;
-			p = counter[ctr].getCol(col);
-		} else {
-			p = getCol(card, col);
-		}
-		String t = cvt.punToAscii(p);
-		if (t != null) {
-			c = t.charAt(0);
-		}
-		return c;
-	}
-
-	private void processRead(int num, byte[] card) {
+	private void processRead(ProgEntry[] ents, byte[] card) {
 		if (card == null) {
 			return;
 		}
-		// Should only be third reading...
-		for (int x = 0; x < counter.length; ++x) {
-			if (counter[x] == null) {
-				continue;
-			}
-			counter[x].processRead(num, card);
-			
+		for (int c = 0; c < 80; ++c) {
+			if (ents[c] == null) continue;
+			int p = getCol(card, c);
+			String t = cvt.punToAscii(p);
+			if (t == null) continue;
+			ents[c].putCol(t.charAt(0));
 		}
-		String s = "";
-		int n = 0;
-		for (int x = 0; x < aprint.length; ++x) {
-			if (aprint[x] == null || !aprint[x].enabled(num)) {
-				s += ' ';
-			} else {
-				s += printCol(card, aprint[x]);
-				++n;
-			}
-		}
-		s += ' ';
-		for (int x = 0; x < nprint.length; ++x) {
-			if (nprint[x] == null || !nprint[x].enabled(num)) {
-				s += ' ';
-			} else {
-				s += printCol(card, nprint[x]);
-				++n;
-			}
-		}
-		if (n > 0) {
-			text.append(s + '\n');
-			caret += s.length() + 1;
-			text.setCaretPosition(caret);
-		}
-		// if programmed stop... {
-		//	stopd.setBackground(Color.red);
-		//	stopped = true;
-		// }
 	}
 
 	private void processFinalTotal() {
-		for (int x = 0; x < counter.length; ++x) {
-			if (counter[x] == null) {
-				continue;
-			}
-System.err.format("Counter %d = %d\n", x, counter[x].sum);
+		if (finalTotal != null) {
+			Arrays.fill(aprint, ' ');
+			Arrays.fill(nprint, ' ');
+			// TODO: minor, inter, major?
+			finalTotal.processExits();
 		}
+		// TODO: allow processing?
+		stopd.setBackground(off);
 	}
 
 	public void run() {
-		idle.setBackground(Color.white);
-		feed.setBackground(Color.white); // OFF by what?
+		idle.setBackground(off);
+		feed.setBackground(off); // OFF by what?
 		byte[] card1 = null;
 		byte[] card2 = null;
 		byte[] card3 = null;
@@ -596,30 +590,34 @@ System.err.format("Counter %d = %d\n", x, counter[x].sum);
 			card1 = new byte[2*80];
 			int c = hopper.getCard(card1);
 			if (c < 0) {
-				//feed.setBackground(Color.red); // feed jam only?
-				stopped = true;
-				// TODO: what is done for 403?
-				if (card3 != null) {
-					processRead(2, card2);
-					processRead(3, card3);
-					stacker.putCard(card3);
+				card1 = null;
+				if (card2 == null && card3 == null) {
+					stopped = true;
+					break;
 				}
-				if (card2 != null) {
-					processRead(3, card2); // third read!
-					stacker.putCard(card2);
-				}
-				break;
 			}
+			Arrays.fill(aprint, ' ');
+			Arrays.fill(nprint, ' ');
+			// TODO: other resets
 			if (ibm403) {
-				processRead(1, card1);
+				processRead(read1, card1);
 			}
-			processRead(2, card2);
-			processRead(3, card3);
+			processRead(read2, card2);
+			processRead(read3, card3);
+			// TODO: other cycles (minor, inter, major)...
+			// TODO: only print if something printed...
+			if (allCards != null && card3 != null) {
+				allCards.processExits();
+			}
+			// if programmed stop... {
+			//	stopd.setBackground(red);
+			//	stopped = true;
+			// }
 			try {
 				Thread.sleep(10);
 			} catch (Exception ee) {}
 		}
-		idle.setBackground(Color.red);
+		idle.setBackground(red);
 	}
 
 	private File pickFile(String purpose, boolean input,
@@ -638,7 +636,7 @@ System.err.format("Counter %d = %d\n", x, counter[x].sum);
 	}
 
 	private void showAbout() {
-		java.net.URL url = this.getClass().getResource("docs/About2.html");
+		java.net.URL url = this.getClass().getResource("docs/About3.html");
 		try {
 			JEditorPane about = new JEditorPane(url);
 			about.setEditable(false);
@@ -651,6 +649,14 @@ System.err.format("Counter %d = %d\n", x, counter[x].sum);
 
 	private void showHelp() {
 		_help.setVisible(true);
+	}
+
+	private void getProg() {
+		File fi = pickFile("Get Prog", false, "40x", "IBM 40x Prog", _cwd);
+		if (fi == null) {
+			return;
+		}
+		loadProgram(fi.getAbsolutePath());
 	}
 
 	private void deckAdd() {
@@ -716,13 +722,14 @@ System.err.format("Counter %d = %d\n", x, counter[x].sum);
 			JButton butt = (JButton)e.getSource();
 			String act = butt.getActionCommand();
 			if (act.equals("start")) {
+				// TODO: indicate if no program is loaded...
 				stopped = false;
 				Thread t = new Thread(this);
 				t.start();
 			} else if (act.equals("stop")) {
 				stopped = true;
 			} else if (act.equals("total")) {
-				stopd.setBackground(Color.white);
+				stopd.setBackground(off);
 				processFinalTotal();
 			}
 			return;
@@ -745,6 +752,8 @@ System.err.format("Counter %d = %d\n", x, counter[x].sum);
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_D) {
 			stacker.discardDeck();
+		} else if (m.getMnemonic() == KeyEvent.VK_P) {
+			getProg();
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			deckAdd();
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {

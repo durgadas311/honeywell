@@ -1,0 +1,59 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<H3>Punch Card Accounting Machine Help</H3>
+
+<P>This is currently a minimal implementation of the IBM 402/403
+Accounting machines.
+
+<P>The input hopper is located in the upper left.
+Output stacker is located derectly below the hopper.
+The program panel is implemented as a properties file.
+currently, this file must be editted external from the simulation.
+The START, STOP, and FINAL TOTAL buttons should function as on original equipment,
+with the exception that FINAL TOTAL does not requires simultaneous pressing of START.
+The run rate is set to 100 cards per second.
+
+<P>The hopper/stacker are set to show 100 cards, with each card represented
+by a line of pixels. More cards may be in the hopper/stackers, in fact
+there is no practical limit (unlike original equipment). When a hopper/stacker
+has exceeded its display limit, there will be a red line on top of the stack.
+
+<P>Clicking on the input hopper will start a dialog to add a PCD file to the hopper.
+By default, this will add the new file after all existing files in the hopper,
+but the option "Remove All" may be used to clear the hopper first.
+
+<P>Clicking on the stacker will empty it. This is for appearances sake only.
+
+The properties files may contain the following:
+<P><TABLE BORDER>
+<TR><TH>Property pattern</TH><TH>Contents</TH></TR>
+<TR><TD>[an][0-9]+</TD><TD>Alphameric or Numeric columns on printer</TD></TR>
+<TR><TD>[2468][abcd][1-8]</TD><TD>Counter column</TD></TR>
+<TR><TD>list</TD><TD>The LIST impulse exit. values: "all"</TD></TR>
+</TABLE>
+
+<P>Print properties may contain one or expression indicating sources.
+The pattern "[123].[0-9]+{*[0-9]+}" ("{}" enclose optional part) is used to
+represent one or more successive colums from FIRST, SECOND, or THIRD READ.
+Columns begin at "1".
+The pattern "[2468][abcd][1-8]{*[0-9]+}" is used to represent one or
+more successive digits from a COUNTER EXIT. Note, the most-significant digit
+is "1".
+
+<P>Counter properties contain a single source (as for sources of print properties),
+plus optional parameters. The additional paramters are:
+
+<P><TABLE BORDER>
+<TR><TH>Parameter</TH><TH>Values/Meaning</TH></TR>
+<TR><TD>total=</TD><TD>final, major, inter, minor, special</TD></TR>
+<TR><TD>plus</TD><TD>add to counter</TD></TR>
+<TR><TD>minus</TD><TD>subtract from counter</TD></TR>
+</TABLE>
+
+<P>While it may have been possible to operate a counter in both plus
+and minus mode in different cycles, that is currently not supported.
+
+</BODY>
+</HTML>
