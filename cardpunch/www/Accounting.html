@@ -30,6 +30,7 @@ The properties files may contain the following:
 <P><TABLE BORDER>
 <TR><TH>Property pattern</TH><TH>Contents</TH></TR>
 <TR><TD>[an][0-9]+</TD><TD>Alphameric or Numeric columns on printer</TD></TR>
+<TR><TD>c[0-9]+</TD><TD>Comparing columns</TD></TR>
 <TR><TD>[2468][abcd][1-8]</TD><TD>Counter column</TD></TR>
 <TR><TD>list</TD><TD>The LIST impulse exit. values: "all"</TD></TR>
 </TABLE>
@@ -39,8 +40,11 @@ The pattern "[123].[0-9]+{*[0-9]+}" ("{}" enclose optional part) is used to
 represent one or more successive colums from FIRST, SECOND, or THIRD READ.
 Columns begin at "1".
 The pattern "[2468][abcd][1-8]{*[0-9]+}" is used to represent one or
-more successive digits from a COUNTER EXIT. Note, the most-significant digit
-is "1".
+more successive digits from a COUNTER EXIT. Note, the most-significant counter digit
+is "1". In addition, the parameter "aster=cycle" (where "cycle" is
+major, inter, minor, special, final, or all) will print an asterisk in the
+column on the specified cycle. Also, the parameter "zero" may be used to
+enable zero suppression on the field.
 
 <P>Counter properties contain a single source (as for sources of print properties),
 plus optional parameters. The additional paramters are:
@@ -54,6 +58,12 @@ plus optional parameters. The additional paramters are:
 
 <P>While it may have been possible to operate a counter in both plus
 and minus mode in different cycles, that is currently not supported.
+
+<P>Comparing columns should have two source parameters, one for
+a "third reading" field and one for a "second reading" field.
+In addition, a "start=cycle" parameter may be used, which selects the
+cycle which will be started ("impulsed") when the card field does not match
+(i.e. a group change).
 
 </BODY>
 </HTML>

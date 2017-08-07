@@ -17,7 +17,14 @@ class CardAccounting implements ActionListener, Runnable
 		public PrintExit() {}
 
 		public void processExits() {
-			// TOD: do not print if nothing was printed?
+			// process other exits first, in case they print
+			if (_next != null) {
+				_next.processExits();
+			}
+			// perform zero-suppression...
+			zeroSuppress(aprint, azsupp);
+			zeroSuppress(nprint, nzsupp);
+			// TODO: do not print if nothing was printed?
 			String s = new String(aprint);
 			s += ' ';
 			s += new String(nprint);
@@ -25,6 +32,19 @@ class CardAccounting implements ActionListener, Runnable
 			text.append(s);
 			caret += s.length();
 			text.setCaretPosition(caret);
+		}
+	}
+
+	class AsterExit extends ProgExit {
+		char[] _line;
+		int _col;
+		public AsterExit(char[] line, int col) {
+			super();
+			_col = col;
+			_line = line;
+		}
+		public void processExits() {
+			_line[_col] = '*';
 			if (_next != null) {
 				_next.processExits();
 			}
@@ -79,6 +99,8 @@ class CardAccounting implements ActionListener, Runnable
 	Comparator comparing;
 	char[] aprint;
 	char[] nprint;
+	boolean[] azsupp;
+	boolean[] nzsupp;
 	Counter[] counter;
 	int caret;
 
@@ -94,6 +116,8 @@ class CardAccounting implements ActionListener, Runnable
 		read3 = new ProgEntry[80];
 		aprint = new char[43];
 		nprint = new char[45];
+		azsupp = new boolean[43];
+		nzsupp = new boolean[45];
 		counter = new Counter[16];
 		comparing = new Comparator(20);
 		minorStart = new ProgStart();
@@ -358,6 +382,22 @@ class CardAccounting implements ActionListener, Runnable
 		idle.setBackground(red);
 	}
 
+	protected void zeroSuppress(char[] prt, boolean[] zsp) {
+		boolean zsupp = false;
+		for (int x = 0; x < prt.length; ++x) {
+			if (zsp[x]) {
+				zsupp = true;
+			}
+			if (zsupp) {
+				if (prt[x] == '0') {
+					prt[x] = ' ';
+				} else {
+					zsupp = false;
+				}
+			}
+		}
+	}
+
 	private ProgEntry[] getReadCycle(char t) {
 		switch (t) {
 		case '1': return read1;
@@ -370,6 +410,11 @@ class CardAccounting implements ActionListener, Runnable
 	// 'idx' is 1-based...
 	private void setPrintEntry(char[] xts, int idx, String p) {
 		--idx;	// 0-based
+		if (p.startsWith("aster=")) {
+			ProgExit xt = new AsterExit(xts, idx);
+			setExit(p.substring(6), xt, xt);
+			return;
+		}
 		byte c = (byte)-1;
 		int n = 1;
 		try {
@@ -406,6 +451,28 @@ class CardAccounting implements ActionListener, Runnable
 		} catch (Exception ee) {}
 	}
 
+	private void setExit(String pm, ProgExit xt, ProgExit ct) {
+		if (pm.equals("final")) {
+			xt.setNext(finalTotal);
+			finalTotal = ct;
+		} else if (pm.equals("major")) {
+			xt.setNext(major);
+			major = ct;
+		} else if (pm.equals("inter")) {
+			xt.setNext(interm);
+			interm = ct;
+		} else if (pm.equals("minor")) {
+			xt.setNext(minor);
+			minor = ct;
+		} else if (pm.equals("special")) {
+			xt.setNext(special);
+			special = ct;
+		} else if (pm.equals("all")) {
+			xt.setNext(allCards);
+			allCards = ct;
+		}
+	}
+
 	// 'dig' is 1-based...
 	private void setCounterEntry(int ctr, int dig, String p) {
 		--dig;	// 0-based
@@ -423,22 +490,7 @@ class CardAccounting implements ActionListener, Runnable
 				ProgExit xt = new PrintExit();
 				counter[ctr].setNext(xt);
 				// TODO: reject duplicates...
-				if (pm.equals("final")) {
-					xt.setNext(finalTotal);
-					finalTotal = counter[ctr];
-				} else if (pm.equals("major")) {
-					xt.setNext(major);
-					major = counter[ctr];
-				} else if (pm.equals("inter")) {
-					xt.setNext(interm);
-					interm = counter[ctr];
-				} else if (pm.equals("minor")) {
-					xt.setNext(minor);
-					minor = counter[ctr];
-				} else if (pm.equals("special")) {
-					xt.setNext(special);
-					special = counter[ctr];
-				}
+				setExit(pm, xt, counter[ctr]);
 			}
 			// TODO: other params...
 		}
@@ -556,6 +608,8 @@ class CardAccounting implements ActionListener, Runnable
 		Arrays.fill(read2, null);
 		Arrays.fill(read3, null);
 		Arrays.fill(counter, null);
+		Arrays.fill(azsupp, false);
+		Arrays.fill(nzsupp, false);
 		minor = null;
 		interm = null;
 		major = null;
@@ -578,9 +632,15 @@ class CardAccounting implements ActionListener, Runnable
 				// Alphameric/Numeric Print Entry
 				int col = Integer.valueOf(prop.substring(1));
 				char[] prt = (prop.charAt(0) == 'n' ? nprint : aprint);
+				boolean[] zsp = (prop.charAt(0) == 'n' ? nzsupp : azsupp);
 				String[] pa = p.split("\\s");
 				for (String pp : pa) {
-					setPrintEntry(prt, col, pp);
+					if (pp.equals("zero")) {
+						// 'col' is still 1-based
+						zsp[col - 1] = true;
+					} else {
+						setPrintEntry(prt, col, pp);
+					}
 				}
 			} else if ((ctr = getCounter(prop)) >= 0) {
 				// Counters - all entries
