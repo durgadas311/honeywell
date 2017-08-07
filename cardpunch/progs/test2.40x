@@ -6,9 +6,9 @@ a19=3.18*2
 a22=3.21*2
 a25=3.24*8 8a1*8 zero
 a33=aster=minor
-8a1=3.24*8 plus total=minor
-8b1=3.24*8 plus total=inter
-8c1=3.24*8 plus total=major
+8a1=3.24*8 plus=all total=minor
+8b1=3.24*8 plus=all total=inter
+8c1=3.24*8 plus=all total=major
 n1=8b1*8 zero
 n10=8c1*8 zero
 c1=3.8*3 2.8*3 start=minor

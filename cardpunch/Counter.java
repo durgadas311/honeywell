@@ -4,7 +4,8 @@ public class Counter extends ProgExit {
 	int width;
 	int sum;
 	ProgEntry[] ents;
-	boolean sub;
+	ProgStart plus;
+	ProgStart minus;
 	int mod;
 
 	public Counter(int wid) {
@@ -12,12 +13,17 @@ public class Counter extends ProgExit {
 		width = wid;
 		ents = new ProgEntry[wid];
 		sum = 0;
-		sub = false;
+		minus = null;
+		plus = null;
 		mod = (int)Math.pow(10, width);
 	}
 
-	public void setMinus(boolean mi) {
-		sub = mi;
+	public void setPlus(ProgStart pl) {
+		plus = pl;
+	}
+
+	public void setMinus(ProgStart mi) {
+		minus = mi;
 	}
 
 	public void setEntry(int dig, ProgEntry ent) {
@@ -50,16 +56,23 @@ public class Counter extends ProgExit {
 	}
 
 	public void accum(int d, int dig) {
+		boolean add = (plus != null && plus.is());
+		boolean sub = (minus != null && minus.is());
+		if (!add && !sub) {
+			return;
+		}
 		if (dig < 0 || dig >= width || d == 0) {
 			return;
 		}
 		dig = width - dig - 1;
 		int f = (d * (int)Math.pow(10, dig));
-		if (sub) {
-			sum -= f;
-		} else {
+		// TODO: carry in...
+		if (add) {
 			sum += f;
+		} else {
+			sum -= f;
 		}
+		// TODO: carry out...
 		sum %= mod;
 	}
 }

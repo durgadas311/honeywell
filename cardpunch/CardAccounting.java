@@ -21,6 +21,7 @@ class CardAccounting implements ActionListener, Runnable
 			if (_next != null) {
 				_next.processExits();
 			}
+			// TODO: allow print spacing suppress...
 			// perform zero-suppression...
 			zeroSuppress(aprint, azsupp);
 			zeroSuppress(nprint, nzsupp);
@@ -29,9 +30,12 @@ class CardAccounting implements ActionListener, Runnable
 			s += ' ';
 			s += new String(nprint);
 			s += '\n';
+			// TODO: support spacing options
 			text.append(s);
 			caret += s.length();
 			text.setCaretPosition(caret);
+			Arrays.fill(aprint, ' ');
+			Arrays.fill(nprint, ' ');
 		}
 	}
 
@@ -92,10 +96,14 @@ class CardAccounting implements ActionListener, Runnable
 	ProgExit special;
 	ProgExit finalTotal;
 	ProgExit allCards;
+
 	ProgStart minorStart;
 	ProgStart interStart;
 	ProgStart majorStart;
 	ProgStart specialStart;
+	ProgStart allStart;
+	ProgStart finalStart;
+
 	Comparator comparing;
 	char[] aprint;
 	char[] nprint;
@@ -116,6 +124,8 @@ class CardAccounting implements ActionListener, Runnable
 		read3 = new ProgEntry[80];
 		aprint = new char[43];
 		nprint = new char[45];
+		Arrays.fill(aprint, ' ');
+		Arrays.fill(nprint, ' ');
 		azsupp = new boolean[43];
 		nzsupp = new boolean[45];
 		counter = new Counter[16];
@@ -124,6 +134,8 @@ class CardAccounting implements ActionListener, Runnable
 		interStart = new ProgStart();
 		majorStart = new ProgStart();
 		specialStart = new ProgStart();
+		allStart = new ProgStart();
+		finalStart = new ProgStart();
 
 		_cwd = new File(System.getProperty("user.dir"));
 		cvt = new CharConverter();
@@ -384,9 +396,13 @@ class CardAccounting implements ActionListener, Runnable
 
 	protected void zeroSuppress(char[] prt, boolean[] zsp) {
 		boolean zsupp = false;
+		boolean zlast = false;
 		for (int x = 0; x < prt.length; ++x) {
 			if (zsp[x]) {
-				zsupp = true;
+				if (!zlast) zsupp = true;
+			} else {
+				zlast = false;
+				zsupp = false;
 			}
 			if (zsupp) {
 				if (prt[x] == '0') {
@@ -395,6 +411,7 @@ class CardAccounting implements ActionListener, Runnable
 					zsupp = false;
 				}
 			}
+			zlast = zsp[x];
 		}
 	}
 
@@ -408,12 +425,13 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	// 'idx' is 1-based...
-	private void setPrintEntry(char[] xts, int idx, String p) {
+	private int setPrintEntry(char[] xts, int idx, String p) {
 		--idx;	// 0-based
+		int ret = 0;
 		if (p.startsWith("aster=")) {
 			ProgExit xt = new AsterExit(xts, idx);
 			setExit(p.substring(6), xt, xt);
-			return;
+			return 0;
 		}
 		byte c = (byte)-1;
 		int n = 1;
@@ -425,6 +443,7 @@ class CardAccounting implements ActionListener, Runnable
 			} else {
 				j = p.length();
 			}
+			ret = n;
 			if (ctr >= 0) {
 				// Use output of counter...
 				c = (byte)(p.charAt(2) - '0');
@@ -437,7 +456,7 @@ class CardAccounting implements ActionListener, Runnable
 				}
 			} else {
 				int i = p.indexOf('.');
-				if (i < 0) return;
+				if (i < 0) return -1;
 				c = Byte.valueOf(p.substring(i + 1, j));
 				c -= 1;
 				ProgEntry[] rd = getReadCycle(p.charAt(0));
@@ -449,6 +468,7 @@ class CardAccounting implements ActionListener, Runnable
 				}
 			}
 		} catch (Exception ee) {}
+		return ret;
 	}
 
 	private void setExit(String pm, ProgExit xt, ProgExit ct) {
@@ -482,9 +502,11 @@ class CardAccounting implements ActionListener, Runnable
 			return;	// TODO: error
 		}
 		for (int x = 1; x < pp.length; ++x) {
-			if (pp[x].equals("plus")) counter[ctr].setMinus(false);
-			else if (pp[x].equals("minus")) counter[ctr].setMinus(true);
-			else if (pp[x].startsWith("total=")) {
+			if (pp[x].startsWith("plus=")) {
+				counter[ctr].setPlus(getStart(pp[x].substring(5)));
+			} else if (pp[x].startsWith("minus=")) {
+				counter[ctr].setMinus(getStart(pp[x].substring(6)));
+			} else if (pp[x].startsWith("total=")) {
 				String pm = pp[x].substring(6);
 				// Also cause print...
 				ProgExit xt = new PrintExit();
@@ -552,6 +574,10 @@ class CardAccounting implements ActionListener, Runnable
 			return majorStart;
 		} else if (p.equals("special")) {
 			return specialStart;
+		} else if (p.equals("final")) {
+			return finalStart;
+		} else if (p.equals("all")) {
+			return allStart;
 		}
 		return null;
 	}
@@ -634,12 +660,17 @@ class CardAccounting implements ActionListener, Runnable
 				char[] prt = (prop.charAt(0) == 'n' ? nprint : aprint);
 				boolean[] zsp = (prop.charAt(0) == 'n' ? nzsupp : azsupp);
 				String[] pa = p.split("\\s");
+				int wid = 0;
 				for (String pp : pa) {
 					if (pp.equals("zero")) {
 						// 'col' is still 1-based
-						zsp[col - 1] = true;
+						// TODO: error if wid == 0...
+						for (int x = 0; x < wid - 1; ++x) {
+							zsp[x + col - 1] = true;
+						}
 					} else {
-						setPrintEntry(prt, col, pp);
+						int w = setPrintEntry(prt, col, pp);
+						if (w > wid) wid = w;
 					}
 				}
 			} else if ((ctr = getCounter(prop)) >= 0) {
@@ -698,27 +729,20 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private void processFinalTotal() {
+		finalStart.set(true);
 		if (minor != null) {
-			Arrays.fill(aprint, ' ');
-			Arrays.fill(nprint, ' ');
 			minor.processExits();
 		}
 		if (interm != null) {
-			Arrays.fill(aprint, ' ');
-			Arrays.fill(nprint, ' ');
 			interm.processExits();
 		}
 		if (major != null) {
-			Arrays.fill(aprint, ' ');
-			Arrays.fill(nprint, ' ');
 			major.processExits();
 		}
 		if (finalTotal != null) {
-			Arrays.fill(aprint, ' ');
-			Arrays.fill(nprint, ' ');
-			// TODO: minor, inter, major?
 			finalTotal.processExits();
 		}
+		finalStart.set(false);
 		// TODO: allow processing?
 		stopd.setBackground(off);
 	}
@@ -751,40 +775,34 @@ class CardAccounting implements ActionListener, Runnable
 					break;
 				}
 			}
-			Arrays.fill(aprint, ' ');
-			Arrays.fill(nprint, ' ');
 			resetStart();
 			// TODO: other resets
 			if (ibm403) {
 				processRead(read1, card1);
 			}
 			processRead(read2, card2);
+			allStart.set(true);
 			processRead(read3, card3);
 			// TODO: other cycles (minor, inter, major)...
 			// TODO: only print if something printed...
 			if (allCards != null && card3 != null) {
 				allCards.processExits();
 			}
+			allStart.set(false);
 			if (card2 != null && card3 != null) {
 				comparing.processExits();
 				if (minorStart.is() || interStart.is() || majorStart.is()) {
 					if (minor != null) {
-						Arrays.fill(aprint, ' ');
-						Arrays.fill(nprint, ' ');
 						minor.processExits();
 					}
 				}
 				if (interStart.is() || majorStart.is()) {
 					if (interm != null) {
-						Arrays.fill(aprint, ' ');
-						Arrays.fill(nprint, ' ');
 						interm.processExits();
 					}
 				}
 				if (majorStart.is()) {
 					if (major != null) {
-						Arrays.fill(aprint, ' ');
-						Arrays.fill(nprint, ' ');
 						major.processExits();
 					}
 				}
