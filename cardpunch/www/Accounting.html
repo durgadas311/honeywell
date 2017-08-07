@@ -27,7 +27,7 @@ but the option "Remove All" may be used to clear the hopper first.
 <P>Clicking on the stacker will empty it. This is for appearances sake only.
 
 <P>Programming is done by a "properties" file, that contains lines of the
-format "property = value". Referencing the original equipment programming panel,
+format "name = value". Referencing the original equipment programming panel,
 the following are supported:
 
 <P><TABLE BORDER>
@@ -47,10 +47,17 @@ the following are supported:
 </TABLE>
 
 <P>(*) Hubs are not labeled, implied that left-most is "1".
-<P>(**) Comparator exits are chain automatically based on field defined in property.
+<P>(**) Comparator exits are chained automatically based on field defined in property.
 
-<P>PRINT and COMPARING hubs (as well as LIST) relate to property names,
-others appear only in property values.
+<P>PRINT, COUNTER, and COMPARING hubs (as well as LIST) relate to property names,
+others appear only in property values. COUNTER hubs can be used in both contexts.
+
+<P>In the property value, a set of hubs (a field) may be designated by adding an
+asterisk and the number of hubs in the field. It is generally expected that all
+sets of hubs in a given property will be the same width, and that width determines
+the property width.
+
+<P>Also note that "list=all" is required in order to print on every card.
 
 <P><B>Example 1:</B> comparing a field (current and previous card). Field starts at card
 column 5 and is 4 columns wide. Compare triggers "minor" group.
