@@ -463,7 +463,7 @@ class CardSorter implements ActionListener, Runnable
 			}
 			stackers[n].putCard(_card);
 			try {
-				Thread.sleep(10);
+				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}
 	}

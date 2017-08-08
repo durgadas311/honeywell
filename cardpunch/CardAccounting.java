@@ -14,10 +14,16 @@ class CardAccounting implements ActionListener, Runnable
 	static final Color off = new Color(190, 190, 180);
 
 	class PrintExit extends ProgExit {
+		private PrintControl ctl;
 		private ProgStart list = null;
-		public PrintExit() {}
-		public PrintExit(ProgStart ps) {
-			list = ps;
+
+		public PrintExit(PrintControl pc) {
+			ctl = pc;
+		}
+
+		public PrintExit(PrintControl pc, ProgStart lst) {
+			ctl = pc;
+			list = lst;
 		}
 
 		public void processExits() {
@@ -28,7 +34,7 @@ class CardAccounting implements ActionListener, Runnable
 			if (list != null && !list.is()) {
 				return;
 			}
-			if (supSpace.is()) {
+			if (ctl.isSuppress()) {
 				return;
 			}
 			// TODO: allow print spacing suppress...
@@ -36,17 +42,17 @@ class CardAccounting implements ActionListener, Runnable
 			zeroSuppress(aprint, azsupp);
 			zeroSuppress(nprint, nzsupp);
 			// TODO: do not print if nothing was printed?
-			String s = new String(aprint);
+			String s = "\n";
+			if (ctl.isDouble()) {
+				s += '\n';
+			}
+			if (ctl.isTriple()) {
+				s += '\n';
+				s += '\n';
+			}
+			s += new String(aprint);
 			s += ' ';
 			s += new String(nprint);
-			s += '\n';
-			if (dblSpace.is()) {
-				s += '\n';
-			}
-			if (trpSpace.is()) {
-				s += '\n';
-				s += '\n';
-			}
 			// TODO: support spacing options
 			text.append(s);
 			caret += s.length();
@@ -59,13 +65,16 @@ class CardAccounting implements ActionListener, Runnable
 	class AsterExit extends ProgExit {
 		char[] _line;
 		int _col;
-		public AsterExit(char[] line, int col) {
+		char _char;
+		public AsterExit(char[] line, int col, char ch) {
 			super();
 			_col = col;
 			_line = line;
+			_char = ch;
 		}
 		public void processExits() {
-			_line[_col] = '*';
+			// TODO: enforce odd/even columns? Numeric?
+			_line[_col] = _char;
 			if (_next != null) {
 				_next.processExits();
 			}
@@ -75,6 +84,9 @@ class CardAccounting implements ActionListener, Runnable
 	JFrame _frame;
 	Font labels;
 	File _cwd;
+	File _prevProg;
+	File _prevDeck;
+	File _prevPapr;
 	File tmp;
 	CardHopper hopper;
 	CardStacker stacker;
@@ -107,26 +119,28 @@ class CardAccounting implements ActionListener, Runnable
 	ProgEntry[] read1;
 	ProgEntry[] read2;
 	ProgEntry[] read3;
+	ProgExit firstMinor;
+	ProgExit firstInter;
+	ProgExit firstMajor;
 	ProgExit minor;
 	ProgExit interm;
 	ProgExit major;
 	ProgExit special;
 	ProgExit finalTotal;
 	ProgExit allCards;
+	ProgExit allCycles;
 
-	ProgStart firstMinor;
-	ProgStart firstInter;
-	ProgStart firstMajor;
 	ProgStart minorStart;
 	ProgStart interStart;
 	ProgStart majorStart;
+	ProgStart minorFirst;
+	ProgStart interFirst;
+	ProgStart majorFirst;
 	ProgStart specialStart;
+	ProgStart cardsStart;
 	ProgStart allStart;
 	ProgStart finalStart;
-	ProgStart listStart;
-	ProgStart supSpace;
-	ProgStart dblSpace;
-	ProgStart trpSpace;
+	PrintControl prtCtl;
 
 	Comparator comparing;
 	char[] aprint;
@@ -154,21 +168,32 @@ class CardAccounting implements ActionListener, Runnable
 		nzsupp = new boolean[45];
 		counter = new Counter[16];
 		comparing = new Comparator(20);
+
 		minorStart = new ProgStart();
 		interStart = new ProgStart();
 		majorStart = new ProgStart();
+		minorFirst = new ProgStart();
+		interFirst = new ProgStart();
+		majorFirst = new ProgStart();
 		specialStart = new ProgStart();
 		allStart = new ProgStart();
+		cardsStart = new ProgStart();
 		finalStart = new ProgStart();
-		listStart = new ProgStart();
-		firstMinor = new ProgStart();
-		firstInter = new ProgStart();
-		firstMajor = new ProgStart();
-		supSpace = new ProgStart();
-		dblSpace = new ProgStart();
-		trpSpace = new ProgStart();
+
+		prtCtl = new PrintControl();
+		firstMinor = null;
+		firstInter = null;
+		firstMajor = null;
+		minor = null;
+		interm = null;
+		major = null;
+		special = null;
+		finalTotal = null;
+		allCards = null;
+		allCycles = null;
 
 		_cwd = new File(System.getProperty("user.dir"));
+		_prevProg = _prevDeck = _prevPapr = _cwd;
 		cvt = new CharConverter();
 
 		stopped = true;
@@ -459,10 +484,15 @@ class CardAccounting implements ActionListener, Runnable
 	private int setPrintEntry(char[] xts, int idx, String p) {
 		--idx;	// 0-based
 		int ret = 0;
+		// TODO: enforce Numeric, odd/even column...
 		if (p.startsWith("aster=")) {
-			ProgExit xt = new AsterExit(xts, idx);
-			setExit(p.substring(6), xt, xt);
+			setExit(p.substring(6), new AsterExit(xts, idx, '*'));
 			return 0;
+		} else if (p.startsWith("cr=")) {
+			int ctr = getCounter(p.substring(3));
+			if (ctr >= 0) {
+				counter[ctr].setCredit(new AsterExit(xts, idx, '\u00a9'));
+			}
 		}
 		byte c = (byte)-1;
 		int n = 1;
@@ -502,25 +532,38 @@ class CardAccounting implements ActionListener, Runnable
 		return ret;
 	}
 
-	private void setExit(String pm, ProgExit xt, ProgExit ct) {
+	private void setExit(String pm, ProgExit xt) {
 		if (pm.equals("final")) {
 			xt.setNext(finalTotal);
-			finalTotal = ct;
+			finalTotal = xt;
 		} else if (pm.equals("major")) {
 			xt.setNext(major);
-			major = ct;
+			major = xt;
 		} else if (pm.equals("inter")) {
 			xt.setNext(interm);
-			interm = ct;
+			interm = xt;
 		} else if (pm.equals("minor")) {
 			xt.setNext(minor);
-			minor = ct;
+			minor = xt;
 		} else if (pm.equals("special")) {
 			xt.setNext(special);
-			special = ct;
-		} else if (pm.equals("all")) {
+			special = xt;
+		} else if (pm.equals("fcma")) {
+			xt.setNext(major);
+			major = xt;
+		} else if (pm.equals("fcin")) {
+			xt.setNext(interm);
+			interm = xt;
+		} else if (pm.equals("fcmi")) {
+			xt.setNext(minor);
+			minor = xt;
+		// TODO: FC MB?
+		} else if (pm.equals("cards")) {
 			xt.setNext(allCards);
-			allCards = ct;
+			allCards = xt;
+		} else if (pm.equals("all")) {
+			xt.setNext(allCycles);
+			allCycles = xt;
 		}
 	}
 
@@ -544,11 +587,10 @@ class CardAccounting implements ActionListener, Runnable
 				}
 			} else if (pp[x].startsWith("total=")) {
 				String pm = pp[x].substring(6);
-				// Also cause print...
-				ProgExit xt = new PrintExit();
-				counter[ctr].setNext(xt);
 				// TODO: reject duplicates...
-				setExit(pm, xt, counter[ctr]);
+				setExit(pm, counter[ctr]);
+				// Also cause print... might be suppressed separately
+				setExit(pm, new PrintExit(prtCtl));
 			}
 			// TODO: other params...
 		}
@@ -602,12 +644,12 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private ProgStart getStart(String p) {
-		if (p.equals("fcminor")) {
-			return firstMinor;
-		} else if (p.equals("fcinter")) {
-			return firstInter;
-		} else if (p.equals("fcmajor")) {
-			return firstMajor;
+		if (p.equals("fcmi")) {
+			return minorFirst;
+		} else if (p.equals("fcin")) {
+			return interFirst;
+		} else if (p.equals("fcma")) {
+			return majorFirst;
 		} else if (p.equals("minor")) {
 			return minorStart;
 		} else if (p.equals("inter")) {
@@ -618,6 +660,8 @@ class CardAccounting implements ActionListener, Runnable
 			return specialStart;
 		} else if (p.equals("final")) {
 			return finalStart;
+		} else if (p.equals("cards")) {
+			return cardsStart;
 		} else if (p.equals("all")) {
 			return allStart;
 		}
@@ -633,6 +677,7 @@ class CardAccounting implements ActionListener, Runnable
 		ProgStart start = null;
 		for (int x = 2; x < pp.length; ++x) {
 			if (pp[x].startsWith("start=")) {
+				// TODO: only major,inter,minor[,special]...
 				start = getStart(pp[x].substring(6));
 			}
 		}
@@ -692,7 +737,6 @@ class CardAccounting implements ActionListener, Runnable
 			return;
 		}
 		// TODO: aN=3.x requires zN=2.x, produce erroneous output if not wired.
-		// TODO: printing requires "all" -> "list"
 		for (String prop : props.stringPropertyNames()) {
 			String p = props.getProperty(prop);
 			int ctr;
@@ -725,9 +769,25 @@ class CardAccounting implements ActionListener, Runnable
 			} else if (prop.equals("list")) {
 				ProgStart ps = getStart(p);
 				if (ps != null) {
-					ProgExit xt = new PrintExit(ps);
+					ProgExit xt = new PrintExit(prtCtl, ps);
 					xt.setNext(allCards);
 					allCards = xt;
+				}
+			} else if (prop.matches("s[0-3]")) {
+				ProgStart ps = getStart(p);
+				if (ps != null) switch (prop.charAt(1)) {
+					case '0':
+						prtCtl.addSuppress(ps);
+						break;
+					case '1':
+						prtCtl.addSingle(ps);
+						break;
+					case '2':
+						prtCtl.addDouble(ps);
+						break;
+					case '3':
+						prtCtl.addTriple(ps);
+						break;
 				}
 			}
 		}
@@ -772,21 +832,15 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private void processFinalTotal() {
+		allStart.set(true);
 		finalStart.set(true);
-		if (minor != null) {
-			minor.processExits();
-		}
-		if (interm != null) {
-			interm.processExits();
-		}
-		if (major != null) {
-			major.processExits();
-		}
-		if (finalTotal != null) {
-			finalTotal.processExits();
-		}
+		impulse(minor);
+		impulse(interm);
+		impulse(major);
+		impulse(finalTotal);
+		impulse(allCycles);
 		finalStart.set(false);
-		// TODO: allow processing?
+		allStart.set(false);
 		stopd.setBackground(off);
 	}
 
@@ -798,9 +852,15 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private void resetFirsts() {
-		firstMinor.set(false);
-		firstInter.set(false);
-		firstMajor.set(false);
+		minorFirst.set(false);
+		interFirst.set(false);
+		majorFirst.set(false);
+	}
+
+	private void impulse(ProgExit xt) {
+		if (xt != null) {
+			xt.processExits();
+		}
 	}
 
 	public void run() {
@@ -825,59 +885,76 @@ class CardAccounting implements ActionListener, Runnable
 				}
 			}
 			resetStart();
-			// TODO: other resets
+			// TODO: other resets... other cycle indicators?
 			if (ibm403) {
 				processRead(read1, card1);
 			}
 			processRead(read2, card2);
-			allStart.set(true);
-			processRead(read3, card3);
-			// TODO: other cycles (minor, inter, major)...
-			// TODO: only print if something printed...
-			if (allCards != null && card3 != null) {
-				allCards.processExits();
+			// short-circuit run-in...
+			if (card3 == null) {
+				continue;
 			}
+			allStart.set(true);
+			cardsStart.set(true);
+			processRead(read3, card3);
+			// TODO: run-in until card3 != null?
+			// TODO: do this in minor/inter/major?
+			if (card3 != null) {
+				impulse(allCards);
+				impulse(allCycles);
+			}
+			resetFirsts();
 			// If card3 != null then check for print
-			allStart.set(false);
+			cardsStart.set(false);
 			if (card2 != null && card3 != null) {
+				// TODO: ordering, placement... dependencies?
+				if (majorFirst.is()) {
+					impulse(firstMajor);
+					impulse(allCycles);
+				}
+				if (majorFirst.is() || interFirst.is()) {
+					impulse(firstInter);
+					impulse(allCycles);
+				}
+				if (majorFirst.is() || interFirst.is() || minorFirst.is()) {
+					impulse(firstMinor);
+					impulse(allCycles);
+				}
 				comparing.processExits();
 				if (minorStart.is() || interStart.is() || majorStart.is()) {
-					if (minor != null) {
-						minor.processExits();
-					}
+					impulse(minor);
+					impulse(allCycles);
 				}
 				if (interStart.is() || majorStart.is()) {
-					if (interm != null) {
-						interm.processExits();
-					}
+					impulse(interm);
+					impulse(allCycles);
 				}
 				if (majorStart.is()) {
-					if (major != null) {
-						major.processExits();
-					}
+					impulse(major);
+					impulse(allCycles);
 				}
 				// Is next card a first?
-				firstMinor.set(minorStart.is());
-				firstInter.set(interStart.is());
-				firstMajor.set(majorStart.is());
+				minorFirst.set(minorStart.is());
+				interFirst.set(interStart.is());
+				majorFirst.set(majorStart.is());
 			}
+			allStart.set(false);	// or, always 'true'?
 			// if programmed stop... {
 			//	stopd.setBackground(red);
 			//	stopped = true;
 			// }
 			try {
-				Thread.sleep(10);
+				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}
 		idle.setBackground(red);
 	}
 
-	private File pickFile(String purpose, boolean input,
-				String sfx, String typ, File prev) {
+	private File pickFile(String purpose,
+				String sfx, String typ, File prev, JComponent acc) {
 		File file;
 		ch = new SuffFileChooser(purpose,
-			new String[]{sfx}, new String[]{typ}, prev,
-			input ? acc : null);
+			new String[]{sfx}, new String[]{typ}, prev, acc);
 		int rv = ch.showDialog(_frame);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -904,20 +981,22 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private void getProg() {
-		File fi = pickFile("Get Prog", false, "40x", "IBM 40x Prog", _cwd);
+		File fi = pickFile("Get Prog", "40x", "IBM 40x Prog", _prevProg, null);
 		if (fi == null) {
 			return;
 		}
+		_prevProg = fi;
 		loadProgram(fi.getAbsolutePath());
 	}
 
 	private void deckAdd() {
 		acc_stk.setText(hopper.stackList('\n', false));
 		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", _cwd);
+		File fi = pickFile("Add Input", "pcd", "Punch Card Deck", _prevDeck, acc);
 		if (fi == null) {
 			return;
 		}
+		_prevDeck = fi;
 		deckAdd(fi, acc_cb.isSelected());
 	}
 
@@ -1013,12 +1092,13 @@ class CardAccounting implements ActionListener, Runnable
 			// stacker.discardDeck(); // file should get removed
 			System.exit(0);
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
-			File f = pickFile("Save Report", false,
-					"txt", "Text Files", _cwd);
+			File f = pickFile("Save Report",
+					"txt", "Text Files", _prevPapr, null);
 			if (f != null) try {
 				FileOutputStream fo = new FileOutputStream(f);
 				fo.write(text.getText(0, caret).getBytes());
 				fo.close();
+				_prevPapr = f;
 			} catch (Exception ee) {
 				// TODO: pop-up error
 			}

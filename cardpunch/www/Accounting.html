@@ -13,7 +13,7 @@ The program panel is implemented as a properties file.
 currently, this file must be editted external from the simulation.
 The START, STOP, and FINAL TOTAL buttons should function as on original equipment,
 with the exception that FINAL TOTAL does not requires simultaneous pressing of START.
-The run rate is set to 100 cards per second.
+The run rate is set to 20 cards per second.
 
 <P>The hopper/stacker are set to show 100 cards, with each card represented
 by a line of pixels. More cards may be in the hopper/stackers, in fact
@@ -40,15 +40,30 @@ the following are supported:
 <TR><TD>NUMERICAL PRINT</TD><TD>1-45</TD><TD>Print Cols 44-88*</TD><TD>n1-n45</TD></TR>
 <TR><TD>COMPARING ENTRY</TD><TD>(*)</TD><TD>Comparator</TD><TD>c1-c20</TD></TR>
 <TR><TD>COMPARING EXIT</TD><TD>(*)</TD><TD>Comparator (**)</TD><TD>start={minor,inter,major,special}</TD></TR>
-<TR><TD>COUNTER CONTROL</TD><TD>2A - 8D</TD><TD>Counters</TD><TD>minus=/plus={all,fc.minor,fc.inter,fc.major,fc.mb?,x?}</TD></TR>
+<TR><TD>COUNTER CONTROL</TD><TD>2A - 8D</TD><TD>Counters</TD><TD>minus=/plus=<I>cycle</I></TD></TR>
 <TR><TD>COUNTER CARRY</TD><TD>2A - 8D</TD><TD>Counter carry out</TD><TD>carry={2a-8d}</TD></TR>
-<TR><TD>TOTAL</TD><TD>2A - 8D</TD><TD>Counter print/reset</TD><TD>total={final,minor,inter,major,all}</TD></TR>
+<TR><TD>TOTAL</TD><TD>2A - 8D</TD><TD>Counter print/reset</TD><TD>total=<I>cycle</I></TD></TR>
 <TR><TD>* SYMBOL</TD><TD>F,1,2,3,ALL</TD><TD>Asterisk printing</TD><TD>aster={final,minor,inter,major,all}</TD></TR>
 <TR><TD>CR SYMBOL</TD><TD>2A - 8D</TD><TD>Credit symbol printing</TD><TD>cr={2a...8d}</TD></TR>
 </TABLE>
 
 <P>(*) Hubs are not labeled, implied that left-most is "1".
 <P>(**) Comparator exits are chained automatically based on field defined in property.
+
+<P>The following cycles are defined, although not all are appropriate in all cases.
+<P><TABLE BORDER>
+<TR><TH>Cycle</TH><TH>Meaning</TH></TR>
+<TR><TD>minor</TD><TD>Minor group change</TD></TR>
+<TR><TD>inter</TD><TD>Intermediate group change</TD></TR>
+<TR><TD>major</TD><TD>Major group change</TD></TR>
+<TR><TD>special</TD><TD>Special group (TBD)</TD></TR>
+<TR><TD>cards</TD><TD>All Cards</TD></TR>
+<TR><TD>all</TD><TD>All Cycles</TD></TR>
+<TR><TD>final</TD><TD>Final Total</TD></TR>
+<TR><TD>fcmi</TD><TD>First Card, Minor</TD></TR>
+<TR><TD>fcin</TD><TD>First Card, Intermediate</TD></TR>
+<TR><TD>fcma</TD><TD>First Card, Major</TD></TR>
+</TABLE>
 
 <P>PRINT, COUNTER, and COMPARING hubs (as well as LIST) relate to property names,
 others appear only in property values. COUNTER hubs can be used in both contexts.
@@ -61,13 +76,18 @@ asterisk and the number of hubs in the field. It is generally expected that all
 sets of hubs in a given property will be the same width, and that width determines
 the property width.
 
-<P>Also note that "list=all" is required in order to print on every card.
+<P>Also note that "list=all" or "list=cards" is required in order to print on every card.
 
 <P><B>Example 1:</B> comparing a field (current and previous card). Field starts at card
 column 5 and is 4 columns wide. Compare triggers "minor" group.
 <UL><PRE>
 c1 = 2.5*4 3.5*4 start=minor
-</PRE></UL>
+</PRE>
+<P>Which means to send card columns 5-8 from SECOND READING to COMPARING hubs 1-4,
+and send card columns 5-8 from THIRD READING to the other COMPARING hubs 1-4.
+COMPARING EXIT hubs 1-4 are linked together,
+and the output is tied to the MINOR START hub.
+</UL>
 
 <P><B>Example 2:</B> Add field from card column 5, 4 columns wide, to counter 8B and
 print result into numeric columns 10-17 with zero suppression. Print/reset
@@ -76,7 +96,17 @@ the lower part of the 8-digit counter.
 <UL><PRE>
 8b5 = 3.5*4 plus=all total=minor
 n10 = 8b1*8 zero
-</PRE></UL>
+</PRE>
+<P>Line 1 sends card columns 5-8 from THIRD READING to COUNTER 8B ENTRY hubs 5-8,
+wires ALL CYCLES to the PLUS hub for COUNTER 8B,
+and wires the TOTAL hub for 8B to the MINOR TOTAL PROGRAM hub.
+<P>Line 2 wires COUNTER 8B EXIT hubs 1-8 to NUMERICAL PRINT columns 10-17
+and enables zero suppression.
+<P>Note, zero suppression was configured by changing levers
+on the type bars in the printer (and not by wires on the control panel).
+This property parameter defines
+zero suppression for the field automatically, which is a compromise.
+</UL>
 
 </BODY>
 </HTML>

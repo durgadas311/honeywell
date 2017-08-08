@@ -4,20 +4,23 @@ public class Counter extends ProgExit {
 	int width;
 	int sum;
 	ProgEntry[] ents;
-	ProgStart plus;
-	ProgStart minus;
-	Counter cyo;
+	ProgStart plus = null;
+	ProgStart minus = null;
+	ProgExit credit = null;
+	Counter cyo = null;
 	int mod;
+
+	// max number digits is 8.
+	static final int[] pow = new int[]{
+		1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000
+	};
 
 	public Counter(int wid) {
 		super();
 		width = wid;
-		ents = new ProgEntry[wid];
+		ents = new ProgEntry[width];
 		sum = 0;
-		minus = null;
-		plus = null;
-		cyo = null;
-		mod = (int)Math.pow(10, width);
+		mod = pow[width];
 	}
 
 	public void setPlus(ProgStart pl) {
@@ -26,6 +29,10 @@ public class Counter extends ProgExit {
 
 	public void setMinus(ProgStart mi) {
 		minus = mi;
+	}
+
+	public void setCredit(ProgExit cr) {
+		credit = cr;
 	}
 
 	public void setCarry(Counter ct) {
@@ -43,10 +50,11 @@ public class Counter extends ProgExit {
 	public void processExits() {
 		int v = sum;
 		sum = 0;
-		boolean neg = false;
 		if (v < 0) {
-			neg = true;
 			v = -v;
+			if (credit != null) {
+				credit.processExits();
+			}
 		}
 		for (int x = ents.length; x > 0;) {
 			--x;
@@ -61,8 +69,32 @@ public class Counter extends ProgExit {
 		}
 	}
 
-	public void carry() {
-		++sum;
+	private void add(int n) {
+		sum += n;
+		if (sum >= mod) {
+			if (cyo != null) {
+				cyo.carry();
+			}
+			sum -= mod;
+		}
+	}
+
+	private void sub(int n) {
+		sum -= n;
+		if (sum < 0) {
+			if (cyo != null) {
+				cyo.borrow();
+			}
+			sum += mod;
+		}
+	}
+
+	private void carry() {
+		add(1);
+	}
+
+	private void borrow() {
+		sub(1);
 	}
 
 	public void accum(int d, int dig) {
@@ -75,19 +107,11 @@ public class Counter extends ProgExit {
 			return;
 		}
 		dig = width - dig - 1;
-		int f = (d * (int)Math.pow(10, dig));
-		// TODO: carry in...
+		int f = (d * pow[dig]);
 		if (add) {
-			sum += f;
+			add(f);
 		} else {
-			sum -= f;
-		}
-		// TODO: borrow...
-		if (sum >= mod) {
-			if (cyo != null) {
-				cyo.carry();
-			}
-			sum -= mod;
+			sub(f);
 		}
 	}
 }
