@@ -6,6 +6,7 @@ public class Counter extends ProgExit {
 	ProgEntry[] ents;
 	ProgStart plus;
 	ProgStart minus;
+	Counter cyo;
 	int mod;
 
 	public Counter(int wid) {
@@ -15,6 +16,7 @@ public class Counter extends ProgExit {
 		sum = 0;
 		minus = null;
 		plus = null;
+		cyo = null;
 		mod = (int)Math.pow(10, width);
 	}
 
@@ -24,6 +26,10 @@ public class Counter extends ProgExit {
 
 	public void setMinus(ProgStart mi) {
 		minus = mi;
+	}
+
+	public void setCarry(Counter ct) {
+		cyo = ct;
 	}
 
 	public void setEntry(int dig, ProgEntry ent) {
@@ -55,6 +61,10 @@ public class Counter extends ProgExit {
 		}
 	}
 
+	public void carry() {
+		++sum;
+	}
+
 	public void accum(int d, int dig) {
 		boolean add = (plus != null && plus.is());
 		boolean sub = (minus != null && minus.is());
@@ -72,7 +82,12 @@ public class Counter extends ProgExit {
 		} else {
 			sum -= f;
 		}
-		// TODO: carry out...
-		sum %= mod;
+		// TODO: borrow...
+		if (sum >= mod) {
+			if (cyo != null) {
+				cyo.carry();
+			}
+			sum -= mod;
+		}
 	}
 }

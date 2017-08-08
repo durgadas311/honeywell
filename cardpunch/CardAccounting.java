@@ -14,12 +14,22 @@ class CardAccounting implements ActionListener, Runnable
 	static final Color off = new Color(190, 190, 180);
 
 	class PrintExit extends ProgExit {
+		private ProgStart list = null;
 		public PrintExit() {}
+		public PrintExit(ProgStart ps) {
+			list = ps;
+		}
 
 		public void processExits() {
 			// process other exits first, in case they print
 			if (_next != null) {
 				_next.processExits();
+			}
+			if (list != null && !list.is()) {
+				return;
+			}
+			if (supSpace.is()) {
+				return;
 			}
 			// TODO: allow print spacing suppress...
 			// perform zero-suppression...
@@ -30,6 +40,13 @@ class CardAccounting implements ActionListener, Runnable
 			s += ' ';
 			s += new String(nprint);
 			s += '\n';
+			if (dblSpace.is()) {
+				s += '\n';
+			}
+			if (trpSpace.is()) {
+				s += '\n';
+				s += '\n';
+			}
 			// TODO: support spacing options
 			text.append(s);
 			caret += s.length();
@@ -97,12 +114,19 @@ class CardAccounting implements ActionListener, Runnable
 	ProgExit finalTotal;
 	ProgExit allCards;
 
+	ProgStart firstMinor;
+	ProgStart firstInter;
+	ProgStart firstMajor;
 	ProgStart minorStart;
 	ProgStart interStart;
 	ProgStart majorStart;
 	ProgStart specialStart;
 	ProgStart allStart;
 	ProgStart finalStart;
+	ProgStart listStart;
+	ProgStart supSpace;
+	ProgStart dblSpace;
+	ProgStart trpSpace;
 
 	Comparator comparing;
 	char[] aprint;
@@ -136,6 +160,13 @@ class CardAccounting implements ActionListener, Runnable
 		specialStart = new ProgStart();
 		allStart = new ProgStart();
 		finalStart = new ProgStart();
+		listStart = new ProgStart();
+		firstMinor = new ProgStart();
+		firstInter = new ProgStart();
+		firstMajor = new ProgStart();
+		supSpace = new ProgStart();
+		dblSpace = new ProgStart();
+		trpSpace = new ProgStart();
 
 		_cwd = new File(System.getProperty("user.dir"));
 		cvt = new CharConverter();
@@ -506,6 +537,11 @@ class CardAccounting implements ActionListener, Runnable
 				counter[ctr].setPlus(getStart(pp[x].substring(5)));
 			} else if (pp[x].startsWith("minus=")) {
 				counter[ctr].setMinus(getStart(pp[x].substring(6)));
+			} else if (pp[x].startsWith("carry=")) {
+				int ct = getCounter(pp[x].substring(6));
+				if (ct >= 0) {
+					counter[ctr].setCarry(counter[ct]);
+				}
 			} else if (pp[x].startsWith("total=")) {
 				String pm = pp[x].substring(6);
 				// Also cause print...
@@ -566,7 +602,13 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	private ProgStart getStart(String p) {
-		if (p.equals("minor")) {
+		if (p.equals("fcminor")) {
+			return firstMinor;
+		} else if (p.equals("fcinter")) {
+			return firstInter;
+		} else if (p.equals("fcmajor")) {
+			return firstMajor;
+		} else if (p.equals("minor")) {
 			return minorStart;
 		} else if (p.equals("inter")) {
 			return interStart;
@@ -681,8 +723,9 @@ class CardAccounting implements ActionListener, Runnable
 				int pos = Integer.valueOf(prop.substring(1));
 				setComparing(comparing, pos, p);
 			} else if (prop.equals("list")) {
-				if (p.equals("all")) {
-					ProgExit xt = new PrintExit();
+				ProgStart ps = getStart(p);
+				if (ps != null) {
+					ProgExit xt = new PrintExit(ps);
 					xt.setNext(allCards);
 					allCards = xt;
 				}
@@ -754,6 +797,12 @@ class CardAccounting implements ActionListener, Runnable
 		specialStart.set(false);
 	}
 
+	private void resetFirsts() {
+		firstMinor.set(false);
+		firstInter.set(false);
+		firstMajor.set(false);
+	}
+
 	public void run() {
 		idle.setBackground(off);
 		feed.setBackground(off); // OFF by what?
@@ -788,6 +837,7 @@ class CardAccounting implements ActionListener, Runnable
 			if (allCards != null && card3 != null) {
 				allCards.processExits();
 			}
+			// If card3 != null then check for print
 			allStart.set(false);
 			if (card2 != null && card3 != null) {
 				comparing.processExits();
@@ -806,6 +856,10 @@ class CardAccounting implements ActionListener, Runnable
 						major.processExits();
 					}
 				}
+				// Is next card a first?
+				firstMinor.set(minorStart.is());
+				firstInter.set(interStart.is());
+				firstMajor.set(majorStart.is());
 			}
 			// if programmed stop... {
 			//	stopd.setBackground(red);
