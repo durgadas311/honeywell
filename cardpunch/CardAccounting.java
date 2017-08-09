@@ -197,10 +197,10 @@ class CardAccounting implements ActionListener, Runnable
 		cvt = new CharConverter();
 
 		stopped = true;
-		hopper = new CardHopper("Input Hopper", 60, 100, 1, false);
+		hopper = new CardHopper("Input Hopper", 45, 100, 1, false);
 		hopper.setListener(this);
 		deckUpdate(hopper);
-		stacker = new CardStacker("Stacker", 60, 100, 1, true);
+		stacker = new CardStacker("Stacker", 45, 100, 1, true);
 		stacker.setListener(this);
 		deckUpdate(stacker);
 		start = makeButton("START", "start", Color.black, Color.white);
@@ -884,8 +884,9 @@ class CardAccounting implements ActionListener, Runnable
 					break;
 				}
 			}
-			resetStart();
+			resetStart();	// TODO: do this at bottom of last loop?
 			// TODO: other resets... other cycle indicators?
+			// TODO: any indicators for run-in?
 			if (ibm403) {
 				processRead(read1, card1);
 			}
@@ -897,16 +898,12 @@ class CardAccounting implements ActionListener, Runnable
 			allStart.set(true);
 			cardsStart.set(true);
 			processRead(read3, card3);
-			// TODO: run-in until card3 != null?
 			// TODO: do this in minor/inter/major?
-			if (card3 != null) {
-				impulse(allCards);
-				impulse(allCycles);
-			}
-			resetFirsts();
-			// If card3 != null then check for print
-			cardsStart.set(false);
-			if (card2 != null && card3 != null) {
+			impulse(allCards);
+			impulse(allCycles);
+			cardsStart.set(false);	// End ALL CARDS cycle
+			// On run-out, card2 might be null...
+			if (card2 != null) {
 				// TODO: ordering, placement... dependencies?
 				if (majorFirst.is()) {
 					impulse(firstMajor);
@@ -920,6 +917,7 @@ class CardAccounting implements ActionListener, Runnable
 					impulse(firstMinor);
 					impulse(allCycles);
 				}
+				resetFirsts();
 				comparing.processExits();
 				if (minorStart.is() || interStart.is() || majorStart.is()) {
 					impulse(minor);
@@ -933,7 +931,7 @@ class CardAccounting implements ActionListener, Runnable
 					impulse(major);
 					impulse(allCycles);
 				}
-				// Is next card a first?
+				// Is next card a first-in-group?
 				minorFirst.set(minorStart.is());
 				interFirst.set(interStart.is());
 				majorFirst.set(majorStart.is());
