@@ -6,7 +6,7 @@ all: $(CLASSES)
 %.class: %.java
 	javac -source 1.7 -target 1.7 $?
 
-jar: CardPunch.jar Sorter.jar Accounting.jar Viewer.jar
+jar: CardPunch.jar Sorter.jar Accounting.jar Collator.jar Viewer.jar
 
 CardPunch.jar: all docs/About.html
 	echo "Main-Class: CardPunch" >Manifest.txt
@@ -23,6 +23,11 @@ Accounting.jar: all docs/About3.html
 	jar cfm $@ Manifest.txt *.ttf *.class \
 		icons/*.png docs/*
 
+Collator.jar: all docs/About4.html
+	echo "Main-Class: Collator" >Manifest.txt
+	jar cfm $@ Manifest.txt *.ttf *.class \
+		icons/*.png docs/*
+
 Viewer.jar: all docs/About2.html
 	echo "Main-Class: Viewer" >Manifest.txt
 	jar cfm $@ Manifest.txt *.ttf *.class \
@@ -36,6 +41,9 @@ docs/About2.html: __FRC__
 
 docs/About3.html: __FRC__
 	./mkAbout3 >$@
+
+docs/About4.html: __FRC__
+	./mkAbout4 >$@
 
 www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/sims/punchcards
