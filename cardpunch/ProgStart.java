@@ -2,6 +2,10 @@
 
 import java.util.Vector;
 
+// "is()" and "set()" represent opposite ends of this "widget".
+// Watchers are part of the "is()" end. Watchers should never
+// include this instance or the instance that calls "set()".
+
 public class ProgStart {
 	boolean bool;
 	boolean oneShot;
@@ -19,15 +23,29 @@ public class ProgStart {
 		watchers.add(ps);
 	}
 
-	public boolean is() { return bool; }
+	public void reset() {
+		watchers.clear();
+		bool = false;
+	}
+
+	boolean get() { return bool; }
+
+	void trigger(boolean b) {
+		for (ProgStart ps : watchers) {
+			ps.set(b);
+		}
+	}
+
+	// These may be overridden...
+	// This is the interface.
+	public boolean is() { return get(); }
 
 	public void set(boolean b) {
 		bool = b;
-		for (ProgStart ps : watchers) {
-			ps.set(bool);
-		}
+		trigger(bool);
 		if (bool && oneShot) {
 			bool = false;
+			trigger(bool);
 		}
 	}
 }

@@ -2,6 +2,14 @@
 
 import java.util.Vector;
 
+// set() -----> Selector(ProgStart) -----> is()
+//                 |
+//                 |
+//        change() +----> SelectorContact
+//                         [C(ProgStart)]
+//                         [N(ProgStart)]
+//                         [T(ProgStart)]
+
 // An array of this class represents all available selectors,
 // but each selector has an infinit number of contacts.
 public class Selector extends ProgStart {
@@ -13,7 +21,7 @@ public class Selector extends ProgStart {
 	}
 
 	private SelectorContact addContact() {
-		SelectorContact ctc = new SelectorContact(this);
+		SelectorContact ctc = new SelectorContact(is());
 		ctcs.add(ctc);
 		return ctc;
 	}

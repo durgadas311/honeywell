@@ -2,15 +2,10 @@
 
 public abstract class ProgEntry {
 	int _col;
-	ProgEntry _next;
 
-	public ProgEntry(int col, ProgEntry next) {
+	public ProgEntry(int col) {
 		_col = col;
-		_next = next;
 	}
 
 	abstract void putCol(char c);
-
-	// TODO: reject duplicates
-	public void setNext(ProgEntry ent) { _next = ent; }
 }

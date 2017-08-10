@@ -7,30 +7,27 @@ import java.io.*;
 import java.awt.event.*;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.Vector;
 
 class CardAccounting implements ActionListener, Runnable
 {
 	static final Color red = new Color(255, 120, 120);
 	static final Color off = new Color(190, 190, 180);
 
-	class PrintExit extends ProgExit {
+	class PrintExit extends ProgStart {
 		private PrintControl ctl;
 		private ProgStart list = null;
 
-		public PrintExit(PrintControl pc) {
-			ctl = pc;
-		}
-
 		public PrintExit(PrintControl pc, ProgStart lst) {
+			super(true);
 			ctl = pc;
 			list = lst;
 		}
 
-		public void processExits() {
-			// process other exits first, in case they print
-			if (_next != null) {
-				_next.processExits();
-			}
+		@Override
+		public void set(boolean b) {
+			super.set(b);	// triggers watchers... never any?
+			if (!b) return;
 			if (list != null && !list.is()) {
 				return;
 			}
@@ -62,22 +59,22 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
-	class AsterExit extends ProgExit {
+	class SpecialPrint extends ProgStart {
 		char[] _line;
 		int _col;
 		char _char;
-		public AsterExit(char[] line, int col, char ch) {
-			super();
+		public SpecialPrint(char[] line, int col, char ch) {
+			super(true);
 			_col = col;
 			_line = line;
 			_char = ch;
 		}
-		public void processExits() {
+		@Override
+		public void set(boolean b) {
+			super.set(b);	// n/a ?
+			if (!b) return;
 			// TODO: enforce odd/even columns? Numeric?
 			_line[_col] = _char;
-			if (_next != null) {
-				_next.processExits();
-			}
 		}
 	}
 
@@ -116,20 +113,23 @@ class CardAccounting implements ActionListener, Runnable
 	GenericHelp _help;
 	SuffFileChooser ch;
 	Properties props;
-	ProgEntry[] read1;
-	ProgEntry[] read2;
-	ProgEntry[] read3;
-	ProgExit firstMinor;
-	ProgExit firstInter;
-	ProgExit firstMajor;
-	ProgExit minor;
-	ProgExit interm;
-	ProgExit major;
-	ProgExit special;
-	ProgExit finalTotal;
-	ProgExit allCards;
-	ProgExit allCycles;
+	Vector<ProgEntry>[] read1;
+	Vector<ProgEntry>[] read2;
+	Vector<ProgEntry>[] read3;
 
+	// These may have watchers - one-shots
+	ProgStart firstMinor;
+	ProgStart firstInter;
+	ProgStart firstMajor;
+	ProgStart minor;
+	ProgStart interm;
+	ProgStart major;
+	ProgStart special;
+	ProgStart finalTotal;
+	ProgStart allCards;
+	ProgStart allCycles;
+
+	// These should only be polled
 	ProgStart minorStart;
 	ProgStart interStart;
 	ProgStart majorStart;
@@ -140,6 +140,7 @@ class CardAccounting implements ActionListener, Runnable
 	ProgStart cardsStart;
 	ProgStart allStart;
 	ProgStart finalStart;
+
 	PrintControl prtCtl;
 
 	Comparator comparing;
@@ -157,10 +158,7 @@ class CardAccounting implements ActionListener, Runnable
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
 		ibm403 = false;	// TODO: configure
-
-		read1 = new ProgEntry[80];
-		read2 = new ProgEntry[80];
-		read3 = new ProgEntry[80];
+		initReaders();
 		aprint = new char[43];
 		nprint = new char[45];
 		Arrays.fill(aprint, ' ');
@@ -170,6 +168,7 @@ class CardAccounting implements ActionListener, Runnable
 		counter = new Counter[16];
 		selector = new Selector[12];
 		comparing = new Comparator(20);
+		prtCtl = new PrintControl();
 
 		// TODO: are any of these one-shots?
 		minorStart = new ProgStart(false);
@@ -183,17 +182,17 @@ class CardAccounting implements ActionListener, Runnable
 		cardsStart = new ProgStart(false);
 		finalStart = new ProgStart(false);
 
-		prtCtl = new PrintControl();
-		firstMinor = null;
-		firstInter = null;
-		firstMajor = null;
-		minor = null;
-		interm = null;
-		major = null;
-		special = null;
-		finalTotal = null;
-		allCards = null;
-		allCycles = null;
+		// These are one-shots, used for watchers only
+		firstMinor = new ProgStart(true);
+		firstInter = new ProgStart(true);
+		firstMajor = new ProgStart(true);
+		minor = new ProgStart(true);
+		interm = new ProgStart(true);
+		major = new ProgStart(true);
+		special = new ProgStart(true);
+		finalTotal = new ProgStart(true);
+		allCards = new ProgStart(true);
+		allCycles = new ProgStart(true);
 
 		_cwd = new File(System.getProperty("user.dir"));
 		_prevProg = _prevDeck = _prevPapr = _cwd;
@@ -474,7 +473,7 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
-	private ProgEntry[] getReadCycle(char t) {
+	private Vector<ProgEntry>[] getReadCycle(char t) {
 		switch (t) {
 		case '1': return read1;
 		case '2': return read2;
@@ -489,12 +488,12 @@ class CardAccounting implements ActionListener, Runnable
 		int ret = 0;
 		// TODO: enforce Numeric, odd/even column...
 		if (p.startsWith("aster=")) {
-			setExit(p.substring(6), new AsterExit(xts, idx, '*'));
+			getExit(p.substring(6)).addWatcher(new SpecialPrint(xts, idx, '*'));
 			return 0;
 		} else if (p.startsWith("cr=")) {
 			int ctr = getCounter(p.substring(3));
 			if (ctr >= 0) {
-				counter[ctr].setCredit(new AsterExit(xts, idx, '\u00a9'));
+				counter[ctr].setCredit(new SpecialPrint(xts, idx, '\u00a9'));
 			}
 		}
 		byte c = (byte)-1;
@@ -523,9 +522,9 @@ class CardAccounting implements ActionListener, Runnable
 				if (i < 0) return -1;
 				c = Byte.valueOf(p.substring(i + 1, j));
 				c -= 1;
-				ProgEntry[] rd = getReadCycle(p.charAt(0));
+				Vector<ProgEntry>[] rd = getReadCycle(p.charAt(0));
 				while (n > 0) {
-					rd[c] = new PrintEntry(xts, idx, rd[c]);
+					addEntry(rd, c, new PrintEntry(xts, idx));
 					++idx;
 					++c;
 					--n;
@@ -535,39 +534,30 @@ class CardAccounting implements ActionListener, Runnable
 		return ret;
 	}
 
-	private void setExit(String pm, ProgExit xt) {
+	private ProgStart getExit(String pm) {
 		if (pm.equals("final")) {
-			xt.setNext(finalTotal);
-			finalTotal = xt;
+			return finalTotal;
 		} else if (pm.equals("major")) {
-			xt.setNext(major);
-			major = xt;
+			return major;
 		} else if (pm.equals("inter")) {
-			xt.setNext(interm);
-			interm = xt;
+			return interm;
 		} else if (pm.equals("minor")) {
-			xt.setNext(minor);
-			minor = xt;
+			return minor;
 		} else if (pm.equals("special")) {
-			xt.setNext(special);
-			special = xt;
+			return special;
 		} else if (pm.equals("fcma")) {
-			xt.setNext(major);
-			major = xt;
+			return firstMajor;
 		} else if (pm.equals("fcin")) {
-			xt.setNext(interm);
-			interm = xt;
+			return firstInter;
 		} else if (pm.equals("fcmi")) {
-			xt.setNext(minor);
-			minor = xt;
+			return firstMinor;
 		// TODO: FC MB?
 		} else if (pm.equals("cards")) {
-			xt.setNext(allCards);
-			allCards = xt;
+			return allCards;
 		} else if (pm.equals("all")) {
-			xt.setNext(allCycles);
-			allCycles = xt;
+			return allCycles;
 		}
+		return null; // or some dummy ProgStart?
 	}
 
 	// 'dig' is 1-based...
@@ -590,10 +580,10 @@ class CardAccounting implements ActionListener, Runnable
 				}
 			} else if (pp[x].startsWith("total=")) {
 				String pm = pp[x].substring(6);
-				// TODO: reject duplicates...
-				setExit(pm, counter[ctr]);
+				ProgStart pms = getExit(pm);
+				pms.addWatcher(counter[ctr]);
 				// Also cause print... might be suppressed separately
-				setExit(pm, new PrintExit(prtCtl));
+				pms.addWatcher(new PrintExit(prtCtl, null));
 			}
 			// TODO: other params...
 		}
@@ -622,9 +612,9 @@ class CardAccounting implements ActionListener, Runnable
 				if (i < 0) return;
 				c = Byte.valueOf(pp[0].substring(i + 1, j));
 				c -= 1;
-				ProgEntry[] rd = getReadCycle(pp[0].charAt(0));
+				Vector<ProgEntry>[] rd = getReadCycle(pp[0].charAt(0));
 				while (n > 0) {
-					rd[c] = new CounterEntry(counter[ctr], dig, rd[c]);
+					addEntry(rd, c, new CounterEntry(counter[ctr], dig));
 					++dig;
 					++c;
 					--n;
@@ -687,8 +677,8 @@ class CardAccounting implements ActionListener, Runnable
 		int na = 1;
 		int nb = 1;
 		try {
-			ProgEntry[] rda = getReadCycle(pp[0].charAt(0));
-			ProgEntry[] rdb = getReadCycle(pp[1].charAt(0));
+			Vector<ProgEntry>[] rda = getReadCycle(pp[0].charAt(0));
+			Vector<ProgEntry>[] rdb = getReadCycle(pp[1].charAt(0));
 			int j = pp[0].indexOf('*');
 			if (j > 2) na = Integer.valueOf(pp[0].substring(j + 1));
 			else j = pp[0].length();
@@ -705,10 +695,10 @@ class CardAccounting implements ActionListener, Runnable
 				cmp.setExit(pos, na, start);
 			}
 			while (na > 0) {
-				ComparingEntry ea = new ComparingEntry(pos, rda[ca]);
-				ComparingEntry eb = new ComparingEntry(pos, rdb[cb]);
-				rda[ca] = ea;
-				rdb[cb] = eb;
+				ComparingEntry ea = new ComparingEntry(pos);
+				ComparingEntry eb = new ComparingEntry(pos);
+				addEntry(rda, ca, ea);
+				addEntry(rdb, cb, eb);
 				cmp.setEntryA(pos, ea);
 				cmp.setEntryB(pos, eb);
 				++pos;
@@ -726,12 +716,16 @@ class CardAccounting implements ActionListener, Runnable
 		Arrays.fill(counter, null);
 		Arrays.fill(azsupp, false);
 		Arrays.fill(nzsupp, false);
-		minor = null;
-		interm = null;
-		major = null;
-		special = null;
-		finalTotal = null;
-		allCards = null;
+		firstMinor.reset();
+		firstInter.reset();
+		firstMajor.reset();
+		minor.reset();
+		interm.reset();
+		major.reset();
+		special.reset();
+		finalTotal.reset();
+		allCards.reset();
+		allCycles.reset();
 		props = new Properties();
 		try {
 			InputStream is = new FileInputStream(prog);
@@ -772,9 +766,7 @@ class CardAccounting implements ActionListener, Runnable
 			} else if (prop.equals("list")) {
 				ProgStart ps = getStart(p);
 				if (ps != null) {
-					ProgExit xt = new PrintExit(prtCtl, ps);
-					xt.setNext(allCards);
-					allCards = xt;
+					allCards.addWatcher(new PrintExit(prtCtl, ps));
 				}
 			} else if (prop.matches("s[0-3]")) {
 				ProgStart ps = getStart(p);
@@ -821,7 +813,7 @@ class CardAccounting implements ActionListener, Runnable
 		return p;
 	}
 
-	private void processRead(ProgEntry[] ents, byte[] card) {
+	private void processRead(Vector<ProgEntry>[] ents, byte[] card) {
 		if (card == null) {
 			return;
 		}
@@ -830,8 +822,18 @@ class CardAccounting implements ActionListener, Runnable
 			int p = getCol(card, c);
 			String t = cvt.punToAscii(p);
 			if (t == null) continue;
-			ents[c].putCol(t.charAt(0));
+			char h = t.charAt(0);
+			for (ProgEntry ent : ents[c]) {
+				ent.putCol(h);
+			}
 		}
+	}
+
+	private void addEntry(Vector<ProgEntry>[] ents, int pos, ProgEntry ent) {
+		if (ents[pos] == null) {
+			ents[pos] = new Vector<ProgEntry>();
+		}
+		ents[pos].add(ent);
 	}
 
 	private void processFinalTotal() {
@@ -860,10 +862,8 @@ class CardAccounting implements ActionListener, Runnable
 		majorFirst.set(false);
 	}
 
-	private void impulse(ProgExit xt) {
-		if (xt != null) {
-			xt.processExits();
-		}
+	private void impulse(ProgStart xt) {
+		xt.set(true);	// should all be one-shots...
 	}
 
 	public void run() {
@@ -1114,5 +1114,12 @@ class CardAccounting implements ActionListener, Runnable
 		} else if (m.getMnemonic() == KeyEvent.VK_H) {
 			showHelp();
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void initReaders() {
+		read1 = new Vector[80];
+		read2 = new Vector[80];
+		read3 = new Vector[80];
 	}
 }

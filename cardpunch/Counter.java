@@ -1,12 +1,14 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
-public class Counter extends ProgExit {
+import java.util.Vector;
+
+public class Counter extends ProgStart {
 	int width;
 	int sum;
-	ProgEntry[] ents;
+	Vector<ProgEntry>[] ents;
 	ProgStart plus = null;
 	ProgStart minus = null;
-	ProgExit credit = null;
+	ProgStart credit = null;
 	Counter cyo = null;
 	int mod;
 
@@ -16,9 +18,9 @@ public class Counter extends ProgExit {
 	};
 
 	public Counter(int wid) {
-		super();
+		super(true);
 		width = wid;
-		ents = new ProgEntry[width];
+		initEnts();
 		sum = 0;
 		mod = pow[width];
 	}
@@ -31,7 +33,7 @@ public class Counter extends ProgExit {
 		minus = mi;
 	}
 
-	public void setCredit(ProgExit cr) {
+	public void setCredit(ProgStart cr) {
 		credit = cr;
 	}
 
@@ -43,29 +45,31 @@ public class Counter extends ProgExit {
 		if (dig < 0 || dig >= width) {
 			return;
 		}
-		ent.setNext(ents[dig]);
-		ents[dig] = ent;
+		if (ents[dig] == null) {
+			ents[dig] = new Vector<ProgEntry>();
+		}
+		ents[dig].add(ent);
 	}
 
-	public void processExits() {
+	@Override
+	public void set(boolean b) {
+		super.set(b);
+		if (!b) return;
 		int v = sum;
 		sum = 0;
 		if (v < 0) {
 			v = -v;
 			if (credit != null) {
-				credit.processExits();
+				credit.set(true);
 			}
 		}
 		for (int x = ents.length; x > 0;) {
 			--x;
 			char d = (char)((v % 10) + '0');
 			v /= 10;
-			if (ents[x] != null) {
-				ents[x].putCol(d);
+			if (ents[x] != null) for (ProgEntry ent : ents[x]) {
+				ent.putCol(d);
 			}
-		}
-		if (_next != null) {
-			_next.processExits();
 		}
 	}
 
@@ -113,5 +117,10 @@ public class Counter extends ProgExit {
 		} else {
 			sub(f);
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void initEnts() {
+		ents = new Vector[width];
 	}
 }

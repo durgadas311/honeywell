@@ -1,10 +1,12 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
+import java.util.Vector;
+
 public class Comparator {
 	int width;
-	ComparingEntry[] ents1;
-	ComparingEntry[] ents2;
-	ComparingExit[] xits;	// could be simple list...
+	ComparingEntry[] ents1; // there can be only one...
+	ComparingEntry[] ents2; // there can be only one...
+	Vector<ComparingExit> xits;	// could be simple list...
 
 	// Wiring:
 	// COMP EXIT -> PROG START (MI/IN/MA) -> TOTAL PROG (1/2/3) -+
@@ -24,7 +26,7 @@ public class Comparator {
 		width = wid;
 		ents1 = new ComparingEntry[wid];
 		ents2 = new ComparingEntry[wid];
-		xits = new ComparingExit[wid];
+		xits = new Vector<ComparingExit>();
 	}
 
 	private void setEntry(ComparingEntry[] ents, int pos, ComparingEntry ent) {
@@ -48,11 +50,10 @@ public class Comparator {
 			return;
 		}
 		// TODO: check overlaps, conflicts?
-		xits[pos] = new ComparingExit(pos, wid, srt);
+		xits.add(new ComparingExit(pos, wid, srt));
 	}
 
 	private void compare(ComparingExit xit) {
-		if (xit == null) return;
 		int n = xit.width();
 		int c = xit.position();
 		while (n > 0) {
@@ -66,8 +67,8 @@ public class Comparator {
 	}
 
 	public void processExits() {
-		for (int x = 0; x < xits.length; ++x) {
-			compare(xits[x]);
+		for (ComparingExit xit : xits) {
+			compare(xit);
 		}
 	}
 }

@@ -5,35 +5,61 @@
 // Calling set() on N or T will conditionally call set() on C.
 // Requesting is() on N or T will conditionally return is() on C.
 public class SelectorContact {
-	ProgStart selector;
-	C comm;
-	T tran;
-	N norm;
+	boolean selector;	// current state of the pickup
+	C comm;	// "common" contact terminal (C)
+	T tran;	// "transferred" contact terminal (NO)
+	N norm;	// "normal" contact terminal (NC)
 
+	// "set()" should only be called on one end, either
+	// "C" or "N"/"T". The state is *only* stored on the
+	// end where "set()" is called. It is assumed that
+	// any call to "is()" is looking for the state on
+	// the "remote" (opposite) end.
+	// This allows the contact to be bi-direction, but
+	// there are effectively two paths through the contact
+	// and they have separate states. The contact should
+	// only be used in one direction, however choice of
+	// that direction is entirely up to the user.
+	//
 	class C extends ProgStart {
 		public C() {
 			super(false);
 		}
 		@Override
 		public void set(boolean b) {
-			// TODO: remember state here, also?
-			if (selector.is()) {
-				tran._set(b);
+			super.set(b);
+			if (selector) {
+				tran.trigger(b);
 			} else {
-				norm._set(b);
+				norm.trigger(b);
 			}
 		}
 		@Override
 		public boolean is() {
-			if (selector.is()) {
-				return tran._is();
+			if (selector) {
+				return tran.get();
 			} else {
-				return norm._is();
+				return norm.get();
 			}
 		}
-		// These are needed to avoid looping
-		public void _set(boolean b) { super.set(b); }
-		public boolean _is() { return super.is(); }
+		// selector is about to change state...
+		public void pre() {
+			if (!get()) return;
+			if (selector) {
+				tran.trigger(false);
+			} else {
+				norm.trigger(false);
+			}
+		}
+		// selector just changed state...
+		public void post() {
+			if (!get()) return;
+			if (selector) {
+				tran.trigger(get());
+			} else {
+				norm.trigger(get());
+			}
+		}
 	}
 
 	class N extends ProgStart {
@@ -42,17 +68,30 @@ public class SelectorContact {
 		}
 		@Override
 		public void set(boolean b) {
-			// TODO: remember state here, also?
-			if (!selector.is()) { comm._set(b); }
+			super.set(b);
+			if (!selector) {
+				comm.trigger(b);
+			}
 		}
 		@Override
 		public boolean is() {
-			if (!selector.is()) { return comm._is(); }
+			if (!selector) { return comm.get(); }
 			return false;
 		}
-		// These are needed to avoid looping
-		public void _set(boolean b) { super.set(b); }
-		public boolean _is() { return super.is(); }
+		// selector is about to change state...
+		public void pre() {
+			if (!get()) return;
+			if (!selector) {
+				comm.trigger(false);
+			}
+		}
+		// selector just changed state...
+		public void post() {
+			if (!get()) return;
+			if (!selector) {
+				comm.trigger(get());
+			}
+		}
 	}
 
 	class T extends ProgStart {
@@ -61,21 +100,34 @@ public class SelectorContact {
 		}
 		@Override
 		public void set(boolean b) {
-			// TODO: remember state here, also?
-			if (selector.is()) { comm._set(b); }
+			super.set(b);
+			if (selector) {
+				comm.trigger(b);
+			}
 		}
 		@Override
 		public boolean is() {
-			if (selector.is()) { return comm._is(); }
+			if (selector) { return comm.get(); }
 			return false;
 		}
-		// These are needed to avoid looping
-		public void _set(boolean b) { super.set(b); }
-		public boolean _is() { return super.is(); }
+		// selector is about to change state...
+		public void pre() {
+			if (!get()) return;
+			if (selector) {
+				comm.trigger(false);
+			}
+		}
+		// selector just changed state...
+		public void post() {
+			if (!get()) return;
+			if (selector) {
+				comm.trigger(get());
+			}
+		}
 	}
 
-	public SelectorContact(ProgStart sel) {
-		selector = sel;
+	public SelectorContact(boolean st) {
+		selector = st;
 		comm = new C();
 		norm = new N();
 		tran = new T();
@@ -85,7 +137,14 @@ public class SelectorContact {
 	public ProgStart N() { return norm; }
 	public ProgStart T() { return tran; }
 
+
 	public void change(boolean st) {
-		// TODO: how to ripple change through...
+		comm.pre();
+		norm.pre();
+		tran.pre();
+		selector = st;
+		tran.post();
+		norm.post();
+		comm.post();
 	}
 }
