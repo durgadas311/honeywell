@@ -21,7 +21,6 @@ public class Comparator {
 	// c[1-9][0-9]* = <src1> <src2> start={major|inter|minor}
 
 	public Comparator(int wid) {
-		super();
 		width = wid;
 		ents1 = new ComparingEntry[wid];
 		ents2 = new ComparingEntry[wid];

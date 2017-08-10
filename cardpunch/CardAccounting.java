@@ -148,6 +148,7 @@ class CardAccounting implements ActionListener, Runnable
 	boolean[] azsupp;
 	boolean[] nzsupp;
 	Counter[] counter;
+	Selector[] selector;
 	int caret;
 
 	public JMenu[] getMenu() { return _menus; }
@@ -167,18 +168,20 @@ class CardAccounting implements ActionListener, Runnable
 		azsupp = new boolean[43];
 		nzsupp = new boolean[45];
 		counter = new Counter[16];
+		selector = new Selector[12];
 		comparing = new Comparator(20);
 
-		minorStart = new ProgStart();
-		interStart = new ProgStart();
-		majorStart = new ProgStart();
-		minorFirst = new ProgStart();
-		interFirst = new ProgStart();
-		majorFirst = new ProgStart();
-		specialStart = new ProgStart();
-		allStart = new ProgStart();
-		cardsStart = new ProgStart();
-		finalStart = new ProgStart();
+		// TODO: are any of these one-shots?
+		minorStart = new ProgStart(false);
+		interStart = new ProgStart(false);
+		majorStart = new ProgStart(false);
+		minorFirst = new ProgStart(false);
+		interFirst = new ProgStart(false);
+		majorFirst = new ProgStart(false);
+		specialStart = new ProgStart(false);
+		allStart = new ProgStart(false);
+		cardsStart = new ProgStart(false);
+		finalStart = new ProgStart(false);
 
 		prtCtl = new PrintControl();
 		firstMinor = null;
