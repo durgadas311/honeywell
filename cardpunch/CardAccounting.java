@@ -78,14 +78,16 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
-	class XSelector implements ProgEntry {
+	class XSelector extends ProgStart {
 		char chr;
 		Selector i_pu;
 
 		public XSelector(Selector I_PU) {
+			super(true);
 			i_pu = I_PU;
 		}
 
+		@Override
 		public void putCol(char c) {
 			chr = c;
 			// TODO: implement actual quirks
@@ -93,14 +95,16 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
-	class DSelector implements ProgEntry {
+	class DSelector extends ProgStart {
 		char chr;
 		Selector i_pu;
 
 		public DSelector(Selector I_PU) {
+			super(true);
 			i_pu = I_PU;
 		}
 
+		@Override
 		public void putCol(char c) {
 			chr = c;
 			// TODO: implement actual quirks
@@ -143,9 +147,9 @@ class CardAccounting implements ActionListener, Runnable
 	GenericHelp _help;
 	SuffFileChooser ch;
 	Properties props;
-	Vector<ProgEntry>[] read1;
-	Vector<ProgEntry>[] read2;
-	Vector<ProgEntry>[] read3;
+	Vector<ProgStart>[] read1;
+	Vector<ProgStart>[] read2;
+	Vector<ProgStart>[] read3;
 
 	// These may have watchers - one-shots
 	ProgStart firstMinor;
@@ -503,7 +507,7 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
-	private Vector<ProgEntry>[] getReadCycle(char t) {
+	private Vector<ProgStart>[] getReadCycle(char t) {
 		switch (t) {
 		case '1': return read1;
 		case '2': return read2;
@@ -552,7 +556,7 @@ class CardAccounting implements ActionListener, Runnable
 				if (i < 0) return -1;
 				c = Byte.valueOf(p.substring(i + 1, j));
 				c -= 1;
-				Vector<ProgEntry>[] rd = getReadCycle(p.charAt(0));
+				Vector<ProgStart>[] rd = getReadCycle(p.charAt(0));
 				while (n > 0) {
 					addEntry(rd, c, new PrintEntry(xts, idx));
 					++idx;
@@ -600,9 +604,9 @@ class CardAccounting implements ActionListener, Runnable
 		}
 		for (int x = 1; x < pp.length; ++x) {
 			if (pp[x].startsWith("plus=")) {
-				counter[ctr].setPlus(getStart(pp[x].substring(5)));
+				counter[ctr].setPlus(getCycle(pp[x].substring(5)));
 			} else if (pp[x].startsWith("minus=")) {
-				counter[ctr].setMinus(getStart(pp[x].substring(6)));
+				counter[ctr].setMinus(getCycle(pp[x].substring(6)));
 			} else if (pp[x].startsWith("carry=")) {
 				int ct = getCounter(pp[x].substring(6));
 				if (ct >= 0) {
@@ -642,7 +646,7 @@ class CardAccounting implements ActionListener, Runnable
 				if (i < 0) return;
 				c = Byte.valueOf(pp[0].substring(i + 1, j));
 				c -= 1;
-				Vector<ProgEntry>[] rd = getReadCycle(pp[0].charAt(0));
+				Vector<ProgStart>[] rd = getReadCycle(pp[0].charAt(0));
 				while (n > 0) {
 					addEntry(rd, c, new CounterEntry(counter[ctr], dig));
 					++dig;
@@ -667,7 +671,7 @@ class CardAccounting implements ActionListener, Runnable
 		return ctr;
 	}
 
-	private ProgStart getStart(String p) {
+	private ProgStart getCycle(String p) {
 		if (p.equals("fcmi")) {
 			return minorFirst;
 		} else if (p.equals("fcin")) {
@@ -692,6 +696,19 @@ class CardAccounting implements ActionListener, Runnable
 		return null;
 	}
 
+	private ProgStart getStart(String p) {
+		if (p.equals("minor")) {
+			return minorStart;
+		} else if (p.equals("inter")) {
+			return interStart;
+		} else if (p.equals("major")) {
+			return majorStart;
+		} else if (p.equals("special")) {
+			return specialStart;
+		}
+		return null;
+	}
+
 	private void setSelector(int sel, char typ, String p) {
 		String[] pp = p.split("\\s");
 		if (typ != 'i') {
@@ -705,7 +722,7 @@ class CardAccounting implements ActionListener, Runnable
 				--c;
 				comparing.setExit(c, n, selector[sel]);
 			} else {
-				ProgStart s = getStart(pp[0]);
+				ProgStart s = getCycle(pp[0]);
 				if (s == null) {
 					return;
 				}
@@ -713,13 +730,13 @@ class CardAccounting implements ActionListener, Runnable
 			}
 			// TODO: other sources... counter?
 		} else {	// 'x' or 'd'
-			// some character source... ProgEntry
+			// some character source...
 			// TODO: allow other character sources?
 			int ctr = getCounter(pp[0]);
 			if (ctr < 0 && !pp[0].matches("[123]\\.[0-9]+.*")) {
 				return; // error
 			}
-			ProgEntry e;
+			ProgStart e;
 			if (typ == 'x') {
 				e = new XSelector(selector[sel]);
 			} else {
@@ -730,15 +747,29 @@ class CardAccounting implements ActionListener, Runnable
 				--c;
 				counter[ctr].setEntry(c, e);
 			} else {
-				Vector<ProgEntry>[] rd = getReadCycle(pp[0].charAt(0));
+				Vector<ProgStart>[] rd = getReadCycle(pp[0].charAt(0));
 				byte c = Byte.valueOf(pp[0].substring(2));
 				--c;
 				addEntry(rd, c, e);
 			}
 		}
 		// Now for connections to C, N, and T.
-		// TODO: multiple contacts...
+		// c=?,n=?,t=? for c->n->t flow: ?.addWatcher(selector[x].C(),
+		//                               selector[x].N().addWatcher(?),
+		//                               selector[x].T().addWatcher(?)
+		//
+		// t=?,n=?,c=? for t->n->c flow: selector[x].C().addWatcher(?),
+		//                               ?.addWatcher(selector[x].N(),
+		//                               ?.addWatcher(selector[x].T()
+		// '?' may be cycle, start, entry, exit, ...
 		for (String g : pp) {
+			boolean fwd = g.startsWith("c=");
+			String[] x = g.split(",");
+			for (String y : x) {
+				if (!y.matches("[cnt]=.*")) {
+					return;
+				}
+			}
 		}
 	}
 
@@ -751,15 +782,14 @@ class CardAccounting implements ActionListener, Runnable
 		ProgStart start = null;
 		for (int x = 2; x < pp.length; ++x) {
 			if (pp[x].startsWith("start=")) {
-				// TODO: only major,inter,minor[,special]...
 				start = getStart(pp[x].substring(6));
 			}
 		}
 		int na = 1;
 		int nb = 1;
 		try {
-			Vector<ProgEntry>[] rda = getReadCycle(pp[0].charAt(0));
-			Vector<ProgEntry>[] rdb = getReadCycle(pp[1].charAt(0));
+			Vector<ProgStart>[] rda = getReadCycle(pp[0].charAt(0));
+			Vector<ProgStart>[] rdb = getReadCycle(pp[1].charAt(0));
 			int j = pp[0].indexOf('*');
 			if (j > 2) na = Integer.valueOf(pp[0].substring(j + 1));
 			else j = pp[0].length();
@@ -849,12 +879,12 @@ class CardAccounting implements ActionListener, Runnable
 				int sel = Integer.valueOf(prop.substring(1));
 				setSelector(sel, prop.charAt(0), p);
 			} else if (prop.equals("list")) {
-				ProgStart ps = getStart(p);
+				ProgStart ps = getCycle(p);
 				if (ps != null) {
 					allCards.addWatcher(new PrintExit(prtCtl, ps));
 				}
 			} else if (prop.matches("s[0-3]")) {
-				ProgStart ps = getStart(p);
+				ProgStart ps = getCycle(p);
 				if (ps != null) switch (prop.charAt(1)) {
 					case '0':
 						prtCtl.addSuppress(ps);
@@ -898,7 +928,7 @@ class CardAccounting implements ActionListener, Runnable
 		return p;
 	}
 
-	private void processRead(Vector<ProgEntry>[] ents, byte[] card) {
+	private void processRead(Vector<ProgStart>[] ents, byte[] card) {
 		if (card == null) {
 			return;
 		}
@@ -908,15 +938,15 @@ class CardAccounting implements ActionListener, Runnable
 			String t = cvt.punToAscii(p);
 			if (t == null) continue;
 			char h = t.charAt(0);
-			for (ProgEntry ent : ents[c]) {
+			for (ProgStart ent : ents[c]) {
 				ent.putCol(h);
 			}
 		}
 	}
 
-	private void addEntry(Vector<ProgEntry>[] ents, int pos, ProgEntry ent) {
+	private void addEntry(Vector<ProgStart>[] ents, int pos, ProgStart ent) {
 		if (ents[pos] == null) {
-			ents[pos] = new Vector<ProgEntry>();
+			ents[pos] = new Vector<ProgStart>();
 		}
 		ents[pos].add(ent);
 	}

@@ -1,7 +1,5 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
-// TODO! Contacts can carry ProgStart or ProgEntry!
-
 // Calling set() on C will result in set() on either N or T.
 // Requesting is() on C will return is() on either N or T.
 // Calling set() on N or T will conditionally call set() on C.
@@ -34,6 +32,14 @@ public class SelectorContact {
 				tran.trigger(b);
 			} else {
 				norm.trigger(b);
+			}
+		}
+		@Override
+		public void putCol(char c) {
+			if (selector) {
+				tran.trigger(c);
+			} else {
+				norm.trigger(c);
 			}
 		}
 		@Override
@@ -76,6 +82,12 @@ public class SelectorContact {
 			}
 		}
 		@Override
+		public void putCol(char c) {
+			if (!selector) {
+				comm.trigger(c);
+			}
+		}
+		@Override
 		public boolean is() {
 			if (!selector) { return comm.get(); }
 			return false;
@@ -105,6 +117,12 @@ public class SelectorContact {
 			super.set(b);
 			if (selector) {
 				comm.trigger(b);
+			}
+		}
+		@Override
+		public void putCol(char c) {
+			if (selector) {
+				comm.trigger(c);
 			}
 		}
 		@Override

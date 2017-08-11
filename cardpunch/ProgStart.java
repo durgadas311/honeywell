@@ -36,6 +36,12 @@ public class ProgStart {
 		}
 	}
 
+	void trigger(char c) {
+		for (ProgStart ps : watchers) {
+			ps.putCol(c);
+		}
+	}
+
 	// These may be overridden...
 	// This is the interface.
 	public boolean is() { return get(); }
@@ -47,5 +53,9 @@ public class ProgStart {
 			bool = false;
 			trigger(bool);
 		}
+	}
+
+	public void putCol(char c) {
+		trigger(c);
 	}
 }

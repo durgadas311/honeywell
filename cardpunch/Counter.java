@@ -5,7 +5,7 @@ import java.util.Vector;
 public class Counter extends ProgStart {
 	int width;
 	int sum;
-	Vector<ProgEntry>[] ents;
+	Vector<ProgStart>[] ents;
 	ProgStart plus = null;
 	ProgStart minus = null;
 	ProgStart credit = null;
@@ -41,12 +41,12 @@ public class Counter extends ProgStart {
 		cyo = ct;
 	}
 
-	public void setEntry(int dig, ProgEntry ent) {
+	public void setEntry(int dig, ProgStart ent) {
 		if (dig < 0 || dig >= width) {
 			return;
 		}
 		if (ents[dig] == null) {
-			ents[dig] = new Vector<ProgEntry>();
+			ents[dig] = new Vector<ProgStart>();
 		}
 		ents[dig].add(ent);
 	}
@@ -67,7 +67,7 @@ public class Counter extends ProgStart {
 			--x;
 			char d = (char)((v % 10) + '0');
 			v /= 10;
-			if (ents[x] != null) for (ProgEntry ent : ents[x]) {
+			if (ents[x] != null) for (ProgStart ent : ents[x]) {
 				ent.putCol(d);
 			}
 		}
