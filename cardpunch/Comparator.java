@@ -4,9 +4,9 @@ import java.util.Vector;
 
 public class Comparator {
 	int width;
-	ComparingEntry[] ents1; // there can be only one...
-	ComparingEntry[] ents2; // there can be only one...
-	Vector<ComparingExit> xits;	// could be simple list...
+	ComparingEntry[] ents1; // there can be only one... each
+	ComparingEntry[] ents2; // there can be only one... each
+	Vector<ComparingExit> xits;
 
 	// Wiring:
 	// COMP EXIT -> PROG START (MI/IN/MA) -> TOTAL PROG (1/2/3) -+

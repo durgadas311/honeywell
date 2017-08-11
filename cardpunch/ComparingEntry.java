@@ -1,12 +1,10 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 public class ComparingEntry extends ProgStart {
-	int col;
 	char punch;
 
-	public ComparingEntry(int pos) {
+	public ComparingEntry() {
 		super(true);
-		col = pos;
 	}
 
 	@Override

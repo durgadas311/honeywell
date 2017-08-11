@@ -20,7 +20,7 @@ public class Selector extends ProgStart {
 		ctcs = new Vector<SelectorContact>();
 	}
 
-	private SelectorContact addContact() {
+	public SelectorContact addContact() {
 		SelectorContact ctc = new SelectorContact(is());
 		ctcs.add(ctc);
 		return ctc;

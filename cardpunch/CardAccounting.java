@@ -754,22 +754,47 @@ class CardAccounting implements ActionListener, Runnable
 			}
 		}
 		// Now for connections to C, N, and T.
-		// c=?,n=?,t=? for c->n->t flow: ?.addWatcher(selector[x].C(),
+		// c=?,n=?,t=? for c->n->t flow: ?.addWatcher(selector[x].C()) or
+		//                               ctr.setEntry(dig, selector[x].C()) or
+		//                               cmp.setExit(col, wid, selector[x].C()) or
+		//                               addEntry(read3, col, selector[x].C()),
 		//                               selector[x].N().addWatcher(?),
 		//                               selector[x].T().addWatcher(?)
 		//
 		// t=?,n=?,c=? for t->n->c flow: selector[x].C().addWatcher(?),
-		//                               ?.addWatcher(selector[x].N(),
-		//                               ?.addWatcher(selector[x].T()
+		//                               ?.addWatcher(selector[x].N()) (''),
+		//                               ?.addWatcher(selector[x].T()) ('')
 		// '?' may be cycle, start, entry, exit, ...
 		for (String g : pp) {
 			boolean fwd = g.startsWith("c=");
 			String[] x = g.split(",");
+			SelectorContact cx = selector[sel].addContact();
 			for (String y : x) {
 				if (!y.matches("[cnt]=.*")) {
 					return;
 				}
+				boolean f = fwd;
+				ProgStart cp = null;
+				switch (y.charAt(0)) {
+				case 'c': cp = cx.C(); break;
+				case 'n': cp = cx.N(); f = !f; break;
+				case 't': cp = cx.T(); f = !f; break;
+				}
+				parseStart(cp, f, y.substring(2));
 			}
+		}
+	}
+
+	private void parseStart(ProgStart cx, boolean fwd, String p) {
+		ProgStart tg = null;
+		if (p.matches("[123]\\.[0-9]+")) {
+			// card columns read
+		} else if (p.matches("[an][0-9]+")) {
+			// alpha/numeric print entry
+		} else if (p.matches("[2468][abcd][0-9]*")) {
+			// counter, digit or carry?
+		} else if (p.matches("c[0-9]+")) {
+			// comparing exit/entry
 		}
 	}
 
@@ -806,8 +831,8 @@ class CardAccounting implements ActionListener, Runnable
 				cmp.setExit(pos, na, start);
 			}
 			while (na > 0) {
-				ComparingEntry ea = new ComparingEntry(pos);
-				ComparingEntry eb = new ComparingEntry(pos);
+				ComparingEntry ea = new ComparingEntry();
+				ComparingEntry eb = new ComparingEntry();
 				addEntry(rda, ca, ea);
 				addEntry(rdb, cb, eb);
 				cmp.setEntryA(pos, ea);
