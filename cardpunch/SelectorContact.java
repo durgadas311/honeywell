@@ -1,5 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
+// TODO! Contacts can carry ProgStart or ProgEntry!
+
 // Calling set() on C will result in set() on either N or T.
 // Requesting is() on C will return is() on either N or T.
 // Calling set() on N or T will conditionally call set() on C.

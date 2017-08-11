@@ -1,10 +1,11 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
-public class ComparingEntry extends ProgEntry {
+public class ComparingEntry implements ProgEntry {
+	int col;
 	char punch;
 
 	public ComparingEntry(int pos) {
-		super(pos);
+		col = pos;
 	}
 
 	public void putCol(char c) {

@@ -1,10 +1,11 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
-public class PrintEntry extends ProgEntry {
+public class PrintEntry implements ProgEntry {
+	int _col;
 	char[] _line;
 
 	public PrintEntry(char[] line, int col) {
-		super(col);
+		_col = col;
 		_line = line;
 	}
 

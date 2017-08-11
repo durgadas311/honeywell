@@ -78,6 +78,36 @@ class CardAccounting implements ActionListener, Runnable
 		}
 	}
 
+	class XSelector implements ProgEntry {
+		char chr;
+		Selector i_pu;
+
+		public XSelector(Selector I_PU) {
+			i_pu = I_PU;
+		}
+
+		public void putCol(char c) {
+			chr = c;
+			// TODO: implement actual quirks
+			i_pu.set(c == '-');
+		}
+	}
+
+	class DSelector implements ProgEntry {
+		char chr;
+		Selector i_pu;
+
+		public DSelector(Selector I_PU) {
+			i_pu = I_PU;
+		}
+
+		public void putCol(char c) {
+			chr = c;
+			// TODO: implement actual quirks
+			i_pu.set(Character.isDigit(c));
+		}
+	}
+
 	JFrame _frame;
 	Font labels;
 	File _cwd;
@@ -623,6 +653,7 @@ class CardAccounting implements ActionListener, Runnable
 		} catch (Exception ee) {}
 	}
 
+	// This ensures the counter gets created on first reference...
 	private int getCounter(String p) {
 		if (!p.matches("[2468][abcd].*")) {
 			return -1;
@@ -659,6 +690,56 @@ class CardAccounting implements ActionListener, Runnable
 			return allStart;
 		}
 		return null;
+	}
+
+	private void setSelector(int sel, char typ, String p) {
+		String[] pp = p.split("\\s");
+		if (typ != 'i') {
+			// some impulse source... ProgStart
+			if (pp[0].matches("c[0-9]+.*")) {
+				int n = 1;
+				int j = pp[0].indexOf('*');
+				if (j > 2) n = Integer.valueOf(pp[0].substring(j + 1));
+				else j = pp[0].length();
+				byte c = Byte.valueOf(pp[0].substring(2, j));
+				--c;
+				comparing.setExit(c, n, selector[sel]);
+			} else {
+				ProgStart s = getStart(pp[0]);
+				if (s == null) {
+					return;
+				}
+				s.addWatcher(selector[sel]);
+			}
+			// TODO: other sources... counter?
+		} else {	// 'x' or 'd'
+			// some character source... ProgEntry
+			// TODO: allow other character sources?
+			int ctr = getCounter(pp[0]);
+			if (ctr < 0 && !pp[0].matches("[123]\\.[0-9]+.*")) {
+				return; // error
+			}
+			ProgEntry e;
+			if (typ == 'x') {
+				e = new XSelector(selector[sel]);
+			} else {
+				e = new DSelector(selector[sel]);
+			}
+			if (ctr >= 0) {
+				byte c = (byte)(pp[0].charAt(2) - '0');
+				--c;
+				counter[ctr].setEntry(c, e);
+			} else {
+				Vector<ProgEntry>[] rd = getReadCycle(pp[0].charAt(0));
+				byte c = Byte.valueOf(pp[0].substring(2));
+				--c;
+				addEntry(rd, c, e);
+			}
+		}
+		// Now for connections to C, N, and T.
+		// TODO: multiple contacts...
+		for (String g : pp) {
+		}
 	}
 
 	private void setComparing(Comparator cmp, int pos, String p) {
@@ -763,6 +844,10 @@ class CardAccounting implements ActionListener, Runnable
 			} else if (prop.matches("c[0-9]+")) {
 				int pos = Integer.valueOf(prop.substring(1));
 				setComparing(comparing, pos, p);
+			} else if (prop.matches("[xdi][0-9]+")) {
+				// Selector pick-ups
+				int sel = Integer.valueOf(prop.substring(1));
+				setSelector(sel, prop.charAt(0), p);
 			} else if (prop.equals("list")) {
 				ProgStart ps = getStart(p);
 				if (ps != null) {
