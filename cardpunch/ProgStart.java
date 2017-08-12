@@ -49,12 +49,10 @@ public class ProgStart {
 	public void set(boolean b) {
 		bool = b;
 		trigger(bool);
-		if (bool && oneShot) {
-			bool = false;
-			trigger(bool);
-		}
 	}
 
+	// Unless extended, this class has nothing to do with char.
+	// Note, overriding putCol() requires calling trigger(c).
 	public void putCol(char c) {
 		trigger(c);
 	}

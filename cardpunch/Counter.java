@@ -1,15 +1,57 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
-import java.util.Vector;
-
 public class Counter extends ProgStart {
+
+	class Carry extends ProgStart {
+		Counter that;
+		public Carry(Counter it) {
+			super(true);
+			that = it;
+		}
+		@Override
+		public void set(boolean b) {
+			super.set(b);
+			if (!b) return;
+			that.accum(1, width - 1);
+		}
+	}
+
+	class Entry extends ProgItem {
+		Counter that;
+		public Entry(int w, Counter it) {
+			super(w);
+			exit = false;
+			that = it;
+		}
+		@Override
+		public ProgStart get(int p) {
+			if (ents[p] == null) {
+				ents[p] = new CounterEntry(that, p);
+			}
+			return ents[p];
+		}
+	}
+
+	class Exit extends ProgItem {
+		public Exit(int w) {
+			super(w);
+		}
+		public void processExit(int p, char d) {
+			// Do not use get() here...
+			if (ents[p] != null) {
+				ents[p].putCol(d);
+			}
+		}
+	}
+
 	int width;
 	int sum;
-	Vector<ProgStart>[] ents;
+	Entry ents;
+	Exit exts;
 	ProgStart plus = null;
 	ProgStart minus = null;
-	ProgStart credit = null;
-	Counter cyo = null;
+	ProgStart credit;
+	ProgStart cyo;
 	int mod;
 
 	// max number digits is 8.
@@ -20,9 +62,12 @@ public class Counter extends ProgStart {
 	public Counter(int wid) {
 		super(true);
 		width = wid;
-		initEnts();
+		ents = new Entry(width, this);
+		exts = new Exit(width);
 		sum = 0;
 		mod = pow[width];
+		credit = new ProgStart(true);
+		cyo = new ProgStart(true);
 	}
 
 	public void setPlus(ProgStart pl) {
@@ -33,52 +78,47 @@ public class Counter extends ProgStart {
 		minus = mi;
 	}
 
+	// Credit Symbol Exit - allow multiple connections...
+	// TODO: this should emit a character, not impulse...
 	public void setCredit(ProgStart cr) {
-		credit = cr;
+		credit.addWatcher(cr);
 	}
 
+	// Carry Exit - allow multiple connections...
 	public void setCarry(Counter ct) {
-		cyo = ct;
+		setCarry(new Carry(ct));
+	}
+	public void setCarry(ProgStart es) {
+		cyo.addWatcher(es);
 	}
 
-	public void setEntry(int dig, ProgStart ent) {
-		if (dig < 0 || dig >= width) {
-			return;
-		}
-		if (ents[dig] == null) {
-			ents[dig] = new Vector<ProgStart>();
-		}
-		ents[dig].add(ent);
-	}
+	public ProgItem E() { return ents; }
+	public ProgItem X() { return exts; }
 
+	// TOTAL ENTRY (print & reset)
 	@Override
 	public void set(boolean b) {
-		super.set(b);
+		super.set(b);	// n/a ?
 		if (!b) return;
 		int v = sum;
 		sum = 0;
+		// TODO: if (supp.is()) return;
 		if (v < 0) {
 			v = -v;
-			if (credit != null) {
-				credit.set(true);
-			}
+			credit.set(true);
 		}
-		for (int x = ents.length; x > 0;) {
+		for (int x = width; x > 0;) {
 			--x;
 			char d = (char)((v % 10) + '0');
 			v /= 10;
-			if (ents[x] != null) for (ProgStart ent : ents[x]) {
-				ent.putCol(d);
-			}
+			exts.processExit(x, d);
 		}
 	}
 
 	private void add(int n) {
 		sum += n;
 		if (sum >= mod) {
-			if (cyo != null) {
-				cyo.carry();
-			}
+			cyo.set(true);
 			sum -= mod;
 		}
 	}
@@ -86,41 +126,28 @@ public class Counter extends ProgStart {
 	private void sub(int n) {
 		sum -= n;
 		if (sum < 0) {
-			if (cyo != null) {
-				cyo.borrow();
-			}
+			cyo.set(true);
 			sum += mod;
 		}
 	}
 
-	private void carry() {
-		add(1);
-	}
-
-	private void borrow() {
-		sub(1);
-	}
-
-	public void accum(int d, int dig) {
+	// Called by CounterEntry.putCol() and Carry
+	// 'dig' is 0-based but '0' is MSD.
+	public void accum(int val, int dig) {
 		boolean add = (plus != null && plus.is());
 		boolean sub = (minus != null && minus.is());
 		if (!add && !sub) {
 			return;
 		}
-		if (dig < 0 || dig >= width || d == 0) {
+		if (dig < 0 || dig >= width || val == 0) {
 			return;
 		}
-		dig = width - dig - 1;
-		int f = (d * pow[dig]);
+		dig = width - dig - 1;	// '0' is now LSD
+		int f = (val * pow[dig]);
 		if (add) {
 			add(f);
 		} else {
 			sub(f);
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private void initEnts() {
-		ents = new Vector[width];
 	}
 }
