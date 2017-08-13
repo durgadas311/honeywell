@@ -1,0 +1,37 @@
+# first name print
+a1 = 3.14*10
+# last name print
+a11 = 3.29*10
+# cust Id print
+a22 = 3.10*4
+# zip code print
+a27 = 3.44*5
+# amount dollars print
+n4 = 3.49*3
+# amount cents print and minor total
+n8 = 3.52*2 8a7*2
+# amount summing
+8a4 = 3.49*5
+8ap = all
+8at = minor
+8b4 = 3.49*5
+8bp = all
+8bt = major
+8c4 = 3.49*5
+8cp = all
+8ct = final
+# comparators
+c1a = 3.10*4
+c1b = 2.10*4
+stmi = c1x
+c5a = 3.44*5
+c5b = 2.44*5
+stma = c5x
+# minor sum print
+n1 = 8a1*6 zero
+n10 = aster1
+n11 = 8b1*6 zero
+n18 = 8b7*2
+n21 = 8c1*6 zero
+n28 = 8c7*2
+list = cards
