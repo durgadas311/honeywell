@@ -11,7 +11,7 @@ public class PrintEntry extends ProgStart {
 	}
 
 	@Override
-	public void putCol(char c) {
+	public void putCol(int p, char c) {
 		// TODO: Alphameric vs. Numeric
 		_line[_col] = c;
 	}

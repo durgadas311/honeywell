@@ -11,6 +11,7 @@ class SpecialPrint extends ProgStart {
 		super.set(b);	// n/a ?
 		if (!b) return;	// generate character on leading edge of cycle
 		// TODO: enforce odd/even columns? Numeric?
-		trigger(_char);
+		// TODO: generate some punch value?
+		trigger(0, _char);
 	}
 }

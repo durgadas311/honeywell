@@ -36,10 +36,10 @@ public class Counter extends ProgStart {
 		public Exit(int w) {
 			super(w);
 		}
-		public void processExit(int p, char d) {
+		public void processExit(int x, int p, char c) {
 			// Do not use get() here...
-			if (ents[p] != null) {
-				ents[p].putCol(d);
+			if (ents[x] != null) {
+				ents[x].putCol(p, c);
 			}
 		}
 	}
@@ -103,9 +103,11 @@ public class Counter extends ProgStart {
 		}
 		for (int x = width; x > 0;) {
 			--x;
-			char d = (char)((v % 10) + '0');
+			int n = v % 10;
+			char d = (char)(n + '0');
+			int p = (0x0200 >> n);
 			v /= 10;
-			exts.processExit(x, d);
+			exts.processExit(x, p, d);
 		}
 		super.set(b); // now trigger watchers (printing)...
 	}

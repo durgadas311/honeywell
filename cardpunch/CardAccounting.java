@@ -36,7 +36,7 @@ class CardAccounting implements ActionListener, Runnable
 				String t = cvt.punToAscii(p);
 				if (t == null) continue;
 				char h = t.charAt(0);
-				ents[c].putCol(h);
+				ents[c].putCol(p, h);
 			}
 		}
 	}
@@ -136,39 +136,56 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	class XSelector extends ProgStart {
-		char chr;
 		Selector i_pu;
+		DelayStart delay;
 
 		public XSelector(Selector I_PU) {
 			super(true);
 			i_pu = I_PU;
+			delay = new DelayStart();
+			delay.addWatcher(i_pu);
+			allCards.get(0).addWatcher(delay);
 		}
 
 		@Override
-		public void putCol(char c) {
-			super.trigger(c);	// n/a ?
-			chr = c;
-			// TODO: implement actual quirks (cycle delay?)
-			i_pu.set(c == '-');
+		public void putCol(int p, char c) {
+			super.trigger(p, c);	// n/a ?
+			// Any punch in X/11 or 12
+			delay.setFlag((p & 0x0c00) != 0);
 		}
 	}
 
 	class DSelector extends ProgStart {
-		char chr;
 		Selector i_pu;
+		DelayStart delay;
 
 		public DSelector(Selector I_PU) {
 			super(true);
 			i_pu = I_PU;
+			delay = new DelayStart();
+			delay.addWatcher(i_pu);
+			allCards.get(0).addWatcher(delay);
 		}
 
 		@Override
-		public void putCol(char c) {
-			super.trigger(c);	// n/a ?
-			chr = c;
-			// TODO: implement actual quirks (cycle delay?)
-			i_pu.set(Character.isDigit(c));
+		public void putCol(int p, char c) {
+			super.trigger(p, c);	// n/a ?
+			// Any punch in 9-0,X/11, or 12.
+			// Requires digit selectors to be more specific.
+			delay.set(p != 0);
 		}
+	}
+
+	private String dumpSelectors() {
+		String ret = "";
+		for (int x = 0; x < selector.length; ++x) {
+			if (selector[x] != null) {
+				ret += selector[x].dump();
+			} else {
+				ret += '.';
+			}
+		}
+		return ret;
 	}
 
 	JFrame _frame;
@@ -611,18 +628,29 @@ class CardAccounting implements ActionListener, Runnable
 	}
 
 	// This ensures the counter gets created on first reference...
+	// Returns 0-based index
 	private int getCounter(String p) {
 		if (!p.matches("[2468][abcd].*")) {
 			return -1;
 		}
-		int w = p.charAt(0) - '0';
-		int ctr = (w - 2) << 1;		// 0, 4, 8, 12
+		int w = p.charAt(0) - '0';	// 2,4,6,8
+		int ctr = (w - 2) << 1;		// (0,2,4,6) 0,4,8,12
 		ctr |= (p.charAt(1) - 'a');	// 0..15
 		if (counter[ctr] == null) {
 			counter[ctr] = new Counter(w);
 			counter[ctr].TOTAL().get(0).addWatcher(new PrintExit(prtCtl));
 		}
 		return ctr;
+	}
+
+	// TODO: pass in width... ???
+	// Returns 0-based index
+	private int getSelector(String p) {
+		int sel = Integer.valueOf(p) - 1;
+		if (selector[sel] == null) {
+			selector[sel] = new Selector(5);
+		}
+		return sel;
 	}
 
 	// Char Sources:
@@ -733,8 +761,40 @@ class CardAccounting implements ActionListener, Runnable
 			// ALPHA/NUMERICAL PRINTING ENTRY
 			c = Integer.valueOf(p.substring(1));
 			rd = (p.charAt(0) == 'n' ? nprint : aprint);
-		} else if (p.matches("[xdi][0-9]+")) {
-			// Selector PUs
+		} else if (p.matches("s[0-9]+[xdi]")) {
+			// SELECTOR X/D/I PU
+			w = 1;
+			char t = p.charAt(p.length() - 1);
+			int sel = getSelector(p.substring(1, p.length() - 1));
+			if (t == 'x') {
+				rd = new SingleEntry(new XSelector(selector[sel]));
+			} else if (t == 'd') {
+				rd = new SingleEntry(new DSelector(selector[sel]));
+			} else {
+				rd = new SingleEntry(selector[sel]);
+			}
+		} else if (p.matches("s[0-9]+[cnt][0-9]+")) {
+			// SELECTOR C/N/T contacts
+			i = p.indexOf('c');
+			if (i < 0) {
+				i = p.indexOf('n');
+				if (i < 0) {
+					i = p.indexOf('t');
+				}
+			}
+			char t = p.charAt(i);
+			int sel = getSelector(p.substring(1, i));
+			c = Integer.valueOf(p.substring(i + 1));
+			if (t == 'c') {
+				selector[sel].C().setExit(ctx == 0);
+				rd = selector[sel].C();
+			} else if (t == 'n') {
+				selector[sel].N().setExit(ctx == 0);
+				rd = selector[sel].N();
+			} else {
+				selector[sel].T().setExit(ctx == 0);
+				rd = selector[sel].T();
+			}
 		} else {
 			w = 1;
 			if (ctx == 0) {
@@ -856,7 +916,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 
 	static private int getCol(byte[] card, int ix) {
 		int p = card[ix * 2] & 0x0ff;
-		p |= (card[ix * 2 + 1] & 0x0ff) << 8;
+		p |= (card[ix * 2 + 1] & 0x00f) << 8;
 		return p;
 	}
 
@@ -888,8 +948,12 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 		majorStart.set(0, false);
 	}
 
-	private void impulse(ProgItem xt) {
-		xt.set(0, true);	// should all be one-shots...
+	private void changeSelectors() {
+		for (Selector sel : selector) {
+			if (sel != null) {
+				sel.change();
+			}
+		}
 	}
 
 	// 'xt' was previously set 'true'...
@@ -900,7 +964,10 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 		allCycles.set(0, true);
 		xt.set(0, false);
 		allCycles.set(0, false);
+		changeSelectors();
 	}
+
+public static int ncards = 0;
 
 	public void run() {
 		idle.setBackground(off);
@@ -936,7 +1003,9 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 			}
 			allCycles.set(0, true);
 			allCards.set(0, true);
+++ncards;
 			processRead(read3, card3);
+//System.err.format("at card %d %s\n", ncards, dumpSelectors());
 			impulseCycle(allCards);	// End ALL CARDS cycle
 			// On run-out, card2 might be null...
 			if (card2 != null) {

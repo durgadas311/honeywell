@@ -11,8 +11,8 @@ public class CounterEntry extends ProgStart {
 	}
 
 	@Override
-	public void putCol(char c) {
-		if (c >= '0' && c <= '9') {
+	public void putCol(int p, char c) {
+		if (Character.isDigit(c)) {
 			_ctr.accum(c - '0', _col);
 		}
 	}

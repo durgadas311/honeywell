@@ -13,25 +13,38 @@ import java.util.Vector;
 // An array of this class represents all available selectors,
 // but each selector has an infinit number of contacts.
 public class Selector extends ProgStart {
-	Vector<SelectorContact> ctcs;
+	boolean next;
+	SelectorComm comm;
+	SelectorNorm norm;
+	SelectorTran tran;
 
-	public Selector() {
+	public Selector(int w) {
 		super(false);
-		ctcs = new Vector<SelectorContact>();
+		comm = new SelectorComm(this, w);
+		norm = new SelectorNorm(this, w);
+		tran = new SelectorTran(this, w);
+		comm.setNT(norm, tran);
+		norm.setC(comm);
+		tran.setC(comm);
+		next = false;
 	}
 
-	public SelectorContact addContact() {
-		SelectorContact ctc = new SelectorContact(is());
-		ctcs.add(ctc);
-		return ctc;
-	}
+	public SelectorComm C() { return comm; }
+	public SelectorNorm N() { return norm; }
+	public SelectorTran T() { return tran; }
 
 	@Override
 	public void set(boolean b) {
-		super.set(b);
-		// TODO: only if 'true'?
-		for (SelectorContact sc : ctcs) {
-			sc.change(b);
-		}
+		// TODO: does change require handling?
+		// (notification of contacts?)
+		next = b;
+	}
+
+	public void change() {
+		super.set(next);
+	}
+
+	public String dump() {
+		return String.format("%d", bool ? 1 : 0);
 	}
 }

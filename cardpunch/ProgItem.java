@@ -29,9 +29,9 @@ public class ProgItem {
 		}
 	}
 
-	public void putCol(int p, char c) {
-		if (p < ents.length && ents[p] != null) {
-			ents[p].putCol(c);
+	public void putCol(int x, int p, char c) {
+		if (x < ents.length && ents[x] != null) {
+			ents[x].putCol(p, c);
 		}
 	}
 

@@ -36,9 +36,9 @@ public class ProgStart {
 		}
 	}
 
-	void trigger(char c) {
+	void trigger(int p, char c) {
 		for (ProgStart ps : watchers) {
-			ps.putCol(c);
+			ps.putCol(p, c);
 		}
 	}
 
@@ -56,7 +56,7 @@ public class ProgStart {
 
 	// Unless extended, this class has nothing to do with char.
 	// Note, overriding putCol() requires calling trigger(c).
-	public void putCol(char c) {
-		trigger(c);
+	public void putCol(int p, char c) {
+		trigger(p, c);
 	}
 }

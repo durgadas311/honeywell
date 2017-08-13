@@ -1,15 +1,15 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 public class ComparingEntry extends ProgStart {
-	char punch;
+	int punch;
 
 	public ComparingEntry() {
 		super(true);
 	}
 
 	@Override
-	public void putCol(char c) {
-		punch = c;
+	public void putCol(int p, char c) {
+		punch = p;
 	}
 
 	public boolean compare(ComparingEntry ent) {
