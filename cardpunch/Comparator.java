@@ -16,6 +16,12 @@ public class Comparator {
 			}
 			return ents[p];
 		}
+		@Override
+		public void linkEntry(int id, int p, ProgStart es) {
+			ComparingExit xt = (ComparingExit)exits.get(id);
+			xt.expand(p);
+			super.linkEntry(id, p, es);
+		}
 	}
 	class ExitItem extends ProgItem {
 		public ExitItem(int w) {
@@ -30,8 +36,9 @@ public class Comparator {
 		}
 		@Override
 		public void linkEntry(int id, int p, ProgStart es) {
+			// should only get called once, id == p.
 			ComparingExit xt = (ComparingExit)get(id);
-			xt.expand(p);
+			//xt.expand(p);
 			if (p == id) {
 				xt.addWatcher(es);
 			}

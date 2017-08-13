@@ -35,77 +35,74 @@ the following are supported:
 <TR><TD>FIRST READING</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>1.1 - 1.80</TD></TR>
 <TR><TD>SECOND READING</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>2.1 - 2.80</TD></TR>
 <TR><TD>THIRD READING</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>3.1 - 3.80</TD></TR>
-<TR><TD>COUNTER EXIT/ENTRY</TD><TD>(*)</TD><TD>Counters 2A - 8D</TD><TD>2a1 - 8d8</TD></TR>
-<TR><TD>ALPHAMERICAL PRINT</TD><TD>1-43</TD><TD>Print Cols 1-43*</TD><TD>a1-a43</TD></TR>
-<TR><TD>NUMERICAL PRINT</TD><TD>1-45</TD><TD>Print Cols 44-88*</TD><TD>n1-n45</TD></TR>
-<TR><TD>COMPARING ENTRY</TD><TD>(*)</TD><TD>Comparator</TD><TD>c1-c20</TD></TR>
-<TR><TD>COMPARING EXIT</TD><TD>(*)</TD><TD>Comparator (**)</TD><TD>start={minor,inter,major,special}</TD></TR>
-<TR><TD>COUNTER CONTROL</TD><TD>2A - 8D</TD><TD>Counters</TD><TD>minus=/plus=<I>cycle</I></TD></TR>
-<TR><TD>COUNTER CARRY</TD><TD>2A - 8D</TD><TD>Counter carry out</TD><TD>carry={2a-8d}</TD></TR>
-<TR><TD>TOTAL</TD><TD>2A - 8D</TD><TD>Counter print/reset</TD><TD>total=<I>cycle</I></TD></TR>
-<TR><TD>* SYMBOL</TD><TD>F,1,2,3,ALL</TD><TD>Asterisk printing</TD><TD>aster={final,minor,inter,major,all}</TD></TR>
-<TR><TD>CR SYMBOL</TD><TD>2A - 8D</TD><TD>Credit symbol printing</TD><TD>cr={2a...8d}</TD></TR>
+<TR><TD>COUNTER EXIT/ENTRY</TD><TD>(1)</TD><TD>Counters 2A - 8D</TD><TD>2a1 - 8d8</TD></TR>
+<TR><TD>ALPHAMERICAL PRINT</TD><TD>1-43</TD><TD>Print Cols 1-43</TD><TD>a1 - a43</TD></TR>
+<TR><TD>NUMERICAL PRINT</TD><TD>1-45</TD><TD>Print Cols 44-88</TD><TD>n1 - n45</TD></TR>
+<TR><TD>COMPARING ENTRY</TD><TD>(1)</TD><TD>Comparator</TD><TD>c1a - c20a<BR>c1b - c20b</TD></TR>
+<TR><TD>COMPARING EXIT</TD><TD>(1)</TD><TD>Comparator (2)</TD><TD>c1x - c20x</TD></TR>
+<TR><TD>COUNTER CONTROL</TD><TD>2A - 8D</TD><TD>Counters</TD><TD>2ap - 8dp (PLUS)<BR>
+							2am - 8dm (MINUS)</TD></TR>
+<TR><TD>COUNTER CARRY</TD><TD>2A - 8D</TD><TD>Counter carry out</TD><TD>2ay - 8dy</TD></TR>
+<TR><TD>TOTAL</TD><TD>2A - 8D</TD><TD>Counter print/reset</TD><TD>2at - 8dt</TD></TR>
+<TR><TD>CR SYMBOL</TD><TD>2A - 8D</TD><TD>Credit symbol printing</TD><TD>2ac - 8dc</TD></TR>
+<TR><TD>* SYMBOL</TD><TD>F,1,2,3,ALL</TD><TD>Asterisk printing</TD><TD>aster{f,1,2,3,all}</TD></TR>
+<TR><TD>TOTAL PROGRAM</TD><TD>MINOR,INTER,MAJOR</TD><TD>Grouping cycles</TD><TD>{minor,inter,major}</TD></TR>
+<TR><TD>ALL CYCLES</TD><TD>(1)</TD><TD>All cycles</TD><TD>all</TD></TR>
+<TR><TD>CARD CYCLES</TD><TD>(1)</TD><TD>Card cycles</TD><TD>cards</TD></TR>
+<TR><TD>FIRST CD</TD><TD>MI,IN,MA,MB</TD><TD>First Card cycles</TD><TD>{fcmi,fcin,fcma,fcmb}</TD></TR>
+<TR><TD>FINAL TOTAL</TD><TD></TD><TD>Final Total cycle</TD><TD>final</TD></TR>
+<TR><TD>LIST</TD><TD></TD><TD>Print entry</TD><TD>list</TD></TR>
+<TR><TD>SPACE CTRL</TD><TD>S,1,2,3</TD><TD>Print spacing</TD><TD>{sps,sp1,sp2,sp3}</TD></TR>
+<TR><TD>Zero Suppression</TD><TD>(n/a)</TD><TD>Print field zero suppression (3)</TD><TD>zero</TD></TR>
 </TABLE>
 
-<P>(*) Hubs are not labeled, implied that left-most is "1".
-<P>(**) Comparator exits are chained automatically based on field defined in property.
+<P>Notes:
+<BR>(1) Hubs are not labeled, implied that left-most is "1" if relavent.
+<BR>(2) Comparator exits are chained automatically based on entry field(s).
+<BR>(3) Added to property for ALPHAMERICAL/NUMERICAL PRINT entry.
 
-<P>The following cycles are defined, although not all are appropriate in all cases.
-<P><TABLE BORDER>
-<TR><TH>Cycle</TH><TH>Meaning</TH></TR>
-<TR><TD>minor</TD><TD>Minor group change</TD></TR>
-<TR><TD>inter</TD><TD>Intermediate group change</TD></TR>
-<TR><TD>major</TD><TD>Major group change</TD></TR>
-<TR><TD>special</TD><TD>Special group (TBD)</TD></TR>
-<TR><TD>cards</TD><TD>All Cards</TD></TR>
-<TR><TD>all</TD><TD>All Cycles</TD></TR>
-<TR><TD>final</TD><TD>Final Total</TD></TR>
-<TR><TD>fcmi</TD><TD>First Card, Minor</TD></TR>
-<TR><TD>fcin</TD><TD>First Card, Intermediate</TD></TR>
-<TR><TD>fcma</TD><TD>First Card, Major</TD></TR>
-</TABLE>
-
-<P>PRINT, COUNTER, and COMPARING hubs (as well as LIST) relate to property names,
-others appear only in property values. COUNTER hubs can be used in both contexts.
-
-<P>COUNTER CONTROL and CARRY are specified in the counter propery, and the "carry="
-parameter designates which counter will receive the carry from this counter.
+<P>Property names are expected to represent ENTRY hubs, and generally do not contain
+a width (field width is determined by source(s)).
 
 <P>In the property value, a set of hubs (a field) may be designated by adding an
 asterisk and the number of hubs in the field. It is generally expected that all
 sets of hubs in a given property will be the same width, and that width determines
 the property width.
 
-<P>Also note that "list=all" or "list=cards" is required in order to print on every card.
+<P>Single items (cycles, controls, etc) must not have a field width specified.
 
 <P><B>Example 1:</B> comparing a field (current and previous card). Field starts at card
-column 5 and is 4 columns wide. Compare triggers "minor" group.
+column 10 and is 4 columns wide. Compare triggers "minor" group.
 <UL><PRE>
-c1 = 2.5*4 3.5*4 start=minor
+c1a = 3.10*4 
+c1b = 2.10*4 
+stmi = c1x
 </PRE>
-<P>Which means to send card columns 5-8 from SECOND READING to COMPARING hubs 1-4,
-and send card columns 5-8 from THIRD READING to the other COMPARING hubs 1-4.
-COMPARING EXIT hubs 1-4 are linked together,
+<P>Which means to send card columns 10-13 from SECOND READING to COMPARING hubs 1-4,
+and send card columns 10-13 from THIRD READING to the other COMPARING hubs 1-4.
+COMPARING EXIT hubs 1-4 are linked together automatically,
 and the output is tied to the MINOR START hub.
 </UL>
 
-<P><B>Example 2:</B> Add field from card column 5, 4 columns wide, to counter 8B and
-print result into numeric columns 10-17 with zero suppression. Print/reset
-on minor group change. Note how the 4-col field is positioned to
+<P><B>Example 2:</B> Add field from card column 49, 5 columns wide, to counter 8B and
+print result into numeric columns 11-18 with zero suppression. Print/reset
+on minor group change. Note how the 5-col field is positioned to
 the lower part of the 8-digit counter.
 <UL><PRE>
-8b5 = 3.5*4 plus=all total=minor
-n10 = 8b1*8 zero
+8b4 = 3.49*5
+8bp = all
+8bt = minor
+n11 = 8b1*8 zero
 </PRE>
-<P>Line 1 sends card columns 5-8 from THIRD READING to COUNTER 8B ENTRY hubs 5-8,
-wires ALL CYCLES to the PLUS hub for COUNTER 8B,
-and wires the TOTAL hub for 8B to the MINOR TOTAL PROGRAM hub.
-<P>Line 2 wires COUNTER 8B EXIT hubs 1-8 to NUMERICAL PRINT columns 10-17
+<P>Line 1 sends card columns 49-53 from THIRD READING to COUNTER 8B ENTRY hubs 4-8,
+Line 2 wires ALL CYCLES to the PLUS hub for COUNTER 8B,
+and Line 3 wires the TOTAL hub for 8B to the MINOR TOTAL PROGRAM hub.
+<P>Line 4 wires COUNTER 8B EXIT hubs 1-8 to NUMERICAL PRINT columns 11-18
 and enables zero suppression.
-<P>Note, zero suppression was configured by changing levers
+<P>Note, on original hardware, zero suppression was configured by changing levers
 on the type bars in the printer (and not by wires on the control panel).
 This property parameter defines
-zero suppression for the field automatically, which is a compromise.
+zero suppression for the field automatically, which is a compromise implementation.
 </UL>
 
 </BODY>

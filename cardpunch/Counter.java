@@ -48,10 +48,13 @@ public class Counter extends ProgStart {
 	int sum;
 	Entry ents;
 	Exit exts;
-	ProgStart plus = null;
-	ProgStart minus = null;
-	ProgStart credit;
-	ProgStart cyo;
+	SingleEntry plus;
+	SingleEntry minus;
+	ProgItem credit;
+	ProgItem cyo;
+	ProgItem cyi;
+	SingleEntry supp;
+	SingleEntry total;
 	int mod;
 
 	// max number digits is 8.
@@ -64,48 +67,39 @@ public class Counter extends ProgStart {
 		width = wid;
 		ents = new Entry(width, this);
 		exts = new Exit(width);
+		plus = new SingleEntry();
+		minus = new SingleEntry();
 		sum = 0;
 		mod = pow[width];
-		credit = new ProgStart(true);
-		cyo = new ProgStart(true);
-	}
-
-	public void setPlus(ProgStart pl) {
-		plus = pl;
-	}
-
-	public void setMinus(ProgStart mi) {
-		minus = mi;
-	}
-
-	// Credit Symbol Exit - allow multiple connections...
-	// TODO: this should emit a character, not impulse...
-	public void setCredit(ProgStart cr) {
-		credit.addWatcher(cr);
-	}
-
-	// Carry Exit - allow multiple connections...
-	public void setCarry(Counter ct) {
-		setCarry(new Carry(ct));
-	}
-	public void setCarry(ProgStart es) {
-		cyo.addWatcher(es);
+		credit = new SingleExit(new SpecialPrint('\u00a9'));
+		cyo = new ProgItem(1);
+		cyi = new SingleEntry(new Carry(this));
+		supp = new SingleEntry();
+		total = new SingleEntry(this);
 	}
 
 	public ProgItem E() { return ents; }
 	public ProgItem X() { return exts; }
+	public ProgItem PLUS() { return plus; }
+	public ProgItem MINUS() { return minus; }
+	public ProgItem CR() { return credit; }
+	public ProgItem CI() { return cyo; }
+	public ProgItem C() { return cyi; }
+	public ProgItem SUPP() { return supp; }
+	public ProgItem TOTAL() { return total; }
 
 	// TOTAL ENTRY (print & reset)
 	@Override
 	public void set(boolean b) {
-		super.set(b);	// n/a ?
-		if (!b) return;
+		if (b) return;	// Print on trailing edge of cycle
 		int v = sum;
 		sum = 0;
-		// TODO: if (supp.is()) return;
+		if (supp.is(0)) {
+			return;
+		}
 		if (v < 0) {
 			v = -v;
-			credit.set(true);
+			credit.set(0, true);
 		}
 		for (int x = width; x > 0;) {
 			--x;
@@ -113,12 +107,13 @@ public class Counter extends ProgStart {
 			v /= 10;
 			exts.processExit(x, d);
 		}
+		super.set(b); // now trigger watchers (printing)...
 	}
 
 	private void add(int n) {
 		sum += n;
 		if (sum >= mod) {
-			cyo.set(true);
+			cyo.set(0, true);
 			sum -= mod;
 		}
 	}
@@ -126,7 +121,7 @@ public class Counter extends ProgStart {
 	private void sub(int n) {
 		sum -= n;
 		if (sum < 0) {
-			cyo.set(true);
+			cyo.set(0, true);
 			sum += mod;
 		}
 	}
@@ -134,8 +129,8 @@ public class Counter extends ProgStart {
 	// Called by CounterEntry.putCol() and Carry
 	// 'dig' is 0-based but '0' is MSD.
 	public void accum(int val, int dig) {
-		boolean add = (plus != null && plus.is());
-		boolean sub = (minus != null && minus.is());
+		boolean add = (plus != null && plus.is(0));
+		boolean sub = (minus != null && minus.is(0));
 		if (!add && !sub) {
 			return;
 		}

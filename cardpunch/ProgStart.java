@@ -47,6 +47,9 @@ public class ProgStart {
 	public boolean is() { return get(); }
 
 	public void set(boolean b) {
+		if (!oneShot && bool == b) {
+			return;
+		}
 		bool = b;
 		trigger(bool);
 	}

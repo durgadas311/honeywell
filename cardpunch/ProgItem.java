@@ -23,6 +23,22 @@ public class ProgItem {
 		return ents[p];
 	}
 
+	public void set(int p, boolean b) {
+		if (p < ents.length && ents[p] != null) {
+			ents[p].set(b);
+		}
+	}
+
+	public void putCol(int p, char c) {
+		if (p < ents.length && ents[p] != null) {
+			ents[p].putCol(c);
+		}
+	}
+
+	public boolean is(int p) {
+		return p < ents.length && ents[p] != null && ents[p].is();
+	}
+
 	public boolean isExit() { return exit; }
 
 	// Typically overridden, this default works for simple cases.
