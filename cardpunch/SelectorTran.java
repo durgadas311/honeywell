@@ -1,5 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
+import java.util.Arrays;
+
 class SelectorTran extends ProgItem {
 	ProgStart that;
 	SelectorComm comm;
@@ -72,5 +74,13 @@ class SelectorTran extends ProgItem {
 		if (ents[x] != null) {
 			ents[x].trigger(p, c);
 		}
+	}
+
+	public void resize(int w) {
+		if (w <= ents.length) {
+			return;
+		}
+		ProgStart[] ne = Arrays.copyOf(ents, w);
+		ents = ne;
 	}
 }

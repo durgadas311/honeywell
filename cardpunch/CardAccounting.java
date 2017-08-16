@@ -739,6 +739,12 @@ class CardAccounting implements ActionListener, Runnable
 				rd = counter[ctr].MINUS();
 			} else if (t == 'p') { // PLUS ENTRY
 				rd = counter[ctr].PLUS();
+			} else if (t == 'n') { // NEGATIVE BALANCE TEST/CTRL
+				if (ctx == 0) {
+					rd = counter[ctr].NBT();
+				} else {
+					rd = counter[ctr].NBC();
+				}
 			} else if (t == 's') { // CTR EXIT SUPPRESSION
 				rd = counter[ctr].SUPP();
 			}
@@ -785,6 +791,7 @@ class CardAccounting implements ActionListener, Runnable
 			char t = p.charAt(i);
 			int sel = getSelector(p.substring(1, i));
 			c = Integer.valueOf(p.substring(i + 1));
+			selector[sel].resize(c); // 'c' is still +1 == width
 			if (t == 'c') {
 				selector[sel].C().setExit(ctx == 0);
 				rd = selector[sel].C();

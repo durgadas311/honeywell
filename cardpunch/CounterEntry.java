@@ -12,9 +12,12 @@ public class CounterEntry extends ProgStart {
 
 	@Override
 	public void putCol(int p, char c) {
+		// TODO: strip zone and assume number?
+		int v = 0;
 		if (Character.isDigit(c)) {
-			_ctr.accum(c - '0', _col);
+			v = c - '0';
 		}
+		_ctr.accum(v, _col);
 	}
 }
 

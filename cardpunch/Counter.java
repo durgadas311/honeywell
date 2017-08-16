@@ -12,7 +12,7 @@ public class Counter extends ProgStart {
 		public void set(boolean b) {
 			super.set(b);
 			if (!b) return;
-			that.accum(1, width - 1);
+			that.add(1);
 		}
 	}
 
@@ -53,9 +53,12 @@ public class Counter extends ProgStart {
 	ProgItem credit;
 	ProgItem cyo;
 	ProgItem cyi;
+	ProgItem nbt;
+	SingleEntry nbc;
 	SingleEntry supp;
 	SingleEntry total;
 	int mod;
+	int sgn;
 
 	// max number digits is 8.
 	static final int[] pow = new int[]{
@@ -71,9 +74,12 @@ public class Counter extends ProgStart {
 		minus = new SingleEntry();
 		sum = 0;
 		mod = pow[width];
+		sgn = pow[width - 1] * 9; // '9' in high digit == negative
 		credit = new SingleExit(new SpecialPrint('\u00a9'));
 		cyo = new ProgItem(1);
 		cyi = new SingleEntry(new Carry(this));
+		nbt = new ProgItem(1);
+		nbc = new SingleEntry();
 		supp = new SingleEntry();
 		total = new SingleEntry(this);
 	}
@@ -85,6 +91,8 @@ public class Counter extends ProgStart {
 	public ProgItem CR() { return credit; }
 	public ProgItem CI() { return cyo; }
 	public ProgItem C() { return cyi; }
+	public ProgItem NBT() { return nbt; }
+	public ProgItem NBC() { return nbc; }
 	public ProgItem SUPP() { return supp; }
 	public ProgItem TOTAL() { return total; }
 
@@ -93,12 +101,14 @@ public class Counter extends ProgStart {
 	public void set(boolean b) {
 		if (b) return;	// Print on trailing edge of cycle
 		int v = sum;
+		boolean nb = nbc.is(0);
 		sum = 0;
+		nbc.set(0, false); // ???
 		if (supp.is(0)) {
 			return;
 		}
-		if (v < 0) {
-			v = -v;
+		if (nb) {
+			v = (mod - 1 - v);
 			credit.set(0, true);
 		}
 		for (int x = width; x > 0;) {
@@ -112,20 +122,13 @@ public class Counter extends ProgStart {
 		super.set(b); // now trigger watchers (printing)...
 	}
 
-	private void add(int n) {
+	protected void add(int n) {
 		sum += n;
 		if (sum >= mod) {
-			cyo.set(0, true);
 			sum -= mod;
-		}
-	}
-
-	private void sub(int n) {
-		sum -= n;
-		if (sum < 0) {
 			cyo.set(0, true);
-			sum += mod;
 		}
+		nbt.set(0, (sum >= sgn));
 	}
 
 	// Called by CounterEntry.putCol() and Carry
@@ -136,15 +139,15 @@ public class Counter extends ProgStart {
 		if (!add && !sub) {
 			return;
 		}
+		if (!add) { // TODO: if both, 'add' overrides?
+			val = 9 - val;
+			credit.set(0, true);
+		}
 		if (dig < 0 || dig >= width || val == 0) {
 			return;
 		}
 		dig = width - dig - 1;	// '0' is now LSD
 		int f = (val * pow[dig]);
-		if (add) {
-			add(f);
-		} else {
-			sub(f);
-		}
+		add(f);
 	}
 }

@@ -42,9 +42,17 @@ the following are supported:
 <TR><TD>COMPARING EXIT</TD><TD>(1)</TD><TD>Comparator (2)</TD><TD>c1x - c20x</TD></TR>
 <TR><TD>COUNTER CONTROL</TD><TD>2A - 8D</TD><TD>Counters</TD><TD>2ap - 8dp (PLUS)<BR>
 							2am - 8dm (MINUS)</TD></TR>
-<TR><TD>COUNTER CARRY</TD><TD>2A - 8D</TD><TD>Counter carry out</TD><TD>2ay - 8dy</TD></TR>
+<TR><TD>COUNTER CARRY</TD><TD>2A - 8D</TD><TD>Counter carry (4)</TD><TD>2ay - 8dy</TD></TR>
+<TR><TD>NEGATIVE BALANCE</TD><TD>2A - 8D</TD><TD>Counter neg. bal. (4)</TD><TD>2an - 8dn</TD></TR>
 <TR><TD>TOTAL</TD><TD>2A - 8D</TD><TD>Counter print/reset</TD><TD>2at - 8dt</TD></TR>
 <TR><TD>CR SYMBOL</TD><TD>2A - 8D</TD><TD>Credit symbol printing</TD><TD>2ac - 8dc</TD></TR>
+<TR><TD ROWSPAN=6>PILOT SELECTORS</TD>
+	    <TD>X PU</TD><TD>X pick-up</TD><TD>s1x - s11x</TD></TR>
+	<TR><TD>D PU</TD><TD>digit pick-up</TD><TD>s1d - s11d</TD></TR>
+	<TR><TD>I PU</TD><TD>immediate pick-up</TD><TD>s1i - s11i</TD></TR>
+	<TR><TD>T</TD><TD>transfer position</TD><TD>s1t1 - s11t<I>N</I></TD></TR>
+	<TR><TD>N</TD><TD>normal position</TD><TD>s1n1 - s11n<I>N</I></TD></TR>
+	<TR><TD>C</TD><TD>common position</TD><TD>s1c1 - s11c<I>N</I></TD></TR>
 <TR><TD>* SYMBOL</TD><TD>F,1,2,3,ALL</TD><TD>Asterisk printing</TD><TD>aster{f,1,2,3,all}</TD></TR>
 <TR><TD>TOTAL PROGRAM</TD><TD>MINOR,INTER,MAJOR</TD><TD>Grouping cycles</TD><TD>{minor,inter,major}</TD></TR>
 <TR><TD>ALL CYCLES</TD><TD>(1)</TD><TD>All cycles</TD><TD>all</TD></TR>
@@ -60,6 +68,7 @@ the following are supported:
 <BR>(1) Hubs are not labeled, implied that left-most is "1" if relavent.
 <BR>(2) Comparator exits are chained automatically based on entry field(s).
 <BR>(3) Added to property for ALPHAMERICAL/NUMERICAL PRINT entry.
+<BR>(4) Item is either the EXIT or corresponding ENTRY depending on context.
 
 <P>Property names are expected to represent ENTRY hubs, and generally do not contain
 a width (field width is determined by source(s)).
@@ -70,6 +79,11 @@ sets of hubs in a given property will be the same width, and that width determin
 the property width.
 
 <P>Single items (cycles, controls, etc) must not have a field width specified.
+
+<P>Selectors do not have a limit on positions (contact sets).
+<I>N</I> may be any practical number (CO-SELECTORS are not needed).
+The position numbers should start at "1" and be kept contiguous.
+Keep in mind that related C, N, and T contacts must have the same position number.
 
 <P><B>Example 1:</B> comparing a field (current and previous card). Field starts at card
 column 10 and is 4 columns wide. Compare triggers "minor" group.
@@ -104,6 +118,27 @@ on the type bars in the printer (and not by wires on the control panel).
 This property parameter defines
 zero suppression for the field automatically, which is a compromise implementation.
 </UL>
+
+<P><B>Example 3:</B> Setting a counter for data-controlled plus/minus and
+negative balances. Card column 54 contains an X punch ('&') for negative data.
+Card columns 40-47 contain the numerical data.
+<UL><PRE>
+8a1 = 3.40*8
+s1x = 2.54
+s1c1 = cards
+8ap = s1n1
+8am = s1t1
+8ay = 8ay
+8an = 8an
+</PRE>
+<P>Line 1 directs the input data to the counter.
+Lines 2-5 setup the X-punch selection of plus/minus from column 54.
+Lines 6,7 configure the counter to handle negative balances,
+by looping back the CARRY impulse and connecting NEGATIVE BALANCE TEST EXIT
+to NEGATIVE BALANCE CONTROL.
+<P>It is required that all ENTRY hubs of a counter be supplied with data
+in order to properly perform minus operations. Unknown if original hardware
+had the same restriction. Blanks are treated as zeros.
 
 </BODY>
 </HTML>

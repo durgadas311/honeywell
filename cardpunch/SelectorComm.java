@@ -1,5 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
+import java.util.Arrays;
+
 class SelectorComm extends ProgItem {
 	ProgStart that;
 	SelectorNorm norm;
@@ -81,5 +83,13 @@ class SelectorComm extends ProgItem {
 		if (ents[x] != null) {
 			ents[x].trigger(p, c);
 		}
+	}
+
+	public void resize(int w) {
+		if (w <= ents.length) {
+			return;
+		}
+		ProgStart[] ne = Arrays.copyOf(ents, w);
+		ents = ne;
 	}
 }

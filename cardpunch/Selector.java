@@ -29,6 +29,12 @@ public class Selector extends ProgStart {
 		next = false;
 	}
 
+	public void resize(int w) {
+		comm.resize(w);
+		norm.resize(w);
+		tran.resize(w);
+	}
+
 	public SelectorComm C() { return comm; }
 	public SelectorNorm N() { return norm; }
 	public SelectorTran T() { return tran; }
