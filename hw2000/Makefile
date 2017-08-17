@@ -28,7 +28,8 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	mod1test1.ezc mod1test2.ezc mod1test3.ezc \
 	mmbtest1.ezc mmbtest2.ezc mmbtest3.ezc \
 	brfloader.ezc mod1loader.ezc superv.ezc \
-	barberpole.mti prog3.pcd 1eof.pcd example.pcd
+	barberpole.mti prog3.pcd 1eof.pcd example.pcd \
+	master1.pcd detail1.pcd
 
 SHIPS = H2000.jar hwprogs.tgz h2000.tgz
 

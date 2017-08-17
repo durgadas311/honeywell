@@ -1,0 +1,104 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<H3>Punch Card Data Processing Examples</H3>
+
+<H4>Overview</H4>
+
+<P>This set of examples takes you through a typical data processing
+sequence for a company. The card deck "master1.pcd" contains a set
+of customer "master" cards, each containing static information about a customer
+along with that customer's current balance.
+Credit balances are indicated by an "X" punch ('&' character) in column 40.
+These cards are kept in sorted order by customer ID, as a convenience.
+The file "detail1.pcd" contains customer transactions (e.g. purchases and
+payments).
+Payments are indicated by an "X" punch ('&' character) in column 40.
+These cards are not sorted, as they typically would come straight from
+data entry where they were punched from paper invoices - which were likely
+processed in chronological order, plus possibly punched by several different
+operators and then arbitrarely combined.
+
+<P>In order to process a month's transactions, first the detail cards
+need to be sorted by customer ID (using the sorter).
+Then, the detail cards and master cards need to be merged such that
+each customer card is followed by their transaction cards (using the collator).
+Finally, this combined deck of master-detail cards is passed through
+the accounting machine to produce a report and also to punch new customer
+master cards with updated balances (on the summary punch). These new
+customer master cards become the input for the next month's processing.
+The original master and details cards might be archived, but are
+otherwise not normally used again.
+
+<H4>The Data</H4>
+
+The customer master cards ("master1") contain data in the following format:
+<P><TABLE BORDER>
+<TR><TH>Columns</TH><TH>Contents</TH></TR>
+<TR><TD>1-4</TD><TD>Customer ID (numeric)</TD></TR>
+<TR><TD>5-19</TD><TD>First name (alphabetic)</TD></TR>
+<TR><TD>20-34</TD><TD>Last name (alphabetic)</TD></TR>
+<TR><TD>35-39</TD><TD>Zip code (numeric)</TD></TR>
+<TR><TD>40</TD><TD>"X" punch ('&') for credit</TD></TR>
+<TR><TD>41-48</TD><TD>Balance (numeric, 2 decimal positions)</TD></TR>
+</TABLE>
+
+<P>The transaction (detail) cards ("detail1") contain the following data:
+<P><TABLE BORDER>
+<TR><TH>Columns</TH><TH>Contents</TH></TR>
+<TR><TD>1-4</TD><TD>Customer ID (numeric)</TD></TR>
+<TR><TD>40</TD><TD>"X" punch ('&') for payments</TD></TR>
+<TR><TD>41-48</TD><TD>Transaction Amount (numeric, 2 decimal positions)</TD></TR>
+</TABLE>
+
+<H4>Step 1 - Sort detail records</H4>
+<P>Start the DataCenter application, which provides central access to all
+punch-card data processing equipment.
+
+<P>NOTE: card decks may be viewed using the "Viewer" application,
+available in the "File" menu. Only saved files may be viewed, not the
+contents of hoppers or stackers.
+
+<P>Customer ID is in columns 1-4. Sorting must begin at column 4 and work
+towards column 1.
+<OL>
+<LI>Start the Sorter. Ensure setup is for numeric sorting.
+<LI>Load "detail1" into the hopper.
+<LI>Set column to 4.
+<LI>Press START. Once completed, ensure no cards were rejected.
+<LI>Click on the pockets, ensure pockets 0-9 are selected and that
+reverse picking (L-R) is NOT enabled. Set the RECYCLE option. Accept.
+<LI>Set column to 3.
+<LI>Repeat at step 4, reducing column by 1 each time, until completing column
+1. Do not select RECYCLE for column 1 results, instead save into a new file.
+The following steps assume the saved file was "detail1s".
+</OL>
+<H4>Step 2 - Merge master/detail records</H4>
+<OL>
+<LI>Start the Collator.
+<LI>Load program panel "merge1".
+<LI>Load "detail1s" into the SECONDARY hopper.
+<LI>Load "master1" into the PRIMARY hopper.
+<LI>Press START. Once the collator stops, press RUNOUT. All cards should be in
+pocket/stacker 2.
+<LI>Click on the pockets (stackers) and save to a new file. For this example,
+the new file is assumed to be "records1".
+</OL>
+<H4>Step 3 - Compute new balances</H4>
+<OL>
+<LI>Start the Accounting Machine.
+<LI>Load program panel "report1".
+<LI>Load "records1" in the hopper.
+<LI>(TODO: setup summary punch)
+<LI>Press START. When the machine stops, press FINAL TOTAL.
+<LI>Use the "Paper" menu to save the report in a text file.
+<LI>(TODO: save summary punch cards in "master2")
+</OL>
+
+</BODY>
+</HTML>
+
+
+</BODY>
+</HTML>
