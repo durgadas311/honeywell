@@ -7,7 +7,7 @@ import java.io.*;
 import java.awt.event.*;
 import java.util.Arrays;
 
-class CardSorter implements ActionListener, Runnable
+class CardSorter implements Machine, ActionListener, Runnable
 {
 	static final long serialVersionUID = 311614000000L;
 
@@ -83,6 +83,9 @@ class CardSorter implements ActionListener, Runnable
 	SuffFileChooser ch;
 
 	public JMenu[] getMenu() { return _menus; }
+	public JFrame getFrame() { return _frame; }
+	public void setQuitListener(ActionListener lstn) { quit = lstn; }
+	private ActionListener quit = null;
 
 	// Order of stackers, L-R
 	int[] order = new int[]{
@@ -133,6 +136,7 @@ class CardSorter implements ActionListener, Runnable
 				inhibits[x].setIcon(gry);
 				inhibits[x].setSelectedIcon(blk);
 				inhibits[x].setPressedIcon(blk);
+				inhibits[x].setFocusable(false);
 			}
 		}
 		rev_pick = new JCheckBox("Pick L-R");
@@ -144,6 +148,7 @@ class CardSorter implements ActionListener, Runnable
 		alphabetic.setSelectedIcon(red);
 		alphabetic.setPressedIcon(red);
 		alphabetic.addActionListener(this);
+		alphabetic.setFocusable(false);
 		start = new JButton("START");
 		start.setActionCommand("start");
 		start.addActionListener(this);
@@ -660,7 +665,11 @@ class CardSorter implements ActionListener, Runnable
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed
-			System.exit(0);
+			if (quit != null) {
+				quit.actionPerformed(new ActionEvent(this, e.getID(), "quit"));
+			} else {
+				System.exit(0);
+			}
 		} else if (m.getMnemonic() == KeyEvent.VK_A) {
 			showAbout();
 		} else if (m.getMnemonic() == KeyEvent.VK_H) {

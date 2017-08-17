@@ -6,7 +6,7 @@ all: $(CLASSES)
 %.class: %.java
 	javac -source 1.7 -target 1.7 $?
 
-jar: CardPunch.jar Sorter.jar Accounting.jar Collator.jar Viewer.jar
+jar: CardPunch.jar Viewer.jar DataCenter.jar
 
 CardPunch.jar: all docs/About.html
 	echo "Main-Class: CardPunch" >Manifest.txt
@@ -28,9 +28,15 @@ Collator.jar: all docs/About4.html
 	jar cfm $@ Manifest.txt *.ttf *.class \
 		icons/*.png docs/*
 
-Viewer.jar: all docs/About2.html
+Viewer.jar: all
 	echo "Main-Class: Viewer" >Manifest.txt
 	jar cfm $@ Manifest.txt *.ttf *.class \
+		icons/*.png docs/*
+
+# All apps from a single control center...
+DataCenter.jar: all docs/About2.html docs/About3.html docs/About4.html
+	echo "Main-Class: DataCenter" >Manifest.txt
+	jar cfm $@ Manifest.txt *.ttf PunchCard*.png *.class \
 		icons/*.png docs/*
 
 docs/About.html: __FRC__

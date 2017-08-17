@@ -8,7 +8,7 @@ import java.io.*;
 import java.awt.event.*;
 import java.util.Arrays;
 
-class CardViewer implements ActionListener
+class CardViewer implements Machine, ActionListener
 {
 	JFrame _frame;
 
@@ -36,8 +36,11 @@ class CardViewer implements ActionListener
 	Font f026;
 
 	public JMenu[] getMenu() { return _menus; }
+	public JFrame getFrame() { return _frame; }
+	public void setQuitListener(ActionListener lstn) { quit = lstn; }
+	private ActionListener quit = null;
 
-	public CardViewer(JFrame frame) {
+	public CardViewer(JFrame frame, boolean i029) {
 		_frame = frame;
 
 		_cwd = new File(System.getProperty("user.dir"));
@@ -60,8 +63,6 @@ class CardViewer implements ActionListener
 
 		text = new JTextArea(10, 80);
 		text.setEditable(false);
-		text.setBackground(Color.white);
-		text.setFont(f222);
 		scroll = new JScrollPane(text);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -91,7 +92,15 @@ class CardViewer implements ActionListener
 		bg.add(ibm029);
 		bg.add(hw200);
 		bg.add(hw200spc);
-		hw200.setSelected(true);
+		if (i029) {
+			text.setFont(f029);
+			text.setBackground(CardHandler.buff1);
+			ibm029.setSelected(true);
+		} else {
+			text.setFont(f222);
+			text.setBackground(Color.white);
+			hw200.setSelected(true);
+		}
 
 		acc = new JPanel();
 		acc.setLayout(new BoxLayout(acc, BoxLayout.Y_AXIS));
@@ -206,6 +215,11 @@ class CardViewer implements ActionListener
 			System.err.format("Internal error: chosen file does not exist\n");
 			return;
 		}
+		if (hw200.isSelected() || hw200spc.isSelected()) {
+			text.setBackground(Color.white);
+		} else {
+			text.setBackground(CardHandler.buff1);
+		}
 		text.setText("");
 		while (hopper.getCard(_card) > 0) {
 			addCard(_card);
@@ -234,7 +248,11 @@ class CardViewer implements ActionListener
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed
-			System.exit(0);
+			if (quit != null) {
+				quit.actionPerformed(new ActionEvent(this, e.getID(), "quit"));
+			} else {
+				System.exit(0);
+			}
 		}
 	}
 }

@@ -13,7 +13,7 @@ import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
 class PunchCardDeck extends PunchCard
-		implements KeyListener, ActionListener, Runnable
+		implements Machine, KeyListener, ActionListener, Runnable
 {
 	static final long serialVersionUID = 311614000000L;
 
@@ -71,6 +71,9 @@ class PunchCardDeck extends PunchCard
 	ImageIcon pgm_off;
 
 	public JMenu[] getMenu() { return _menus; }
+	public JFrame getFrame() { return _frame; }
+	public void setQuitListener(ActionListener lstn) { quit = lstn; }
+	private ActionListener quit = null;
 
 	public Color getBg() { return hole; }
 
@@ -101,6 +104,7 @@ class PunchCardDeck extends PunchCard
 		}
 		_saveImage = opts.images;
 		_frame = frame;
+		_frame.setFocusTraversalKeysEnabled(false);
 		bb = new byte[1];
 
 		_cwd = new File(System.getProperty("user.dir"));
@@ -1187,7 +1191,11 @@ class PunchCardDeck extends PunchCard
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed
-			System.exit(0);
+			if (quit != null) {
+				quit.actionPerformed(new ActionEvent(this, e.getID(), "quit"));
+			} else {
+				System.exit(0);
+			}
 		} else if (m.getMnemonic() == KeyEvent.VK_L) {
 			File nu = pickFile("Load Prog Card", false,
 				"prc", "Program Card",

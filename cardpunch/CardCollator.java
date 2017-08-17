@@ -10,7 +10,7 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.Random;
 
-class CardCollator implements ActionListener, Runnable
+class CardCollator implements Machine, ActionListener, Runnable
 {
 	static final Color red = new Color(255, 120, 120);
 	static final Color grn = new Color(120, 255, 120);
@@ -201,6 +201,9 @@ class CardCollator implements ActionListener, Runnable
 	Selector[] selector;
 
 	public JMenu[] getMenu() { return _menus; }
+	public JFrame getFrame() { return _frame; }
+	public void setQuitListener(ActionListener lstn) { quit = lstn; }
+	private ActionListener quit = null;
 
 	public CardCollator(JFrame frame) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
@@ -261,9 +264,13 @@ class CardCollator implements ActionListener, Runnable
 		reset = makeButton("RESET", "reset", Color.black, Color.white, 1.0);
 		// TODO: make indicators...
 		ready = makeButton("READY", null, off, Color.black, 1.0);
+		ready.setFocusable(false);
 		error = makeButton("ERROR", null, off, Color.black, 1.0);
+		error.setFocusable(false);
 		bcd1 = makeButton("BCD 1", null, off, Color.black, 1.0);
+		bcd1.setFocusable(false);
 		bcd2 = makeButton("BCD 2", null, off, Color.black, 1.0);
+		bcd2.setFocusable(false);
 
 		_menus = new JMenu[3];
 		JMenu mu;
@@ -1182,7 +1189,11 @@ public static int ncards = 0;
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper1.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed
-			System.exit(0);
+			if (quit != null) {
+				quit.actionPerformed(new ActionEvent(this, e.getID(), "quit"));
+			} else {
+				System.exit(0);
+			}
 		} else if (m.getMnemonic() == KeyEvent.VK_A) {
 			showAbout();
 		} else if (m.getMnemonic() == KeyEvent.VK_H) {

@@ -5,8 +5,7 @@ IndexOrderDefault Descending Date
 AddDescription "Honeywell Series 2000 Virtual Computer" H2000.jar
 AddDescription "Sample/Example EasyCoder programs and files" hwprogs.tgz
 AddDescription "Novelty Card Punch machine" CardPunch.jar
-AddDescription "Novelty Punch Card Sorter machine" Sorter.jar
-AddDescription "Novelty Punch Card Accounting machine" Accounting.jar
+AddDescription "Punch Card Machines launcher" DataCenter.jar
 AddDescription "Convenience Punch Card Viewer program" Viewer.jar
 AddDescription "Convenience off-line EasyCoder program" EasyCoder.jar
 AddDescription "H2000 Plugin for FORTRANIV compiler" Fortran4Embedded.jar

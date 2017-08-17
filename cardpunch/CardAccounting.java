@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.Vector;
 
-class CardAccounting implements ActionListener, Runnable
+class CardAccounting implements Machine, ActionListener, Runnable
 {
 	static final Color red = new Color(255, 120, 120);
 	static final Color off = new Color(190, 190, 180);
@@ -265,6 +265,9 @@ class CardAccounting implements ActionListener, Runnable
 	int caret;
 
 	public JMenu[] getMenu() { return _menus; }
+	public JFrame getFrame() { return _frame; }
+	public void setQuitListener(ActionListener lstn) { quit = lstn; }
+	private ActionListener quit = null;
 
 	public CardAccounting(JFrame frame) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
@@ -320,15 +323,21 @@ class CardAccounting implements ActionListener, Runnable
 		total = makeButton("FINAL<BR>TOTAL", "total", Color.black, Color.white);
 		// TODO: make indicators...
 		idle = makeButton("", null, off, Color.black);
+		idle.setFocusable(false);
 		stopd = makeButton("STOP", null, off, Color.black);
+		stopd.setFocusable(false);
 		fuse = makeButton("FUSE", null, off, Color.black);
+		fuse.setFocusable(false);
 		form = makeButton("FORM", null, off, Color.black);
+		form.setFocusable(false);
 		feed = makeButton("CARD<BR>FEED<BR>STOP", null, off, Color.black);
+		feed.setFocusable(false);
 
 		text = new JTextArea(20, 89);
 		text.setEditable(false);
 		text.setBackground(Color.white);
 		text.setFont(new Font("Monospaced", Font.PLAIN, 10));
+		text.setFocusable(false);
 		scroll = new JScrollPane(text);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -1202,7 +1211,11 @@ public static int ncards = 0;
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed
-			System.exit(0);
+			if (quit != null) {
+				quit.actionPerformed(new ActionEvent(this, e.getID(), "quit"));
+			} else {
+				System.exit(0);
+			}
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
 			File f = pickFile("Save Report",
 					"txt", "Text Files", _prevPapr, null);
