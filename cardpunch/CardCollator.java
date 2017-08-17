@@ -204,10 +204,12 @@ class CardCollator implements Machine, ActionListener, Runnable
 	public JFrame getFrame() { return _frame; }
 	public void setQuitListener(ActionListener lstn) { quit = lstn; }
 	private ActionListener quit = null;
+	String title;
 
 	public CardCollator(JFrame frame) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
+		title = _frame.getTitle();
 		ibm087 = false;	// TODO: configure
 		read1 = new ReadingItem(80);
 		read2 = new ReadingItem(80);
@@ -917,6 +919,7 @@ public static int ncards = 0;
 		if (errorStop) {
 			return;
 		}
+		_frame.setTitle(title + " (running)");
 		boolean cmp = ibm087 && zone.is();
 		// Need to start the cycles...
 		//allCycles.set(0, true);
@@ -1006,6 +1009,7 @@ public static int ncards = 0;
 		if (card1 == null && card1s == null && card2 == null) {
 			ready.setBackground(grn);
 		}
+		_frame.setTitle(title);
 	}
 
 	private File pickFile(String purpose,

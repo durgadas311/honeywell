@@ -86,6 +86,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 	public JFrame getFrame() { return _frame; }
 	public void setQuitListener(ActionListener lstn) { quit = lstn; }
 	private ActionListener quit = null;
+	String title;
 
 	// Order of stackers, L-R
 	int[] order = new int[]{
@@ -99,6 +100,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 	public CardSorter(JFrame frame) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
+		title = _frame.getTitle();
 		blk = new ImageIcon(getClass().getResource("icons/black-box.png"));
 		red = new ImageIcon(getClass().getResource("icons/red-box.png"));
 		gry = new ImageIcon(getClass().getResource("icons/gray-box.png"));
@@ -451,6 +453,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 	}
 
 	public void run() {
+		_frame.setTitle(title + " (running)");
 		int col = _col_lb.column;
 		int msk = getMask();
 		while (!stopped) {
@@ -471,6 +474,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}
+		_frame.setTitle(title);
 	}
 
 	private File pickFile(String purpose, boolean input,

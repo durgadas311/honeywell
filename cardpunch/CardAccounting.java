@@ -268,10 +268,12 @@ class CardAccounting implements Machine, ActionListener, Runnable
 	public JFrame getFrame() { return _frame; }
 	public void setQuitListener(ActionListener lstn) { quit = lstn; }
 	private ActionListener quit = null;
+	String title;
 
 	public CardAccounting(JFrame frame) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
+		title = _frame.getTitle();
 		ibm403 = false;	// TODO: configure
 		read1 = new ReadingItem(80);
 		read2 = new ReadingItem(80);
@@ -986,6 +988,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 public static int ncards = 0;
 
 	public void run() {
+		_frame.setTitle(title + " (running)");
 		idle.setBackground(off);
 		feed.setBackground(off); // OFF by what?
 		byte[] card1 = null;
@@ -1069,6 +1072,7 @@ public static int ncards = 0;
 			} catch (Exception ee) {}
 		}
 		idle.setBackground(red);
+		_frame.setTitle(title);
 	}
 
 	private File pickFile(String purpose,
