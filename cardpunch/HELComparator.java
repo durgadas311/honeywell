@@ -39,7 +39,7 @@ public class HELComparator {
 		}
 
 		// HIGH-EQUAL-LOW compare...
-		private int compare() {
+		private int compare(boolean mode) {
 			// fixed-width comparator
 			int n = width;
 			int c = 0;
@@ -48,7 +48,7 @@ public class HELComparator {
 				// TODO: don't use get()!
 				HELComparingEntry e1 = (HELComparingEntry)ents1.get(c);
 				HELComparingEntry e2 = (HELComparingEntry)ents2.get(c);
-				cmp = e1.compare(e2);
+				cmp = e1.compare(mode, e2);
 				if (cmp != 0) {
 					break;
 				}
@@ -58,11 +58,11 @@ public class HELComparator {
 			return cmp;
 		}
 
-		public void processExits() {
+		public void processExits(boolean mode) {
 			ents[0].set(false);
 			ents[1].set(false);
 			ents[2].set(false);
-			int cmp = compare();
+			int cmp = compare(mode);
 			switch (cmp) {
 			case -1:
 				ents[2].set(true);
@@ -98,7 +98,7 @@ public class HELComparator {
 	public ProgItem B() { return ents2; }
 	public ProgItem X() { return exits; }
 
-	public void processExits() {
-		exits.processExits();
+	public void processExits(boolean mode) {
+		exits.processExits(mode);
 	}
 }

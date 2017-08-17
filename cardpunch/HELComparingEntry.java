@@ -17,9 +17,14 @@ public char chr;
 	// special (zones 12, 11, 0, -) ([12],[11],[0][1] special cases)
 	// alpha (zones 12, 11, 0)
 	// numeric (no zone)
-	private int xlat(int p) {
+	// TODO: 087 ZONE switch enables zone punch detection.
+	// TODO: 085 only detects digit 1-9 punches?
+	private int xlat(boolean mode, int p) {
 		int n = 0;
 		int c = 0;
+		if (!mode) {
+			p &= 0x01ff; // digit 1-9 only
+		}
 		if (p == 0x0000) return 0;
 		if (p == 0x0800) return (0 << 4) + 16;
 		if (p == 0x0400) return (1 << 4) + 16;
@@ -40,9 +45,9 @@ public char chr;
 
 	// Order is: BLANK, special, A-Z, 0-9
 	// Returns 0 if equal, -1 if this < 'ent', +1 if this > 'ent'
-	public int compare(HELComparingEntry ent) {
+	public int compare(boolean mode, HELComparingEntry ent) {
 		if (punch == ent.punch) return 0;
-		if (xlat(punch) < xlat(ent.punch)) return -1;
+		if (xlat(mode, punch) < xlat(mode, ent.punch)) return -1;
 		return 1;
 	}
 }

@@ -192,6 +192,8 @@ class CardCollator implements ActionListener, Runnable
 	SingleEntry priSel;
 	SingleEntry secdySel3;
 	SingleEntry secdySel4;
+	// "switches"
+	ProgStart zone;
 
 	HELComparator sequence;
 	HELComparator selection;
@@ -226,6 +228,7 @@ class CardCollator implements ActionListener, Runnable
 		priSel = new SingleEntry();
 		secdySel3 = new SingleEntry();
 		secdySel4 = new SingleEntry();
+		zone = new ProgStart(false);
 
 		_cwd = new File(System.getProperty("user.dir"));
 		_prevProg = _prevDeck = _prevPapr = _cwd;
@@ -714,7 +717,7 @@ class CardCollator implements ActionListener, Runnable
 			}
 		} else if (p.equals("lowSecdy")) { // a.k.a. high Primary?
 			w = 1;
-			c = 1;
+			c = 1; // A() > B() : psN > ssN
 			rd = selection.X();
 		} else if (p.equals("equal")) {
 			w = 1;
@@ -726,15 +729,15 @@ class CardCollator implements ActionListener, Runnable
 			rd = selection.X();
 		} else if (p.equals("highSeq")) {
 			w = 1;
-			c = 1;
+			c = 3;
 			rd = sequence.X();
 		} else if (p.equals("equalSeq")) {
 			w = 1;
 			c = 2;
 			rd = sequence.X();
-		} else if (p.equals("lowSeq")) {
+		} else if (p.equals("lowSeq")) { // a.k.a. pqN > sqN
 			w = 1;
-			c = 3;
+			c = 1; // A() > B() : pqN > sqN
 			rd = sequence.X();
 		} else {
 			w = 1;
@@ -749,6 +752,17 @@ class CardCollator implements ActionListener, Runnable
 		}
 		--c;	// 0-based
 		return new ProgSet(rd, c, w);
+	}
+
+	private boolean getSwitch(String p, String v) {
+		ProgStart ps = null;
+		if (p.equals("zone")) {
+			ps = zone;
+		}
+		if (ps != null) {
+			ps.set(v.equals("on"));
+		}
+		return (ps != null);
 	}
 
 	private void loadProgram(String prog) {
@@ -769,6 +783,7 @@ class CardCollator implements ActionListener, Runnable
 		priSel.reset();
 		secdySel3.reset();
 		secdySel4.reset();
+		zone.reset();
 		//
 		props = new Properties();
 		try {
@@ -779,7 +794,11 @@ class CardCollator implements ActionListener, Runnable
 		}
 		// TODO: aN=3.x requires zN=2.x, produce erroneous output if not wired.
 		for (String prop : props.stringPropertyNames()) {
-			String[] vals = props.getProperty(prop).split("\\s");
+			String p = props.getProperty(prop);
+			if (getSwitch(prop, p)) {
+				continue;
+			}
+			String[] vals = p.split("\\s");
 			Vector<ProgSet> pv = new Vector<ProgSet>();
 			ProgSet p1 = parseItem(prop, 1);
 			if (p1 == null) {
@@ -787,12 +806,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 				continue;
 			}
 			int n = p1.wid;
-			boolean zero = false;
 			for (String val : vals) {
-				if (val.equals("zero")) {
-					zero = true;
-					continue;
-				}
 				ProgSet p2 = parseItem(val, 0);
 				if (p2 == null) {
 System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
@@ -896,6 +910,7 @@ public static int ncards = 0;
 		if (errorStop) {
 			return;
 		}
+		boolean cmp = ibm087 && zone.is();
 		// Need to start the cycles...
 		//allCycles.set(0, true);
 		// TODO: supposed to stop when last card fed, not when
@@ -942,10 +957,10 @@ public static int ncards = 0;
 			}
 			if (card1 != null) {
 				if (card1s != null) {
-					sequence.processExits();
+					sequence.processExits(cmp);
 				}
 				if (card2 != null) {
-					selection.processExits();
+					selection.processExits(cmp);
 				}
 			}
 			if (priSel.is(0)) {
