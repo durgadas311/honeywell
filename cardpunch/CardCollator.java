@@ -218,7 +218,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 		card2 = null;
 		card1s = null;
 		counter = new Counter[1];
-		selector = new Selector[2];
+		selector = new Selector[5];
 		sequence = new HELComparator(16);
 		selection = new HELComparator(16);
 
@@ -578,6 +578,10 @@ class CardCollator implements Machine, ActionListener, Runnable
 		stk_rev = new JCheckBox("Pick L-R");
 		gb.setConstraints(stk_rev, gc);
 		acc2.add(stk_rev);
+		stk_cb1.setSelected(true);
+		stk_cb2.setSelected(true);
+		stk_cb3.setSelected(true);
+		stk_cb4.setSelected(true);
 
 		ready.setBackground(grn);
 	}
@@ -695,7 +699,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 				rd = selection.B();
 			}
 		} else if (p.matches("[ps]q[0-9]+")) {
-			// Selector Comparing entry
+			// Sequence Comparing entry
 			char t = p.charAt(0);
 			c = Integer.valueOf(p.substring(2));
 			if (t == 'p') {
@@ -711,7 +715,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 			// SELECTOR C/N/T contacts
 			i = p.length() - 1;
 			char t = p.charAt(i);
-			int sel = getSelector(p.substring(1, i));
+			int sel = getSelector(p.substring(2, i));
 			c = 1;
 			selector[sel].resize(c); // 'c' is still +1 == width
 			if (t == 'c') {
@@ -925,12 +929,18 @@ public static int ncards = 0;
 		//allCycles.set(0, true);
 		// TODO: supposed to stop when last card fed, not when
 		// feeding next card failed...
-		// TODO: does RUNOUT feed cards or only eject?
+		if (runningOut) {
+			out1 = stacker2;
+			out2 = stacker2;
+		}
 		while (!stopped) {
 			boolean empty = false;
 			allCycles.set(0, true);
 			allCards.set(0, true);
-			if (card2 == null && !runningOut && secdyFd.is(0)) {
+			if (card2 == null || runningOut || secdyFd.is(0)) {
+				if (card2 != null) {
+					out2.putCard(card2);
+				}
 				card2 = new byte[2*80];
 				int c = hopper2.getCard(card2);
 				if (c < 0) {
@@ -938,7 +948,11 @@ public static int ncards = 0;
 					card2 = null;
 				}
 			}
-			if (card1s == null && !runningOut && priFeed.is(0)) {
+			if (card1s == null || runningOut || priFeed.is(0)) {
+				if (card1 != null) {
+					out1.putCard(card1);
+				}
+				card1 = card1s;
 				card1s = new byte[2*80];
 				int c = hopper1.getCard(card1s);
 				if (c < 0) {
@@ -985,15 +999,6 @@ public static int ncards = 0;
 			} else {
 				out2 = stacker2;
 			}
-			if (card1 != null) {
-				out1.putCard(card1);
-			}
-			card1 = card1s;
-			card1s = null;
-			if (card2 != null) {
-				out2.putCard(card2);
-			}
-			card2 = null;
 			impulseCycle(allCards);	// End ALL CARDS cycle
 			if (errStp.is(0) && !runningOut) {
 				errorStop = true;

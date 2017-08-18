@@ -29,7 +29,7 @@ PROGS = machin.ezc mcetests.ezc monitor.ezc \
 	mmbtest1.ezc mmbtest2.ezc mmbtest3.ezc \
 	brfloader.ezc mod1loader.ezc superv.ezc \
 	barberpole.mti prog3.pcd 1eof.pcd example.pcd \
-	master1.pcd detail1.pcd
+	master1.pcd detail1.pcd report1.40x merge1.08x
 
 SHIPS = H2000.jar hwprogs.tgz h2000.tgz
 
@@ -64,6 +64,7 @@ h2000.tgz: $(JAVAS) Makefile
 		hw2000/bringup/*.out \
 		fortran4/progs \
 		cardpunch/PunchCard*.png \
+		cardpunch/progs \
 		cardpunch/*.ttf
 
 H2000.jar: all docs/About.html

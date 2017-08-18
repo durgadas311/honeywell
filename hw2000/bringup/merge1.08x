@@ -1,0 +1,8 @@
+# select by customer id
+ps1 = p.1*4
+ss1 = s.1*4
+# setup selector for low secondary
+pu1 = lowSecdy
+pu1c = all
+secdyFd = pu1t
+priFeed = pu1n
