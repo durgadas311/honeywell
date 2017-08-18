@@ -270,7 +270,8 @@ class CardAccounting implements Machine, ActionListener, Runnable
 	private ActionListener quit = null;
 	String title;
 
-	public CardAccounting(JFrame frame) {
+	// TODO: 'summ' is ReproducingPunch a.k.a. Summary Punch
+	public CardAccounting(JFrame frame, Object summ) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
 		title = _frame.getTitle();

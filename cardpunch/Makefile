@@ -34,7 +34,7 @@ Viewer.jar: all
 		icons/*.png docs/*
 
 # All apps from a single control center...
-DataCenter.jar: all docs/About2.html docs/About3.html docs/About4.html
+DataCenter.jar: all docs/About2.html docs/About3.html docs/About4.html docs/About5.html
 	echo "Main-Class: DataCenter" >Manifest.txt
 	jar cfm $@ Manifest.txt *.ttf PunchCard*.png *.class \
 		icons/*.png docs/*
@@ -50,6 +50,9 @@ docs/About3.html: __FRC__
 
 docs/About4.html: __FRC__
 	./mkAbout4 >$@
+
+docs/About5.html: __FRC__
+	./mkAbout5 >$@
 
 www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/sims/punchcards

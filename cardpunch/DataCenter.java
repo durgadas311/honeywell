@@ -26,8 +26,9 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 	static final int SORTER = 1;
 	static final int COLLATOR = 2;
 	static final int ACCOUNTING = 3;
-	static final int VIEWER = 4;
-	static final int NUMACH = 5;
+	static final int PUNCH = 4;
+	static final int VIEWER = 5;
+	static final int NUMACH = 6;
 
 	private Machine[] machs;
 	Dimension bd = new Dimension(210, 210);
@@ -67,6 +68,9 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		mi = new JMenuItem("402 Accounting Mach", KeyEvent.VK_6);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("514 Reproducing Punch", KeyEvent.VK_7);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mb.add(mu);
 		setJMenuBar(mb);
 
@@ -95,13 +99,17 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		gb.setConstraints(bt, gc);
 		add(bt);
 		++gc.gridx;
-		gc.gridx = 0;
-		++gc.gridy;
 		bt = makeButton("085 Collator", "collator", "docs/ibm085-sm.png");
 		gb.setConstraints(bt, gc);
 		add(bt);
 		++gc.gridx;
+		gc.gridx = 0;
+		++gc.gridy;
 		bt = makeButton("402 Accounting Machine", "accounting", "docs/ibm402-sm.png");
+		gb.setConstraints(bt, gc);
+		add(bt);
+		++gc.gridx;
+		bt = makeButton("514 Reproducing Punch", "punch", "docs/ibm514-sm.png");
 		gb.setConstraints(bt, gc);
 		add(bt);
 		++gc.gridx;
@@ -125,7 +133,7 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		return bt;
 	}
 
-	private void openMach(int ix, String ttl, CardPunchOptions opts) {
+	private void openMach(int ix, String ttl, CardPunchOptions opts, boolean visib) {
 		if (machs[ix] != null) {
 			machs[ix].getFrame().setVisible(true);
 			// raise also?
@@ -147,7 +155,11 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 			break;
 		case ACCOUNTING:
 			// TODO: model options...
-			mach = new CardAccounting(frame);
+			//openMach(PUNCH, "IBM 514 Reproducing Punch", null, false);
+			mach = new CardAccounting(frame, machs[PUNCH]);
+			break;
+		case PUNCH:
+			// mach = new ReproducingPunch(frame);
 			break;
 		case VIEWER:
 			mach = new CardViewer(frame, true);
@@ -165,7 +177,7 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		frame.addWindowListener(this);
 		frame.getContentPane().setBackground(Color.gray);
 		frame.pack();
-		frame.setVisible(true);
+		frame.setVisible(visib);
 		mach.setQuitListener(this);
 		machs[ix] = mach;
 		if (ix == KEYPUNCH) {
@@ -179,13 +191,15 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 			String act = bt.getActionCommand();
 			if (act.equals("keypunch")) {
 				CardPunchOptions opts = new CardPunchOptions();
-				openMach(KEYPUNCH, "IBM 029 Keypunch", opts);
+				openMach(KEYPUNCH, "IBM 029 Keypunch", opts, true);
 			} else if (act.equals("sorter")) {
-				openMach(SORTER, "IBM 082 Sorter", null);
+				openMach(SORTER, "IBM 082 Sorter", null, true);
 			} else if (act.equals("collator")) {
-				openMach(COLLATOR, "IBM 085 Collator", null);
+				openMach(COLLATOR, "IBM 085 Collator", null, true);
 			} else if (act.equals("accounting")) {
-				openMach(ACCOUNTING, "IBM 402 Accounting Machine", null);
+				openMach(ACCOUNTING, "IBM 402 Accounting Machine", null, true);
+			} else if (act.equals("punch")) {
+				openMach(PUNCH, "IBM 514 Reproducing Punch", null, true);
 			}
 			return;
 		}
@@ -206,28 +220,31 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		if (m.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (m.getMnemonic() == KeyEvent.VK_V) {
-			openMach(VIEWER, "Punch Card Viewer", null);
+			openMach(VIEWER, "Punch Card Viewer", null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_1) {
 			CardPunchOptions opts = new CardPunchOptions();
-			openMach(KEYPUNCH, "IBM 029 Keypunch", opts);
+			openMach(KEYPUNCH, "IBM 029 Keypunch", opts, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_2) {
 			CardPunchOptions opts = new CardPunchOptions();
 			opts.ibm026 = true;
-			openMach(KEYPUNCH, "IBM 026 Keypunch", opts);
+			openMach(KEYPUNCH, "IBM 026 Keypunch", opts, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_3) {
 			CardPunchOptions opts = new CardPunchOptions();
 			opts.ibm026 = true;
 			opts.fortran = true;
-			openMach(KEYPUNCH, "IBM 026-H Keypunch", opts);
+			openMach(KEYPUNCH, "IBM 026-H Keypunch", opts, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_4) {
 			// TODO: options...
-			openMach(SORTER, "IBM 082 Sorter", null);
+			openMach(SORTER, "IBM 082 Sorter", null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_5) {
 			// TODO: options...
-			openMach(COLLATOR, "IBM 085 Collator", null);
+			openMach(COLLATOR, "IBM 085 Collator", null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_6) {
 			// TODO: options...
-			openMach(ACCOUNTING, "IBM 402 Accounting Machine", null);
+			openMach(ACCOUNTING, "IBM 402 Accounting Machine", null, true);
+		} else if (m.getMnemonic() == KeyEvent.VK_6) {
+			// TODO: options...
+			openMach(ACCOUNTING, "IBM 514 Reproducing Punch", null, true);
 		}
 	}
 
