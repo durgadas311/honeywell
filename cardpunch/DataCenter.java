@@ -155,11 +155,11 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 			break;
 		case ACCOUNTING:
 			// TODO: model options...
-			//openMach(PUNCH, "IBM 514 Reproducing Punch", null, false);
-			mach = new CardAccounting(frame, machs[PUNCH]);
+			openMach(PUNCH, "IBM 514 Reproducing Punch", null, false);
+			mach = new CardAccounting(frame, (ReproducingPunch)machs[PUNCH]);
 			break;
 		case PUNCH:
-			// mach = new ReproducingPunch(frame);
+			mach = new ReproducingPunch(frame);
 			break;
 		case VIEWER:
 			mach = new CardViewer(frame, true);

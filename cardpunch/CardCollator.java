@@ -125,6 +125,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 	boolean runningOut;
 	boolean errorStop;
 	boolean ibm087;
+	boolean progSet;
 	JPanel acc;
 	JPanel acc2;
 	JCheckBox acc_cb;
@@ -211,6 +212,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 		_frame = frame;
 		title = _frame.getTitle();
 		ibm087 = false;	// TODO: configure
+		progSet = false;
 		read1 = new ReadingItem(80);
 		read2 = new ReadingItem(80);
 		read1s = new ReadingItem(80);
@@ -278,7 +280,10 @@ class CardCollator implements Machine, ActionListener, Runnable
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
-		mi = new JMenuItem("Prog", KeyEvent.VK_P);
+		mi = new JMenuItem("Load Prog", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Unload Prog", KeyEvent.VK_U);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Discard", KeyEvent.VK_D);
@@ -779,25 +784,6 @@ class CardCollator implements Machine, ActionListener, Runnable
 	}
 
 	private void loadProgram(String prog) {
-		Arrays.fill(counter, null);
-		Arrays.fill(selector, null);
-		sequence.reset();
-		selection.reset();
-		read1.reset();
-		read2.reset();
-		read1s.reset();
-		// clear exits
-		allCards.reset();
-		allCycles.reset();
-		errStp.reset();
-		priFeed.reset();
-		priEject.reset();
-		secdyFd.reset();
-		priSel.reset();
-		secdySel3.reset();
-		secdySel4.reset();
-		zone.reset();
-		//
 		props = new Properties();
 		try {
 			InputStream is = new FileInputStream(prog);
@@ -840,6 +826,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 				}
 			}
 		}
+		progSet = true;
 	}
 
 	private JButton makeButton(String lab, String act, Color bg, Color fg, double sc) {
@@ -1047,12 +1034,34 @@ public static int ncards = 0;
 		_help.setVisible(true);
 	}
 
+	private void unProg() {
+		progSet = false;
+		Arrays.fill(counter, null);
+		Arrays.fill(selector, null);
+		sequence.reset();
+		selection.reset();
+		read1.reset();
+		read2.reset();
+		read1s.reset();
+		// clear exits
+		allCards.reset();
+		allCycles.reset();
+		errStp.reset();
+		priFeed.reset();
+		priEject.reset();
+		secdyFd.reset();
+		priSel.reset();
+		secdySel3.reset();
+		secdySel4.reset();
+		zone.reset();
+	}
 	private void getProg() {
 		File fi = pickFile("Get Prog", "08x", "IBM 08x Prog", _prevProg, null);
 		if (fi == null) {
 			return;
 		}
 		_prevProg = fi;
+		unProg();
 		loadProgram(fi.getAbsolutePath());
 	}
 
@@ -1193,6 +1202,8 @@ public static int ncards = 0;
 			stacker1.discardDeck();
 		} else if (m.getMnemonic() == KeyEvent.VK_P) {
 			getProg();
+		} else if (m.getMnemonic() == KeyEvent.VK_U) {
+			unProg();
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			deckAdd(hopper1);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {

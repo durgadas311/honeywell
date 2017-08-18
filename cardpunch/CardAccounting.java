@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.Vector;
 
-class CardAccounting implements Machine, ActionListener, Runnable
+class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 {
 	static final Color red = new Color(255, 120, 120);
 	static final Color off = new Color(190, 190, 180);
@@ -176,6 +176,32 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		}
 	}
 
+	class SummaryEntry extends ProgStart {
+		public SummaryEntry() {
+			super(true);
+		}
+		@Override
+		public void set(boolean b) {
+			super.set(b); // never watchers?
+			if (!b) return;
+			if (summary != null) {
+				summary.startPunch();
+			}
+		}
+	}
+	class SummaryItem extends SingleEntry {
+		public SummaryItem() {
+			super();
+		}
+		@Override
+		public ProgStart get(int x) {
+			if (ents[x] == null) {
+				ents[x] = new SummaryEntry();
+			}
+			return ents[x];
+		}
+	}
+
 	private String dumpSelectors() {
 		String ret = "";
 		for (int x = 0; x < selector.length; ++x) {
@@ -213,6 +239,7 @@ class CardAccounting implements Machine, ActionListener, Runnable
 
 	boolean stopped;
 	boolean ibm403;
+	boolean progSet;
 	JPanel acc;
 	JCheckBox acc_cb;
 	JTextArea acc_stk;
@@ -252,6 +279,8 @@ class CardAccounting implements Machine, ActionListener, Runnable
 	SingleEntry interStart;
 	SingleEntry majorStart;
 	SingleEntry listStart;
+	SummaryItem summPU;
+	ProgItem summPC;
 
 	// Special entry
 	PrintControl prtCtl;
@@ -269,13 +298,16 @@ class CardAccounting implements Machine, ActionListener, Runnable
 	public void setQuitListener(ActionListener lstn) { quit = lstn; }
 	private ActionListener quit = null;
 	String title;
+	ReproducingPunch summary;
 
 	// TODO: 'summ' is ReproducingPunch a.k.a. Summary Punch
-	public CardAccounting(JFrame frame, Object summ) {
+	public CardAccounting(JFrame frame, ReproducingPunch summ) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		_frame = frame;
+		summary = summ;
 		title = _frame.getTitle();
 		ibm403 = false;	// TODO: configure
+		progSet = false;
 		read1 = new ReadingItem(80);
 		read2 = new ReadingItem(80);
 		read3 = new ReadingItem(80);
@@ -284,6 +316,7 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		counter = new Counter[16];
 		selector = new Selector[12];
 		prtCtl = new PrintControl();
+		summPC = new ProgItem(12);
 
 		comparing = new Comparator(20);
 
@@ -309,6 +342,7 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		interStart = new SingleEntry(inter.get(0));
 		majorStart = new SingleEntry(major.get(0));
 		listStart = new SingleEntry(new PrintExit(prtCtl));
+		summPU = new SummaryItem();
 
 		_cwd = new File(System.getProperty("user.dir"));
 		_prevProg = _prevDeck = _prevPapr = _cwd;
@@ -351,7 +385,10 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
-		mi = new JMenuItem("Prog", KeyEvent.VK_P);
+		mi = new JMenuItem("Load Prog", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Unload Prog", KeyEvent.VK_U);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Discard", KeyEvent.VK_D);
@@ -600,6 +637,8 @@ class CardAccounting implements Machine, ActionListener, Runnable
 			return prtCtl.S2();
 		} else if (pm.equals("sp3")) {
 			return prtCtl.S3();
+		} else if (pm.equals("sppu")) {
+			return summPU;
 		}
 		return null;
 	}
@@ -648,11 +687,22 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		int w = p.charAt(0) - '0';	// 2,4,6,8
 		int ctr = (w - 2) << 1;		// (0,2,4,6) 0,4,8,12
 		ctr |= (p.charAt(1) - 'a');	// 0..15
+		_getCounter(ctr);
+		return ctr;
+	}
+
+	private void _getCounter(int ctr) {
 		if (counter[ctr] == null) {
+			int w = ((ctr & 0x1c) >> 1) + 2;
 			counter[ctr] = new Counter(w);
 			counter[ctr].TOTAL().get(0).addWatcher(new PrintExit(prtCtl));
 		}
-		return ctr;
+	}
+
+	// Puncher interface
+	public ProgItem counterExit(int ctr) {
+		_getCounter(ctr);
+		return counter[ctr].X();
 	}
 
 	// TODO: pass in width... ???
@@ -814,6 +864,13 @@ class CardAccounting implements Machine, ActionListener, Runnable
 				selector[sel].T().setExit(ctx == 0);
 				rd = selector[sel].T();
 			}
+		} else if (p.matches("sp[0-9]+")) {
+			// S.P. CONTROL ENTRY
+			w = 1; // TODO: only single width?
+			c = Integer.valueOf(p.substring(2));
+			if (summary != null) {
+				rd = summary.summaryEntry();
+			}
 		} else {
 			w = 1;
 			if (ctx == 0) {
@@ -829,32 +886,20 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		return new ProgSet(rd, c, w);
 	}
 
+	private void startSummaryPunch() {
+		if (summary != null) {
+			summary.connect(this);
+			_frame.toFront(); // re-assert ourself
+		}
+	}
+
+	private void stopSummaryPunch() {
+		if (summary != null) {
+			summary.connect(null);
+		}
+	}
+
 	private void loadProgram(String prog) {
-		Arrays.fill(counter, null);
-		Arrays.fill(selector, null);
-		comparing.reset();
-		read1.reset();
-		read2.reset();
-		read3.reset();
-		aprint.reset();
-		nprint.reset();
-		minorStart.reset();
-		interStart.reset();
-		majorStart.reset();
-		listStart.reset();
-		prtCtl.reset();
-		// clear exits
-		firstMinor.reset();
-		firstInter.reset();
-		firstMajor.reset();
-		firstBody.reset();
-		minor.reset();
-		inter.reset();
-		major.reset();
-		finalTotal.reset();
-		allCards.reset();
-		allCycles.reset();
-		//
 		major.linkEntry(0, 0, asterMajor.get(0));
 		inter.linkEntry(0, 0, asterInter.get(0));
 		minor.linkEntry(0, 0, asterMinor.get(0));
@@ -870,6 +915,11 @@ class CardAccounting implements Machine, ActionListener, Runnable
 		}
 		// TODO: aN=3.x requires zN=2.x, produce erroneous output if not wired.
 		for (String prop : props.stringPropertyNames()) {
+			String p = props.getProperty(prop);
+			if (prop.equals("sp") && p.equals("on")) {
+				startSummaryPunch();
+				continue;
+			}
 			String[] vals = props.getProperty(prop).split("\\s");
 			Vector<ProgSet> pv = new Vector<ProgSet>();
 			ProgSet p1 = parseItem(prop, 1);
@@ -912,6 +962,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 				}
 			}
 		}
+		progSet = true;
 	}
 
 	private JButton makeButton(String lab, String act, Color bg, Color fg) {
@@ -1106,12 +1157,42 @@ public static int ncards = 0;
 		_help.setVisible(true);
 	}
 
+	private void unProg() {
+		progSet = false;
+		Arrays.fill(counter, null);
+		Arrays.fill(selector, null);
+		comparing.reset();
+		read1.reset();
+		read2.reset();
+		read3.reset();
+		aprint.reset();
+		nprint.reset();
+		minorStart.reset();
+		interStart.reset();
+		majorStart.reset();
+		listStart.reset();
+		prtCtl.reset();
+		// clear exits
+		firstMinor.reset();
+		firstInter.reset();
+		firstMajor.reset();
+		firstBody.reset();
+		minor.reset();
+		inter.reset();
+		major.reset();
+		finalTotal.reset();
+		allCards.reset();
+		allCycles.reset();
+		stopSummaryPunch();
+	}
+
 	private void getProg() {
 		File fi = pickFile("Get Prog", "40x", "IBM 40x Prog", _prevProg, null);
 		if (fi == null) {
 			return;
 		}
 		_prevProg = fi;
+		unProg();
 		loadProgram(fi.getAbsolutePath());
 	}
 
@@ -1211,6 +1292,8 @@ public static int ncards = 0;
 			stacker.discardDeck();
 		} else if (m.getMnemonic() == KeyEvent.VK_P) {
 			getProg();
+		} else if (m.getMnemonic() == KeyEvent.VK_U) {
+			unProg();
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			deckAdd();
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {

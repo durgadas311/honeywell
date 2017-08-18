@@ -1,0 +1,83 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<H3>Reproducing Punch Machine Help</H3>
+
+<P>This is currently a minimal implementation of the IBM 514
+Reproducing Punch machines, also used as Summary Punch for
+the IBM 402 Accounting Machine.
+
+<P>The read hopper is located in the upper left, and the punch hopper in
+the upper middle.
+Read output stacker is in the lower middle, and punch stacker in the lower right.
+The program panel is implemented as a properties file.
+currently, this file must be edited external from the simulation.
+The START, STOP, and RESET buttons should function as on original equipment,
+with the exception that switches do not require holding down.
+The run rate is set to 20 cards per second.
+
+<P>Comparing magnets may be viewed in the opening between the two stackers.
+Control switches are located to the left of the stackers.
+
+<P>The hoppers/stackers are set to show 100 cards, with each card represented
+by a line of pixels. More cards may be in the hopper/stackers, in fact
+there is no practical limit (unlike original equipment). When a hopper/stacker
+has exceeded its display limit, there will be a red line on top of the stack.
+
+<P>Clicking on an input hopper will start a dialog to add a PCD file to the hopper.
+By default, this will add the new file after all existing files in the hopper,
+but the option "Remove All" may be used to clear the hopper first.
+Right clicking on a hopper will load blank cards.
+
+<P>Clicking on a stacker will start a dialog to save the cards.
+Right clicking on a stacker will empty it.
+
+<P>Programming is done by a "properties" file, that contains lines of the
+format "name = value". Referencing the original equipment programming panel,
+the following are supported:
+
+<P><TABLE BORDER>
+<TR><TH>Group</TH><TH>Hubs</TH><TH>Purpose</TH><TH>Property Syntax</TH></TR>
+<TR><TD>REPRODUCING BRUSHES</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>r.1 - r.80</TD></TR>
+<TR><TD>PUNCH BRUSHES</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>p.1 - p.80</TD></TR>
+<TR><TD>COMPARING BRUSHES</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>c.1 - c.80</TD></TR>
+<TR><TD>READ X BR.</TD><TD>1-80</TD><TD>Read X brushes 1-80</TD><TD>rx1 - rx80</TD></TR>
+<TR><TD>P X BR.</TD><TD>1-80</TD><TD>Punch X brushes 1-80</TD><TD>px1 - px80</TD></TR>
+<TR><TD>PUNCH MAGNETS</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>pm1 - pm80</TD></TR>
+<TR><TD>COMP. MAG FROM PUNCH BRUSHES</TD><TD>1-80</TD><TD>Comparator</TD><TD>c1p - c80p</TD></TR>
+<TR><TD>COMP. MAG FROM COMPARING BRUSHES</TD><TD>1-80</TD><TD>Comparator</TD><TD>c1c - c80c</TD></TR>
+<TR><TD>CTR TOT EXIT</TD><TD>2A-8D</TD><TD>Counters (Summary Punch)</TD><TD>2a1 - 8d8</TD></TR>
+<TR><TD ROWSPAN=6>SELECTOR 1/2</TD>
+	    <TD>R</TD><TD>R pick-up</TD><TD>s1r - s2r</TD></TR>
+	<TR><TD>P</TD><TD>P pick-up</TD><TD>s1p - s2p</TD></TR>
+	<TR><TD>I</TD><TD>I pick-up</TD><TD>s1i - s2i</TD></TR>
+	<TR><TD>T</TD><TD>transfer position</TD><TD>s1t1 - s2t<I>N</I></TD></TR>
+	<TR><TD>N</TD><TD>normal position</TD><TD>s1n1 - s2n<I>N</I></TD></TR>
+	<TR><TD>C</TD><TD>common position</TD><TD>s1c1 - s2c<I>N</I></TD></TR>
+<TR><TD>SUM X PCH CTRL</TD><TD>+1- thru +7-</TD><TD>unknown</TD><TD>x1+,x1- - x7+,x7-</TD></TR>
+<TR><TD ROWSPAN=3>COLUMN SPLITS</TD>
+	    <TD>11-12</TD><TD>11/12 zone punches</TD><TD>cs1x - cs10x</TD></TR>
+	    <TD>0-9</TD><TD>0-9 digit punches</TD><TD>cs1d - cs10d</TD></TR>
+	    <TD>COM</TD><TD>common</TD><TD>cs1c - cs10c</TD></TR>
+</TABLE>
+
+<P>Notes:
+
+<P>Property names are expected to represent ENTRY hubs, and generally do not contain
+a width (field width is determined by source(s)).
+
+<P>In the property value, a set of hubs (a field) may be designated by adding an
+asterisk and the number of hubs in the field. It is generally expected that all
+sets of hubs in a given property will be the same width, and that width determines
+the property width.
+
+<P>Single items (cycles, controls, etc) must not have a field width specified.
+
+<P>Selectors do not have a limit on positions (contact sets).
+<I>N</I> may be any practical number (CO-SELECTORS are not needed).
+The position numbers should start at "1" and be kept contiguous.
+Keep in mind that related C, N, and T contacts must have the same position number.
+
+</BODY>
+</HTML>
