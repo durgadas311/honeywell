@@ -11,11 +11,22 @@ class CardSorter implements Machine, ActionListener, Runnable
 {
 	static final long serialVersionUID = 311614000000L;
 
-	class ColumnSelector extends JLabel implements MouseListener {
+	class ColumnSelector extends JPanel implements MouseListener {
 		public int column;
+		private JLabel cntr;
 
 		public ColumnSelector() {
-			super("1");
+			super();
+			setPreferredSize(new Dimension(40, 40));
+			setOpaque(false);
+			setBackground(new Color(150,150,150));
+			cntr = new JLabel(" 1");
+			cntr.setPreferredSize(new Dimension(20, 20));
+			cntr.setBackground(new Color(200,200,200));
+			cntr.setOpaque(true);
+			cntr.setFocusable(false);
+			cntr.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+			add(cntr);
 			column = 1;
 			addMouseListener(this);
 		}
@@ -39,11 +50,17 @@ class CardSorter implements Machine, ActionListener, Runnable
 			}
 			if (col != column) {
 				column = col;
-				setText(String.format("%d", column));
+				cntr.setText(String.format("%2d", column));
 			}
 		}
-		public void mouseEntered(MouseEvent e) {}
-		public void mouseExited(MouseEvent e) {}
+		public void mouseEntered(MouseEvent e) {
+			setOpaque(true);
+			repaint();
+		}
+		public void mouseExited(MouseEvent e) {
+			setOpaque(false);
+			repaint();
+		}
 		public void mousePressed(MouseEvent e) {}
 		public void mouseReleased(MouseEvent e) {}
 	}
@@ -200,11 +217,6 @@ class CardSorter implements Machine, ActionListener, Runnable
 		_help = new GenericHelp(frame.getTitle() + " Help", url);
 
 		_col_lb = new ColumnSelector();
-		_col_lb.setPreferredSize(new Dimension(20, 20));
-		_col_lb.setBackground(new Color(200,200,200));
-		_col_lb.setOpaque(true);
-		_col_lb.setFocusable(false);
-		_col_lb.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 
 		gb = new GridBagLayout();
 		frame.setLayout(gb);
