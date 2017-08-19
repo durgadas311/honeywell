@@ -191,7 +191,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	}
 	class SummaryItem extends SingleEntry {
 		public SummaryItem() {
-			super();
+			super(new SummaryEntry());
 		}
 		@Override
 		public ProgStart get(int x) {
