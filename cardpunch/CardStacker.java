@@ -208,16 +208,21 @@ public class CardStacker extends CardHandler implements MouseListener {
 		if (listener == null) {
 			return;
 		}
+		String act;
 		ActionEvent ae;
 		if (e.getButton() == MouseEvent.BUTTON1) {
-			ae = new ActionEvent(this, e.getID(), "left");
+			act = "left";
 		} else if (e.getButton() == MouseEvent.BUTTON2) {
-			ae = new ActionEvent(this, e.getID(), "middle");
+			act = "middle";
 		} else if (e.getButton() == MouseEvent.BUTTON3) {
-			ae = new ActionEvent(this, e.getID(), "right");
+			act = "right";
 		} else {
 			return;
 		}
+		if ((e.getModifiers() & InputEvent.SHIFT_MASK) != 0) {
+			act = act.toUpperCase();
+		}
+		ae = new ActionEvent(this, e.getID(), act);
 		listener.actionPerformed(ae);
 	}
 	public void mouseEntered(MouseEvent e) {}

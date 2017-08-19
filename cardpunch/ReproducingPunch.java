@@ -893,6 +893,8 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 
 	private boolean doOneCycle() {
 		boolean both = repro.isSelected();
+		boolean rfeed = true;
+		boolean pfeed = true;
 		//reading = repro.isSelected() || selre.isSelected();
 		//punching = repro.isSelected();
 		empty = false;
@@ -900,14 +902,20 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 		allCycles.set(0, true);
 		allCards.set(0, true);
 		if (both && (rhopper.stackCount() == 0 || phopper.stackCount() == 0)) {
-			// end cycle? or return later?
-			return true;
+			// stop feed both, runout cards...
+			rfeed = false;
+			pfeed = false;
+		} else {
+			rfeed = (rhopper.stackCount() > 0 || rcard2 != null);
+			pfeed = (phopper.stackCount() > 0 || pcard2 != null);
 		}
-		if (rhopper.stackCount() > 0 || rcard2 != null) {
-			if (rcard2 != null) {
-				rstacker.putCard(rcard2);
-			}
-			rcard2 = rcard1;
+		// Always advance cards, even if not feeding new ones...
+		if (rcard2 != null) {
+			rstacker.putCard(rcard2);
+		}
+		rcard2 = rcard1;
+		rcard1 = null;
+		if (rfeed) {
 			rcard1 = new byte[2*80];
 			int c = rhopper.getCard(rcard1);
 			if (c < 0) {
@@ -916,11 +924,12 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 			empty = empty || (rhopper.stackCount() == 0);
 			done = done || (rcard2 == null && rcard1 == null);
 		}
-		if (phopper.stackCount() > 0 || pcard2 != null) {
-			if (pcard2 != null) {
-				pstacker.putCard(pcard2);
-			}
-			pcard2 = pcard1;
+		if (pcard2 != null) {
+			pstacker.putCard(pcard2);
+		}
+		pcard2 = pcard1;
+		pcard1 = null;
+		if (pfeed) {
 			pcard1 = new byte[2*80];
 			int c = phopper.getCard(pcard1);
 			if (c < 0) {
@@ -1092,11 +1101,17 @@ public static int ncards = 0;
 			} else {
 				((CardStacker)obj).discardDeck();
 			}
+		} else if (act.equals("RIGHT")) {
+			if (obj == rhopper || obj == phopper) {
+				((CardHopper)obj).emptyHopper();
+			}
 		} else if (act.equals("left")) {
 			if (obj == rhopper || obj == phopper) {
 				deckAdd((CardHopper)obj);
-			} else {
+			} else if (obj == pstacker) {
 				deckSave((CardStacker)obj);
+			} else {
+				((CardStacker)obj).discardDeck();
 			}
 		}
 	}

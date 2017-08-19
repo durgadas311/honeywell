@@ -5,7 +5,6 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.util.Arrays;
-import java.util.Random; /////// DEBUG ///////
 
 public class ComparingMagnets extends JPanel implements MouseListener {
 	int width;
@@ -47,7 +46,6 @@ public class ComparingMagnets extends JPanel implements MouseListener {
 	private boolean any;
 	private Color off = new Color(170, 170, 170);
 	private Color on = new Color(200, 200, 170);
-Random rnd = new Random();
 
 	public ComparingMagnets(int wid) {
 		super();
@@ -104,14 +102,8 @@ Random rnd = new Random();
 		}
 	}
 	public void mouseClicked(MouseEvent e) {
-		if (e.getButton() == MouseEvent.BUTTON1) {
-for (int x = 0; x < mag.length; ++x) {
-if (rnd.nextBoolean()) miss(x);
-}
-		} else {
-			clear();
-			repaint();
-		}
+		clear();
+		repaint();
 	}
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
