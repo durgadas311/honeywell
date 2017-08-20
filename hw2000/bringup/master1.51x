@@ -1,0 +1,4 @@
+# Copy master data to new balance cards
+pm5 = r.5*35
+c1c = c.1*4
+c1p = p.1*4
