@@ -7,13 +7,20 @@ class ColumnSplitDigit extends ProgItem {
 
 	class N extends ProgStart {
 		int pos;
+		int pun;
 
 		public N(int p) {
 			super(false);
 			pos = p;
+			pun = 0;
 		}
 		public void putCol(int p, char c) {
-			comm.trigger(pos, p & 0x03ff, ' ');
+			pun = p & 0x03ff;
+		}
+		public int getPun() {
+			int p = pun;
+			pun = 0;
+			return p;
 		}
 	}
 
@@ -49,6 +56,14 @@ class ColumnSplitDigit extends ProgItem {
 	public void trigger(int x, int p, char c) {
 		if (ents[x] != null) {
 			ents[x].trigger(p, c);
+		}
+	}
+
+	public int getPun(int x) {
+		if (ents[x] != null) {
+			return ((N)ents[x]).getPun();
+		} else {
+			return 0;
 		}
 	}
 }

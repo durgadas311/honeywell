@@ -8,12 +8,10 @@ class ColumnSplitComm extends ProgItem {
 
 	class C extends ProgStart {
 		int pos;
-		int pun;
 
 		public C(int p) {
 			super(false);
 			pos = p;
-			pun = 0;
 		}
 		@Override
 		public void putCol(int p, char c) {
@@ -22,12 +20,13 @@ class ColumnSplitComm extends ProgItem {
 		}
 		@Override
 		void trigger(int p, char c) {
-			pun |= p;
+			// do not trigger... yet...
 		}
 		@Override
 		public void set(boolean b) {
+			// "commit"
+			int pun = zone.getPun(pos) | dig.getPun(pos);
 			super.trigger(pun, ' ');
-			pun = 0;
 		}
 	}
 

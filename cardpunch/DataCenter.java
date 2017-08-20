@@ -32,6 +32,7 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 
 	private Machine[] machs;
 	Dimension bd = new Dimension(210, 210);
+	GenericHelp _help;
 
 	public DataCenter() {
 		super("Punch-card Data Processing Center");
@@ -48,8 +49,8 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
+
 		mu = new JMenu("Machines");
-		mb.add(mu);
 		mi = new JMenuItem("029 Keypunch", KeyEvent.VK_1);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -72,7 +73,17 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
+
+		mu = new JMenu("Help");
+		// TODO: About also?
+		mi = new JMenuItem("Show Help", KeyEvent.VK_H);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
 		setJMenuBar(mb);
+
+		java.net.URL url = this.getClass().getResource("docs/DataCenter.html");
+		_help = new GenericHelp(getTitle() + " Help", url);
 
 		GridBagLayout gb = new GridBagLayout();
 		setLayout(gb);
@@ -242,9 +253,11 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		} else if (m.getMnemonic() == KeyEvent.VK_6) {
 			// TODO: options...
 			openMach(ACCOUNTING, "IBM 402 Accounting Machine", null, true);
-		} else if (m.getMnemonic() == KeyEvent.VK_6) {
+		} else if (m.getMnemonic() == KeyEvent.VK_7) {
 			// TODO: options...
-			openMach(ACCOUNTING, "IBM 514 Reproducing Punch", null, true);
+			openMach(PUNCH, "IBM 514 Reproducing Punch", null, true);
+		} else if (m.getMnemonic() == KeyEvent.VK_H) {
+			_help.setVisible(true);
 		}
 	}
 

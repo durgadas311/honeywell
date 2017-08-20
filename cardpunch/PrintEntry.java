@@ -2,9 +2,9 @@
 
 public class PrintEntry extends ProgStart {
 	int _col;
-	char[] _line;
+	TypeBars _line;
 
-	public PrintEntry(char[] line, int col) {
+	public PrintEntry(TypeBars line, int col) {
 		super(true);
 		_col = col;
 		_line = line;
@@ -13,6 +13,6 @@ public class PrintEntry extends ProgStart {
 	@Override
 	public void putCol(int p, char c) {
 		// TODO: Alphameric vs. Numeric
-		_line[_col] = c;
+		_line.print(_col, c);
 	}
 }

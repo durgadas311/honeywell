@@ -26,3 +26,8 @@ s1c1 = cards
 # Summary Punch setup
 sp = on
 sppu = minor
+# this gets cust Id to summary punch
+4a1 = 3.1*4
+4at = minor
+4ap = fcmi
+sp1 = 8ax-

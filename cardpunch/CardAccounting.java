@@ -41,9 +41,10 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		}
 	}
 
-	class PrintItem extends ProgItem {
+	class PrintItem extends ProgItem implements TypeBars {
 		char[] print;
 		boolean[] zsupp;
+		boolean needed;
 
 		public PrintItem(int w) {
 			super(w);
@@ -52,17 +53,23 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 			zsupp = new boolean[w];
 		}
 
+		public void print(int p, char c) {
+			print[p] = c;
+			needed = true;
+		}
+
 		// Reset for new program panel
 		public void reset() {
 			super.reset();
 			Arrays.fill(zsupp, false);
 			Arrays.fill(print, ' ');
+			needed = false;
 		}
 
 		@Override
 		public ProgStart get(int p) {
 			if (ents[p] == null) {
-				ents[p] = new PrintEntry(print, p);
+				ents[p] = new PrintEntry(this, p);
 			}
 			return ents[p];
 		}
@@ -70,6 +77,8 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		public void setZSupp(int p) {
 			zsupp[p] = true;
 		}
+
+		public boolean printNeeded() { return needed; }
 
 		// This generates printer output, and resets for next line
 		public String zeroSuppress() {
@@ -93,6 +102,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 			}
 			String ret = new String(print);
 			Arrays.fill(print, ' ');
+			needed = false;
 			return ret;
 		}
 	}
@@ -109,6 +119,9 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		public void set(boolean b) {
 			super.set(b);	// triggers watchers... never any?
 			if (b) return;	// trigger on falling edge?
+//			if (!aprint.printNeeded() && !nprint.printNeeded()) {
+//				return;
+//			}
 			if (ctl.SS().is(0)) {
 				return;
 			}
@@ -176,6 +189,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		}
 	}
 
+	// Summary Punch must trigger on trailing edge.
 	class SummaryEntry extends ProgStart {
 		public SummaryEntry() {
 			super(true);
@@ -183,7 +197,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		@Override
 		public void set(boolean b) {
 			super.set(b); // never watchers?
-			if (!b) return;
+			if (b) return;
 			if (summary != null) {
 				summary.startPunch();
 			}
@@ -279,6 +293,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	SingleEntry interStart;
 	SingleEntry majorStart;
 	SingleEntry listStart;
+	LatchingEntry printed;
 	SummaryItem summPU;
 	ProgItem summPC;
 
@@ -331,17 +346,19 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		finalTotal = new SingleExit();
 		allCards = new SingleExit();
 		allCycles = new SingleExit();
-		asterMajor = new SingleExit(new SpecialPrint('*'));
-		asterInter = new SingleExit(new SpecialPrint('*'));
-		asterMinor = new SingleExit(new SpecialPrint('*'));
-		asterFinal = new SingleExit(new SpecialPrint('*'));
-		asterAll = new SingleExit(new SpecialPrint('*'));
+		// TODO: use asterisk punch code, or simply X...
+		asterMajor = new SingleExit(new SpecialPrint(0x422, '*'));
+		asterInter = new SingleExit(new SpecialPrint(0x422, '*'));
+		asterMinor = new SingleExit(new SpecialPrint(0x422, '*'));
+		asterFinal = new SingleExit(new SpecialPrint(0x422, '*'));
+		asterAll = new SingleExit(new SpecialPrint(0x422, '*'));
 
 		// TODO: are any of these one-shots?
 		minorStart = new SingleEntry(minor.get(0));
 		interStart = new SingleEntry(inter.get(0));
 		majorStart = new SingleEntry(major.get(0));
 		listStart = new SingleEntry(new PrintExit(prtCtl));
+		printed = new LatchingEntry();
 		summPU = new SummaryItem();
 
 		_cwd = new File(System.getProperty("user.dir"));
@@ -622,20 +639,20 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 
 	private ProgItem parseEntry(String pm) {
 		if (pm.equals("list")) {
-			return listStart;
+			return printed;
 		} else if (pm.equals("stmi")) {
 			return minorStart;
 		} else if (pm.equals("stin")) {
 			return interStart;
 		} else if (pm.equals("stma")) {
 			return majorStart;
-		} else if (pm.equals("sps")) {
+		} else if (pm.equals("spsupp")) {
 			return prtCtl.SS();
-		} else if (pm.equals("sp1")) {
+		} else if (pm.equals("space1")) {
 			return prtCtl.S1();
-		} else if (pm.equals("sp2")) {
+		} else if (pm.equals("space2")) {
 			return prtCtl.S2();
-		} else if (pm.equals("sp3")) {
+		} else if (pm.equals("space3")) {
 			return prtCtl.S3();
 		} else if (pm.equals("sppu")) {
 			return summPU;
@@ -695,7 +712,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		if (counter[ctr] == null) {
 			int w = ((ctr & 0x1c) >> 1) + 2;
 			counter[ctr] = new Counter(w);
-			counter[ctr].TOTAL().get(0).addWatcher(new PrintExit(prtCtl));
+			counter[ctr].TOTAL().get(0).addWatcher(printed.get(0));
 		}
 	}
 
@@ -809,6 +826,17 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 				}
 			} else if (t == 's') { // CTR EXIT SUPPRESSION
 				rd = counter[ctr].SUPP();
+			} else if (t == 'x') { // S.P. X CTRL PLUS/MINUS
+				t = p.charAt(3);
+				rd = counter[ctr].SPX();
+				if (p.length() >= 4 && p.charAt(3) == '-') {
+					c = 2;
+				}
+			} else if (t == 'r') { // TRANSFER
+				rd = counter[ctr].TRANSFER();
+				if (p.length() >= 4 && p.charAt(3) == '-') {
+					c = 2;
+				}
 			}
 		} else if (p.matches("[123]\\.[0-9]+")) {
 			// 1st/2nd/3rd READING EXITs
@@ -1033,6 +1061,11 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 		}
 		allCycles.set(0, true);
 		xt.set(0, false);
+		if (printed.is(0)) {
+			listStart.set(0, true);
+			listStart.set(0, false);
+			printed.set(0, false); // or at top of loop?
+		}
 		allCycles.set(0, false);
 		changeSelectors();
 	}
@@ -1043,9 +1076,15 @@ public static int ncards = 0;
 		_frame.setTitle(title + " (running)");
 		idle.setBackground(off);
 		feed.setBackground(off); // OFF by what?
+		// TODO: allow re-starting with cards still in place?
 		byte[] card1 = null;
 		byte[] card2 = null;
 		byte[] card3 = null;
+		// Any card is the first, when starting fresh...
+		// TODO: same re-start issues...
+		firstMinor.set(0, true);
+		firstInter.set(0, true);
+		firstMajor.set(0, true);
 		while (!stopped) {
 			if (card3 != null) {
 				stacker.putCard(card3);
@@ -1171,6 +1210,7 @@ public static int ncards = 0;
 		interStart.reset();
 		majorStart.reset();
 		listStart.reset();
+		printed.reset();
 		prtCtl.reset();
 		// clear exits
 		firstMinor.reset();

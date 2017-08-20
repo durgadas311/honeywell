@@ -73,19 +73,6 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		}
 	}
 
-	class PunchExit extends ProgStart {
-		public PunchExit() {
-			super(true);
-		}
-
-		@Override
-		public void set(boolean b) {
-			super.set(b);	// triggers watchers... never any?
-			if (b) return;	// trigger on falling edge
-			punch.punchCard(null); // TODO: card data
-		}
-	}
-
 	class XSelector extends ProgStart {
 		Selector i_pu;
 		DelayStart delay;
@@ -211,8 +198,6 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	SingleExit allCycles;
 	ColumnSplit csplits;
 
-	SingleEntry punchStart;
-
 	ComparingMagnets comparing;
 	Selector[] selector;
 
@@ -248,8 +233,6 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		// These are one-shots, used for watchers only
 		allCards = new SingleExit();
 		allCycles = new SingleExit();
-
-		punchStart = new SingleEntry(new PunchExit());
 
 		_cwd = new File(System.getProperty("user.dir"));
 		_prevProg = _prevDeck = _prevPapr = _cwd;
@@ -568,14 +551,14 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	}
 
 	private ProgItem parseEntry(String pm) {
-		if (pm.equals("punchStart")) {
-			return punchStart;
+		if (pm.equals("none")) {
+			return null;
 		}
 		return null;
 	}
 
 	private ProgItem parseExit(String pm) {
-		if (pm.equals("final")) {
+		if (pm.equals("none")) {
 			return null;
 		}
 		return null; // or some dummy item?
@@ -624,10 +607,11 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 				rd = puncher.counterExit(ctr);
 			}
 		} else if (p.matches("[rpc]\\.[0-9]+")) {
-			// 1st/2nd/3rd READING EXITs
+			// REPRODUCING/PUNCH/COMPARING BRUSHES
 			c = Integer.valueOf(p.substring(2));
 			rd = getReadCycle(p.charAt(0));
 		} else if (p.matches("[rp]x[0-9]+")) {
+			// RX or PX BRUSHES
 			c = Integer.valueOf(p.substring(2));
 			if (p.charAt(0) == 'r') {
 				rd = rxbrsh;
@@ -635,6 +619,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 				rd = pxbrsh;
 			}
 		} else if (p.matches("pm[0-9]+")) {
+			// PUNCH MAGNETS
 			c = Integer.valueOf(p.substring(2));
 			rd = punch;
 		} else if (p.matches("x[0-9]+[-+]")) {
@@ -642,7 +627,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 			c = Integer.valueOf(p.substring(1, p.length() - 1));
 			// rd = ???
 		} else if (p.matches("c[0-9]+[pc]")) {
-			// Comparing entry
+			// COMPARING MAGNETS FROM PUNCH/COMP
 			char t = p.charAt(p.length() - 1);
 			c = Integer.valueOf(p.substring(1, p.length() - 1));
 			if (t == 'p') {
@@ -652,6 +637,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 			}
 		} else if (p.matches("s[0-9]+[rpi]")) {
 			// SELECTOR X/D/I PU
+			// TODO: this is wrong for 514
 			w = 1;
 			char t = p.charAt(p.length() - 1);
 			int sel = getSelector(p.substring(1, p.length() - 1));
@@ -686,9 +672,9 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 				rd = selector[sel].T();
 			}
 		} else if (p.matches("cs[0-9]+[xdc]")) {
-			// column-splits 11-12, 0-9, and COMM hubs
+			// COLUMN SPLITS: 11-12 (x), 0-9 (d), and COM (c) hubs
 			char t = p.charAt(p.length() - 1);
-			c = getSelector(p.substring(2, p.length() - 1));
+			c = Integer.valueOf(p.substring(2, p.length() - 1));
 			if (t == 'x') {
 				rd = csplits.X();
 			} else if (t == 'd') {
@@ -820,9 +806,9 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 		pn_gc.gridy = 0;
 		++pn_gc.gridx;
 		labeledToggle(pn, repro, "REPRO");
-		labeledToggle(pn, selre, "SEL-REPO");
-		labeledToggle(pn, detma, "X-MASTER");
-		labeledToggle(pn, mapun, "MA-PUNCH");
+		labeledToggle(pn, selre, "SEL<BR>REPO");
+		labeledToggle(pn, detma, "X<BR>MASTER");
+		labeledToggle(pn, mapun, "MASTER<BR>PUNCH");
 		return pn;
 	}
 
@@ -891,6 +877,8 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 		changeSelectors();
 	}
 
+	// Do not require both cards to be fed, only one is required to
+	// begin punching.
 	private boolean doOneCycle() {
 		boolean both = repro.isSelected();
 		boolean rfeed = true;

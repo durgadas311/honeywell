@@ -57,6 +57,8 @@ public class Counter extends ProgStart {
 	SingleEntry nbc;
 	SingleEntry supp;
 	SingleEntry total;
+	ProgItem tran;
+	ProgItem spx;
 	int mod;
 	int sgn;
 
@@ -75,13 +77,15 @@ public class Counter extends ProgStart {
 		sum = 0;
 		mod = pow[width];
 		sgn = pow[width - 1] * 9; // '9' in high digit == negative
-		credit = new SingleExit(new SpecialPrint('\u00a9'));
+		credit = new SingleExit(new SpecialPrint(0x400, '\u00a9'));
 		cyo = new ProgItem(1);
 		cyi = new SingleEntry(new Carry(this));
 		nbt = new ProgItem(1);
 		nbc = new SingleEntry();
 		supp = new SingleEntry();
 		total = new SingleEntry(this);
+		tran = new ProgItem(2);
+		spx = new ProgItem(2);
 	}
 
 	public ProgItem E() { return ents; }
@@ -95,6 +99,8 @@ public class Counter extends ProgStart {
 	public ProgItem NBC() { return nbc; }
 	public ProgItem SUPP() { return supp; }
 	public ProgItem TOTAL() { return total; }
+	public ProgItem TRANSFER() { return tran; } // 0=plus, 1=minus
+	public ProgItem SPX() { return spx; } // 0=plus, 1=minus
 
 	// TOTAL ENTRY (print & reset)
 	@Override
@@ -110,6 +116,11 @@ public class Counter extends ProgStart {
 		if (nb) {
 			v = (mod - 1 - v);
 			credit.set(0, true);
+			tran.set(1, true);
+			spx.putCol(1, 0x400, '&');
+		} else {
+			tran.set(0, true);
+			spx.putCol(0, 0x400, '&');
 		}
 		for (int x = width; x > 0;) {
 			--x;
@@ -119,7 +130,7 @@ public class Counter extends ProgStart {
 			v /= 10;
 			exts.processExit(x, p, d);
 		}
-		super.set(b); // now trigger watchers (printing)...
+		super.set(true); // now trigger watchers (printing)...
 	}
 
 	protected void add(int n) {

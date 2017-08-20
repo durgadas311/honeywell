@@ -2,9 +2,11 @@
 
 class SpecialPrint extends ProgStart {
 	char _char;
-	public SpecialPrint(char ch) {
+	int _punch;
+	public SpecialPrint(int pu, char ch) {
 		super(true);
 		_char = ch;
+		_punch = pu;
 	}
 	@Override
 	public void set(boolean b) {
@@ -12,6 +14,6 @@ class SpecialPrint extends ProgStart {
 		if (!b) return;	// generate character on leading edge of cycle
 		// TODO: enforce odd/even columns? Numeric?
 		// TODO: generate some punch value?
-		trigger(0, _char);
+		trigger(_punch, _char);
 	}
 }
