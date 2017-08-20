@@ -1,0 +1,7 @@
+pq1 = p.1*4
+sq1 = q.1*4
+priFeed = all
+# must delay highSeq to next card...
+dy1 = highSeq
+dy1c = all
+pri = dy1t

@@ -1,8 +1,8 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 
 public class HELComparingEntry extends ProgStart {
-	int punch;
-public char chr;
+	int punch = 0;
+public char chr = ' ';
 
 	public HELComparingEntry() {
 		super(true);
@@ -11,6 +11,7 @@ public char chr;
 	@Override
 	public void putCol(int p, char c) {
 		punch = p;
+chr = c;
 	}
 
 	// blank == 0;
@@ -31,6 +32,9 @@ public char chr;
 		if (p == 0x0300) return (2 << 4) + 1;
 		// 'c' < 0 if no zone punch... else 0-2
 		c += 11 - Integer.numberOfTrailingZeros(p & 0x0e00);
+		// for 'R' c = 0...
+		// for 'X' c = 1...
+		// for '0' c = 2...
 		if (c < 0) c = 3;
 		if ((p & 0x0002) != 0 && (p & 0x00fc) != 0) { // [8][2-7]
 			n = 8 + (9 - Integer.numberOfTrailingZeros(p & 0x00fc));
@@ -38,7 +42,8 @@ public char chr;
 			c += 4;
 			// 'n' < 0 if no num punch... else 1-9
 			n = 9 - Integer.numberOfTrailingZeros(p & 0x01ff);
-			if (n < 0) n = 16; //
+			if (n < 0) n = 16;	// '0' is c=6, n=16 = 0x70
+						// '1' is c=7, n=1 = 0x71
 		}
 		return (c << 4) + n;
 	}
@@ -47,7 +52,10 @@ public char chr;
 	// Returns 0 if equal, -1 if this < 'ent', +1 if this > 'ent'
 	public int compare(boolean mode, HELComparingEntry ent) {
 		if (punch == ent.punch) return 0;
-		if (xlat(mode, punch) < xlat(mode, ent.punch)) return -1;
+		int c1 = xlat(mode, punch);
+		int c2 = xlat(mode, ent.punch);
+		if (c1 == c2) return 0;
+		if (c1 < c2) return -1;
 		return 1;
 	}
 }

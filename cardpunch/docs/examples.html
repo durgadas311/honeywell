@@ -82,7 +82,7 @@ The following steps assume the saved file was "detail1s".
 <LI>Load "master1" into the PRIMARY hopper.
 <LI>Press START. Once the collator stops, press RUNOUT. All cards should be in
 pocket/stacker 2.
-<LI>Click on the pockets (stackers) and save to a new file. For this example,
+<LI>Click on the pocket (stacker 2) and save to a new file. For this example,
 the new file is assumed to be "records1".
 </OL>
 <H4>Step 3 - Compute new balances</H4>
@@ -110,13 +110,31 @@ the new file is assumed to be "records1".
 the customer ID and new balance. Additional customer info must be transferred
 from the previous master cards ("master1").
 
-<H4>Step 4 - Copy customer information to new balance cards</H4>
+<H4>Step 4 - Extract master cards from combined deck</H4>
+
+<P>NOTE: since we have the original "master1" file in-tact, this step is
+not necessary in a virtual world. But, in the old days, the master cards
+needed to be isolated from the detail cards in order to copy (only) their data
+to the new master cards. One method is to use the Collator to extract
+master cards into a separate pocket. An example of this method follows.
+
+<OL>
+<LI>Start the Collator (if not already).
+<LI>Load the program panel "separate1".
+<LI>Load the "records1" deck into the primary hopper.
+<LI>Press START. Cards should be sent to both stacker 2 and stacker 1.
+Stacker 1 will contain the master cards. don't forget to press RUNOUT.
+<LI>Save stacker 1 to a file, and use that file in place of "master1"
+in the next step.
+</OL>
+
+<H4>Step 5 - Copy customer information to new balance cards</H4>
 <OL>
 <LI>Start the Reproducing Punch (if not already).
 <LI>Load program panel "master1".
 <LI>Set the REPRO switch on.
-<LI>Load "master1" in the read hopper.
-<LI>Load "master2" (from the previous step) in the punch hopper.
+<LI>Load "master1" in the read hopper (or the deck created in step 4).
+<LI>Load "master2" (from step 3) in the punch hopper.
 <LI>Press START. If any cards are out of order (customer ID mismatch)
 then a comparing error will result.
 <LI>Click on the punch stacker and save the complete new balance cards.

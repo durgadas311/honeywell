@@ -43,16 +43,22 @@ class CardCollator implements Machine, ActionListener, Runnable
 		}
 	}
 
-	class XSelector extends ProgStart {
-		Selector i_pu;
+	class DelaySelector extends ProgStart {
 		DelayStart delay;
+		Selector i_pu;
 
-		public XSelector(Selector I_PU) {
+		public DelaySelector(Selector I_PU) {
 			super(true);
 			i_pu = I_PU;
 			delay = new DelayStart();
 			delay.addWatcher(i_pu);
-			allCards.get(0).addWatcher(delay);
+			allCycles.get(0).addWatcher(delay);
+		}
+
+		@Override
+		public void set(boolean b) {
+			super.trigger(b);	// n/a ?
+			delay.setFlag(b);
 		}
 
 		@Override
@@ -63,32 +69,19 @@ class CardCollator implements Machine, ActionListener, Runnable
 		}
 	}
 
-	class DSelector extends ProgStart {
-		Selector i_pu;
-		DelayStart delay;
-
-		public DSelector(Selector I_PU) {
-			super(true);
-			i_pu = I_PU;
-			delay = new DelayStart();
-			delay.addWatcher(i_pu);
-			allCards.get(0).addWatcher(delay);
-		}
-
-		@Override
-		public void putCol(int p, char c) {
-			super.trigger(p, c);	// n/a ?
-			// Any punch in 9-0,X/11, or 12.
-			// Requires digit selectors to be more specific.
-			delay.set(p != 0);
-		}
-	}
-
 	private String dumpSelectors() {
 		String ret = "";
 		for (int x = 0; x < selector.length; ++x) {
 			if (selector[x] != null) {
 				ret += selector[x].dump();
+			} else {
+				ret += '.';
+			}
+		}
+		ret += ' ';
+		for (int x = 0; x < delay.length; ++x) {
+			if (delay[x] != null) {
+				ret += delay[x].dump();
 			} else {
 				ret += '.';
 			}
@@ -127,14 +120,8 @@ class CardCollator implements Machine, ActionListener, Runnable
 	boolean ibm087;
 	boolean progSet;
 	JPanel acc;
-	JPanel acc2;
 	JCheckBox acc_cb;
 	JTextArea acc_stk;
-	JCheckBox stk_cb1;
-	JCheckBox stk_cb2;
-	JCheckBox stk_cb3;
-	JCheckBox stk_cb4;
-	JCheckBox stk_rev;
 	JMenu[] _menus;
 	GridBagLayout gb;
 	GridBagConstraints gc;
@@ -149,6 +136,8 @@ class CardCollator implements Machine, ActionListener, Runnable
 	byte[] card1;
 	byte[] card2;
 	byte[] card1s;
+	CardStacker out1;
+	CardStacker out2;
 
 	// These are exits, may have watchers - one-shots
 
@@ -169,6 +158,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 	HELComparator selection;
 	Counter[] counter;
 	Selector[] selector;
+	Selector[] delay;
 
 	public JMenu[] getMenu() { return _menus; }
 	public JFrame getFrame() { return _frame; }
@@ -188,8 +178,11 @@ class CardCollator implements Machine, ActionListener, Runnable
 		card1 = null;
 		card2 = null;
 		card1s = null;
+		out1 = null;
+		out2 = null;
 		counter = new Counter[1];
 		selector = new Selector[5];
+		delay = new Selector[2];
 		sequence = new HELComparator(16);
 		selection = new HELComparator(16);
 
@@ -522,44 +515,6 @@ class CardCollator implements Machine, ActionListener, Runnable
 		gb.setConstraints(acc_stk, gc);
 		acc.add(acc_stk);
 
-		// -----------------------------------------
-		// Accessory panel for Stacker saver...
-		gc.gridx = 0;
-		gc.gridy = 0;
-		gc.gridwidth = 1;
-		gc.gridheight = 1;
-		gb = new GridBagLayout();
-		acc2 = new JPanel();
-		acc2.setLayout(gb);
-		gc.anchor = GridBagConstraints.WEST;
-		lb = new JLabel("Save Pockets");
-		gb.setConstraints(lb, gc);
-		acc2.add(lb);
-		++gc.gridy;
-		stk_cb1 = new JCheckBox("Stacker 1");
-		gb.setConstraints(stk_cb1, gc);
-		acc2.add(stk_cb1);
-		++gc.gridy;
-		stk_cb2 = new JCheckBox("Stacker 2");
-		gb.setConstraints(stk_cb2, gc);
-		acc2.add(stk_cb2);
-		++gc.gridy;
-		stk_cb3 = new JCheckBox("Stacker 3");
-		gb.setConstraints(stk_cb3, gc);
-		acc2.add(stk_cb3);
-		++gc.gridy;
-		stk_cb4 = new JCheckBox("Stacker 4");
-		gb.setConstraints(stk_cb4, gc);
-		acc2.add(stk_cb4);
-		++gc.gridy;
-		stk_rev = new JCheckBox("Pick L-R");
-		gb.setConstraints(stk_rev, gc);
-		acc2.add(stk_rev);
-		stk_cb1.setSelected(true);
-		stk_cb2.setSelected(true);
-		stk_cb3.setSelected(true);
-		stk_cb4.setSelected(true);
-
 		ready.setBackground(grn);
 	}
 
@@ -615,6 +570,13 @@ class CardCollator implements Machine, ActionListener, Runnable
 		}
 		return sel;
 	}
+	private int getDelaySel(String p) {
+		int sel = Integer.valueOf(p) - 1;
+		if (delay[sel] == null) {
+			delay[sel] = new Selector(1);
+		}
+		return sel;
+	}
 
 	// 'ctx': 0=EXIT, 1=ENTRY (2=ENTRY B...)
 	private ProgSet parseItem(String p, int ctx) {
@@ -667,7 +629,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 			c = Integer.valueOf(p.substring(2));
 			rd = getReadCycle(p.charAt(0));
 		} else if (p.matches("[ps]s[0-9]+")) {
-			// Selector Comparing entry
+			// Selection Comparing entry
 			char t = p.charAt(0);
 			c = Integer.valueOf(p.substring(2));
 			if (t == 'p') {
@@ -704,6 +666,28 @@ class CardCollator implements Machine, ActionListener, Runnable
 			} else {
 				selector[sel].T().setExit(ctx == 0);
 				rd = selector[sel].T();
+			}
+		} else if (p.matches("dy[0-9]+")) {
+			// CYCLE DELAY PU
+			w = 1;
+			int sel = getDelaySel(p.substring(2));
+			rd = new SingleEntry(new DelaySelector(delay[sel]));
+		} else if (p.matches("dy[0-9]+[cnt]")) {
+			// CYCLE DELAY C/N/T contacts
+			i = p.length() - 1;
+			char t = p.charAt(i);
+			int sel = getDelaySel(p.substring(2, i));
+			c = 1;
+			delay[sel].resize(c); // 'c' is still +1 == width
+			if (t == 'c') {
+				delay[sel].C().setExit(ctx == 0);
+				rd = delay[sel].C();
+			} else if (t == 'n') {
+				delay[sel].N().setExit(ctx == 0);
+				rd = delay[sel].N();
+			} else {
+				delay[sel].T().setExit(ctx == 0);
+				rd = delay[sel].T();
 			}
 		} else if (p.equals("lowSecdy")) { // a.k.a. high Primary?
 			w = 1;
@@ -846,6 +830,11 @@ class CardCollator implements Machine, ActionListener, Runnable
 				sel.change();
 			}
 		}
+		for (Selector sel : delay) {
+			if (sel != null) {
+				sel.change();
+			}
+		}
 	}
 
 	// 'xt' was previously set 'true'...
@@ -873,32 +862,29 @@ public static int ncards = 0;
 		ready.setBackground(off); // should already be off...
 		stopped = false;
 		runningOut = true;
+		// TODO: preserve previous stacker selections?
+		out1 = stacker2;
+		out2 = stacker2;
 		Thread t = new Thread(this);
 		t.start();
 	}
 
 	public void run() {
-		CardStacker out1 = null;
-		CardStacker out2 = null;
-		ready.setBackground(off);
 		if (errorStop.is()) {
 			return;
 		}
+		ready.setBackground(off);
 		_frame.setTitle(title + " (running)");
 		boolean cmp = ibm087 && zone.is();
 		// Need to start the cycles...
 		//allCycles.set(0, true);
 		// TODO: supposed to stop when last card fed, not when
 		// feeding next card failed...
-		if (runningOut) {
-			out1 = stacker2;
-			out2 = stacker2;
-		}
 		while (!stopped) {
 			boolean empty = false;
 			allCycles.set(0, true);
 			allCards.set(0, true);
-			if (card2 == null || runningOut || secdyFd.is(0)) {
+			if (runningOut || secdyFd.is(0)) {
 				if (card2 != null) {
 					out2.putCard(card2);
 				}
@@ -909,7 +895,7 @@ public static int ncards = 0;
 					card2 = null;
 				}
 			}
-			if (card1s == null || runningOut || priFeed.is(0)) {
+			if (runningOut || priFeed.is(0)) {
 				if (card1 != null) {
 					out1.putCard(card1);
 				}
@@ -940,10 +926,10 @@ public static int ncards = 0;
 				processRead(read1, card1);
 //System.err.format("at card %d %s\n", ncards, dumpSelectors());
 			}
+			if (card1s != null) {
+				sequence.processExits(cmp);
+			}
 			if (card1 != null) {
-				if (card1s != null) {
-					sequence.processExits(cmp);
-				}
 				if (card2 != null) {
 					selection.processExits(cmp);
 				}
@@ -1039,20 +1025,9 @@ public static int ncards = 0;
 		loadProgram(fi.getAbsolutePath());
 	}
 
-	private boolean pickStack(CardStacker stk, JCheckBox cb,
-					OutputStream os, boolean prev) {
-		if (!cb.isSelected()) {
-			return prev;
-		}
-		if (!stk.saveDeck(os)) {
-			return false;
-		}
-		return prev;
-	}
-
-	private void deckSave() {
-		File fi = pickFile("Save Output", "pcd", "Punch Card Deck",
-					_prevDeck, acc2);
+	private void deckSave(CardStacker stk) {
+		File fi = pickFile("Save " + stk.getLabel(), "pcd", "Punch Card Deck",
+					_prevDeck, null);
 		if (fi == null) {
 			return;
 		}
@@ -1064,18 +1039,15 @@ public static int ncards = 0;
 			return;
 		}
 		boolean ok = true;
-		if (stk_rev.isSelected()) {
-			ok = pickStack(stacker1, stk_cb1, os, ok);
-			ok = pickStack(stacker2, stk_cb2, os, ok);
-			ok = pickStack(stacker3, stk_cb3, os, ok);
-			ok = pickStack(stacker4, stk_cb4, os, ok);
-		} else {
-			ok = pickStack(stacker4, stk_cb4, os, ok);
-			ok = pickStack(stacker3, stk_cb3, os, ok);
-			ok = pickStack(stacker2, stk_cb2, os, ok);
-			ok = pickStack(stacker1, stk_cb1, os, ok);
+		ok = stk.saveDeck(os);
+		try {
+			os.close();
+		} catch (Exception ee) {
+			// TODO: pop-up error
 		}
-		_prevDeck = fi;
+		if (ok) {
+			_prevDeck = fi;
+		}
 	}
 
 	private void deckAdd(CardHopper hop) {
@@ -1121,7 +1093,7 @@ public static int ncards = 0;
 			if (obj == hopper1 || obj == hopper2) {
 				deckAdd((CardHopper)obj);
 			} else {
-				deckSave();
+				deckSave((CardStacker)obj);
 			}
 		}
 	}
