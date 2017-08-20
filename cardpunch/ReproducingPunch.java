@@ -73,44 +73,39 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		}
 	}
 
+	class TSelector extends ProgStart {
+		Selector i_pu;
+
+		public TSelector(Selector I_PU) {
+			super(true);
+			i_pu = I_PU;
+		}
+
+		@Override
+		public void putCol(int p, char c) {
+			super.trigger(p, c);	// n/a ?
+			// Any non-zero punch? or only '9'?
+			i_pu.set((p & 0x001) != 0);
+		}
+	}
+
 	class XSelector extends ProgStart {
 		Selector i_pu;
-		DelayStart delay;
 
 		public XSelector(Selector I_PU) {
 			super(true);
 			i_pu = I_PU;
-			delay = new DelayStart();
-			delay.addWatcher(i_pu);
-			allCards.get(0).addWatcher(delay);
+		}
+
+		@Override
+		public void set(boolean b) {
+			i_pu.set(b);
 		}
 
 		@Override
 		public void putCol(int p, char c) {
 			super.trigger(p, c);	// n/a ?
-			// Any punch in X/11 or 12
-			delay.setFlag((p & 0x0c00) != 0);
-		}
-	}
-
-	class DSelector extends ProgStart {
-		Selector i_pu;
-		DelayStart delay;
-
-		public DSelector(Selector I_PU) {
-			super(true);
-			i_pu = I_PU;
-			delay = new DelayStart();
-			delay.addWatcher(i_pu);
-			allCards.get(0).addWatcher(delay);
-		}
-
-		@Override
-		public void putCol(int p, char c) {
-			super.trigger(p, c);	// n/a ?
-			// Any punch in 9-0,X/11, or 12.
-			// Requires digit selectors to be more specific.
-			delay.set(p != 0);
+			i_pu.set((p & 0x400) != 0);
 		}
 	}
 
@@ -226,7 +221,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		pcard1 = null;
 		pcard2 = null;
 		selector = new Selector[2];
-		csplits = new ColumnSplit(8);
+		csplits = new ColumnSplit(8, false);
 
 		comparing = new ComparingMagnets(80);
 
@@ -635,20 +630,17 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 			} else {
 				rd = comparing.B();
 			}
-		} else if (p.matches("s[0-9]+[rpi]")) {
-			// SELECTOR X/D/I PU
-			// TODO: this is wrong for 514
+		} else if (p.matches("s[0-9]+[rpt]")) {
+			// SELECTOR RX/PX/T PU
 			w = 1;
 			char t = p.charAt(p.length() - 1);
 			int sel = getSelector(p.substring(1, p.length() - 1));
-			if (t == 'x') {
+			if (t == 't') {
+				rd = new SingleEntry(new TSelector(selector[sel]));
+			} else { // TODO: any diff btw RX/RD and PX/PD?
 				rd = new SingleEntry(new XSelector(selector[sel]));
-			} else if (t == 'd') {
-				rd = new SingleEntry(new DSelector(selector[sel]));
-			} else {
-				rd = new SingleEntry(selector[sel]);
 			}
-		} else if (p.matches("s[0-9]+[cnt][0-9]+")) {
+		} else if (p.matches("s[0-9]+[cnx][0-9]+")) {
 			// SELECTOR C/N/T contacts
 			i = p.indexOf('c');
 			if (i < 0) {
@@ -880,7 +872,6 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		allCycles.set(0, true);
 		xt.set(0, false);
 		allCycles.set(0, false);
-		changeSelectors();
 	}
 
 	// Do not require both cards to be fed, only one is required to
@@ -939,6 +930,9 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		}
 		processRead(rxbrsh, rcard1);
 		processRead(pxbrsh, pcard1);
+		// TODO: impulse PD/RD here...
+		// TODO: confirm that AcctMach will impulse TOTAL before this...
+		changeSelectors();
 		processRead(rbrush, rcard1);
 		processRead(cbrush, rcard2);
 		processRead(pbrush, pcard2);

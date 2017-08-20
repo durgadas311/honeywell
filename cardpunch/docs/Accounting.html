@@ -55,6 +55,11 @@ the following are supported:
 	<TR><TD>T</TD><TD>transfer position</TD><TD>s1t1 - s11t<I>N</I></TD></TR>
 	<TR><TD>N</TD><TD>normal position</TD><TD>s1n1 - s11n<I>N</I></TD></TR>
 	<TR><TD>C</TD><TD>common position</TD><TD>s1c1 - s11c<I>N</I></TD></TR>
+<TR><TD ROWSPAN=4>COL SPLIT</TD>
+	<TD>X</TD><TD>11 zone punches</TD><TD>cs1x - cs4x</TD></TR>
+	<TD>R</TD><TD>12 zone punches</TD><TD>cs1r - cs4r</TD></TR>
+	<TD>0-9</TD><TD>0-9 digit punches</TD><TD>cs1d - cs10d</TD></TR>
+	<TD>C</TD><TD>common</TD><TD>cs1c - cs10c</TD></TR>
 <TR><TD>* SYMBOL</TD><TD>F,1,2,3,ALL</TD><TD>Asterisk printing</TD><TD>aster{f,1,2,3,all}</TD></TR>
 <TR><TD>TOTAL PROGRAM</TD><TD>MINOR,INTER,MAJOR</TD><TD>Grouping cycles</TD><TD>{minor,inter,major}</TD></TR>
 <TR><TD>ALL CYCLES</TD><TD>(1)</TD><TD>All cycles</TD><TD>all</TD></TR>
@@ -87,6 +92,8 @@ the property width.
 <I>N</I> may be any practical number (CO-SELECTORS are not needed).
 The position numbers should start at "1" and be kept contiguous.
 Keep in mind that related C, N, and T contacts must have the same position number.
+
+<P>Column Splits are bi-directional, similar to Selector positions (contacts).
 
 <P><B>Example 1:</B> comparing a field (current and previous card). Field starts at card
 column 10 and is 4 columns wide. Compare triggers "minor" group.

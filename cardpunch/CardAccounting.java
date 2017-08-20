@@ -286,6 +286,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	SingleExit asterMinor;
 	SingleExit asterFinal;
 	SingleExit asterAll;
+	ColumnSplit csplits;
 
 	// These should only be polled, internally
 	// (no watchers added)
@@ -332,6 +333,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		selector = new Selector[12];
 		prtCtl = new PrintControl();
 		summPC = new ProgItem(12);
+		csplits = new ColumnSplit(4, true);
 
 		comparing = new Comparator(20);
 
@@ -892,6 +894,19 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 				selector[sel].T().setExit(ctx == 0);
 				rd = selector[sel].T();
 			}
+		} else if (p.matches("cs[0-9]+[xrdc]")) {
+			// COLUMN SPLITS: R (12), X (11), 0-9 (d), and COM (c) hubs
+			char t = p.charAt(p.length() - 1);
+			c = Integer.valueOf(p.substring(2, p.length() - 1));
+			if (t == 'r') {
+				rd = csplits.R();
+			} else if (t == 'x') {
+				rd = csplits.X();
+			} else if (t == 'd') {
+				rd = csplits.D();
+			} else {
+				rd = csplits.C();
+			}
 		} else if (p.matches("sp[0-9]+")) {
 			// S.P. CONTROL ENTRY
 			w = 1; // TODO: only single width?
@@ -1120,6 +1135,7 @@ public static int ncards = 0;
 			allCards.set(0, true);
 ++ncards;
 			processRead(read3, card3);
+			csplits.commit(); // needed elsewhere? all cycles?
 //System.err.format("at card %d %s\n", ncards, dumpSelectors());
 			impulseCycle(allCards);	// End ALL CARDS cycle
 			// On run-out, card2 might be null...

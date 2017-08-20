@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 class ColumnSplitZone extends ProgItem {
 	ColumnSplitComm comm;
+	int mask;
 
 	class T extends ProgStart {
 		int pos;
@@ -15,8 +16,13 @@ class ColumnSplitZone extends ProgItem {
 			pun = 0;
 		}
 		@Override
+		void trigger(int p, char c) {
+			// 'c' no longer valid...
+			super.trigger(p & mask, ' ');
+		}
+		@Override
 		public void putCol(int p, char c) {
-			pun = p & 0x0c00;
+			pun = p & mask;
 		}
 		public int getPun() {
 			int p = pun;
@@ -25,8 +31,9 @@ class ColumnSplitZone extends ProgItem {
 		}
 	}
 
-	public ColumnSplitZone(int w) {
+	public ColumnSplitZone(int w, int m) {
 		super(w);
+		mask = m;
 	}
 
 	public void setC(ColumnSplitComm c) {

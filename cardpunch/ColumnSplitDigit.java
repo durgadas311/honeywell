@@ -14,6 +14,12 @@ class ColumnSplitDigit extends ProgItem {
 			pos = p;
 			pun = 0;
 		}
+		@Override
+		void trigger(int p, char c) {
+			// 'c' no longer valid...
+			super.trigger(p & 0x3ff, ' ');
+		}
+		@Override
 		public void putCol(int p, char c) {
 			pun = p & 0x03ff;
 		}

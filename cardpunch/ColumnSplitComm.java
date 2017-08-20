@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 class ColumnSplitComm extends ProgItem {
 	ColumnSplitZone zone;
+	ColumnSplitZone r;
 	ColumnSplitDigit dig;
 
 	class C extends ProgStart {
@@ -15,8 +16,11 @@ class ColumnSplitComm extends ProgItem {
 		}
 		@Override
 		public void putCol(int p, char c) {
-			dig.trigger(pos, p & 0x03ff, ' ');
-			zone.trigger(pos, p & 0x0c00, ' ');
+			dig.trigger(pos, p, c);
+			zone.trigger(pos, p, c);
+			if (r != null) {
+				r.trigger(pos, p, c);
+			}
 		}
 		@Override
 		void trigger(int p, char c) {
@@ -26,6 +30,9 @@ class ColumnSplitComm extends ProgItem {
 		public void set(boolean b) {
 			// "commit"
 			int pun = zone.getPun(pos) | dig.getPun(pos);
+			if (r != null) {
+				pun |= r.getPun(pos);
+			}
 			super.trigger(pun, ' ');
 		}
 	}
@@ -35,9 +42,10 @@ class ColumnSplitComm extends ProgItem {
 		// 'exit' is n/a... how to...
 	}
 
-	public void setXD(ColumnSplitZone n, ColumnSplitDigit t) {
+	public void setXD(ColumnSplitZone r, ColumnSplitZone n, ColumnSplitDigit t) {
 		zone = n;
 		dig = t;
+		this.r = r;
 	}
 
 	@Override
