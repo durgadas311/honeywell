@@ -199,7 +199,14 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 			super.set(b); // never watchers?
 			if (b) return;
 			if (summary != null) {
-				summary.startPunch();
+				// TODO: too much thrash?
+				feed.setBackground(red);
+				if (summary.startPunch()) {
+					errorStop.set(true);
+					stopped = true;
+				} else {
+					feed.setBackground(off);
+				}
 			}
 		}
 	}
@@ -254,6 +261,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	boolean stopped;
 	boolean ibm403;
 	boolean progSet;
+	ErrorStop errorStop;
 	JPanel acc;
 	JCheckBox acc_cb;
 	JTextArea acc_stk;
@@ -323,6 +331,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		summary = summ;
 		title = _frame.getTitle();
 		ibm403 = false;	// TODO: configure
+		errorStop = new ErrorStop(off);
 		progSet = false;
 		read1 = new ReadingItem(80);
 		read2 = new ReadingItem(80);
@@ -388,6 +397,10 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		form.setFocusable(false);
 		feed = makeButton("CARD<BR>FEED<BR>STOP", null, off, Color.black);
 		feed.setFocusable(false);
+		errorStop.addLight(stopd);
+		errorStop.addLight(fuse);
+		errorStop.addLight(form);
+		errorStop.addLight(feed);
 
 		text = new JTextArea(20, 89);
 		text.setEditable(false);
@@ -1093,9 +1106,11 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 public static int ncards = 0;
 
 	public void run() {
+		if (errorStop.is()) {
+			return;
+		}
 		_frame.setTitle(title + " (running)");
 		idle.setBackground(off);
-		feed.setBackground(off); // OFF by what?
 		// TODO: allow re-starting with cards still in place?
 		byte[] card1 = null;
 		byte[] card2 = null;
@@ -1177,6 +1192,7 @@ public static int ncards = 0;
 			}
 			// if programmed stop... {
 			//	stopd.setBackground(red);
+			//	errorStop.set(true);
 			//	stopped = true;
 			// }
 			try {
@@ -1328,7 +1344,7 @@ public static int ncards = 0;
 			} else if (act.equals("stop")) {
 				stopped = true;
 			} else if (act.equals("total")) {
-				stopd.setBackground(off);
+				errorStop.clear(); // yes?
 				processFinalTotal();
 			}
 			return;

@@ -123,7 +123,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 
 	boolean stopped;
 	boolean runningOut;
-	boolean errorStop;
+	ErrorStop errorStop;
 	boolean ibm087;
 	boolean progSet;
 	JPanel acc;
@@ -212,7 +212,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 
 		stopped = true;
 		runningOut = false;
-		errorStop = false;
+		errorStop = new ErrorStop(off);
 		hopper1 = new CardHopper("Primary Hopper", 20, 100, 1, false);
 		hopper2 = new CardHopper("Secondary Hopper", 20, 100, 1, false);
 		hopper1.setListener(this);
@@ -244,6 +244,9 @@ class CardCollator implements Machine, ActionListener, Runnable
 		bcd1.setFocusable(false);
 		bcd2 = makeButton("BCD 2", null, off, Color.black, 1.0);
 		bcd2.setFocusable(false);
+		errorStop.addLight(error);
+		errorStop.addLight(bcd1);
+		errorStop.addLight(bcd2);
 
 		_menus = new JMenu[3];
 		JMenu mu;
@@ -859,10 +862,7 @@ class CardCollator implements Machine, ActionListener, Runnable
 public static int ncards = 0;
 
 	public void reset() {
-		errorStop = false;
-		error.setBackground(off);
-		bcd1.setBackground(off);
-		bcd2.setBackground(off);
+		errorStop.clear();
 		// TODO: allow machine to run...
 	}
 
@@ -881,7 +881,7 @@ public static int ncards = 0;
 		CardStacker out1 = null;
 		CardStacker out2 = null;
 		ready.setBackground(off);
-		if (errorStop) {
+		if (errorStop.is()) {
 			return;
 		}
 		_frame.setTitle(title + " (running)");
@@ -962,7 +962,7 @@ public static int ncards = 0;
 			}
 			impulseCycle(allCards);	// End ALL CARDS cycle
 			if (errStp.is(0) && !runningOut) {
-				errorStop = true;
+				errorStop.set(true);
 				error.setBackground(red);
 				stopped = true;
 				break;

@@ -138,7 +138,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	// TODO: these are indicators...
 	JButton idle;
 	JButton comp;
-	JButton dpdc;
+	JButton dpbc;
 	JButton form;
 	JButton feed;
 
@@ -157,7 +157,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	CharConverter cvt;
 
 	boolean stopped;
-	boolean errorStop;
+	ErrorStop errorStop;
 	boolean ibm514;
 	boolean progSet;
 	boolean empty;
@@ -208,7 +208,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		_frame = frame;
 		title = _frame.getTitle();
 		ibm514 = false;	// TODO: configure
-		errorStop = false;
+		errorStop = new ErrorStop(off);
 		progSet = false;
 		rbrush = new ReadingItem(80);
 		cbrush = new ReadingItem(80);
@@ -271,12 +271,16 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		idle.setFocusable(false);
 		comp = makeButton("COMP", null, off, Color.black);
 		comp.setFocusable(false);
-		dpdc = makeButton("DPBC<BR>DETECT", null, off, Color.black);
-		dpdc.setFocusable(false);
+		dpbc = makeButton("DPBC<BR>DETECT", null, off, Color.black);
+		dpbc.setFocusable(false);
 		form = makeButton("?", null, off, Color.black);
 		form.setFocusable(false);
 		feed = makeButton("?", null, off, Color.black);
 		feed.setFocusable(false);
+		errorStop.addLight(comp);
+		errorStop.addLight(dpbc);
+		errorStop.addLight(form);
+		errorStop.addLight(feed);
 
 		// Control Panel Switches
 		repro = toggleSwitch();
@@ -419,8 +423,8 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		gb.setConstraints(pn, gc);
 		_frame.add(pn);
 		++gc.gridx;
-		gb.setConstraints(dpdc, gc);
-		_frame.add(dpdc);
+		gb.setConstraints(dpbc, gc);
+		_frame.add(dpbc);
 		++gc.gridx;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(5, 5));
@@ -526,10 +530,11 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		}
 		// TODO: other setup?
 	}
-	public void startPunch() {
-		if (doOneCycle()) {
-			// ???
+	public boolean startPunch() {
+		if (phopper.stackCount() == 0) {
+			return true;
 		}
+		return doOneCycle();
 	}
 	public ProgItem summaryEntry() {
 		return csplits.X();
@@ -876,6 +881,8 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 
 	// Do not require both cards to be fed, only one is required to
 	// begin punching.
+	// TODO: improve restart capability... need to be able to restart
+	// where last stopped...
 	private boolean doOneCycle() {
 		boolean both = repro.isSelected();
 		boolean rfeed = true;
@@ -942,7 +949,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		if (!comparing.processExits()) {
 			// error stop...
 			comp.setBackground(red);
-			errorStop = true;
+			errorStop.set(true);
 			// end cycle? or return later?
 			return true;
 		}
@@ -955,7 +962,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 public static int ncards = 0;
 
 	public void run() {
-		if (errorStop) {
+		if (errorStop.is()) {
 			return;
 		}
 		_frame.setTitle(title + " (running)");
@@ -1129,8 +1136,7 @@ public static int ncards = 0;
 				stopped = true;
 			} else if (act.equals("reset")) {
 				comparing.clear();
-				comp.setBackground(off);
-				errorStop = false;
+				errorStop.clear();
 			}
 			return;
 		} else if (e.getSource() instanceof CardHandler) {

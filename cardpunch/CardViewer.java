@@ -143,6 +143,9 @@ class CardViewer implements Machine, ActionListener
 
 	private void addCard029(byte[] card, CharConverter cvt) {
 		String s = "";
+		if (text.getText().length() > 0) {
+			s += '\n';
+		}
 		for (int x = 0; x < 80; ++x) {
 			int p = getCol(x);
 			String t = cvt.punToAscii(p);
@@ -152,7 +155,6 @@ class CardViewer implements Machine, ActionListener
 				s += t;
 			}
 		}
-		s += '\n';
 		text.append(s);
 	}
 
