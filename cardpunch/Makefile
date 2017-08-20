@@ -1,7 +1,9 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
-all: $(CLASSES)
+HWCLASSES = PopupFactory.class
+
+all: $(HWCLASSES) $(CLASSES)
 
 %.class: %.java
 	javac -source 1.7 -target 1.7 $?
@@ -56,6 +58,9 @@ docs/About5.html: __FRC__
 
 www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/sims/punchcards
+
+$(HWCLASSES):
+	ln -s ../hw2000/$@ .
 
 clobber:
 	rm -f *.jar *.class

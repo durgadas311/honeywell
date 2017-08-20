@@ -933,6 +933,7 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		minor.linkEntry(0, 0, asterMinor.get(0));
 		finalTotal.linkEntry(0, 0, asterFinal.get(0));
 		allCycles.linkEntry(0, 0, asterAll.get(0));
+		String err = "";
 		//
 		props = new Properties();
 		try {
@@ -948,11 +949,11 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 				startSummaryPunch();
 				continue;
 			}
-			String[] vals = props.getProperty(prop).split("\\s");
+			String[] vals = p.split("\\s");
 			Vector<ProgSet> pv = new Vector<ProgSet>();
 			ProgSet p1 = parseItem(prop, 1);
 			if (p1 == null) {
-System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
+				err += String.format("%s = \"%s\"\n", prop, p);
 				continue;
 			}
 			int n = p1.wid;
@@ -964,7 +965,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 				}
 				ProgSet p2 = parseItem(val, 0);
 				if (p2 == null) {
-System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
+					err += String.format("%s = \"%s\"\n", prop, p);
 					continue;
 				}
 				if (p2.wid > n) n = p2.wid;
@@ -989,6 +990,10 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 					++c2;
 				}
 			}
+		}
+		if (err.length() > 0) {
+			PopupFactory.warning(_frame, "Property Errors",
+				"<HTML><PRE>" + err + "</PRE></HTML>");
 		}
 		progSet = true;
 	}

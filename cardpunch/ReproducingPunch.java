@@ -698,6 +698,7 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	}
 
 	private void loadProgram(String prog) {
+		String err = "";
 		props = new Properties();
 		try {
 			InputStream is = new FileInputStream(prog);
@@ -707,11 +708,12 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		}
 		// TODO: aN=3.x requires zN=2.x, produce erroneous output if not wired.
 		for (String prop : props.stringPropertyNames()) {
-			String[] vals = props.getProperty(prop).split("\\s");
+			String p = props.getProperty(prop);
+			String[] vals = p.split("\\s");
 			Vector<ProgSet> pv = new Vector<ProgSet>();
 			ProgSet p1 = parseItem(prop, 1);
 			if (p1 == null) {
-System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
+				err += String.format("%s = \"%s\"\n", prop, p);
 				continue;
 			}
 			int n = p1.wid;
@@ -719,7 +721,7 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 			for (String val : vals) {
 				ProgSet p2 = parseItem(val, 0);
 				if (p2 == null) {
-System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
+					err += String.format("%s = \"%s\"\n", prop, p);
 					continue;
 				}
 				if (p2.wid > n) n = p2.wid;
@@ -736,6 +738,10 @@ System.err.format("error \"%s = %s\"\n", prop, props.getProperty(prop));
 					++c2;
 				}
 			}
+		}
+		if (err.length() > 0) {
+			PopupFactory.warning(_frame, "Property Errors",
+				"<HTML><PRE>" + err + "</PRE></HTML>");
 		}
 		progSet = true;
 	}
