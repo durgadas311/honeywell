@@ -22,7 +22,7 @@ public class Accounting
 			}
 		}
 		JFrame frame = new JFrame("IBM 402 Accounting Machine");
-		acct = new CardAccounting(frame);
+		acct = new CardAccounting(frame, null, null);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = acct.getMenu();

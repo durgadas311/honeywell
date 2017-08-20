@@ -6,7 +6,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.io.*;
 
-public class DataCenter extends JFrame implements ActionListener, WindowListener
+public class DataCenter extends JFrame
+	implements AppManager, ActionListener, WindowListener
 {
 	private static DataCenter dc;
 
@@ -34,9 +35,17 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 	Dimension bd = new Dimension(210, 210);
 	GenericHelp _help;
 
+	File cardDir;
+	File panelDir;
+	File paperDir;
+	File drumDir;
+
 	public DataCenter() {
 		super("Punch-card Data Processing Center");
 		machs = new Machine[NUMACH];
+
+		cardDir = panelDir = paperDir = drumDir =
+			new File(System.getProperty("user.dir"));
 
 		JMenuBar mb = new JMenuBar();
 		JMenu mu;
@@ -154,26 +163,26 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 		Machine mach = null;
 		switch (ix) {
 		case KEYPUNCH:
-			mach = new PunchCardDeck(frame, opts);
+			mach = new PunchCardDeck(frame, this, opts);
 			break;
 		case SORTER:
 			// TODO: model options...
-			mach = new CardSorter(frame);
+			mach = new CardSorter(frame, this);
 			break;
 		case COLLATOR:
 			// TODO: model options...
-			mach = new CardCollator(frame);
+			mach = new CardCollator(frame, this);
 			break;
 		case ACCOUNTING:
 			// TODO: model options...
 			openMach(PUNCH, "IBM 514 Reproducing Punch", null, false);
-			mach = new CardAccounting(frame, (ReproducingPunch)machs[PUNCH]);
+			mach = new CardAccounting(frame, this, (ReproducingPunch)machs[PUNCH]);
 			break;
 		case PUNCH:
-			mach = new ReproducingPunch(frame);
+			mach = new ReproducingPunch(frame, this);
 			break;
 		case VIEWER:
-			mach = new CardViewer(frame, true);
+			mach = new CardViewer(frame, this, true);
 			break;
 		}
 		if (mach == null) {
@@ -195,6 +204,21 @@ public class DataCenter extends JFrame implements ActionListener, WindowListener
 			((PunchCardDeck)mach).start();
 		}
 	}
+
+
+	public CardViewer getViewer() {
+		openMach(VIEWER, "Punch Card Viewer", null, false);
+		return (CardViewer)machs[VIEWER];
+	}
+
+	public File getCardDir() { return cardDir; }
+	public void setCardDir(File dir) { cardDir = dir; }
+	public File getPanelDir() { return panelDir; }
+	public void setPanelDir(File dir) { panelDir = dir; }
+	public File getPaperDir() { return paperDir; }
+	public void setPaperDir(File dir) { paperDir = dir; }
+	public File getDrumDir() { return drumDir; }
+	public void setDrumDir(File dir) { drumDir = dir; }
 
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JButton) {

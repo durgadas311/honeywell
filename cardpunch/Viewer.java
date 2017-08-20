@@ -22,7 +22,7 @@ public class Viewer
 			}
 		}
 		JFrame frame = new JFrame("Punch Card Viewer");
-		view = new CardViewer(frame, false);
+		view = new CardViewer(frame, null, false);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = view.getMenu();

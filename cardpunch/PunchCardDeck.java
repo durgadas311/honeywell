@@ -88,8 +88,11 @@ class PunchCardDeck extends PunchCard
 		return c;
 	}
 
-	public PunchCardDeck(JFrame frame, CardPunchOptions opts) {
+	AppManager manager;
+
+	public PunchCardDeck(JFrame frame, AppManager mgr, CardPunchOptions opts) {
 		super(opts);
+		manager = mgr;
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		pgm_on = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-on.png"));
 		pgm_off = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-off.png"));
@@ -1095,9 +1098,13 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void deckAdd() {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
 		acc_stk.setText(hopper.stackList('\n', false));
 		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", _cwd);
+		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", dir);
 		if (fi == null) {
 			return;
 		}
@@ -1110,6 +1117,9 @@ class PunchCardDeck extends PunchCard
 				}
 				int c = (int)((fi.length() + 159) / 160);
 				hopper.addInput(f, n, c, acc_cb.isSelected());
+				if (manager != null) {
+					manager.setCardDir(fi);
+				}
 			} catch (Exception ee) {
 				// TODO: PopupFactory
 				ee.printStackTrace();
@@ -1121,12 +1131,20 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void deckSave() {
-		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", _cwd);
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
+		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", dir);
 		if (fi == null) {
 			return;
 		}
 		if (!stacker.saveDeck(fi)) {
 			// TODO: PopupFactory
+			return;
+		}
+		if (manager != null) {
+			manager.setCardDir(fi);
 		}
 	}
 
@@ -1197,19 +1215,35 @@ class PunchCardDeck extends PunchCard
 				System.exit(0);
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_L) {
+			File dir = _cwd;
+			if (manager != null) {
+				dir = manager.getDrumDir();
+			}
+			if (_progFile != null) {
+				dir =  _progFile;
+			}
 			File nu = pickFile("Load Prog Card", false,
-				"prc", "Program Card",
-				_progFile == null ? _cwd : _progFile);
+				"prc", "Program Card", dir);
 			if (nu != null) {
 				_progFile = nu;
 				loadProg(_progFile);
+				if (manager != null) {
+					manager.setDrumDir(nu);
+				}
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
+			File dir = _cwd;
+			if (manager != null) {
+				dir = manager.getDrumDir();
+			}
 			if (_progFile == null) {
 				File nu = pickFile("Save Prog Card As", false,
-					"prc", "Program Card", _cwd);
+					"prc", "Program Card", dir);
 				if (nu != null) {
 					_progFile = nu;
+				}
+				if (manager != null) {
+					manager.setDrumDir(nu);
 				}
 			}
 			saveProg(_progFile);

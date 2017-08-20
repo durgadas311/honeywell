@@ -40,8 +40,11 @@ class CardViewer implements Machine, ActionListener
 	public void setQuitListener(ActionListener lstn) { quit = lstn; }
 	private ActionListener quit = null;
 
-	public CardViewer(JFrame frame, boolean i029) {
+	AppManager manager;
+
+	public CardViewer(JFrame frame, AppManager mgr, boolean i029) {
 		_frame = frame;
+		manager = mgr;
 
 		_cwd = new File(System.getProperty("user.dir"));
 		CardPunchOptions opts = new CardPunchOptions();
@@ -180,47 +183,46 @@ class CardViewer implements Machine, ActionListener
 		_frame.repaint();
 	}
 
-	private void addCard(byte[] card) {
+	private void reSetup() {
 		if (hw200.isSelected() || hw200spc.isSelected()) {
 			reFont(f222);
+			text.setBackground(Color.white);
+		} else {
+			text.setBackground(CardHandler.buff1);
+			if (ibm026.isSelected() || ibm026h.isSelected()) {
+				reFont(f026);
+			} else {
+				reFont(f029);
+			}
+		}
+	}
+
+	private void addCard(byte[] card) {
+		if (hw200.isSelected() || hw200spc.isSelected()) {
 			addCardHW(card);
 		} else if (ibm026.isSelected() || ibm026h.isSelected()) {
-			reFont(f026);
 			addCard029(card, ibm026h.isSelected() ? cvt026h : cvt026);
 		} else {
-			reFont(f029);
 			addCard029(card, cvt);
 		}
 	}
 
-	private void deckAdd() {
-		File fi = pickFile("View Deck", "pcd", "Punch Card Deck", _cwd);
-		if (fi == null) {
-			return;
-		}
-		if (fi.exists()) {
-			try {
-				InputStream f = new FileInputStream(fi);
-				String n = fi.getName();
-				if (n.endsWith(".pcd")) {
-					n = n.substring(0, n.length() - 4);
-				}
-				int c = (int)((fi.length() + 159) / 160);
-				hopper.addInput(f, n, c, true);
-			} catch (Exception ee) {
-				// TODO: PopupFactory
-				ee.printStackTrace();
-				return;
+	private void deckAdd(File fi) {
+		try {
+			InputStream f = new FileInputStream(fi);
+			String n = fi.getName();
+			if (n.endsWith(".pcd")) {
+				n = n.substring(0, n.length() - 4);
 			}
-		} else {
+			int c = (int)((fi.length() + 159) / 160);
+			hopper.addInput(f, n, c, true);
+			if (manager != null) {
+				manager.setCardDir(fi);
+			}
+		} catch (Exception ee) {
 			// TODO: PopupFactory
-			System.err.format("Internal error: chosen file does not exist\n");
+			ee.printStackTrace();
 			return;
-		}
-		if (hw200.isSelected() || hw200spc.isSelected()) {
-			text.setBackground(Color.white);
-		} else {
-			text.setBackground(CardHandler.buff1);
 		}
 		text.setText("");
 		while (hopper.getCard(_card) > 0) {
@@ -228,6 +230,34 @@ class CardViewer implements Machine, ActionListener
 		}
 		hopper.addBlank(0); // closes things
 		text.setCaretPosition(0);
+	}
+
+	private void deckAdd() {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
+		File fi = pickFile("View Deck", "pcd", "Punch Card Deck", dir);
+		if (fi == null) {
+			return;
+		}
+		if (!fi.exists()) {
+			// TODO: PopupFactory
+			System.err.format("Internal error: chosen file does not exist\n");
+			return;
+		}
+		reSetup();
+		deckAdd(fi);
+	}
+
+	public boolean viewDeck(File fi, boolean i026, boolean fortran) {
+		ibm029.setSelected(!i026);
+		ibm026.setSelected(i026 && !fortran);
+		ibm026h.setSelected(i026 && fortran);
+		reSetup();
+		deckAdd(fi);
+		_frame.setVisible(true);
+		return true;
 	}
 
 	public void actionPerformed(ActionEvent e) {

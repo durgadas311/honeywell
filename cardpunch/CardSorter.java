@@ -114,8 +114,11 @@ class CardSorter implements Machine, ActionListener, Runnable
 	ImageIcon red;
 	ImageIcon gry;
 
-	public CardSorter(JFrame frame) {
+	AppManager manager;
+
+	public CardSorter(JFrame frame, AppManager mgr) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
+		manager = mgr;
 		_frame = frame;
 		title = _frame.getTitle();
 		blk = new ImageIcon(getClass().getResource("icons/black-box.png"));
@@ -530,13 +533,20 @@ class CardSorter implements Machine, ActionListener, Runnable
 	}
 
 	private void deckAdd() {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
 		acc_stk.setText(hopper.stackList('\n', false));
 		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", _cwd);
+		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", dir);
 		if (fi == null) {
 			return;
 		}
 		deckAdd(fi, acc_cb.isSelected());
+		if (manager != null) {
+			manager.setCardDir(fi);
+		}
 	}
 
 	private void deckAdd(File fi, boolean empty) {
@@ -560,8 +570,12 @@ class CardSorter implements Machine, ActionListener, Runnable
 	}
 
 	private void deckSave() {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
 		recycle.setSelected(false);
-		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", _cwd);
+		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", dir);
 		if (recycle.isSelected()) {
 			fi = tmp;
 		}
@@ -602,6 +616,9 @@ class CardSorter implements Machine, ActionListener, Runnable
 		}
 		if (recycle.isSelected()) {
 			deckAdd(fi, true);
+		}
+		if (manager != null) {
+			manager.setCardDir(fi);
 		}
 	}
 

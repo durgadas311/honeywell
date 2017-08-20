@@ -25,7 +25,7 @@ public class Sorter
 		s = "IBM 082";
 
 		JFrame frame = new JFrame(s + " Sorter");
-		sort = new CardSorter(frame);
+		sort = new CardSorter(frame, null);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = sort.getMenu();

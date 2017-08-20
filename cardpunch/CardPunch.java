@@ -42,7 +42,7 @@ public class CardPunch
 		}
 
 		JFrame frame = new JFrame(s + " Card Punch");
-		card = new PunchCardDeck(frame, opts);
+		card = new PunchCardDeck(frame, null, opts);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = card.getMenu();

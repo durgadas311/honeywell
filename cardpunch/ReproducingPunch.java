@@ -124,9 +124,6 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	JFrame _frame;
 	Font labels;
 	File _cwd;
-	File _prevProg;
-	File _prevDeck;
-	File _prevPapr;
 	File tmp;
 	CardHopper rhopper;
 	CardStacker rstacker;
@@ -203,8 +200,11 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	String title;
 	Puncher puncher;
 
-	public ReproducingPunch(JFrame frame) {
+	AppManager manager;
+
+	public ReproducingPunch(JFrame frame, AppManager mgr) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
+		manager = mgr;
 		_frame = frame;
 		title = _frame.getTitle();
 		ibm514 = false;	// TODO: configure
@@ -230,7 +230,6 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		allCycles = new SingleExit();
 
 		_cwd = new File(System.getProperty("user.dir"));
-		_prevProg = _prevDeck = _prevPapr = _cwd;
 		cvt = new CharConverter();
 		tog_up = new ImageIcon(getClass().getResource("icons/ibm026-30-on.png"));
 		tog_dn = new ImageIcon(getClass().getResource("icons/ibm026-30-off.png"));
@@ -1028,25 +1027,37 @@ public static int ncards = 0;
 	}
 
 	private void getProg() {
-		File fi = pickFile("Get Prog", "51x", "IBM 51x Prog", _prevProg, null);
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getPanelDir();
+		}
+		File fi = pickFile("Get Prog", "51x", "IBM 51x Prog", dir, null);
 		if (fi == null) {
 			return;
 		}
-		_prevProg = fi;
 		unProg();
 		loadProgram(fi.getAbsolutePath());
+		if (manager != null) {
+			manager.setPanelDir(fi);
+		}
 	}
 
 	private void deckAdd(CardHopper hop) {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
 		acc_stk.setText(hop.stackList('\n', false));
 		acc_cb.setSelected(false);
 		File fi = pickFile(hop.getLabel(), "pcd", "Punch Card Deck",
-					_prevDeck, acc);
+					dir, acc);
 		if (fi == null) {
 			return;
 		}
-		_prevDeck = fi;
 		deckAdd(hop, fi, acc_cb.isSelected());
+		if (manager != null) {
+			manager.setCardDir(fi);
+		}
 	}
 
 	private void deckAdd(CardHopper hop, File fi, boolean empty) {
@@ -1070,8 +1081,12 @@ public static int ncards = 0;
 	}
 
 	private void deckSave(CardStacker stk) {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
 		File fi = pickFile(stk.getLabel(), "pcd", "Punch Card Deck",
-				_prevDeck, null);
+				dir, null);
 		if (fi == null) {
 			return;
 		}
@@ -1085,7 +1100,9 @@ public static int ncards = 0;
 		boolean ok = true;
 		ok = stk.saveDeck(os);
 		if (ok) {
-			_prevDeck = fi;
+			if (manager != null) {
+				manager.setCardDir(fi);
+			}
 		}
 	}
 

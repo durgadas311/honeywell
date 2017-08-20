@@ -22,7 +22,7 @@ public class Collator
 			}
 		}
 		JFrame frame = new JFrame("IBM 085 Collator");
-		acct = new CardCollator(frame);
+		acct = new CardCollator(frame, null);
 
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = acct.getMenu();

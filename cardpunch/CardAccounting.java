@@ -238,9 +238,6 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	JFrame _frame;
 	Font labels;
 	File _cwd;
-	File _prevProg;
-	File _prevDeck;
-	File _prevPapr;
 	File tmp;
 	CardHopper hopper;
 	CardStacker stacker;
@@ -324,9 +321,12 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	String title;
 	ReproducingPunch summary;
 
+	AppManager manager;
+
 	// TODO: 'summ' is ReproducingPunch a.k.a. Summary Punch
-	public CardAccounting(JFrame frame, ReproducingPunch summ) {
+	public CardAccounting(JFrame frame, AppManager mgr, ReproducingPunch summ) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
+		manager = mgr;
 		_frame = frame;
 		summary = summ;
 		title = _frame.getTitle();
@@ -373,7 +373,6 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		summPU = new SummaryItem();
 
 		_cwd = new File(System.getProperty("user.dir"));
-		_prevProg = _prevDeck = _prevPapr = _cwd;
 		cvt = new CharConverter();
 
 		stopped = true;
@@ -1264,24 +1263,37 @@ public static int ncards = 0;
 	}
 
 	private void getProg() {
-		File fi = pickFile("Get Prog", "40x", "IBM 40x Prog", _prevProg, null);
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getPanelDir();
+		}
+		File fi = pickFile("Get Prog", "40x", "IBM 40x Prog", dir, null);
 		if (fi == null) {
 			return;
 		}
-		_prevProg = fi;
 		unProg();
 		loadProgram(fi.getAbsolutePath());
+		if (manager != null) {
+			manager.setPanelDir(fi);
+		}
 	}
 
 	private void deckAdd() {
+		File dir = _cwd;
+		if (manager != null) {
+			dir = manager.getCardDir();
+		}
 		acc_stk.setText(hopper.stackList('\n', false));
 		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", "pcd", "Punch Card Deck", _prevDeck, acc);
+		File fi = pickFile("Add Input", "pcd", "Punch Card Deck", dir, acc);
 		if (fi == null) {
 			return;
 		}
-		_prevDeck = fi;
+		dir = fi;
 		deckAdd(fi, acc_cb.isSelected());
+		if (manager != null) {
+			manager.setCardDir(fi);
+		}
 	}
 
 	private void deckAdd(File fi, boolean empty) {
@@ -1382,13 +1394,19 @@ public static int ncards = 0;
 				System.exit(0);
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_S) {
+			File dir = _cwd;
+			if (manager != null) {
+				dir = manager.getPaperDir();
+			}
 			File f = pickFile("Save Report",
-					"txt", "Text Files", _prevPapr, null);
+					"txt", "Text Files", dir, null);
 			if (f != null) try {
 				FileOutputStream fo = new FileOutputStream(f);
 				fo.write(text.getText(0, caret).getBytes());
 				fo.close();
-				_prevPapr = f;
+				if (manager != null) {
+					manager.setPaperDir(f);
+				}
 			} catch (Exception ee) {
 				// TODO: pop-up error
 			}
