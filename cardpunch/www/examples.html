@@ -48,9 +48,54 @@ The customer master cards ("master1") contain data in the following format:
 <P><TABLE BORDER>
 <TR><TH>Columns</TH><TH>Contents</TH></TR>
 <TR><TD>1-4</TD><TD>Customer ID (numeric)</TD></TR>
-<TR><TD>40</TD><TD>"X" punch ('&') for payments</TD></TR>
-<TR><TD>41-48</TD><TD>Transaction Amount (numeric, 2 decimal positions)</TD></TR>
+<TR><TD>40</TD><TD>"X" punch ('&') for payments (credits)</TD></TR>
+<TR><TD>41-48</TD><TD>Transaction Amount (numeric, 2 implied decimal positions)</TD></TR>
 </TABLE>
+
+<H4>Prerequisite - Data Entry</H4>
+<P>This step demonstrates the data entry phase. Since the output of this step
+is the card deck "detail1", which already exists, it is not strictly necessary.
+
+<P>The amounts must be entered as right-justified, zero-filled, 8-digit values
+with an assumed decimal point at 2 places.
+Since data entry input documents are typically prepared by humans, and even hand-written,
+an data entry operator must be able to glance at the value and know how
+many leading zeros (or blanks) to type.
+Experienced keypunch operators could very quickly predict how many zeros to punch.
+<P>Most good keypuch operators would never look at the card being punched (let alone
+the keyboard). Even with the best keypunchers, mistakes would happen.
+Data entry often consisted of two phases - data entry and data verification.
+For verification, a different operator would re-enter the data on a keypunch
+setup to verify - where it does not punch what is typed by only compares
+with what was previously punched and jams when there is a mis-match.
+The operator would then have to examine the document, card, and their own typing
+to determine where the mistake was. Verification is not covered in this example.
+<P>The input data document has data grouped by customer ID, although not
+in numerical order. Depending on how the original data was gathered,
+this may or may not have been the case for a given data entry job.
+
+<OL>
+<LI>Start the Keypunch.
+<LI>Load the program card "detentry1" (DETail data ENTRY).
+<LI>Set the program bar to the left (on), turn on AUTO SKIP DUP and AUTO FEED
+(ensure that PROG 1 is selected).
+<LI>Ensure blank cards are in the input hopper.
+<LI>Press RELEASE (Enter) to feed the first card.
+<LI>Use the file "dataentry1.txt" to enter the data:
+<OL>
+<LI>If the customer ID is the same as the previous card, press DUP (Ctrl-D).
+Otherwise, type the 4-digit customer ID. The keypunch will skip to column 40.
+<LI>If the amount is a credit/payment, type '&' else type a space.
+<LI>Enter the amount, but it must be zero-filled and right justified.
+Do not enter the decimal point character. When the last digit is typed,
+the card will release and a new blank card will feed into the punch station.
+</OL>
+Once the data has been entered, save the output stacker cards into a file
+("detail1").
+</OL>
+<P>NOTE: the program drum card may be viewed by pressing Ctrl-A. This also
+sends the current card to the output stacker, so keep that in mind.
+To return to data entry, press Ctrl-A again, which feeds another card.
 
 <H4>Step 1 - Sort detail records</H4>
 <P>Start the DataCenter application, which provides central access to all
