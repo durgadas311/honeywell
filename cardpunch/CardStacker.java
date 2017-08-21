@@ -107,6 +107,9 @@ public class CardStacker extends CardHandler implements MouseListener {
 		update();
 	}
 
+	// Use caution! should use read-only
+	public File getDeck() { return ofil; }
+
 	public void discardDeck() {
 		if (odev != null) {
 			try {

@@ -164,10 +164,12 @@ class CardCollator implements Machine, ActionListener, Runnable
 	String title;
 
 	AppManager manager;
+	CardViewer viewer;
 
 	public CardCollator(JFrame frame, AppManager mgr) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		manager = mgr;
+		viewer = null;
 		_frame = frame;
 		title = _frame.getTitle();
 		ibm087 = false;	// TODO: configure
@@ -1099,18 +1101,32 @@ public static int ncards = 0;
 		}
 	}
 
+	private void deckView(CardStacker stk) {
+		if (manager == null) {
+			return;
+		}
+		if (viewer == null) {
+			viewer = manager.getViewer();
+		}
+		viewer.viewDeck(stk.getDeck(), false, false);
+	}
+
 	private void deckChange(CardHandler obj, String act) {
 		if (act.equals("right")) {
-			if (obj == hopper1 || obj == hopper2) {
+			if (obj instanceof CardHopper) {
 				((CardHopper)obj).addBlank(0);
 			} else {
 				((CardStacker)obj).discardDeck();
 			}
 		} else if (act.equals("left")) {
-			if (obj == hopper1 || obj == hopper2) {
+			if (obj instanceof CardHopper) {
 				deckAdd((CardHopper)obj);
 			} else {
 				deckSave((CardStacker)obj);
+			}
+		} else if (act.equals("LEFT")) {
+			if (obj instanceof CardStacker) {
+				deckView((CardStacker)obj);
 			}
 		}
 	}

@@ -40,6 +40,8 @@ class PunchCardDeck extends PunchCard
 	byte[] _prev;
 	boolean _currIsProg;
 	boolean _saveImage;
+	boolean _ibm026;
+	boolean _fortran;
 	boolean _endOfCard;
 
 	GridBagLayout pn_gb;
@@ -89,14 +91,18 @@ class PunchCardDeck extends PunchCard
 	}
 
 	AppManager manager;
+	CardViewer viewer;
 
 	public PunchCardDeck(JFrame frame, AppManager mgr, CardPunchOptions opts) {
 		super(opts);
 		manager = mgr;
+		viewer = null;
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		pgm_on = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-on.png"));
 		pgm_off = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-off.png"));
-		if (opts.ibm026) {
+		_ibm026 = opts.ibm026;
+		_fortran = opts.fortran;
+		if (_ibm026) {
 			icn_on = new ImageIcon(getClass().getResource("icons/ibm026-30-on.png"));
 			icn_off = new ImageIcon(getClass().getResource("icons/ibm026-30-off.png"));
 			icn_pr = new ImageIcon(getClass().getResource("icons/ibm026-30-pr.png"));
@@ -218,7 +224,7 @@ class PunchCardDeck extends PunchCard
 		pn_pn = new JPanel();
 		pn_pn.setLayout(pn_gb);
 		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
-		if (opts.ibm026) {
+		if (_ibm026) {
 			ibm026Panel(opts);
 		} else {
 			ibm029Panel(opts);
@@ -1130,6 +1136,16 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
+	private void deckView(CardStacker stk) {
+		if (manager == null) {
+			return;
+		}
+		if (viewer == null) {
+			viewer = manager.getViewer();
+		}
+		viewer.viewDeck(stk.getDeck(), _ibm026, _fortran);
+	}
+
 	private void deckSave() {
 		File dir = _cwd;
 		if (manager != null) {
@@ -1160,6 +1176,10 @@ class PunchCardDeck extends PunchCard
 				deckAdd();
 			} else {
 				deckSave();
+			}
+		} else if (act.equals("LEFT")) {
+			if (obj instanceof CardStacker) {
+				deckView((CardStacker)obj);
 			}
 		}
 	}

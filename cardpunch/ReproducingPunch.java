@@ -201,10 +201,12 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	Puncher puncher;
 
 	AppManager manager;
+	CardViewer viewer;
 
 	public ReproducingPunch(JFrame frame, AppManager mgr) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		manager = mgr;
+		viewer = null;
 		_frame = frame;
 		title = _frame.getTitle();
 		ibm514 = false;	// TODO: configure
@@ -1106,24 +1108,38 @@ public static int ncards = 0;
 		}
 	}
 
+	private void deckView(CardStacker stk) {
+		if (manager == null) {
+			return;
+		}
+		if (viewer == null) {
+			viewer = manager.getViewer();
+		}
+		viewer.viewDeck(stk.getDeck(), false, false);
+	}
+
 	private void deckChange(CardHandler obj, String act) {
 		if (act.equals("right")) {
-			if (obj == rhopper || obj == phopper) {
+			if (obj instanceof CardHopper) {
 				((CardHopper)obj).addBlank(50);
 			} else {
 				((CardStacker)obj).discardDeck();
 			}
 		} else if (act.equals("RIGHT")) {
-			if (obj == rhopper || obj == phopper) {
+			if (obj instanceof CardHopper) {
 				((CardHopper)obj).emptyHopper();
 			}
 		} else if (act.equals("left")) {
-			if (obj == rhopper || obj == phopper) {
+			if (obj instanceof CardHopper) {
 				deckAdd((CardHopper)obj);
 			} else if (obj == pstacker) {
 				deckSave((CardStacker)obj);
 			} else {
 				((CardStacker)obj).discardDeck();
+			}
+		} else if (act.equals("LEFT")) {
+			if (obj instanceof CardStacker) {
+				deckView((CardStacker)obj);
 			}
 		}
 	}

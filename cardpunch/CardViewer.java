@@ -27,6 +27,7 @@ class CardViewer implements Machine, ActionListener
 	ButtonGroup bg;
 
 	JTextArea text;
+	JTextArea ruler;
 	JScrollPane scroll;
 	CharConverter cvt;
 	CharConverter cvt026;
@@ -64,6 +65,17 @@ class CardViewer implements Machine, ActionListener
 		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);
 		hopper.setListener(this);
 
+		_frame.setLayout(new BoxLayout(_frame.getContentPane(), BoxLayout.Y_AXIS));
+		// Use JScrollPane for ruler so it aligns with text...
+		ruler = new JTextArea(1, 80);
+		ruler.setText("1...*....10...*....20...*....30...*....40" +
+			"...*....50...*....60...*....70...*...80");
+		ruler.setEditable(false);
+		scroll = new JScrollPane(ruler);
+		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+		scroll.setViewportBorder(new LineBorder(Color.white, 3));
+		_frame.add(scroll);
 		text = new JTextArea(10, 80);
 		text.setEditable(false);
 		scroll = new JScrollPane(text);
@@ -96,10 +108,12 @@ class CardViewer implements Machine, ActionListener
 		bg.add(hw200);
 		bg.add(hw200spc);
 		if (i029) {
+			ruler.setFont(f029);
 			text.setFont(f029);
 			text.setBackground(CardHandler.buff1);
 			ibm029.setSelected(true);
 		} else {
+			ruler.setFont(f222);
 			text.setFont(f222);
 			text.setBackground(Color.white);
 			hw200.setSelected(true);
@@ -177,6 +191,7 @@ class CardViewer implements Machine, ActionListener
 	}
 
 	private void reFont(Font f) {
+		ruler.setFont(f);
 		text.setFont(f);
 		_frame.validate();
 		_frame.pack();
@@ -228,7 +243,7 @@ class CardViewer implements Machine, ActionListener
 		while (hopper.getCard(_card) > 0) {
 			addCard(_card);
 		}
-		hopper.addBlank(0); // closes things
+		hopper.emptyHopper(); // closes things
 		text.setCaretPosition(0);
 	}
 

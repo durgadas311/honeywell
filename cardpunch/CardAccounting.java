@@ -322,11 +322,13 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	ReproducingPunch summary;
 
 	AppManager manager;
+	CardViewer viewer;
 
 	// TODO: 'summ' is ReproducingPunch a.k.a. Summary Punch
 	public CardAccounting(JFrame frame, AppManager mgr, ReproducingPunch summ) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		manager = mgr;
+		viewer = null;
 		_frame = frame;
 		summary = summ;
 		title = _frame.getTitle();
@@ -1316,6 +1318,16 @@ public static int ncards = 0;
 		}
 	}
 
+	private void deckView(CardStacker stk) {
+		if (manager == null) {
+			return;
+		}
+		if (viewer == null) {
+			viewer = manager.getViewer();
+		}
+		viewer.viewDeck(stk.getDeck(), false, false);
+	}
+
 	private void deckChange(CardHandler obj, String act) {
 		if (act.equals("right")) {
 			if (obj == hopper) {
@@ -1328,6 +1340,10 @@ public static int ncards = 0;
 				deckAdd();
 			} else {
 				stacker.discardDeck();
+			}
+		} else if (act.equals("LEFT")) {
+			if (obj instanceof CardStacker) {
+				deckView((CardStacker)obj);
 			}
 		}
 	}

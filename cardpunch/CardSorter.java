@@ -115,10 +115,12 @@ class CardSorter implements Machine, ActionListener, Runnable
 	ImageIcon gry;
 
 	AppManager manager;
+	CardViewer viewer;
 
 	public CardSorter(JFrame frame, AppManager mgr) {
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
 		manager = mgr;
+		viewer = null;
 		_frame = frame;
 		title = _frame.getTitle();
 		blk = new ImageIcon(getClass().getResource("icons/black-box.png"));
@@ -622,6 +624,16 @@ class CardSorter implements Machine, ActionListener, Runnable
 		}
 	}
 
+	private void deckView(CardStacker stk) {
+		if (manager == null) {
+			return;
+		}
+		if (viewer == null) {
+			viewer = manager.getViewer();
+		}
+		viewer.viewDeck(stk.getDeck(), false, false);
+	}
+
 	private void deckChange(CardHandler obj, String act) {
 		if (act.equals("right")) {
 			if (obj == hopper) {
@@ -637,6 +649,10 @@ class CardSorter implements Machine, ActionListener, Runnable
 				deckAdd();
 			} else {
 				deckSave();
+			}
+		} else if (act.equals("LEFT")) {
+			if (obj instanceof CardStacker) {
+				deckView((CardStacker)obj);
 			}
 		}
 	}
