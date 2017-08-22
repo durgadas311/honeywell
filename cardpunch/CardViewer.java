@@ -57,9 +57,9 @@ class CardViewer implements Machine, ActionListener
 		//f222 = new Font("Monospaced", Font.PLAIN, 12);
 		// font size must be multiple of artifact geometry
 		// for best appearance. For keypunch fonts that is 8.
-		f222 = loadFont("HW222.ttf", 16);
-		f029 = loadFont("IBM029.ttf", 16);
-		f026 = loadFont("IBM026.ttf", 16);
+		f222 = loadFont("HW222.ttf", 10);
+		f029 = loadFont("IBM029.ttf", 8);
+		f026 = loadFont("IBM026.ttf", 8);
 
 		_card = new byte[2*80];
 		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);
@@ -222,7 +222,7 @@ class CardViewer implements Machine, ActionListener
 		}
 	}
 
-	private void deckAdd(File fi) {
+	private void deckAdd(File fi, boolean update) {
 		try {
 			InputStream f = new FileInputStream(fi);
 			String n = fi.getName();
@@ -231,7 +231,7 @@ class CardViewer implements Machine, ActionListener
 			}
 			int c = (int)((fi.length() + 159) / 160);
 			hopper.addInput(f, n, c, true);
-			if (manager != null) {
+			if (update && manager != null) {
 				manager.setCardDir(fi);
 			}
 		} catch (Exception ee) {
@@ -262,15 +262,16 @@ class CardViewer implements Machine, ActionListener
 			return;
 		}
 		reSetup();
-		deckAdd(fi);
+		deckAdd(fi, true);
 	}
 
 	public boolean viewDeck(File fi, boolean i026, boolean fortran) {
+		// Do not update "current dir"!
 		ibm029.setSelected(!i026);
 		ibm026.setSelected(i026 && !fortran);
 		ibm026h.setSelected(i026 && fortran);
 		reSetup();
-		deckAdd(fi);
+		deckAdd(fi, false);
 		_frame.setVisible(true);
 		return true;
 	}
