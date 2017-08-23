@@ -10,11 +10,11 @@
 sequence for a company. The card deck "master1.pcd" contains a set
 of customer "master" cards, each containing static information about a customer
 along with that customer's current balance.
-Credit balances are indicated by an "X" punch ('&' character) in column 40.
+Credit balances are indicated by an "X" punch ('-' character) in column 40.
 These cards are kept in sorted order by customer ID, as a convenience.
 The file "detail1.pcd" contains customer transactions (e.g. purchases and
 payments).
-Payments are indicated by an "X" punch ('&' character) in column 40.
+Payments are indicated by an "X" punch ('-' character) in column 40.
 These cards are not sorted, as they typically would come straight from
 data entry where they were punched from paper invoices - which were likely
 processed in chronological order, plus possibly punched by several different
@@ -40,7 +40,7 @@ The customer master cards ("master1") contain data in the following format:
 <TR><TD>5-19</TD><TD>First name (alphabetic)</TD></TR>
 <TR><TD>20-34</TD><TD>Last name (alphabetic)</TD></TR>
 <TR><TD>35-39</TD><TD>Zip code (numeric)</TD></TR>
-<TR><TD>40</TD><TD>"X" punch ('&') for credit</TD></TR>
+<TR><TD>40</TD><TD>"X" punch ('-') for credit</TD></TR>
 <TR><TD>41-48</TD><TD>Balance (numeric, 2 decimal positions)</TD></TR>
 </TABLE>
 
@@ -48,7 +48,7 @@ The customer master cards ("master1") contain data in the following format:
 <P><TABLE BORDER>
 <TR><TH>Columns</TH><TH>Contents</TH></TR>
 <TR><TD>1-4</TD><TD>Customer ID (numeric)</TD></TR>
-<TR><TD>40</TD><TD>"X" punch ('&') for payments (credits)</TD></TR>
+<TR><TD>40</TD><TD>"X" punch ('-') for payments (credits)</TD></TR>
 <TR><TD>41-48</TD><TD>Transaction Amount (numeric, 2 implied decimal positions)</TD></TR>
 </TABLE>
 
@@ -87,7 +87,7 @@ punch-card data processing equipment.
 <OL>
 <LI>If the customer ID is the same as the previous card, press DUP (Ctrl-D).
 Otherwise, type the 4-digit customer ID. The keypunch will skip to column 40.
-<LI>If the amount is a credit/payment, type '&' else type a space.
+<LI>If the amount is a credit/payment, type '-' else type a space.
 <LI>Enter the amount, but it must be zero-filled and right justified.
 Do not enter the decimal point character. When the last digit is typed,
 the card will release and a new blank card will feed into the punch station.

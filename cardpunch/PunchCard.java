@@ -27,12 +27,13 @@ class PunchCard extends JLabel
 	protected byte[] _curr;
 	protected int _cursor;
 
-	private double _bit_spacing = 37.8;
-	private double _bit_start = 26.7;
-	private double _row_spacing = 13.1;
-	private double _row_start = 34.4;
-	private int _bit_width = 9;
-	private int _bit_height = 20;
+	private int _bit_spacing = 23;
+	private int _bit_start = 15;
+	private int _row_spacing = 8;
+	private int _row_start = 18;
+	private int _baseline = 10;
+	private int _bit_width = _row_spacing - 2;
+	private int _bit_height = 13;
 	private int _cols_per_card = 80;
 	private int _curs_y0 = 10;
 	private int _curs_y1;
@@ -71,25 +72,24 @@ class PunchCard extends JLabel
 			if ((c & 0x1000) == 0) {
 				continue;
 			}
-			double rx = s * _row_spacing + _row_start;
+			int rx = s * _row_spacing + _row_start + 1;
 			ss = _cvt.punToAscii(c);
 			if (ss != null) {
-				g2d.drawString(ss, (int)Math.round(rx), 17);
+				g2d.drawString(ss, rx, _baseline);
 			}
 		}
 		g2d.setColor(hole);
 		for (s = 0; s < _cols_per_card; ++s) {
 			int c = 0;
 			c = getCode(_curr, s);
-			double rx = s * _row_spacing + _row_start;
+			int rx = s * _row_spacing + _row_start;
 			int b;
 			for (b = 0; b < 12; ++b) {
-				double ry = (b * _bit_spacing) + _bit_start;
+				int ry = (b * _bit_spacing) + _bit_start;
 				boolean m = ((c & 0x800) != 0);
 				c <<= 1;
 				if (m) {
-					g2d.fillRect((int)Math.round(rx),
-						(int)Math.round(ry),
+					g2d.fillRect(rx, ry,
 						_bit_width, _bit_height);
 				}
 			}
@@ -98,7 +98,7 @@ class PunchCard extends JLabel
 			if (_cursor > 81) {
 				_cursor = 81;
 			}
-			int rx = (int)Math.round(_cursor * _row_spacing + _row_start - _row_spacing);
+			int rx = _cursor * _row_spacing + _row_start - _row_spacing;
 			g2d.setColor(Color.red);
 			g2d.drawLine(rx, _curs_y0, rx, _curs_y1);
 		}
@@ -131,12 +131,12 @@ class PunchCard extends JLabel
 		if (ttf != null) {
 			try {
 				Font font = Font.createFont(Font.TRUETYPE_FONT, ttf);
-				font1 = font.deriveFont(16f);
+				font1 = font.deriveFont(8f);
 			} catch (Exception ee) {
-				font1 = new Font("Monospaced", Font.PLAIN, 14);
+				font1 = new Font("Monospaced", Font.PLAIN, 10);
 			}
 		}
-		_image = new ImageIcon(getClass().getResource("PunchCard2.png"));
+		_image = new ImageIcon(getClass().getResource("PunchCard.png"));
 		setIcon(_image);
 		hole = Color.gray;
 		setBackground(hole);

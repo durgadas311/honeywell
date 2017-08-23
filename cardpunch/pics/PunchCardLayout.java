@@ -26,7 +26,7 @@ class PunchCardLayout extends JLabel
 	int row1 = top + half;
 	int row9 = row1 + 8 * row;
 
-	Polygon clip = new Polygon(new int[]{0, 23, 0},
+	Polygon clip = new Polygon(new int[]{0, 20, 0},
 				new int[]{0, 0, 36},
 				3);
 

@@ -224,6 +224,11 @@ class PunchCardDeck extends PunchCard
 		pn_pn = new JPanel();
 		pn_pn.setLayout(pn_gb);
 		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
+		hopperPanel(opts);
+		JPanel hp = pn_pn;
+		pn_pn = new JPanel();
+		pn_pn.setLayout(pn_gb);
+		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
 		if (_ibm026) {
 			ibm026Panel(opts);
 		} else {
@@ -245,6 +250,9 @@ class PunchCardDeck extends PunchCard
 		gc.insets.right = 0;
 		gc.anchor = GridBagConstraints.NORTH;
 
+		gridbag.setConstraints(hp, gc);
+		frame.add(hp);
+		++gc.gridy;
 		pn_pn.setFocusable(false);
 		gridbag.setConstraints(pn_pn, gc);
 		frame.add(pn_pn);
@@ -326,6 +334,7 @@ class PunchCardDeck extends PunchCard
 
 	private void labeledToggle(AbstractButton sw, String top, String bot,
 					boolean gap) {
+		int saveY = pn_gc.gridy;
 		JPanel spc;
 		pn_gc.gridheight = 1;
 		iconToggle(sw);
@@ -355,7 +364,7 @@ class PunchCardDeck extends PunchCard
 		// cleanup
 		pn_gc.anchor = GridBagConstraints.CENTER;
 		pn_gc.gridheight = 3;
-		pn_gc.gridy = 0;
+		pn_gc.gridy = saveY;
 		//
 		if (gap) {
 			spc = new JPanel();
@@ -476,6 +485,25 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void ibm026Panel(CardPunchOptions opts) {
+		pn_gc.gridheight = 3;
+		JPanel spc = new JPanel();
+		spc.setPreferredSize(new Dimension(200, 90));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = ibm026Switches(opts);
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(220, 20));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+	}
+
+	private void hopperPanel(CardPunchOptions opts) {
+		// First, the hoppers and program drum...
 		JPanel spc = new JPanel();
 		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gc.gridheight = 3;
@@ -487,16 +515,16 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(40, 20));
+		spc.setPreferredSize(new Dimension(80, 100));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		pn_gc.gridheight = 1;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(20, 20));
+		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
-		++pn_gc.gridy;
+		pn_gc.gridy = 1;
 		pn_gb.setConstraints(_col_lb, pn_gc);
 		pn_pn.add(_col_lb);
 		++pn_gc.gridy;
@@ -506,16 +534,7 @@ class PunchCardDeck extends PunchCard
 		pn_gc.gridheight = 3;
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(200, 90));
-		pn_gb.setConstraints(spc, pn_gc);
-		pn_pn.add(spc);
-		++pn_gc.gridx;
-		spc = ibm026Switches(opts);
-		pn_gb.setConstraints(spc, pn_gc);
-		pn_pn.add(spc);
-		++pn_gc.gridx;
-		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(220, 20));
+		spc.setPreferredSize(new Dimension(180, 100));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -531,41 +550,17 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void ibm029Panel(CardPunchOptions opts) {
-		JPanel spc = new JPanel();
-		spc.setPreferredSize(new Dimension(5, 20));
-		pn_gc.gridheight = 3;
-		pn_gb.setConstraints(spc, pn_gc);
-		pn_pn.add(spc);
-		++pn_gc.gridx;
-		spc = stacker;
-		pn_gb.setConstraints(spc, pn_gc);
-		pn_pn.add(spc);
-		++pn_gc.gridx;
-		pn_gc.gridheight = 1;
-		pn_gc.gridy = 1;
-		pn_gb.setConstraints(_col_lb, pn_gc);
-		pn_pn.add(_col_lb);
-		++pn_gc.gridy;
-		pn_gb.setConstraints(_prog_cb, pn_gc);
-		pn_pn.add(_prog_cb);
+		// Now the switch panel
+		pn_gc.gridx = 0;
 		pn_gc.gridy = 0;
-		pn_gc.gridheight = 3;
-		++pn_gc.gridx;
-		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(60, 100));
-		//spc.setOpaque(true);
-		//spc.setBackground(Color.gray);
-		pn_gb.setConstraints(spc, pn_gc);
-		pn_pn.add(spc);
-		++pn_gc.gridx;
-		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(15, 20));
+		JPanel spc = new JPanel();
+		spc.setPreferredSize(new Dimension(10, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		labeledToggle(_interp_cb, "INTERP", "PUNCH", true);
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(35, 20));
+		spc.setPreferredSize(new Dimension(60, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -577,7 +572,7 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(sp);
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(120, 20));
+		spc.setPreferredSize(new Dimension(100, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -586,7 +581,7 @@ class PunchCardDeck extends PunchCard
 		labeledToggle(_print_cb, "ON", "PRINT", true);
 		labeledToggle(_lzprint_cb, "ON", "LZ<BR>PRINT", true);
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(100, 20));
+		spc.setPreferredSize(new Dimension(80, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -601,10 +596,6 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		labeledToggle(_clear_bn, "ON", "CLEAR", true);
-		spc = hopper;
-		pn_gb.setConstraints(spc, pn_gc);
-		pn_pn.add(spc);
-		++pn_gc.gridx;
 		spc = new JPanel();
 		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gb.setConstraints(spc, pn_gc);
@@ -808,6 +799,7 @@ class PunchCardDeck extends PunchCard
 					System.err.println("error writing " + fn);
 				}
 			}
+			// TODO: we do this too often...
 			stacker.putCard(_curr);
 		}
 		if (!_noCard) {
@@ -920,15 +912,35 @@ class PunchCardDeck extends PunchCard
 	}
 
 	// Must not tie-up the Event Dispatch Thread... queue-up key and return...
-	public void keyTyped(KeyEvent e) {
+	public void keyPressed(KeyEvent e) {
 		boolean multi = ((e.getModifiers() & InputEvent.ALT_MASK) != 0);
-		char c = e.getKeyChar();
-		int evt = (int)c;
+		int k = e.getKeyCode();
+		int evt;
+		if (k == KeyEvent.VK_F6) {
+			evt = 004; // Ctrl-D DUP
+		} else if (k == KeyEvent.VK_HOME) {
+			evt = 002; // Ctrl-B
+		} else if (k == KeyEvent.VK_END) {
+			evt = 005; // Ctrl-E interpret
+		} else if (k == KeyEvent.VK_DELETE) {
+			evt = 030; // Ctrl-X delete card
+		} else if (k == KeyEvent.VK_INSERT) {
+			evt = 016; // Ctrl-N insert new card
+		} else if (k == KeyEvent.VK_F1) {
+			evt = 001; // Ctrl-A program card in/out
+		} else {
+			char c = e.getKeyChar();
+			evt = (int)c;
+		}
 		if (multi) {
 			evt |= 0x1000;
 		}
 		_keyQue.add(evt);
 	}
+
+	public void keyTyped(KeyEvent e) { }
+
+	public void keyReleased(KeyEvent e) { }
 
 	public void run() {
 		int c = 0;
@@ -1027,10 +1039,6 @@ class PunchCardDeck extends PunchCard
 			}
 		}
 	}
-
-	public void keyPressed(KeyEvent e) { }
-
-	public void keyReleased(KeyEvent e) { }
 
 	private File pickFile(String purpose, boolean input,
 				String sfx, String typ, File prev) {
