@@ -31,6 +31,20 @@ public class DataCenter extends JFrame
 	static final int VIEWER = 5;
 	static final int NUMACH = 6;
 
+	static final String viewer = "Punch Card Viewer";
+	static final String ibm029 = "IBM 029 Keypunch";
+	static final String ibm026 = "IBM 026 Keypunch";
+	static final String ibm026h = "IBM 026-H Keypunch";
+	static final String ibm082 = "IBM 082 Sorter";
+	static final String ibm083 = "IBM 083 Sorter";
+	static final String ibm084 = "IBM 084 Sorter";
+	static final String ibm085 = "IBM 085 Collator";
+	static final String ibm087 = "IBM 087 Collator";
+	static final String ibm402 = "IBM 402 Accounting Machine";
+	static final String ibm403 = "IBM 403 Accounting Machine";
+	static final String ibm514 = "IBM 514 Reproducing Punch";
+	static final String ibm519 = "IBM 519 Reproducing Punch";
+
 	private Machine[] machs;
 	Dimension bd = new Dimension(210, 210);
 	GenericHelp _help;
@@ -51,7 +65,7 @@ public class DataCenter extends JFrame
 		JMenu mu;
 		JMenuItem mi;
 		mu = new JMenu("File");
-		mi = new JMenuItem("Viewer", KeyEvent.VK_V);
+		mi = new JMenuItem(viewer, KeyEvent.VK_V);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Quit", KeyEvent.VK_Q);
@@ -60,25 +74,25 @@ public class DataCenter extends JFrame
 		mb.add(mu);
 
 		mu = new JMenu("Machines");
-		mi = new JMenuItem("029 Keypunch", KeyEvent.VK_1);
+		mi = new JMenuItem(ibm029.substring(4), KeyEvent.VK_1);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("026 Keypunch", KeyEvent.VK_2);
+		mi = new JMenuItem(ibm026.substring(4), KeyEvent.VK_2);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("026-H Keypunch", KeyEvent.VK_3);
+		mi = new JMenuItem(ibm026h.substring(4), KeyEvent.VK_3);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("082 Sorter", KeyEvent.VK_4);
+		mi = new JMenuItem(ibm082.substring(4), KeyEvent.VK_4);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("085 Collator", KeyEvent.VK_5);
+		mi = new JMenuItem(ibm085.substring(4), KeyEvent.VK_5);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("402 Accounting Mach", KeyEvent.VK_6);
+		mi = new JMenuItem(ibm402.substring(4), KeyEvent.VK_6);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("514 Reproducing Punch", KeyEvent.VK_7);
+		mi = new JMenuItem(ibm514.substring(4), KeyEvent.VK_7);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -153,40 +167,35 @@ public class DataCenter extends JFrame
 		return bt;
 	}
 
-	private void openMach(int ix, String ttl, CardPunchOptions opts, boolean visib) {
-		if (machs[ix] != null) {
-			machs[ix].getFrame().setVisible(true);
-			// raise also?
-			return;
-		}
+	static private Machine makeApp(int ix, String ttl, AppManager mgr,
+				Machine aux, CardPunchOptions opts, boolean visib) {
 		JFrame frame = new JFrame(ttl);
 		Machine mach = null;
 		switch (ix) {
 		case KEYPUNCH:
-			mach = new PunchCardDeck(frame, this, opts);
+			mach = new PunchCardDeck(frame, mgr, opts);
 			break;
 		case SORTER:
 			// TODO: model options...
-			mach = new CardSorter(frame, this);
+			mach = new CardSorter(frame, mgr);
 			break;
 		case COLLATOR:
 			// TODO: model options...
-			mach = new CardCollator(frame, this);
+			mach = new CardCollator(frame, mgr);
 			break;
 		case ACCOUNTING:
 			// TODO: model options...
-			openMach(PUNCH, "IBM 514 Reproducing Punch", null, false);
-			mach = new CardAccounting(frame, this, (ReproducingPunch)machs[PUNCH]);
+			mach = new CardAccounting(frame, mgr, (ReproducingPunch)aux);
 			break;
 		case PUNCH:
-			mach = new ReproducingPunch(frame, this);
+			mach = new ReproducingPunch(frame, mgr);
 			break;
 		case VIEWER:
-			mach = new CardViewer(frame, this, true);
+			mach = new CardViewer(frame, mgr, true);
 			break;
 		}
 		if (mach == null) {
-			return;
+			return null;
 		}
 		JMenuBar mb = new JMenuBar();
 		JMenu[] ms = mach.getMenu();
@@ -194,21 +203,46 @@ public class DataCenter extends JFrame
 			mb.add(ms[x]);
 		}
 		frame.setJMenuBar(mb);
-		frame.addWindowListener(this);
 		frame.getContentPane().setBackground(Color.gray);
 		frame.pack();
 		frame.setVisible(visib);
+		return mach;
+	}
+
+	private void openMach(int ix, String ttl, CardPunchOptions opts, boolean visib) {
+		if (machs[ix] != null) {
+			machs[ix].getFrame().setVisible(true);
+			// raise also?
+			return;
+		}
+		Machine aux = null;
+		if (ix == ACCOUNTING) {
+			// Make certain Summary Punch is also ready (if needed)...
+			openMach(PUNCH, ibm514, null, false);
+			aux = machs[PUNCH];
+		}
+		Machine mach = makeApp(ix, ttl, this, aux, opts, visib);
+		if (mach == null) {
+			// TODO: pop-up error
+			return;
+		}
+		mach.getFrame().addWindowListener(this);
 		mach.setQuitListener(this);
 		machs[ix] = mach;
 		if (ix == KEYPUNCH) {
+			// TODO: get rid of this requirement...
 			((PunchCardDeck)mach).start();
 		}
 	}
 
-
 	public CardViewer getViewer() {
-		openMach(VIEWER, "Punch Card Viewer", null, false);
+		openMach(VIEWER, viewer, null, false);
 		return (CardViewer)machs[VIEWER];
+	}
+
+	static public CardViewer makeViewer() {
+		Machine mach = makeApp(VIEWER, viewer, null, null, null, false);
+		return (CardViewer)mach;
 	}
 
 	public File getCardDir() { return cardDir; }
@@ -226,15 +260,15 @@ public class DataCenter extends JFrame
 			String act = bt.getActionCommand();
 			if (act.equals("keypunch")) {
 				CardPunchOptions opts = new CardPunchOptions();
-				openMach(KEYPUNCH, "IBM 029 Keypunch", opts, true);
+				openMach(KEYPUNCH, ibm029, opts, true);
 			} else if (act.equals("sorter")) {
-				openMach(SORTER, "IBM 082 Sorter", null, true);
+				openMach(SORTER, ibm082, null, true);
 			} else if (act.equals("collator")) {
-				openMach(COLLATOR, "IBM 085 Collator", null, true);
+				openMach(COLLATOR, ibm085, null, true);
 			} else if (act.equals("accounting")) {
-				openMach(ACCOUNTING, "IBM 402 Accounting Machine", null, true);
+				openMach(ACCOUNTING, ibm402, null, true);
 			} else if (act.equals("punch")) {
-				openMach(PUNCH, "IBM 514 Reproducing Punch", null, true);
+				openMach(PUNCH, ibm514, null, true);
 			}
 			return;
 		}
@@ -255,31 +289,31 @@ public class DataCenter extends JFrame
 		if (m.getMnemonic() == KeyEvent.VK_Q) {
 			System.exit(0);
 		} else if (m.getMnemonic() == KeyEvent.VK_V) {
-			openMach(VIEWER, "Punch Card Viewer", null, true);
+			openMach(VIEWER, viewer, null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_1) {
 			CardPunchOptions opts = new CardPunchOptions();
-			openMach(KEYPUNCH, "IBM 029 Keypunch", opts, true);
+			openMach(KEYPUNCH, ibm029, opts, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_2) {
 			CardPunchOptions opts = new CardPunchOptions();
 			opts.ibm026 = true;
-			openMach(KEYPUNCH, "IBM 026 Keypunch", opts, true);
+			openMach(KEYPUNCH, ibm026, opts, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_3) {
 			CardPunchOptions opts = new CardPunchOptions();
 			opts.ibm026 = true;
 			opts.fortran = true;
-			openMach(KEYPUNCH, "IBM 026-H Keypunch", opts, true);
+			openMach(KEYPUNCH, ibm026h, opts, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_4) {
 			// TODO: options...
-			openMach(SORTER, "IBM 082 Sorter", null, true);
+			openMach(SORTER, ibm082, null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_5) {
 			// TODO: options...
-			openMach(COLLATOR, "IBM 085 Collator", null, true);
+			openMach(COLLATOR, ibm085, null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_6) {
 			// TODO: options...
-			openMach(ACCOUNTING, "IBM 402 Accounting Machine", null, true);
+			openMach(ACCOUNTING, ibm402, null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_7) {
 			// TODO: options...
-			openMach(PUNCH, "IBM 514 Reproducing Punch", null, true);
+			openMach(PUNCH, ibm514, null, true);
 		} else if (m.getMnemonic() == KeyEvent.VK_H) {
 			_help.setVisible(true);
 		}

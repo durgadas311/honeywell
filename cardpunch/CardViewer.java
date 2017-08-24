@@ -42,10 +42,12 @@ class CardViewer implements Machine, ActionListener
 	private ActionListener quit = null;
 
 	AppManager manager;
+	String title;
 
 	public CardViewer(JFrame frame, AppManager mgr, boolean i029) {
 		_frame = frame;
 		manager = mgr;
+		title = _frame.getTitle();
 
 		_cwd = new File(System.getProperty("user.dir"));
 		CardPunchOptions opts = new CardPunchOptions();
@@ -234,7 +236,9 @@ class CardViewer implements Machine, ActionListener
 			if (update && manager != null) {
 				manager.setCardDir(fi);
 			}
+			_frame.setTitle(title + String.format(" - %d cards", c));
 		} catch (Exception ee) {
+			_frame.setTitle(title);
 			// TODO: PopupFactory
 			ee.printStackTrace();
 			return;

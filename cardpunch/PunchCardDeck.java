@@ -13,7 +13,7 @@ import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
 class PunchCardDeck extends PunchCard
-		implements Machine, KeyListener, ActionListener, Runnable
+		implements Machine, KeyListener, ActionListener, WindowListener, Runnable
 {
 	static final long serialVersionUID = 311614000000L;
 
@@ -635,7 +635,11 @@ class PunchCardDeck extends PunchCard
 
 	private void setCursor(int curs) {
 		_cursor = curs;
-		_col_lb.setText(Integer.toString(_cursor));
+		if (_cursor <= 0) {
+			_col_lb.setText("");
+		} else {
+			_col_lb.setText(Integer.toString(_cursor));
+		}
 	}
 
 	// This might recurse, but only at field start and until end of card
@@ -663,7 +667,6 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void newCard(boolean blank) {
-		ejectCard();
 		_endOfCard = false;
 		_code = new byte[2*80];
 		Arrays.fill(_code, (byte)0);
@@ -710,7 +713,7 @@ class PunchCardDeck extends PunchCard
 
 	// Animate movement of card out of sight to the left.
 	private void cardOutLeft() {
-		_cursor = 0;
+		setCursor(0);
 		_tranX = _tranY = 0;
 		_animate = true;
 		int tEnd = -_image.getIconWidth();
@@ -726,7 +729,7 @@ class PunchCardDeck extends PunchCard
 
 	// Animate movement of card into sight from the top (moving down).
 	private void cardInDown() {
-		_cursor = 0;
+		setCursor(0);
 		_tranY = -_image.getIconHeight();
 		_animate = true;
 		for (; _tranY < 0; _tranY += 10) {
@@ -741,7 +744,7 @@ class PunchCardDeck extends PunchCard
 
 	// Animate movement of card out of sight to the top (moving up).
 	private void cardOutUp() {
-		_cursor = 0;
+		setCursor(0);
 		_tranX = _tranY = 0;
 		int tEnd = -_image.getIconHeight();
 		_animate = true;
@@ -756,7 +759,7 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void cardOutRight() {
-		_cursor = 0;
+		setCursor(0);
 		_tranX = _tranY = 0;
 		_animate = true;
 		int tEnd = _image.getIconWidth();
@@ -771,7 +774,7 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void cardInRight() {
-		_cursor = 0;
+		setCursor(0);
 		_tranY = 0;
 		_tranX = _image.getIconWidth();
 		_animate = true;
@@ -824,7 +827,7 @@ class PunchCardDeck extends PunchCard
 				Dimension d = getSize();
 				java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
 					d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
-				_cursor = 0;
+				_cursor = 0; // turn off cursor
 				paint(i.getGraphics());
 				String fn = String.format("pcard%02d.png", _pgix);
 				try {
@@ -834,8 +837,10 @@ class PunchCardDeck extends PunchCard
 				}
 			}
 		}
-		if (!_noCard) {
-			_cursor = 0;
+		if (_noCard) {
+			reading.setBackground(Color.gray);
+		} else {
+			setCursor(0);
 			if (auto) {
 				repaint();
 				try {
@@ -863,6 +868,7 @@ class PunchCardDeck extends PunchCard
 			ejectCard();
 			repaint();
 		} else {
+			ejectCard();
 			newCard(false);	// does repaint
 		}
 		if (!_noCard) {
@@ -948,7 +954,7 @@ class PunchCardDeck extends PunchCard
 			return;
 		}
 		if (_cursor <= 1) {
-			_cursor = 0;
+			_cursor = 0; // nextCol updates display
 			nextCol();
 		}
 	}
@@ -1023,7 +1029,7 @@ class PunchCardDeck extends PunchCard
 				continue;
 			}
 			if (c == '\002') {	// ^B
-				_cursor = 0;
+				setCursor(0);
 				repaint();
 				continue;
 			}
@@ -1201,11 +1207,22 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void deckView(CardStacker stk) {
-		if (manager == null) {
-			return;
-		}
 		if (viewer == null) {
-			viewer = manager.getViewer();
+			if (manager == null) {
+				viewer = DataCenter.makeViewer();
+				if (viewer == null) {
+					// TODO: pop-up error
+					return;
+				}
+				viewer.getFrame().addWindowListener(this);
+				viewer.setQuitListener(this);
+			} else {
+				viewer = manager.getViewer();
+				if (viewer == null) {
+					// TODO: pop-up error
+					return;
+				}
+			}
 		}
 		viewer.viewDeck(stk.getDeck(), _ibm026, _fortran);
 	}
@@ -1278,6 +1295,9 @@ class PunchCardDeck extends PunchCard
 				deckChange(ch, a);
 			}
 			return;
+		} else if (e.getSource() == viewer) {
+			// any other shutdown?
+			viewer = null;
 		} else if (!(e.getSource() instanceof JMenuItem)) {
 			return;
 		}
@@ -1335,6 +1355,20 @@ class PunchCardDeck extends PunchCard
 			showAbout();
 		} else if (m.getMnemonic() == KeyEvent.VK_H) {
 			showHelp();
+		}
+	}
+
+	public void windowActivated(WindowEvent e) { }
+	public void windowClosed(WindowEvent e) { }
+	public void windowIconified(WindowEvent e) { }
+	public void windowOpened(WindowEvent e) { }
+	public void windowDeiconified(WindowEvent e) { }
+	public void windowDeactivated(WindowEvent e) { }
+	public void windowClosing(WindowEvent e) {
+		if (viewer == null) return;
+		if (e.getWindow() == viewer.getFrame()) {
+			viewer.getFrame().setVisible(false);
+			return;
 		}
 	}
 }
