@@ -962,6 +962,7 @@ class PunchCardDeck extends PunchCard
 	// Must not tie-up the Event Dispatch Thread... queue-up key and return...
 	public void keyPressed(KeyEvent e) {
 		boolean multi = ((e.getModifiers() & InputEvent.ALT_MASK) != 0);
+		boolean shift = ((e.getModifiers() & InputEvent.SHIFT_MASK) != 0);
 		int k = e.getKeyCode();
 		int evt;
 		if (k == KeyEvent.VK_F6) {
@@ -971,11 +972,19 @@ class PunchCardDeck extends PunchCard
 		} else if (k == KeyEvent.VK_END) {
 			evt = 005; // Ctrl-E interpret
 		} else if (k == KeyEvent.VK_DELETE) {
-			evt = 030; // Ctrl-X delete card
+			if (shift) {
+				evt = 0177; // DEL erase punches
+			} else {
+				evt = 030; // Ctrl-X delete card
+			}
 		} else if (k == KeyEvent.VK_INSERT) {
 			evt = 016; // Ctrl-N insert new card
 		} else if (k == KeyEvent.VK_F1) {
-			evt = 001; // Ctrl-A program card in/out
+			if (shift) {
+				evt = 0x4000; // curr to prog drum...
+			} else {
+				evt = 001; // Ctrl-A program card in/out
+			}
 		} else {
 			char c = e.getKeyChar();
 			if (c == KeyEvent.CHAR_UNDEFINED) {
@@ -1001,7 +1010,22 @@ class PunchCardDeck extends PunchCard
 			} catch (Exception ee) {
 				break;
 			}
-			if (c == 0x3000) {
+			if (c == 0x4000) {	// move current to program drum
+				if (_noCard) {
+					continue;
+				}
+				if (_currIsProg) {
+					// ???
+					continue;
+				}
+				_currIsProg = true;
+				_codeCard = true; // NO code card...
+				_prog = _code;
+				_code = null;
+				finishCard(false, false, false);
+				continue;
+			}
+			if (c == 0x3000) {	// CLEAR
 				finishCard(true, false, true);
 				// We never feed a new card here, so no need
 				// to check for any automated tasks.
@@ -1015,7 +1039,7 @@ class PunchCardDeck extends PunchCard
 				}
 				continue;
 			}
-			if (c == 0x2000) {
+			if (c == 0x2000) {	// RELease
 				// starting new card, check for automated tasks
 				// (includes interpret).
 				newCheck();
