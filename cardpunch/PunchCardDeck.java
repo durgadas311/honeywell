@@ -26,6 +26,7 @@ class PunchCardDeck extends PunchCard
 	File _cwd;
 	CardHopper hopper;
 	CardStacker stacker;
+	JPanel reading;
 	JPanel acc;
 	JCheckBox acc_cb;
 	JTextArea acc_stk;
@@ -120,7 +121,8 @@ class PunchCardDeck extends PunchCard
 		_top = new Rectangle(0, 0, 10, 10);
 		_bottom = new Rectangle(0, _image.getIconHeight() - 10, 10, 10);
 
-		_code = new byte[2*80];
+		_code = null;
+		_noCard = true;
 		_curr = _code;
 		_currIsProg = false;
 		_endOfCard = false;
@@ -136,6 +138,11 @@ class PunchCardDeck extends PunchCard
 		stacker.setListener(this);
 		deckUpdate(hopper);
 		deckUpdate(stacker);
+		reading = new JPanel();
+		reading.setPreferredSize(new Dimension(45, 20));
+		reading.setBackground(Color.gray);
+		reading.setOpaque(true);
+		reading.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 
 		_menus = new JMenu[3];
 		JMenu mu;
@@ -504,6 +511,7 @@ class PunchCardDeck extends PunchCard
 
 	private void hopperPanel(CardPunchOptions opts) {
 		// First, the hoppers and program drum...
+		pn_gc.anchor = GridBagConstraints.SOUTH;
 		JPanel spc = new JPanel();
 		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gc.gridheight = 3;
@@ -515,7 +523,24 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(spc);
 		++pn_gc.gridx;
 		spc = new JPanel();
-		spc.setPreferredSize(new Dimension(80, 100));
+		spc.setPreferredSize(new Dimension(5, 100));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		//
+		spc = new JPanel();
+		spc.setLayout(new BoxLayout(spc, BoxLayout.Y_AXIS));
+		JLabel lb = new JLabel("<HTML>Reading<BR>Station</HTML>");
+		lb.setFont(labels);
+		spc.add(lb);
+		spc.add(reading);
+		pn_gc.anchor = GridBagConstraints.SOUTH;
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridx;
+		//
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(30, 100));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -627,20 +652,27 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
-	private void newCard(boolean blank) {
-		_endOfCard = false;
+	private void ejectCard() {
 		if (_prev != null) {
-			// anything more required to free array?
+			stacker.putCard(_prev);
 			_prev = null;
 		}
 		_prev = _code;
+		_code = null;
+		_noCard = true;
+	}
+
+	private void newCard(boolean blank) {
+		ejectCard();
+		_endOfCard = false;
 		_code = new byte[2*80];
-		_curr = _code;
 		Arrays.fill(_code, (byte)0);
 		_noCard = false;
-		if (hopper.getCard(_code) < 0) {
+		if (!blank && hopper.getCard(_code) < 0) {
+			_code = null;
 			_noCard = true;
 		}
+		_curr = _code;
 		++_pgix;
 		setCursor(1);
 		repaint();
@@ -762,6 +794,8 @@ class PunchCardDeck extends PunchCard
 			setProg(false);
 			Arrays.fill(_prog, (byte)0);
 			_prog_cb.setSelected(false);
+		} else {
+			_code = null;
 		}
 		_noCard = true;
 		repaint();
@@ -799,8 +833,6 @@ class PunchCardDeck extends PunchCard
 					System.err.println("error writing " + fn);
 				}
 			}
-			// TODO: we do this too often...
-			stacker.putCard(_curr);
 		}
 		if (!_noCard) {
 			_cursor = 0;
@@ -815,7 +847,12 @@ class PunchCardDeck extends PunchCard
 				cardOutUp();
 			} else {
 				// Animate the passing of the card to the left...
-				cardOutLeft();
+				if (_currIsProg) {
+					cardOutRight();
+				} else {
+					reading.setBackground(Color.gray);
+					cardOutLeft();
+				}
 			}
 		}
 		if (_currIsProg) {
@@ -823,7 +860,7 @@ class PunchCardDeck extends PunchCard
 		} else if (drum) {
 			setProg(true);
 		} else if (noFeed) {
-			_noCard = true;
+			ejectCard();
 			repaint();
 		} else {
 			newCard(false);	// does repaint
@@ -836,6 +873,9 @@ class PunchCardDeck extends PunchCard
 			}
 			setCursor(1);
 			repaint();
+		}
+		if (_prev != null) {
+			reading.setBackground(CardHandler.buff1);
 		}
 	}
 
@@ -851,6 +891,7 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
+	// Can't reach here if _curr == null?
 	private void repair() {
 		int cx = (_cursor - 1) * 2;
 		_curr[cx] = 0;
@@ -858,6 +899,7 @@ class PunchCardDeck extends PunchCard
 		repaint();
 	}
 
+	// Can't reach here if _curr == null?
 	private void punch(int p, boolean multi) {
 		if (_endOfCard) {
 			return;
@@ -930,6 +972,9 @@ class PunchCardDeck extends PunchCard
 			evt = 001; // Ctrl-A program card in/out
 		} else {
 			char c = e.getKeyChar();
+			if (c == KeyEvent.CHAR_UNDEFINED) {
+				return;
+			}
 			evt = (int)c;
 		}
 		if (multi) {
@@ -954,6 +999,14 @@ class PunchCardDeck extends PunchCard
 				finishCard(true, false, true);
 				// We never feed a new card here, so no need
 				// to check for any automated tasks.
+				if (_prev != null) {
+					// make visible delay?
+					try {
+						Thread.sleep(68 * 5);
+					} catch (Exception ee) {}
+					ejectCard();
+					reading.setBackground(Color.gray);
+				}
 				continue;
 			}
 			if (c == 0x2000) {
@@ -990,6 +1043,9 @@ class PunchCardDeck extends PunchCard
 			}
 			if (c == '\001') {	// ^A
 				finishCard(false, !_currIsProg, true);
+				continue;
+			}
+			if (_noCard) {
 				continue;
 			}
 			// From here on, we must have a valid _cursor...
