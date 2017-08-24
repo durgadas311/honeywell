@@ -154,6 +154,9 @@ class PunchCardDeck extends PunchCard
 		mi = new JMenuItem("Discard", KeyEvent.VK_D);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Snap Image", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Input", KeyEvent.VK_I);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -824,17 +827,8 @@ class PunchCardDeck extends PunchCard
 				auto = true;
 			}
 			if (_saveImage) {
-				Dimension d = getSize();
-				java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
-					d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
-				_cursor = 0; // turn off cursor
-				paint(i.getGraphics());
 				String fn = String.format("pcard%02d.png", _pgix);
-				try {
-					javax.imageio.ImageIO.write(i, "png", new File(fn));
-				} catch (IOException ee) {
-					System.err.println("error writing " + fn);
-				}
+				saveImage(new File(fn));
 			}
 		}
 		if (_noCard) {
@@ -1126,6 +1120,21 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
+	private void saveImage(File fn) {
+		Dimension d = getSize();
+		java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
+			d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+		int c = _cursor;
+		_cursor = 0; // turn off cursor
+		paint(i.getGraphics());
+		try {
+			javax.imageio.ImageIO.write(i, "png", fn);
+		} catch (IOException ee) {
+			System.err.println("error writing " + fn.getAbsolutePath());
+		}
+		_cursor = c;
+	}
+
 	private File pickFile(String purpose, boolean input,
 				String sfx, String typ, File prev) {
 		File file;
@@ -1330,6 +1339,12 @@ class PunchCardDeck extends PunchCard
 			deckSave();
 		} else if (m.getMnemonic() == KeyEvent.VK_D) {
 			stacker.discardDeck();
+		} else if (m.getMnemonic() == KeyEvent.VK_P) {
+			File nu = pickFile("Snap Image", false,
+				"png", "PNG Image", _cwd);
+			if (nu != null) {
+				saveImage(nu);
+			}
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			deckAdd();
 		} else if (m.getMnemonic() == KeyEvent.VK_B) {
