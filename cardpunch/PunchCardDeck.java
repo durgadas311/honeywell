@@ -1121,12 +1121,24 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void saveImage(File fn) {
+		boolean transparent = false;
 		Dimension d = getSize();
 		java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
-			d.width, d.height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+			d.width, d.height, transparent ?
+				java.awt.image.BufferedImage.TYPE_INT_ARGB :
+				java.awt.image.BufferedImage.TYPE_INT_RGB);
 		int c = _cursor;
 		_cursor = 0; // turn off cursor
 		paint(i.getGraphics());
+		if (transparent) {
+			for (int x = 0; x < i.getWidth(); ++x) {
+			for (int y = 0; y < i.getHeight(); ++y) {
+				int px = i.getRGB(x, y);
+				if (hole.equals(new Color(px, false))) {
+					i.setRGB(x, y, 0);
+				}
+			}}
+		}
 		try {
 			javax.imageio.ImageIO.write(i, "png", fn);
 		} catch (IOException ee) {
