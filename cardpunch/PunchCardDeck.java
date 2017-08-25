@@ -141,7 +141,7 @@ class PunchCardDeck extends PunchCard
 		deckUpdate(hopper);
 		deckUpdate(stacker);
 		reading = new JPanel();
-		reading.setPreferredSize(new Dimension(45, 20));
+		reading.setPreferredSize(new Dimension(45 + 4, 20 + 4));
 		reading.setBackground(Color.gray);
 		reading.setOpaque(true);
 		reading.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
