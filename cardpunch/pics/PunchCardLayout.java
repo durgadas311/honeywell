@@ -6,17 +6,19 @@ import java.awt.geom.AffineTransform;
 import java.io.*;
 import java.awt.event.*;
 import java.util.Arrays;
+import java.awt.geom.Path2D;
 
 import java.awt.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 
 class PunchCardLayout extends JLabel
-		implements java.awt.image.ImageObserver {
+		implements java.awt.image.ImageObserver, ActionListener {
 
 	protected Font font1;
 	protected Font font2;
 	protected Color ink;
+	protected Color ink2;
 	protected Color card;
 	int row = 23;
 	int col = 8;
@@ -26,9 +28,7 @@ class PunchCardLayout extends JLabel
 	int row1 = top + half;
 	int row9 = row1 + 8 * row;
 
-	Polygon clip = new Polygon(new int[]{0, 20, 0},
-				new int[]{0, 0, 36},
-				3);
+	private Path2D.Float punchCard;
 
 	private int _cols_per_card = 80;
 	static boolean punch;
@@ -41,9 +41,7 @@ class PunchCardLayout extends JLabel
 			RenderingHints.VALUE_ANTIALIAS_ON));
 		super.paint(g2d);
 		g2d.setColor(card);
-		g2d.fillRoundRect(0, 0, 681, 300, 40, 40);
-		g2d.setColor(getBackground());
-		g2d.fillPolygon(clip);
+		g2d.fill(punchCard);
 		g2d.setColor(ink);
 		g2d.setFont(font1);
 		int s;
@@ -70,6 +68,7 @@ class PunchCardLayout extends JLabel
 			y += row;
 			g2d.drawString("9", x, y);
 		}
+		g2d.setColor(ink2);
 		g2d.setFont(font2);
 		for (s = 0; s < _cols_per_card; ++s) {
 			ss = String.format("%d", s + 1);
@@ -90,15 +89,55 @@ class PunchCardLayout extends JLabel
 		}
 	}
 
-	public PunchCardLayout() {
+	public PunchCardLayout(JFrame frame) {
 		super();
 		ink = Color.black;
+		ink2 = Color.gray;
 		card = new Color(243, 226, 182);
-		setBackground(Color.gray);
+		setOpaque(false);
+		//setBackground(Color.gray);
+		//setOpaque(true);
 		font1 = new Font("Sans-serif", Font.PLAIN, 11);
 		font2 = new Font("Sans-serif", Font.PLAIN, 6);
-		setOpaque(true);
-		setPreferredSize(new Dimension(681, 300));
+		int radius = 40;
+		int width = 681;
+		int height = 300;
+		setPreferredSize(new Dimension(width, height));
+		JMenuBar mb = new JMenuBar();
+		JButton btn = new JButton("Snap");
+		btn.addActionListener(this);
+		mb.add(btn);
+		frame.setJMenuBar(mb);
+		punchCard = new Path2D.Float();
+		punchCard.moveTo(20, 0);
+		punchCard.lineTo(width - radius, 0);
+		punchCard.curveTo(width, 0 - 1, width + 1, 0, width, radius);
+		punchCard.lineTo(width, height - radius);
+		punchCard.curveTo(width + 1, height, width, height + 1, width - radius, height);
+		punchCard.lineTo(0 + radius, height);
+		punchCard.curveTo(0, height + 1, 0 - 1, height, 0, height - radius);
+		punchCard.lineTo(0, 36);
+		punchCard.closePath();
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof JButton) {
+			saveImage(new File("cardImage01.png"), true);
+		}
+	}
+
+	private void saveImage(File fn, boolean transparent) {
+		Dimension d = getSize();
+		java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
+			d.width, d.height, transparent ?
+				java.awt.image.BufferedImage.TYPE_INT_ARGB :
+				java.awt.image.BufferedImage.TYPE_INT_RGB);
+		paint(i.getGraphics());
+		try {
+			javax.imageio.ImageIO.write(i, "png", fn);
+		} catch (IOException ee) {
+			System.err.println("error writing " + fn.getAbsolutePath());
+		}
 	}
 
 	static JFrame frame;
@@ -106,8 +145,9 @@ class PunchCardLayout extends JLabel
 	public static void main(String[] args) {
 		punch = (args.length > 0 && args[0].equals("punch"));
 		frame = new JFrame("Punch Card Layout");
-		frame.add(new PunchCardLayout());
+		frame.add(new PunchCardLayout(frame));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setBackground(Color.red);
 		frame.pack();
 		frame.setVisible(true);
 	}
