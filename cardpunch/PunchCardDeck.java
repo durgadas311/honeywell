@@ -41,6 +41,7 @@ class PunchCardDeck extends PunchCard
 	byte[] _code;
 	byte[] _prog;
 	byte[] _prev;
+	boolean changed;
 	boolean _currIsProg;
 	boolean _saveImage;
 	boolean _ibm026;
@@ -124,8 +125,8 @@ class PunchCardDeck extends PunchCard
 		_bottom = new Rectangle(0, _image.getIconHeight() - 10, 10, 10);
 
 		_code = null;
-		_noCard = true;
 		_curr = _code;
+		changed = false;
 		_currIsProg = false;
 		_endOfCard = false;
 		_prev = null;
@@ -713,19 +714,17 @@ class PunchCardDeck extends PunchCard
 		}
 		_prev = _code;
 		_code = null;
-		_noCard = true;
+		setState(_code, false);
 	}
 
 	private void newCard(boolean blank) {
 		_endOfCard = false;
 		_code = new byte[2*80];
 		Arrays.fill(_code, (byte)0);
-		_noCard = false;
 		if (!blank && hopper.getCard(_code) < 0) {
 			_code = null;
-			_noCard = true;
 		}
-		_curr = _code;
+		setState(_code, false);
 		++_pgix;
 		setCursor(1);
 		repaint();
@@ -746,13 +745,10 @@ class PunchCardDeck extends PunchCard
 	private void setProg(boolean in) {
 		// TODO: animate this?
 		if (in) {
-			_curr = _prog;
-			_codeCard = _noCard;
-			_noCard = false;
+			setState(_prog, false);
 			_col_lb.setBackground(Color.yellow);
 		} else {
-			_curr = _code;
-			_noCard = _codeCard;
+			setState(_code, false);
 			_col_lb.setBackground(Color.white);
 		}
 		_currIsProg = in;
@@ -773,8 +769,7 @@ class PunchCardDeck extends PunchCard
 				Thread.sleep(5);
 			} catch (Exception ee) {}
 		}
-		_tranX = 0;
-		_animate = false;
+		setState(null, false);
 	}
 
 	// Animate movement of card into sight from the top (moving down).
@@ -804,8 +799,7 @@ class PunchCardDeck extends PunchCard
 				Thread.sleep(5);
 			} catch (Exception ee) {}
 		}
-		_tranY = 0;
-		_animate = false;
+		setState(null, false);
 	}
 
 	private void cardOutRight() {
@@ -819,8 +813,7 @@ class PunchCardDeck extends PunchCard
 				Thread.sleep(5);
 			} catch (Exception ee) {}
 		}
-		_tranX = 0;
-		_animate = false;
+		setState(null, false);
 	}
 
 	private void cardInRight() {
@@ -839,91 +832,105 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void shred() {
-		if (!_noCard) {
-			// Animate the destruction of the card to the right...
-			cardOutRight();
+		if (_curr == null) {
+			return;
 		}
+		// Animate the destruction of the card to the right...
+		cardOutRight();
 		if (_currIsProg) {
 			setProg(false);
 			Arrays.fill(_prog, (byte)0);
 			_prog_cb.setSelected(false);
 		} else {
 			_code = null;
+			setState(_code, false);
 		}
-		_noCard = true;
 		repaint();
 	}
 
 	private void blank() {
-		if (!_noCard) {
-			finishCard(false, false, true);
+		if (_curr != null) {
+			release();
 		}
 		newCard(true);
 		cardInRight();
 	}
 
-	private void finishCard(boolean auto, boolean drum, boolean noFeed) {
-		if (!_currIsProg && !_noCard) {
-			if (_autoSD_cb.isSelected()) {
-				// Must scan rest of program card for auto-dup fields.
-				// Let nextCol() handle that, though.
-				while (!_endOfCard) {
-					nextCol();
-				}
-				// Allow user to glipse results...
-				auto = true;
-			}
-			if (_saveImage) {
-				String fn = String.format("pcard%02d.png", _pgix);
-				saveImage(new File(fn), false);
-			}
+	private void feed() {
+		if (_curr != null) {
+			return;
 		}
-		if (_noCard) {
-			reading.setBackground(Color.gray);
-		} else {
+		newCard(false);
+		cardInDown();
+	}
+
+	// Not called if no Card or _currIsProg...
+	// This only logically finishes the card.
+	// It makes no changes to card positions in machine.
+	private void finishDataCard() {
+		if (_autoSD_cb.isSelected()) {
+			// Must scan rest of program card for auto-dup fields.
+			// Let nextCol() handle that, though.
+			while (!_endOfCard) {
+				nextCol();
+			}
+			// Allow user to glipse results...
+			changed = true;
+		}
+		if (_saveImage) { // OBSOLETE
+			String fn = String.format("pcard%02d.png", _pgix);
+			saveImage(new File(fn), false);
+		}
+	}
+
+	// Only called if _currIsProg, back to data card
+	// does not affect Reading Station!
+	private void finishProgCard() {
+		setCursor(0);
+		cardOutRight();
+		setProg(false);
+		if (_curr != null) {
+			cardInDown();
+			setCursor(1);
+			repaint();
+		}
+	}
+
+	// Only called if !_currIsProg, switching to prog card
+	// does not affect Reading Station!
+	private void switchToProg() {
+		if (_curr != null) {
+			finishDataCard(); // TODO: too much?
+			cardOutUp();
+		}
+		setProg(true);
+		cardInRight();
+		setCursor(1);
+		repaint();
+	}
+
+	// Only called if !_currIsProg, (and !next-is-prog-card)
+	// Passes data card to reader station, and any card in
+	// reader station to the stacker.
+	private void release() {
+		reading.setBackground(Color.gray);
+		if (_curr != null) {
+			finishDataCard();
 			setCursor(0);
-			if (auto) {
+			if (changed) {
 				repaint();
 				try {
 					Thread.sleep(150);
 				} catch (Exception ee) {}
 			}
-			if (drum) {
-				// saving current card, back into hopper...
-				cardOutUp();
-			} else {
-				// Animate the passing of the card to the left...
-				if (_currIsProg) {
-					cardOutRight();
-				} else {
-					reading.setBackground(Color.gray);
-					cardOutLeft();
-				}
-			}
+			// Animate the passing of the card to the left...
+			cardOutLeft();
 		}
-		if (_currIsProg) {
-			setProg(false);
-		} else if (drum) {
-			setProg(true);
-		} else if (noFeed) {
-			ejectCard();
-			repaint();
-		} else {
-			ejectCard();
-			newCard(false);	// does repaint
-		}
-		if (!_noCard) {
-			if (_currIsProg) {
-				cardInRight();
-			} else {
-				cardInDown();
-			}
-			setCursor(1);
-			repaint();
-		}
+		ejectCard();
 		if (_prev != null) {
 			reading.setBackground(CardHandler.buff1);
 		}
+		repaint();
 	}
 
 	private void interpret() {
@@ -936,6 +943,7 @@ class PunchCardDeck extends PunchCard
 				Thread.sleep(5);
 			} catch (Exception ee) {}
 		}
+		changed = true;
 	}
 
 	// Can't reach here if _curr == null?
@@ -982,15 +990,15 @@ class PunchCardDeck extends PunchCard
 	}
 
 	public void newCheck() {
-		if (_noCard) {
+		if (_curr == null) {
 			return;
 		}
 		if (_interp_cb.isSelected()) {
 			interpret();
 			// We know we are at end of card now...
 			if (_autoFeed_cb.isSelected()) {
-				finishCard(true, false, false);
-				_keyQue.add(0x2000);
+				release();
+				_keyQue.add(0x2000); // FEED
 			}
 			return;
 		}
@@ -1026,6 +1034,8 @@ class PunchCardDeck extends PunchCard
 			} else {
 				evt = 001; // Ctrl-A program card in/out
 			}
+		} else if (k == KeyEvent.VK_F12) { // FEED
+			evt = 0x2000;
 		} else {
 			char c = e.getKeyChar();
 			if (c == KeyEvent.CHAR_UNDEFINED) {
@@ -1052,37 +1062,38 @@ class PunchCardDeck extends PunchCard
 				break;
 			}
 			if (c == 0x4000) {	// move current to program drum
-				if (_noCard) {
+				if (_curr == null) {
 					continue;
 				}
 				if (_currIsProg) {
 					// ???
 					continue;
 				}
-				_currIsProg = true;
-				_codeCard = true; // NO code card...
 				_prog = _code;
 				_code = null;
-				finishCard(false, false, false);
+				_codeCard = true; // NO code card...
+				finishProgCard();
+				_currIsProg = true;
 				continue;
 			}
 			if (c == 0x3000) {	// CLEAR
-				finishCard(true, false, true);
+				release();
 				// We never feed a new card here, so no need
 				// to check for any automated tasks.
 				if (_prev != null) {
-					// make visible delay?
+					// make visible delay
 					try {
-						Thread.sleep(68 * 5);
+						Thread.sleep(300);
 					} catch (Exception ee) {}
 					ejectCard();
 					reading.setBackground(Color.gray);
 				}
 				continue;
 			}
-			if (c == 0x2000) {	// RELease
+			if (c == 0x2000) {	// FEED
 				// starting new card, check for automated tasks
 				// (includes interpret).
+				feed();
 				newCheck();
 				continue;
 			}
@@ -1091,6 +1102,7 @@ class PunchCardDeck extends PunchCard
 			int p = 0;
 			if (c == '\005') {	// ^E
 				interpret();
+				// TODO: auto-feed
 				continue;
 			}
 			if (c == '\002') {	// ^B
@@ -1108,15 +1120,21 @@ class PunchCardDeck extends PunchCard
 				continue;
 			}
 			if (c == '\n') {
-				finishCard(false, false, false);
-				_keyQue.add(0x2000);
+				release();
+				if (_autoFeed_cb.isSelected()) {
+					_keyQue.add(0x2000);
+				}
 				continue;
 			}
 			if (c == '\001') {	// ^A
-				finishCard(false, !_currIsProg, true);
+				if (_currIsProg) {
+					finishProgCard();
+				} else {
+					switchToProg();
+				}
 				continue;
 			}
-			if (_noCard) {
+			if (_curr == null) {
 				continue;
 			}
 			// From here on, we must have a valid _cursor...
@@ -1126,8 +1144,9 @@ class PunchCardDeck extends PunchCard
 			if (c == '\t') {
 				skipStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
-					finishCard(true, false, false);
-					_keyQue.add(0x2000);
+					changed = true;
+					release();
+					_keyQue.add(0x2000); // FEED
 				}
 				continue;
 			}
@@ -1145,8 +1164,9 @@ class PunchCardDeck extends PunchCard
 			if (c == '\004') {	// DUP
 				dupStart();
 				if (_endOfCard && _autoFeed_cb.isSelected()) {
-					finishCard(true, false, false);
-					_keyQue.add(0x2000);
+					changed = true;
+					release();
+					_keyQue.add(0x2000); // FEED
 				}
 				continue;
 			}
@@ -1161,7 +1181,8 @@ class PunchCardDeck extends PunchCard
 			punch(p, multi);
 			repaint();
 			if (_endOfCard && _autoFeed_cb.isSelected()) {
-				finishCard(true, false, false);
+				changed = true;
+				release();
 				_keyQue.add(0x2000);
 			}
 		}

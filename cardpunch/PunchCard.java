@@ -19,7 +19,6 @@ class PunchCard extends JLabel
 	protected ImageIcon _image;
 	protected int _tranX;
 	protected int _tranY;
-	protected boolean _noCard;
 	protected boolean _animate;
 	protected CharConverter _cvt;
 	protected Color ink;
@@ -47,20 +46,39 @@ class PunchCard extends JLabel
 		return c;
 	}
 
+	private byte[] _curr_card;
+	private boolean _curr_anim;
+	private int _curr_tranX;
+	private int _curr_tranY;
+	private synchronized void getState() {
+		_curr_card = _curr;
+		_curr_anim = _animate;
+		_curr_tranX = _tranX;
+		_curr_tranY = _tranY;
+	}
+	protected synchronized void setState(byte[] card, boolean animate) {
+		_curr = card;
+		_animate = animate;
+		if (!animate) {
+			_tranX = _tranY = 0;
+		}
+	}
+
 	public void paint(Graphics g) {
 		String ss;
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.addRenderingHints(new RenderingHints(
 			RenderingHints.KEY_ANTIALIASING,
 			RenderingHints.VALUE_ANTIALIAS_ON));
-		if (_noCard || _animate) {
+		getState();
+		if (_curr_card == null || _curr_anim) {
 			g2d.setColor(hole);
 			Dimension d = getSize();
 			g2d.fillRect(0, 0, d.width, d.height);
-			if (_noCard) {
+			if (_curr_card == null) {
 				return;
 			}
-			g2d.translate(_tranX, _tranY);
+			g2d.translate(_curr_tranX, _curr_tranY);
 		}
 		super.paint(g2d);
 		g2d.setColor(ink);
@@ -68,7 +86,7 @@ class PunchCard extends JLabel
 		int s;
 		for (s = 0; s < _cols_per_card; ++s) {
 			int c = 0;
-			c = getCode(_curr, s);
+			c = getCode(_curr_card, s);
 			if ((c & 0x1000) == 0) {
 				continue;
 			}
@@ -81,7 +99,7 @@ class PunchCard extends JLabel
 		g2d.setColor(hole);
 		for (s = 0; s < _cols_per_card; ++s) {
 			int c = 0;
-			c = getCode(_curr, s);
+			c = getCode(_curr_card, s);
 			int rx = s * _row_spacing + _row_start;
 			int b;
 			for (b = 0; b < 12; ++b) {
@@ -109,7 +127,6 @@ class PunchCard extends JLabel
 		_animate = false;
 		_cursor = 1;
 		_cvt = new CharConverter(opts);
-		_noCard = true;
 
 		String fn;
 		if (opts.ibm026) {
