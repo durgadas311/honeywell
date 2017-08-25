@@ -30,6 +30,8 @@ class PunchCardDeck extends PunchCard
 	JPanel acc;
 	JCheckBox acc_cb;
 	JTextArea acc_stk;
+	JPanel snap_acc;
+	JCheckBox snap_cb;
 	int _pgix = 0;
 	JMenu[] _menus;
 	Rectangle _top, _bottom;
@@ -297,6 +299,20 @@ class PunchCardDeck extends PunchCard
 		acc_stk.setEditable(false);
 		gb.setConstraints(acc_stk, gc);
 		acc.add(acc_stk);
+		++gc.gridy;
+
+		// Accessory panel for card snapshot dialog
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		snap_acc = new JPanel();
+		gb = new GridBagLayout();
+		acc.setLayout(gb);
+		gc.anchor = GridBagConstraints.WEST;
+		snap_cb = new JCheckBox("Transparency");
+		gb.setConstraints(snap_cb, gc);
+		snap_acc.add(snap_cb);
 		++gc.gridy;
 	}
 
@@ -828,7 +844,7 @@ class PunchCardDeck extends PunchCard
 			}
 			if (_saveImage) {
 				String fn = String.format("pcard%02d.png", _pgix);
-				saveImage(new File(fn));
+				saveImage(new File(fn), false);
 			}
 		}
 		if (_noCard) {
@@ -1120,8 +1136,7 @@ class PunchCardDeck extends PunchCard
 		}
 	}
 
-	private void saveImage(File fn) {
-		boolean transparent = false;
+	private void saveImage(File fn, boolean transparent) {
 		Dimension d = getSize();
 		java.awt.image.BufferedImage i = new java.awt.image.BufferedImage(
 			d.width, d.height, transparent ?
@@ -1147,12 +1162,11 @@ class PunchCardDeck extends PunchCard
 		_cursor = c;
 	}
 
-	private File pickFile(String purpose, boolean input,
+	private File pickFile(String purpose, JComponent acc,
 				String sfx, String typ, File prev) {
 		File file;
 		SuffFileChooser ch = new SuffFileChooser(purpose,
-			new String[]{sfx}, new String[]{typ}, prev,
-			input ? acc : null);
+			new String[]{sfx}, new String[]{typ}, prev, acc);
 		int rv = ch.showDialog(this);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -1225,7 +1239,7 @@ class PunchCardDeck extends PunchCard
 		}
 		acc_stk.setText(hopper.stackList('\n', false));
 		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", dir);
+		File fi = pickFile("Add Input", acc, "pcd", "Punch Card Deck", dir);
 		if (fi == null) {
 			return;
 		}
@@ -1277,7 +1291,7 @@ class PunchCardDeck extends PunchCard
 		if (manager != null) {
 			dir = manager.getCardDir();
 		}
-		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", dir);
+		File fi = pickFile("Save Output", null, "pcd", "Punch Card Deck", dir);
 		if (fi == null) {
 			return;
 		}
@@ -1352,10 +1366,10 @@ class PunchCardDeck extends PunchCard
 		} else if (m.getMnemonic() == KeyEvent.VK_D) {
 			stacker.discardDeck();
 		} else if (m.getMnemonic() == KeyEvent.VK_P) {
-			File nu = pickFile("Snap Image", false,
+			File nu = pickFile("Snap Image", snap_acc,
 				"png", "PNG Image", _cwd);
 			if (nu != null) {
-				saveImage(nu);
+				saveImage(nu, snap_cb.isSelected());
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
 			deckAdd();
@@ -1377,7 +1391,7 @@ class PunchCardDeck extends PunchCard
 			if (_progFile != null) {
 				dir =  _progFile;
 			}
-			File nu = pickFile("Load Prog Card", false,
+			File nu = pickFile("Load Prog Card", null,
 				"prc", "Program Card", dir);
 			if (nu != null) {
 				_progFile = nu;
@@ -1392,7 +1406,7 @@ class PunchCardDeck extends PunchCard
 				dir = manager.getDrumDir();
 			}
 			if (_progFile == null) {
-				File nu = pickFile("Save Prog Card As", false,
+				File nu = pickFile("Save Prog Card As", null,
 					"prc", "Program Card", dir);
 				if (nu != null) {
 					_progFile = nu;
