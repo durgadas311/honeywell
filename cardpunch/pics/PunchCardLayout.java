@@ -102,6 +102,7 @@ class PunchCardLayout extends JLabel
 		int radius = 40;
 		int width = 681;
 		int height = 300;
+		float delta = 1.553f;
 		setPreferredSize(new Dimension(width, height));
 		JMenuBar mb = new JMenuBar();
 		JButton btn = new JButton("Snap");
@@ -111,11 +112,11 @@ class PunchCardLayout extends JLabel
 		punchCard = new Path2D.Float();
 		punchCard.moveTo(20, 0);
 		punchCard.lineTo(width - radius, 0);
-		punchCard.curveTo(width, 0 - 1, width + 1, 0, width, radius);
+		punchCard.curveTo(width, 0 - delta, width + delta, 0, width, radius);
 		punchCard.lineTo(width, height - radius);
-		punchCard.curveTo(width + 1, height, width, height + 1, width - radius, height);
+		punchCard.curveTo(width + delta, height, width, height + delta, width - radius, height);
 		punchCard.lineTo(0 + radius, height);
-		punchCard.curveTo(0, height + 1, 0 - 1, height, 0, height - radius);
+		punchCard.curveTo(0, height + delta, 0 - delta, height, 0, height - radius);
 		punchCard.lineTo(0, 36);
 		punchCard.closePath();
 	}
