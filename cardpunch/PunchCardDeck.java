@@ -219,7 +219,6 @@ class PunchCardDeck extends PunchCard
 		_clear_bn.addActionListener(this);
 		_clear_bn.setFocusable(false);
 
-		pn_gb = new GridBagLayout();
 		pn_gc = new GridBagConstraints();
 		pn_gc.fill = GridBagConstraints.NONE;
 		pn_gc.gridx = 0;
@@ -233,11 +232,12 @@ class PunchCardDeck extends PunchCard
 		pn_gc.insets.left = 0;
 		pn_gc.insets.right = 0;
 		pn_gc.anchor = GridBagConstraints.CENTER;
-		pn_pn = new JPanel();
+		pn_gb = new GridBagLayout();
+		JPanel hp = pn_pn = new JPanel();
 		pn_pn.setLayout(pn_gb);
-		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
+		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 108));
 		hopperPanel(opts);
-		JPanel hp = pn_pn;
+		pn_gb = new GridBagLayout();
 		pn_pn = new JPanel();
 		pn_pn.setLayout(pn_gb);
 		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
@@ -421,7 +421,7 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private JPanel ibm026Switches(CardPunchOptions opts) {
-		JPanel pan = new Ibm026SwitchPlate(250, 98, 48);
+		JPanel pan = new Ibm026SwitchPlate(250, 90, 48);
 		GridBagLayout gb = new GridBagLayout();
 		pan.setLayout(gb);
 		GridBagConstraints gc = new GridBagConstraints();
@@ -511,9 +511,23 @@ class PunchCardDeck extends PunchCard
 	}
 
 	private void ibm026Panel(CardPunchOptions opts) {
-		pn_gc.gridheight = 3;
+		pn_gc.gridx = 0;
+		pn_gc.gridy = 0;
+		pn_gc.gridheight = 1;
+		pn_gc.gridwidth = 3;
 		JPanel spc = new JPanel();
-		spc.setPreferredSize(new Dimension(200, 90));
+		spc.setPreferredSize(new Dimension(200, 5));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		pn_gc.gridy = 2;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(200, 5));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		pn_gc.gridy = 1;
+		pn_gc.gridwidth = 1;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(200, 20));
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
@@ -531,6 +545,8 @@ class PunchCardDeck extends PunchCard
 	private void hopperPanel(CardPunchOptions opts) {
 		// First, the hoppers and program drum...
 		pn_gc.anchor = GridBagConstraints.SOUTH;
+		pn_gc.gridx = 0;
+		pn_gc.gridy = 0;
 		JPanel spc = new JPanel();
 		spc.setPreferredSize(new Dimension(5, 20));
 		pn_gc.gridheight = 3;
@@ -591,6 +607,21 @@ class PunchCardDeck extends PunchCard
 		pn_gb.setConstraints(spc, pn_gc);
 		pn_pn.add(spc);
 		++pn_gc.gridx;
+		pn_gc.gridy += pn_gc.gridheight;
+		pn_gc.gridheight = 1;
+		pn_gc.gridwidth = pn_gc.gridx;
+		pn_gc.gridx = 0;
+		spc = new JPanel();
+		spc.setPreferredSize(new Dimension(5, 5));
+		pn_gb.setConstraints(spc, pn_gc);
+		pn_pn.add(spc);
+		++pn_gc.gridy;
+		JSeparator sp = new JSeparator(SwingConstants.HORIZONTAL);
+		sp.setPreferredSize(new Dimension(_image.getIconWidth(), 3));
+		sp.setForeground(Color.black);
+		pn_gb.setConstraints(sp, pn_gc);
+		pn_pn.add(sp);
+		pn_gc.gridwidth = 1;
 	}
 
 	private void ibm029Panel(CardPunchOptions opts) {
