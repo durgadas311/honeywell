@@ -45,8 +45,8 @@ the following are supported:
 <TR><TD>REPRODUCING BRUSHES</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>r.1 - r.80</TD></TR>
 <TR><TD>PUNCH BRUSHES</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>p.1 - p.80</TD></TR>
 <TR><TD>COMPARING BRUSHES</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>c.1 - c.80</TD></TR>
-<TR><TD>READ X BR.</TD><TD>1-80</TD><TD>Read X brushes 1-80</TD><TD>rx1 - rx80</TD></TR>
-<TR><TD>P X BR.</TD><TD>1-80</TD><TD>Punch X brushes 1-80</TD><TD>px1 - px80</TD></TR>
+<TR><TD>READ X BR.</TD><TD>1-5 (1)</TD><TD>Read X brushes</TD><TD>rx1 - rx80</TD></TR>
+<TR><TD>P X BR.</TD><TD>1-6 (1)</TD><TD>Punch X brushes</TD><TD>px1 - px80</TD></TR>
 <TR><TD>PUNCH MAGNETS</TD><TD>1-80</TD><TD>Card Cols 1-80</TD><TD>pm1 - pm80</TD></TR>
 <TR><TD>COMP. MAG FROM PUNCH BRUSHES</TD><TD>1-80</TD><TD>Comparator</TD><TD>c1p - c80p</TD></TR>
 <TR><TD>COMP. MAG FROM COMPARING BRUSHES</TD><TD>1-80</TD><TD>Comparator</TD><TD>c1c - c80c</TD></TR>
@@ -54,21 +54,31 @@ the following are supported:
 <TR><TD ROWSPAN=6>SELECTOR 1/2</TD>
 	    <TD>R</TD><TD>R pick-up</TD><TD>s1r - s2r</TD></TR>
 	<TR><TD>P</TD><TD>P pick-up</TD><TD>s1p - s2p</TD></TR>
-	<TR><TD>I</TD><TD>T pick-up</TD><TD>s1t - s2t</TD></TR>
-	<TR><TD>T</TD><TD>transfer position</TD><TD>s1x1 - s2x<I>N</I></TD></TR>
-	<TR><TD>N</TD><TD>normal position</TD><TD>s1n1 - s2n<I>N</I></TD></TR>
+	<TR><TD>T</TD><TD>T pick-up</TD><TD>s1t - s2t</TD></TR>
+	<TR><TD>X</TD><TD>X/transfer position</TD><TD>s1x1 - s2x<I>N</I></TD></TR>
+	<TR><TD>N</TD><TD>NX/normal position</TD><TD>s1n1 - s2n<I>N</I></TD></TR>
 	<TR><TD>C</TD><TD>common position</TD><TD>s1c1 - s2c<I>N</I></TD></TR>
 <TR><TD>SUM X PCH CTRL</TD><TD>+1- thru +7-</TD><TD>unknown</TD><TD>x1+,x1- - x7+,x7-</TD></TR>
 <TR><TD ROWSPAN=3>COLUMN SPLITS</TD>
 	    <TD>11-12</TD><TD>11/12 zone punches</TD><TD>cs1x - cs10x</TD></TR>
 	    <TD>0-9</TD><TD>0-9 digit punches</TD><TD>cs1d - cs10d</TD></TR>
 	    <TD>COM</TD><TD>common</TD><TD>cs1c - cs10c</TD></TR>
+<TR><TD>RX</TD><TD></TD><TD>Reader X Entry</TD><TD>rx</TD></TR>
+<TR><TD>RD</TD><TD></TD><TD>Reader X delayed Exit</TD><TD>rd</TD></TR>
+<TR><TD>PX</TD><TD></TD><TD>Punch X Entry</TD><TD>px</TD></TR>
+<TR><TD>PD</TD><TD></TD><TD>Punch X delayed Exit</TD><TD>pd</TD></TR>
 </TABLE>
 
 <P>Notes:
+<P>(1) The small number of Punch/Read X brushes were manually
+positioned in specific columns.
+This implementation simply provides 80 X brushes
+already positioned at respective columns.
 
 <P>Property names are expected to represent ENTRY hubs, and generally do not contain
 a width (field width is determined by source(s)).
+In other words, the syntax of each line is "ENTRY = EXIT..."
+(where "..." represents optional, additional, parameters/exits).
 
 <P>In the property value, a set of hubs (a field) may be designated by adding an
 asterisk and the number of hubs in the field. It is generally expected that all

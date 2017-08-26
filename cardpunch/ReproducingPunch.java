@@ -188,6 +188,10 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 
 	SingleExit allCards;
 	SingleExit allCycles;
+	SingleExit rxDelay;
+	SingleExit pxDelay;
+	SingleEntry rxEntry;
+	SingleEntry pxEntry;
 	ColumnSplit csplits;
 
 	ComparingMagnets comparing;
@@ -230,6 +234,17 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 		// These are one-shots, used for watchers only
 		allCards = new SingleExit();
 		allCycles = new SingleExit();
+		// TODO: hook these up...
+		// NOTE: connecting RD to RX must cause selection for
+		// all cycles after first RX (i.e. latching). (PD, PX)
+		// (manual reset required - could fudge it with RESET).
+		// Ex:	rx = rd rx1
+		//	s1x = rx1
+		// must cause s1x to transfer every cycle after first!
+		rxDelay = new SingleExit();
+		pxDelay = new SingleExit();
+		rxEntry = new SingleEntry();
+		pxEntry = new SingleEntry();
 
 		_cwd = new File(System.getProperty("user.dir"));
 		cvt = new CharConverter();
@@ -552,15 +567,19 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 	}
 
 	private ProgItem parseEntry(String pm) {
-		if (pm.equals("none")) {
-			return null;
+		if (pm.equals("rx")) {
+			return rxEntry;
+		} else if (pm.equals("px")) {
+			return pxEntry;
 		}
 		return null;
 	}
 
 	private ProgItem parseExit(String pm) {
-		if (pm.equals("none")) {
-			return null;
+		if (pm.equals("rd")) {
+			return rxDelay;
+		} else if (pm.equals("pd")) {
+			return pxDelay;
 		}
 		return null; // or some dummy item?
 	}
