@@ -75,10 +75,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 	JButton stop;
 	boolean stopped;
 	ColumnSelector _col_lb;
-	JPanel acc;
 	JPanel acc2;
-	JCheckBox acc_cb;
-	JTextArea acc_stk;
 	JCheckBox[] inhibits;
 	JCheckBox alphabetic;
 	JCheckBox[] pickers;
@@ -137,7 +134,6 @@ class CardSorter implements Machine, ActionListener, Runnable
 		stopped = true;
 		hopper = new CardHopper("Input Hopper", 20, 100, 1, false);
 		hopper.setListener(this);
-		deckUpdate(hopper);
 		stackers = new CardStacker[13];
 		pickers = new JCheckBox[13];
 		inhibits = new JCheckBox[12];
@@ -152,7 +148,6 @@ class CardSorter implements Machine, ActionListener, Runnable
 			}
 			stackers[x] = new CardStacker(t, 20, 100, 1, true);
 			stackers[x].setListener(this);
-			deckUpdate(stackers[x]);
 			pickers[x] = new JCheckBox(t);
 			if (x < 12) {
 				inhibits[x] = new JCheckBox(t);
@@ -313,30 +308,6 @@ class CardSorter implements Machine, ActionListener, Runnable
 		gb.setConstraints(stop, gc);
 		_frame.add(stop);
 
-		// -----------------------------------------
-		// Accessory panel for Input Deck chooser...
-		// Must be finished with _frame...
-		gc.gridx = 0;
-		gc.gridy = 0;
-		gc.gridwidth = 1;
-		gc.gridheight = 1;
-		gb = new GridBagLayout();
-		acc = new JPanel();
-		acc.setLayout(gb);
-		gc.anchor = GridBagConstraints.WEST;
-		JLabel lb = new JLabel("Input Hopper:");
-		gb.setConstraints(lb, gc);
-		acc.add(lb);
-		++gc.gridy;
-		acc_cb = new JCheckBox("Remove All");
-		gb.setConstraints(acc_cb, gc);
-		acc.add(acc_cb);
-		++gc.gridy;
-		acc_stk = new JTextArea(4, 15);
-		acc_stk.setEditable(false);
-		gb.setConstraints(acc_stk, gc);
-		acc.add(acc_stk);
-		++gc.gridy;
 		// Accessory panel for Save Output...
 		gc.gridx = 0;
 		gc.gridy = 0;
@@ -345,7 +316,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 		gb = new GridBagLayout();
 		acc2 = new JPanel();
 		acc2.setLayout(gb);
-		lb = new JLabel("Save Pockets");
+		JLabel lb = new JLabel("Save Pockets");
 		gc.gridwidth = 2;
 		gb.setConstraints(lb, gc);
 		acc2.add(lb);
@@ -494,12 +465,11 @@ class CardSorter implements Machine, ActionListener, Runnable
 		_frame.setTitle(title);
 	}
 
-	private File pickFile(String purpose, boolean input,
+	private File pickFile(String purpose, JComponent acc,
 				String sfx, String typ, File prev) {
 		File file;
 		ch = new SuffFileChooser(purpose,
-			new String[]{sfx}, new String[]{typ}, prev,
-			input ? acc : acc2);
+			new String[]{sfx}, new String[]{typ}, prev, acc);
 		int rv = ch.showDialog(_frame);
 		if (rv == JFileChooser.APPROVE_OPTION) {
 			file = ch.getSelectedFile();
@@ -534,19 +504,13 @@ class CardSorter implements Machine, ActionListener, Runnable
 		_help.setVisible(true);
 	}
 
-	private void deckAdd() {
+	private void deckAdd(CardHopper hop) {
 		File dir = _cwd;
 		if (manager != null) {
 			dir = manager.getCardDir();
 		}
-		acc_stk.setText(hopper.stackList('\n', false));
-		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", true, "pcd", "Punch Card Deck", dir);
-		if (fi == null) {
-			return;
-		}
-		deckAdd(fi, acc_cb.isSelected());
-		if (manager != null) {
+		File fi = hop.addDialog("Add Input", dir);
+		if (fi != null && manager != null) {
 			manager.setCardDir(fi);
 		}
 	}
@@ -577,7 +541,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 			dir = manager.getCardDir();
 		}
 		recycle.setSelected(false);
-		File fi = pickFile("Save Output", false, "pcd", "Punch Card Deck", dir);
+		File fi = pickFile("Save Output", acc2, "pcd", "Punch Card Deck", dir);
 		if (recycle.isSelected()) {
 			fi = tmp;
 		}
@@ -634,39 +598,28 @@ class CardSorter implements Machine, ActionListener, Runnable
 		viewer.viewDeck(stk.getDeck(), false, false);
 	}
 
-	private void deckChange(CardHandler obj, String act) {
+	private void deckChange(CardHandlerEvent ae, CardHandler obj, String act) {
 		if (act.equals("right")) {
-			if (obj == hopper) {
+			if (obj instanceof CardHopper) {
+				ae.consume(); // BLANK not allowed?
 				//hopper.addBlank(50);
-			} else {
-				((CardStacker)obj).discardDeck();
-				//for (int x = 0; x < stackers.length; ++x) {
-				//	stackers[x].discardDeck();
-				//}
 			}
 		} else if (act.equals("left")) {
-			if (obj == hopper) {
-				deckAdd();
+			ae.consume();
+			if (obj instanceof CardHopper) {
+				deckAdd((CardHopper)obj);
 			} else {
 				deckSave();
 			}
 		} else if (act.equals("LEFT")) {
 			if (obj instanceof CardStacker) {
+				ae.consume();
 				deckView((CardStacker)obj);
 			}
 		}
 	}
 
-	private void deckUpdate(CardHandler obj) {
-		String tip = obj.getLabel();
-		tip += String.format(": %d", obj.stackCount());
-		String lst = obj.stackList(',', true);
-		if (lst != null) {
-			tip += '(';
-			tip += lst;
-			tip += ')';
-		}
-		obj.setToolTipText(tip);
+	private void deckUpdate(CardHandlerEvent ae, CardHandler obj) {
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -681,14 +634,15 @@ class CardSorter implements Machine, ActionListener, Runnable
 				stopped = true;
 			}
 			return;
-		} else if (e.getSource() instanceof CardHandler) {
+		} else if (e instanceof CardHandlerEvent) {
 			// hopper or stacker, mouse or repaint...
 			CardHandler ch = (CardHandler)e.getSource();
 			String a = e.getActionCommand();
+			CardHandlerEvent ae = (CardHandlerEvent)e;
 			if (a.equals("repaint")) {
-				deckUpdate(ch);
+				deckUpdate(ae, ch);
 			} else {
-				deckChange(ch, a);
+				deckChange(ae, ch, a);
 			}
 			return;
 		} else if (e.getSource() instanceof JCheckBox) {
@@ -710,7 +664,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 		} else if (m.getMnemonic() == KeyEvent.VK_D) {
 			//stacker.discardDeck();
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
-			deckAdd();
+			deckAdd(hopper);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed

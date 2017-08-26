@@ -65,7 +65,6 @@ class CardViewer implements Machine, ActionListener
 
 		_card = new byte[2*80];
 		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);
-		hopper.setListener(this);
 
 		_frame.setLayout(new BoxLayout(_frame.getContentPane(), BoxLayout.Y_AXIS));
 		// Use JScrollPane for ruler so it aligns with text...
@@ -224,7 +223,7 @@ class CardViewer implements Machine, ActionListener
 		}
 	}
 
-	private void deckAdd(File fi, boolean update) {
+	private void deckAdd(CardHopper hop, File fi, boolean update) {
 		try {
 			InputStream f = new FileInputStream(fi);
 			String n = fi.getName();
@@ -232,7 +231,7 @@ class CardViewer implements Machine, ActionListener
 				n = n.substring(0, n.length() - 4);
 			}
 			int c = (int)((fi.length() + 159) / 160);
-			hopper.addInput(f, n, c, true);
+			hop.addInput(f, n, c, true);
 			if (update && manager != null) {
 				manager.setCardDir(fi);
 			}
@@ -244,14 +243,14 @@ class CardViewer implements Machine, ActionListener
 			return;
 		}
 		text.setText("");
-		while (hopper.getCard(_card) > 0) {
+		while (hop.getCard(_card) > 0) {
 			addCard(_card);
 		}
-		hopper.emptyHopper(); // closes things
+		hop.emptyHopper(); // closes things
 		text.setCaretPosition(0);
 	}
 
-	private void deckAdd() {
+	private void deckAdd(CardHopper hop) {
 		File dir = _cwd;
 		if (manager != null) {
 			dir = manager.getCardDir();
@@ -266,7 +265,7 @@ class CardViewer implements Machine, ActionListener
 			return;
 		}
 		reSetup();
-		deckAdd(fi, true);
+		deckAdd(hop, fi, true);
 	}
 
 	public boolean viewDeck(File fi, boolean i026, boolean fortran) {
@@ -275,7 +274,7 @@ class CardViewer implements Machine, ActionListener
 		ibm026.setSelected(i026 && !fortran);
 		ibm026h.setSelected(i026 && fortran);
 		reSetup();
-		deckAdd(fi, false);
+		deckAdd(hopper, fi, false);
 		_frame.setVisible(true);
 		return true;
 	}
@@ -283,20 +282,12 @@ class CardViewer implements Machine, ActionListener
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JButton) {
 			return;
-		} else if (e.getSource() instanceof CardHandler) {
-			// hopper or stacker, mouse or repaint...
-			CardHandler ch = (CardHandler)e.getSource();
-			String a = e.getActionCommand();
-			if (a.equals("left")) {
-				deckAdd();
-			}
-			return;
 		} else if (!(e.getSource() instanceof JMenuItem)) {
 			return;
 		}
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_I) {
-			deckAdd();
+			deckAdd(hopper);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed

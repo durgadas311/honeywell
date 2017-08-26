@@ -33,6 +33,10 @@ public class CardHopper extends CardHandler implements MouseListener {
 	private LinkedList<NamedCardDeck> hopper;
 	private InputStream idev;
 	private String name;
+	private JPanel acc;
+	JCheckBox acc_cb;
+	JTextArea acc_stk;
+	private File iprv;
 
 	public CardHopper(String name, int wid, int hit, int sca, boolean topDown) {
 		super();
@@ -41,6 +45,8 @@ public class CardHopper extends CardHandler implements MouseListener {
 		height = hit;
 		scale = sca;
 		this.topDown = topDown;
+		// TODO: share?
+		iprv = new File(System.getProperty("user.dir"));
 		setPreferredSize(new Dimension(wid + 2 * bdw, hit + 2 * bdw));
 		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		setBackground(Color.white);
@@ -48,7 +54,38 @@ public class CardHopper extends CardHandler implements MouseListener {
 		listener = null;
 		hopper = new LinkedList<NamedCardDeck>();
 		clearHopper();
+		update();
 		addMouseListener(this);
+
+		// TODO: share this?
+		acc = new JPanel();
+		GridBagLayout gb = new GridBagLayout();
+		acc.setLayout(gb);
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.WEST;
+		JLabel lb = new JLabel("Input Hopper:");
+		gb.setConstraints(lb, gc);
+		acc.add(lb);
+		++gc.gridy;
+		acc_cb = new JCheckBox("Remove All");
+		gb.setConstraints(acc_cb, gc);
+		acc.add(acc_cb);
+		++gc.gridy;
+		acc_stk = new JTextArea(4, 15);
+		acc_stk.setEditable(false);
+		gb.setConstraints(acc_stk, gc);
+		acc.add(acc_stk);
 	}
 
 	public void setListener(ActionListener lstn) {
@@ -86,6 +123,34 @@ public class CardHopper extends CardHandler implements MouseListener {
 			clearHopper();
 		}
 		addDeck(new NamedCardDeck(deck, src, count));
+	}
+
+	public File addDialog(String purp, File prev) {
+		acc_stk.setText(stackList('\n', false));
+		acc_cb.setSelected(false);
+		SuffFileChooser ch = new SuffFileChooser(purp,
+			new String[]{"pcd"}, new String[]{"Punch Card Deck"}, prev, acc);
+		int rv = ch.showDialog(this);
+		if (rv != JFileChooser.APPROVE_OPTION) {
+			return null;
+		}
+		File fi = ch.getSelectedFile();
+		if (!fi.exists()) { // can't happen?
+			return null;
+		}
+		try {
+			InputStream f = new FileInputStream(fi);
+			String n = fi.getName();
+			if (n.endsWith(".pcd")) {
+				n = n.substring(0, n.length() - 4);
+			}
+			int c = (int)((fi.length() + 159) / 160);
+			addInput(f, n, c, acc_cb.isSelected());
+		} catch (Exception ee) {
+			// TODO: errors
+			return null;
+		}
+		return fi;
 	}
 
 	// Consistency:
@@ -230,11 +295,25 @@ public class CardHopper extends CardHandler implements MouseListener {
 
 	private void update() {
 		repaint();
-		if (listener == null) {
-			return;
+		if (listener != null) {
+			setToolTipText(""); // in case user does not update
+			CardHandlerEvent ae = new CardHandlerEvent(this,
+				ActionEvent.ACTION_PERFORMED, "repaint");
+			listener.actionPerformed(ae);
+			if (ae.isConsumed()) {
+				return;
+			}
 		}
-		listener.actionPerformed(new ActionEvent(this,
-			ActionEvent.ACTION_PERFORMED, "repaint"));
+		// default behavior
+		String tip = getLabel();
+		tip += String.format(": %d", stackCount());
+		String lst = stackList(',', true);
+		if (lst != null) {
+			tip += '(';
+			tip += lst;
+			tip += ')';
+		}
+		setToolTipText(tip);
 	}
 
 	@Override
@@ -263,11 +342,8 @@ public class CardHopper extends CardHandler implements MouseListener {
 	}
 
 	public void mouseClicked(MouseEvent e) {
-		if (listener == null) {
-			return;
-		}
 		String act;
-		ActionEvent ae;
+		CardHandlerEvent ae;
 		if (e.getButton() == MouseEvent.BUTTON1) {
 			act = "left";
 		} else if (e.getButton() == MouseEvent.BUTTON2) {
@@ -280,8 +356,25 @@ public class CardHopper extends CardHandler implements MouseListener {
 		if ((e.getModifiers() & InputEvent.SHIFT_MASK) != 0) {
 			act = act.toUpperCase();
 		}
-		ae = new ActionEvent(this, e.getID(), act);
-		listener.actionPerformed(ae);
+		if (listener != null) {
+			ae = new CardHandlerEvent(this, e.getID(), act);
+			listener.actionPerformed(ae);
+			if (ae.isConsumed()) {
+				return;
+			}
+		}
+		if (act.equals("left")) {
+			File f = addDialog("Add Deck", iprv);
+			if (f != null) {
+				iprv = f;
+			}
+		} else if (act.equals("LEFT")) {
+			// viewer, some day?
+		} else if (act.equals("right")) {
+			addBlank(50);
+		} else if (act.equals("RIGHT")) {
+			emptyHopper();
+		}
 	}
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}

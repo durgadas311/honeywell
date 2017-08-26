@@ -259,9 +259,6 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 	boolean ibm403;
 	boolean progSet;
 	ErrorStop errorStop;
-	JPanel acc;
-	JCheckBox acc_cb;
-	JTextArea acc_stk;
 	JMenu[] _menus;
 	GridBagLayout gb;
 	GridBagConstraints gc;
@@ -380,10 +377,8 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		stopped = true;
 		hopper = new CardHopper("Input Hopper", 45, 100, 1, false);
 		hopper.setListener(this);
-		deckUpdate(hopper);
 		stacker = new CardStacker("Stacker", 45, 100, 1, true);
 		stacker.setListener(this);
-		deckUpdate(stacker);
 		start = makeButton("START", "start", Color.black, Color.white);
 		stop = makeButton("STOP", "stop", Color.black, Color.white);
 		total = makeButton("FINAL<BR>TOTAL", "total", Color.black, Color.white);
@@ -615,31 +610,6 @@ class CardAccounting implements Machine, Puncher, ActionListener, Runnable
 		++gc.gridx;
 		gb.setConstraints(feed, gc);
 		_frame.add(feed);
-
-		// -----------------------------------------
-		// Accessory panel for Input Deck chooser...
-		// Must be finished with _frame...
-		gc.gridx = 0;
-		gc.gridy = 0;
-		gc.gridwidth = 1;
-		gc.gridheight = 1;
-		gb = new GridBagLayout();
-		acc = new JPanel();
-		acc.setLayout(gb);
-		gc.anchor = GridBagConstraints.WEST;
-		JLabel lb = new JLabel("Input Hopper:");
-		gb.setConstraints(lb, gc);
-		acc.add(lb);
-		++gc.gridy;
-		acc_cb = new JCheckBox("Remove All");
-		gb.setConstraints(acc_cb, gc);
-		acc.add(acc_cb);
-		++gc.gridy;
-		acc_stk = new JTextArea(4, 15);
-		acc_stk.setEditable(false);
-		gb.setConstraints(acc_stk, gc);
-		acc.add(acc_stk);
-		++gc.gridy;
 
 		idle.setBackground(red);
 	}
@@ -1280,41 +1250,14 @@ public static int ncards = 0;
 		}
 	}
 
-	private void deckAdd() {
+	private void deckAdd(CardHopper hop) {
 		File dir = _cwd;
 		if (manager != null) {
 			dir = manager.getCardDir();
 		}
-		acc_stk.setText(hopper.stackList('\n', false));
-		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", "pcd", "Punch Card Deck", dir, acc);
-		if (fi == null) {
-			return;
-		}
-		dir = fi;
-		deckAdd(fi, acc_cb.isSelected());
-		if (manager != null) {
+		File fi = hop.addDialog("Add Input", dir);
+		if (fi != null && manager != null) {
 			manager.setCardDir(fi);
-		}
-	}
-
-	private void deckAdd(File fi, boolean empty) {
-		if (fi.exists()) {
-			try {
-				InputStream f = new FileInputStream(fi);
-				String n = fi.getName();
-				if (n.endsWith(".pcd")) {
-					n = n.substring(0, n.length() - 4);
-				}
-				int c = (int)((fi.length() + 159) / 160);
-				hopper.addInput(f, n, c, empty);
-			} catch (Exception ee) {
-				// TODO: PopupFactory
-				ee.printStackTrace();
-			}
-		} else {
-			// TODO: PopupFactory
-			System.err.format("Internal error: chosen file does not exist\n");
 		}
 	}
 
@@ -1328,36 +1271,26 @@ public static int ncards = 0;
 		viewer.viewDeck(stk.getDeck(), false, false);
 	}
 
-	private void deckChange(CardHandler obj, String act) {
+	private void deckChange(CardHandlerEvent ae, CardHandler obj, String act) {
 		if (act.equals("right")) {
 			if (obj == hopper) {
-				//hopper.addBlank(50);
-			} else {
-				stacker.discardDeck();
+				// BLANK cards not allowed?
+				ae.consume();
 			}
 		} else if (act.equals("left")) {
+			ae.consume();	// nothing to save?
 			if (obj == hopper) {
-				deckAdd();
-			} else {
-				stacker.discardDeck();
+				deckAdd(hopper);
 			}
 		} else if (act.equals("LEFT")) {
 			if (obj instanceof CardStacker) {
+				ae.consume();
 				deckView((CardStacker)obj);
 			}
 		}
 	}
 
-	private void deckUpdate(CardHandler obj) {
-		String tip = obj.getLabel();
-		tip += String.format(": %d", obj.stackCount());
-		String lst = obj.stackList(',', true);
-		if (lst != null) {
-			tip += '(';
-			tip += lst;
-			tip += ')';
-		}
-		obj.setToolTipText(tip);
+	private void deckUpdate(CardHandlerEvent ae, CardHandler obj) {
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -1376,14 +1309,15 @@ public static int ncards = 0;
 				processFinalTotal();
 			}
 			return;
-		} else if (e.getSource() instanceof CardHandler) {
+		} else if (e instanceof CardHandlerEvent) {
 			// hopper or stacker, mouse or repaint...
 			CardHandler ch = (CardHandler)e.getSource();
 			String a = e.getActionCommand();
+			CardHandlerEvent ae = (CardHandlerEvent)e;
 			if (a.equals("repaint")) {
-				deckUpdate(ch);
+				deckUpdate(ae, ch);
 			} else {
-				deckChange(ch, a);
+				deckChange(ae, ch, a);
 			}
 			return;
 		} else if (e.getSource() instanceof JCheckBox) {
@@ -1400,7 +1334,7 @@ public static int ncards = 0;
 		} else if (m.getMnemonic() == KeyEvent.VK_U) {
 			unProg();
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
-			deckAdd();
+			deckAdd(hopper);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {
 			hopper.addBlank(0); // close any input... we hope.
 			// stacker.discardDeck(); // file should get removed

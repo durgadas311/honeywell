@@ -27,9 +27,6 @@ class PunchCardDeck extends PunchCard
 	CardHopper hopper;
 	CardStacker stacker;
 	JPanel reading;
-	JPanel acc;
-	JCheckBox acc_cb;
-	JTextArea acc_stk;
 	JPanel snap_acc;
 	JCheckBox snap_cb;
 	int _pgix = 0;
@@ -139,8 +136,6 @@ class PunchCardDeck extends PunchCard
 		hopper.addBlank(50);
 		hopper.setListener(this);
 		stacker.setListener(this);
-		deckUpdate(hopper);
-		deckUpdate(stacker);
 		reading = new JPanel();
 		reading.setPreferredSize(new Dimension(45 + 4, 20 + 4));
 		reading.setBackground(Color.gray);
@@ -279,37 +274,14 @@ class PunchCardDeck extends PunchCard
 
 		_keyQue = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 
-		// Accessory panel for Input Deck chooser...
-		gc.gridx = 0;
-		gc.gridy = 0;
-		gc.gridwidth = 1;
-		gc.gridheight = 1;
-		acc = new JPanel();
-		GridBagLayout gb = new GridBagLayout();
-		acc.setLayout(gb);
-		gc.anchor = GridBagConstraints.WEST;
-		JLabel lb = new JLabel("Input Hopper:");
-		gb.setConstraints(lb, gc);
-		acc.add(lb);
-		++gc.gridy;
-		acc_cb = new JCheckBox("Remove All");
-		gb.setConstraints(acc_cb, gc);
-		acc.add(acc_cb);
-		++gc.gridy;
-		acc_stk = new JTextArea(4, 15);
-		acc_stk.setEditable(false);
-		gb.setConstraints(acc_stk, gc);
-		acc.add(acc_stk);
-		++gc.gridy;
-
 		// Accessory panel for card snapshot dialog
 		gc.gridx = 0;
 		gc.gridy = 0;
 		gc.gridwidth = 1;
 		gc.gridheight = 1;
 		snap_acc = new JPanel();
-		gb = new GridBagLayout();
-		acc.setLayout(gb);
+		GridBagLayout gb = new GridBagLayout();
+		snap_acc.setLayout(gb);
 		gc.anchor = GridBagConstraints.WEST;
 		snap_cb = new JCheckBox("Transparency");
 		gb.setConstraints(snap_cb, gc);
@@ -770,6 +742,7 @@ class PunchCardDeck extends PunchCard
 			} catch (Exception ee) {}
 		}
 		setState(null, false);
+		setCursor(1);
 	}
 
 	// Animate movement of card into sight from the top (moving down).
@@ -785,6 +758,7 @@ class PunchCardDeck extends PunchCard
 		}
 		_tranY = 0;
 		_animate = false;
+		setCursor(1);
 	}
 
 	// Animate movement of card out of sight to the top (moving up).
@@ -800,6 +774,7 @@ class PunchCardDeck extends PunchCard
 			} catch (Exception ee) {}
 		}
 		setState(null, false);
+		setCursor(1);
 	}
 
 	private void cardOutRight() {
@@ -814,6 +789,7 @@ class PunchCardDeck extends PunchCard
 			} catch (Exception ee) {}
 		}
 		setState(null, false);
+		setCursor(1);
 	}
 
 	private void cardInRight() {
@@ -829,6 +805,7 @@ class PunchCardDeck extends PunchCard
 		}
 		_tranX = 0;
 		_animate = false;
+		setCursor(1);
 	}
 
 	private void shred() {
@@ -1106,7 +1083,7 @@ class PunchCardDeck extends PunchCard
 				continue;
 			}
 			if (c == '\002') {	// ^B
-				setCursor(0);
+				setCursor(1);
 				repaint();
 				continue;
 			}
@@ -1284,36 +1261,14 @@ class PunchCardDeck extends PunchCard
 		_help.setVisible(true);
 	}
 
-	private void deckAdd() {
+	private void deckAdd(CardHopper hop) {
 		File dir = _cwd;
 		if (manager != null) {
 			dir = manager.getCardDir();
 		}
-		acc_stk.setText(hopper.stackList('\n', false));
-		acc_cb.setSelected(false);
-		File fi = pickFile("Add Input", acc, "pcd", "Punch Card Deck", dir);
-		if (fi == null) {
-			return;
-		}
-		if (fi.exists()) {
-			try {
-				InputStream f = new FileInputStream(fi);
-				String n = fi.getName();
-				if (n.endsWith(".pcd")) {
-					n = n.substring(0, n.length() - 4);
-				}
-				int c = (int)((fi.length() + 159) / 160);
-				hopper.addInput(f, n, c, acc_cb.isSelected());
-				if (manager != null) {
-					manager.setCardDir(fi);
-				}
-			} catch (Exception ee) {
-				// TODO: PopupFactory
-				ee.printStackTrace();
-			}
-		} else {
-			// TODO: PopupFactory
-			System.err.format("Internal error: chosen file does not exist\n");
+		File fi = hop.addDialog("Add Input", dir);
+		if (fi != null && manager != null) {
+			manager.setCardDir(fi);
 		}
 	}
 
@@ -1338,54 +1293,36 @@ class PunchCardDeck extends PunchCard
 		viewer.viewDeck(stk.getDeck(), _ibm026, _fortran);
 	}
 
-	private void deckSave() {
+	private void deckSave(CardStacker stk) {
 		File dir = _cwd;
 		if (manager != null) {
 			dir = manager.getCardDir();
 		}
-		File fi = pickFile("Save Output", null, "pcd", "Punch Card Deck", dir);
-		if (fi == null) {
-			return;
-		}
-		if (!stacker.saveDeck(fi)) {
-			// TODO: PopupFactory
-			return;
-		}
-		if (manager != null) {
+		File fi = stk.saveDialog("Save Output", dir);
+		// TODO: set _cwd also?
+		if (fi != null && manager != null) {
 			manager.setCardDir(fi);
 		}
 	}
 
-	private void deckChange(CardHandler obj, String act) {
-		if (act.equals("right")) {
-			if (obj == hopper) {
-				hopper.addBlank(50);
-			} else {
-				stacker.discardDeck();
-			}
-		} else if (act.equals("left")) {
-			if (obj == hopper) {
-				deckAdd();
-			} else {
-				deckSave();
+	private void deckChange(CardHandlerEvent ae, CardHandler obj, String act) {
+		if (act.equals("left")) {
+			if (obj instanceof CardStacker) {
+				ae.consume();
+				deckSave((CardStacker)obj);
+			} else if (obj instanceof CardHopper) {
+				ae.consume();
+				deckAdd((CardHopper)obj);
 			}
 		} else if (act.equals("LEFT")) {
 			if (obj instanceof CardStacker) {
+				ae.consume();
 				deckView((CardStacker)obj);
 			}
 		}
 	}
 
-	private void deckUpdate(CardHandler obj) {
-		String tip = obj.getLabel();
-		tip += String.format(": %d", obj.stackCount());
-		String lst = obj.stackList(',', true);
-		if (lst != null) {
-			tip += '(';
-			tip += lst;
-			tip += ')';
-		}
-		obj.setToolTipText(tip);
+	private void deckUpdate(CardHandlerEvent ae, CardHandler obj) {
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -1396,14 +1333,15 @@ class PunchCardDeck extends PunchCard
 			}
 			_keyQue.add(0x3000);
 			return;
-		} else if (e.getSource() instanceof CardHandler) {
+		} else if (e instanceof CardHandlerEvent) {
 			// hopper or stacker, mouse or repaint...
 			CardHandler ch = (CardHandler)e.getSource();
+			CardHandlerEvent ae = (CardHandlerEvent)e;
 			String a = e.getActionCommand();
 			if (a.equals("repaint")) {
-				deckUpdate(ch);
+				deckUpdate(ae, ch);
 			} else {
-				deckChange(ch, a);
+				deckChange(ae, ch, a);
 			}
 			return;
 		} else if (e.getSource() == viewer) {
@@ -1414,7 +1352,7 @@ class PunchCardDeck extends PunchCard
 		}
 		JMenuItem m = (JMenuItem)e.getSource();
 		if (m.getMnemonic() == KeyEvent.VK_O) {
-			deckSave();
+			deckSave(stacker);
 		} else if (m.getMnemonic() == KeyEvent.VK_D) {
 			stacker.discardDeck();
 		} else if (m.getMnemonic() == KeyEvent.VK_P) {
@@ -1424,7 +1362,7 @@ class PunchCardDeck extends PunchCard
 				saveImage(nu, snap_cb.isSelected());
 			}
 		} else if (m.getMnemonic() == KeyEvent.VK_I) {
-			deckAdd();
+			deckAdd(hopper);
 		} else if (m.getMnemonic() == KeyEvent.VK_B) {
 			hopper.addBlank(50);
 		} else if (m.getMnemonic() == KeyEvent.VK_Q) {

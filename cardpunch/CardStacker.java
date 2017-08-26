@@ -30,6 +30,7 @@ public class CardStacker extends CardHandler implements MouseListener {
 	private ActionListener listener;
 	private OutputStream odev;
 	private File ofil;
+	private File oprv;
 	private String name;
 
 	public CardStacker(String name, int wid, int hit, int sca, boolean topDown) {
@@ -39,6 +40,8 @@ public class CardStacker extends CardHandler implements MouseListener {
 		width = wid;
 		height = hit;
 		scale = sca;
+		// TODO: share?
+		oprv = new File(System.getProperty("user.dir"));
 		this.topDown = topDown;
 		setPreferredSize(new Dimension(wid + 2 * bdw, hit + 2 * bdw));
 		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
@@ -173,13 +176,34 @@ public class CardStacker extends CardHandler implements MouseListener {
 		return true;
 	}
 
+	public File saveDialog(String purp, File prev) {
+		SuffFileChooser ch = new SuffFileChooser(purp,
+			new String[]{"pcd"}, new String[]{"Punch Card Deck"}, prev, null);
+		int rv = ch.showDialog(this);
+		if (rv != JFileChooser.APPROVE_OPTION) {
+			return null;
+		}
+		if (!saveDeck(ch.getSelectedFile())) {
+			return null;
+		}
+		return ch.getSelectedFile();
+	}
+
 	private void update() {
 		repaint();
-		if (listener == null) {
-			return;
+		if (listener != null) {
+			setToolTipText(""); // in case user does not update
+			CardHandlerEvent ae = new CardHandlerEvent(this,
+				ActionEvent.ACTION_PERFORMED, "repaint");
+			listener.actionPerformed(ae);
+			if (ae.isConsumed()) {
+				return;
+			}
 		}
-		listener.actionPerformed(new ActionEvent(this,
-			ActionEvent.ACTION_PERFORMED, "repaint"));
+		// default behavior
+		String tip = getLabel();
+		tip += String.format(": %d", stackCount());
+		setToolTipText(tip);
 	}
 
 	@Override
@@ -208,11 +232,8 @@ public class CardStacker extends CardHandler implements MouseListener {
 	}
 
 	public void mouseClicked(MouseEvent e) {
-		if (listener == null) {
-			return;
-		}
 		String act;
-		ActionEvent ae;
+		CardHandlerEvent ae;
 		if (e.getButton() == MouseEvent.BUTTON1) {
 			act = "left";
 		} else if (e.getButton() == MouseEvent.BUTTON2) {
@@ -225,8 +246,25 @@ public class CardStacker extends CardHandler implements MouseListener {
 		if ((e.getModifiers() & InputEvent.SHIFT_MASK) != 0) {
 			act = act.toUpperCase();
 		}
-		ae = new ActionEvent(this, e.getID(), act);
-		listener.actionPerformed(ae);
+		if (listener != null) {
+			ae = new CardHandlerEvent(this, e.getID(), act);
+			listener.actionPerformed(ae);
+			if (ae.isConsumed()) {
+				return;
+			}
+		}
+		if (act.equals("left")) {
+			File f = saveDialog("Save Deck", oprv);
+			if (f != null) {
+				oprv = f;
+			}
+		} else if (act.equals("LEFT")) {
+			// we don't have access to viewer...
+		} else if (act.equals("right")) {
+			discardDeck();
+		} else if (act.equals("RIGHT")) {
+			// any action? remove last card?
+		}
 	}
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
