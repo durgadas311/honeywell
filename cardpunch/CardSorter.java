@@ -9,7 +9,20 @@ import java.util.Arrays;
 
 class CardSorter implements Machine, ActionListener, Runnable
 {
-	static final long serialVersionUID = 311614000000L;
+	// index into stacker[]
+	static final int POK_0 = 0;
+	static final int POK_1 = 1;
+	static final int POK_2 = 2;
+	static final int POK_3 = 3;
+	static final int POK_4 = 4;
+	static final int POK_5 = 5;
+	static final int POK_6 = 6;
+	static final int POK_7 = 7;
+	static final int POK_8 = 8;
+	static final int POK_9 = 9;
+	static final int POK_11 = 10;
+	static final int POK_12 = 11;
+	static final int POK_R = 12;
 
 	class ColumnSelector extends JPanel implements MouseListener {
 		public int column;
@@ -104,7 +117,8 @@ class CardSorter implements Machine, ActionListener, Runnable
 
 	// Order of stackers, L-R
 	int[] order = new int[]{
-		9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 10, 11, 12
+		POK_9, POK_8, POK_7, POK_6, POK_5, POK_4, POK_3, POK_2, POK_1, POK_0,
+		POK_11, POK_12, POK_R
 	};
 
 	ImageIcon blk;
@@ -139,9 +153,9 @@ class CardSorter implements Machine, ActionListener, Runnable
 		inhibits = new JCheckBox[12];
 		String t;
 		for (int x = 0; x < 13; ++x) {
-			if (x < 10) {
+			if (x < POK_11) {
 				t = String.format("%d", x);
-			} else if (x < 12) {
+			} else if (x < POK_R) {
 				t = String.format("%d", x + 1);
 			} else {
 				t = "R";
@@ -321,19 +335,19 @@ class CardSorter implements Machine, ActionListener, Runnable
 		gb.setConstraints(lb, gc);
 		acc2.add(lb);
 		gc.gridwidth = 1;
-		addPicker(pickers[9], 0, 1);
-		addPicker(pickers[8], 0, 2);
-		addPicker(pickers[7], 0, 3);
-		addPicker(pickers[6], 0, 4);
-		addPicker(pickers[5], 0, 5);
-		addPicker(pickers[4], 0, 6);
-		addPicker(pickers[3], 1, 1);
-		addPicker(pickers[2], 1, 2);
-		addPicker(pickers[1], 1, 3);
-		addPicker(pickers[0], 1, 4);
-		addPicker(pickers[10], 1, 5);
-		addPicker(pickers[11], 1, 6);
-		addPicker(pickers[12], 1, 7);
+		addPicker(pickers[POK_9], 0, 1);
+		addPicker(pickers[POK_8], 0, 2);
+		addPicker(pickers[POK_7], 0, 3);
+		addPicker(pickers[POK_6], 0, 4);
+		addPicker(pickers[POK_5], 0, 5);
+		addPicker(pickers[POK_4], 0, 6);
+		addPicker(pickers[POK_3], 1, 1);
+		addPicker(pickers[POK_2], 1, 2);
+		addPicker(pickers[POK_1], 1, 3);
+		addPicker(pickers[POK_0], 1, 4);
+		addPicker(pickers[POK_11], 1, 5);
+		addPicker(pickers[POK_12], 1, 6);
+		addPicker(pickers[POK_R], 1, 7);
 		gc.gridwidth = 2;
 		gc.gridx = 0;
 		gc.gridy = 8;
@@ -357,7 +371,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 		JPanel pn = new JPanel();
 		pn.setLayout(new GridLayout(3, 4));
 		pn.setOpaque(false);
-		for (int x = 0; x < 12; ++x) {
+		for (int x = 0; x < POK_R; ++x) {
 			pn.add(inhibits[order[x]]);
 		}
 		return pn;
@@ -432,7 +446,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 			return 0x0e00;
 		}
 		int m = 0;
-		for (int x = 0; x < 12; ++x) {
+		for (int x = 0; x < POK_R; ++x) {
 			if (inhibits[order[x]].isSelected()) {
 				m |= (1 << x);
 			}
@@ -452,13 +466,14 @@ class CardSorter implements Machine, ActionListener, Runnable
 			}
 			int p = getCol(col - 1) & msk;
 			int n = Integer.numberOfTrailingZeros(p);
-			if (n < 10) {
-				n = 9 - n;
-			} else if (n > 12) {
-				n = 12;
+			if (n > POK_R) {
+				n = POK_R;
+			} else {
+				n = order[n];
 			}
 			stackers[n].putCard(_card);
 			try {
+				_frame.repaint();
 				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}
