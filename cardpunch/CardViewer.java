@@ -66,7 +66,17 @@ class CardViewer implements Machine, ActionListener
 		_card = new byte[2*80];
 		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);
 
-		_frame.setLayout(new BoxLayout(_frame.getContentPane(), BoxLayout.Y_AXIS));
+		GridBagLayout gb = new GridBagLayout();
+		_frame.setLayout(gb);
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.anchor = GridBagConstraints.WEST;
 		// Use JScrollPane for ruler so it aligns with text...
 		ruler = new JTextArea(1, 80);
 		ruler.setText("1...*....10...*....20...*....30...*....40" +
@@ -76,6 +86,7 @@ class CardViewer implements Machine, ActionListener
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 		scroll.setViewportBorder(new LineBorder(Color.white, 3));
+		gb.setConstraints(scroll, gc);
 		_frame.add(scroll);
 		text = new JTextArea(10, 80);
 		text.setEditable(false);
@@ -83,6 +94,10 @@ class CardViewer implements Machine, ActionListener
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		scroll.setViewportBorder(new LineBorder(Color.white, 3));
+		++gc.gridy;
+		gc.weighty = 1;
+		gc.fill = GridBagConstraints.VERTICAL;
+		gb.setConstraints(scroll, gc);
 		_frame.add(scroll);
 
 		_menus = new JMenu[1];
