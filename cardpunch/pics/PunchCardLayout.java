@@ -25,8 +25,8 @@ class PunchCardLayout extends JLabel
 	int left = 18;
 	int top = 72; // err, minus X and R... at baseline
 	int half = 10;
-	int row1 = top + half;
-	int row9 = row1 + 8 * row;
+	int row0 = top + half;
+	int row9 = row0 + 9 * row;
 
 	private Path2D.Float punchCard;
 
@@ -76,7 +76,7 @@ class PunchCardLayout extends JLabel
 			if (s < 9) {
 				x += 1;
 			}
-			g2d.drawString(ss, x, row1);
+			g2d.drawString(ss, x, row0);
 			g2d.drawString(ss, x, row9);
 		}
 		if (punch) {
@@ -97,8 +97,12 @@ class PunchCardLayout extends JLabel
 		setOpaque(false);
 		//setBackground(Color.gray);
 		//setOpaque(true);
-		font1 = new Font("Sans-serif", Font.PLAIN, 11);
-		font2 = new Font("Sans-serif", Font.PLAIN, 6);
+//		font1 = new Font("Sans-serif", Font.PLAIN, 11);
+//		font2 = new Font("Sans-serif", Font.PLAIN, 6);
+//font1 = new Font("Liberation Sans Narrow", Font.PLAIN, 11);
+//font2 = new Font("Liberation Sans Narrow", Font.PLAIN, 6);
+font1 = new Font("Ubuntu Condensed", Font.PLAIN, 14);
+font2 = new Font("Ubuntu Condensed", Font.PLAIN, 8);
 		int radius = 40;
 		int width = 681;
 		int height = 300;
@@ -133,7 +137,10 @@ class PunchCardLayout extends JLabel
 			d.width, d.height, transparent ?
 				java.awt.image.BufferedImage.TYPE_INT_ARGB :
 				java.awt.image.BufferedImage.TYPE_INT_RGB);
+		boolean pu = punch;
+		punch = false;
 		paint(i.getGraphics());
+		punch = pu;
 		try {
 			javax.imageio.ImageIO.write(i, "png", fn);
 		} catch (IOException ee) {
