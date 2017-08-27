@@ -226,6 +226,7 @@ public class DataCenter extends JFrame
 			// TODO: pop-up error
 			return;
 		}
+		mach.getFrame().setLocationRelativeTo(this);
 		mach.getFrame().addWindowListener(this);
 		mach.setQuitListener(this);
 		machs[ix] = mach;
