@@ -848,22 +848,23 @@ public static int ncards = 0;
 		//allCycles.set(0, true);
 		// TODO: supposed to stop when last card fed, not when
 		// feeding next card failed...
+		// Do run-in:
+		boolean runningIn = !runningOut;
 		while (!stopped) {
 			boolean empty = false;
 			allCycles.set(0, true);
 			allCards.set(0, true);
-			if (runningOut || secdyFd.is(0)) {
-				if (card2 != null) {
-					out2.putCard(card2);
-				}
-				card2 = new byte[2*80];
-				int c = hopper2.getCard(card2);
-				if (c < 0) {
-					empty = true;
-					card2 = null;
+			if (runningOut) {
+				boolean mt1 = (card1 == null && hopper1.stackCount() == 0);
+				boolean mt2 = (card2 == null && hopper2.stackCount() == 0);
+				if (mt1 && !mt2) {
+					secdyFd.set(0, true);
+				} else if (mt2 && !mt1) {
+					priFeed.set(0, true);
 				}
 			}
-			if (runningOut || priFeed.is(0)) {
+			// Need to process primary first...
+			if (priFeed.is(0)) {
 				if (card1 != null) {
 					out1.putCard(card1);
 				}
@@ -875,12 +876,27 @@ public static int ncards = 0;
 					card1s = null;
 				}
 			}
-			// machine stops if either hopper is empty
-			// (and not RUNOUT)
-			if ((!runningOut && empty) ||
-			    (runningOut && card1 == null && card1s == null && card2 == null)) {
-				stopped = true;
-				break;
+			if (secdyFd.is(0)) {
+				if (card2 != null) {
+					out2.putCard(card2);
+				}
+				card2 = new byte[2*80];
+				int c = hopper2.getCard(card2);
+				if (c < 0) {
+					empty = true;
+					card2 = null;
+				}
+			}
+			if (runningIn) {
+				boolean can1 = (card1 == null && hopper1.stackCount() > 0);
+				boolean can2 = (card2 == null && hopper2.stackCount() > 0);
+				if (can1) {
+					priFeed.set(0, true);
+				}
+				if (can2) {
+					secdyFd.set(0, true);
+				}
+				runningIn = !(can1 || can2);
 			}
 			// TODO: need to make progress if there is a card anywhere...
 			if (card2 != null) {
@@ -921,7 +937,15 @@ public static int ncards = 0;
 				stopped = true;
 				break;
 			}
+			// machine stops if either hopper is empty
+			// (and not RUNOUT)
+			if ((!runningOut && empty) ||
+			    (runningOut && card1 == null && card1s == null && card2 == null)) {
+				stopped = true;
+				break;
+			}
 			try {
+				_frame.repaint();
 				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}
