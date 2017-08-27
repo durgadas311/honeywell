@@ -255,7 +255,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 		}
 		--cards;
 		if (cards <= 0) {
-			finishDeck();
+			finishDeck(); // calls update() (indirectly)
 		} else {
 			update();
 		}
@@ -271,7 +271,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 			idev = null;
 		}
 		hopper.remove();
-		return nextDeck();
+		return nextDeck(); // calls update()
 	}
 
 	// Caller confirms "idev == null" before calling.
@@ -294,26 +294,31 @@ public class CardHopper extends CardHandler implements MouseListener {
 	}
 
 	private void update() {
-		repaint();
-		if (listener != null) {
-			setToolTipText(""); // in case user does not update
-			CardHandlerEvent ae = new CardHandlerEvent(this,
-				ActionEvent.ACTION_PERFORMED, "repaint");
-			listener.actionPerformed(ae);
-			if (ae.isConsumed()) {
-				return;
+		try {
+			if (listener != null) {
+				setToolTipText(""); // in case user does not update
+				CardHandlerEvent ae = new CardHandlerEvent(this,
+					ActionEvent.ACTION_PERFORMED, "repaint");
+				listener.actionPerformed(ae);
+				if (ae.isConsumed()) {
+					return;
+				}
 			}
+			// default behavior
+			String tip = getLabel();
+			tip += String.format(": %d", stackCount());
+			String lst = stackList(',', true);
+			if (lst != null && !lst.isEmpty()) {
+				tip += '(';
+				tip += lst;
+				tip += ')';
+			}
+			setToolTipText(tip);
+		} finally {
+			// TODO: does this do any good?
+			// _frame.repaint() seems to work better.
+			repaint();
 		}
-		// default behavior
-		String tip = getLabel();
-		tip += String.format(": %d", stackCount());
-		String lst = stackList(',', true);
-		if (lst != null) {
-			tip += '(';
-			tip += lst;
-			tip += ')';
-		}
-		setToolTipText(tip);
 	}
 
 	@Override

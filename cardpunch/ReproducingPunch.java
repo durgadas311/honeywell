@@ -960,6 +960,7 @@ public static int ncards = 0;
 				break;
 			}
 			try {
+				_frame.repaint();
 				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}

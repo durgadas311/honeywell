@@ -1167,6 +1167,7 @@ public static int ncards = 0;
 			//	stopped = true;
 			// }
 			try {
+				_frame.repaint();
 				Thread.sleep(50);
 			} catch (Exception ee) {}
 		}
