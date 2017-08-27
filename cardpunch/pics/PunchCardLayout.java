@@ -39,6 +39,9 @@ class PunchCardLayout extends JLabel
 		g2d.addRenderingHints(new RenderingHints(
 			RenderingHints.KEY_ANTIALIASING,
 			RenderingHints.VALUE_ANTIALIAS_ON));
+		g2d.addRenderingHints(new RenderingHints(
+			RenderingHints.KEY_TEXT_ANTIALIASING,
+			RenderingHints.VALUE_TEXT_ANTIALIAS_ON));
 		super.paint(g2d);
 		g2d.setColor(card);
 		g2d.fill(punchCard);
