@@ -1,0 +1,11 @@
+8-28-2017
+
+Keypunch final registration of cardInTop() is off (need >= 0 ?)
+
+Sorter recycle disturbs directory (do not set dir if recycle).
+
+general help on hoppers/stackers (All machines? at least DataCenter)
+
+Repro Punch (all?) hopper tooltip not updated after SHIFT-RIGHTCLICK.
+
+viewDeck() causes resize back to original... Also File->Input...
