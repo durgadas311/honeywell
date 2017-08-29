@@ -8,28 +8,16 @@
 Collator machines.
 
 <P>The input hoppers are located in the upper right.
-Output stackers are located derectly below the control switches.
-The program panel is implemented as a properties file.
+Output stackers are located in the lower middle.
+The hoppers and stackers behave in the
+<A HREF="Hoppers.html">normal fashion</A>, except that
+blank cards cannot be placed in the hopper (this may need to change).
+
+<P>The program panel is implemented as a properties file.
 currently, this file must be edited external from the simulation.
 The START, STOP, RUNOUT, and RESET buttons should function as on original equipment,
 with the exception that switches do not requires holding down.
 The run rate is set to 20 cards per second.
-
-<P>The hoppers/stackers are set to show 100 cards, with each card represented
-by a line of pixels. More cards may be in the hopper/stackers, in fact
-there is no practical limit (unlike original equipment). When a hopper/stacker
-has exceeded its display limit, there will be a red line on top of the stack.
-
-<P>Clicking on an input hopper will start a dialog to add a PCD file to the hopper.
-By default, this will add the new file after all existing files in the hopper,
-but the option "Remove All" may be used to clear the hopper first.
-Right clicking on a hopper will also empty it.
-
-<P>Clicking on the stacker will start a dialog to the
-stackers (pockets).
-Shift+Clicking on the stacker will show the cards in the Viewer, if
-running from the DataCenter app.
-Right clicking on a stacker will empty it.
 
 <P>Programming is done by a "properties" file, that contains lines of the
 format "name = value". Referencing the original equipment programming panel,

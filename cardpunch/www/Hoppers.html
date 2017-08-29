@@ -1,0 +1,59 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<H3>Punch Card Equipment Help</H3>
+
+<P>Card hoppers (input) and stackers (output) are represented by a small, recessed,
+panels with a white background.  Cards in a hopper or stacker (pocket) are
+shown as a portion of the area colored like plain punch cards.
+Most hoppers/stackers have a maximum display capacity of 100 cards.
+If more than 100 cards are in the hopper/stacker, a red line is shown on top.
+There is no actual limit to the number of cards that a hopper or stacker can hold.
+
+<P>Hoppers are generally located in the upper right,
+with cards flowing to stackers in the lower left.
+But each machine has it's own distinct card flow and direction.
+Hovering the mouse pointer over a hopper or stacker will normally
+pop-up a label showing the name of the hopper or stacker and
+information about the current contents.
+
+<P>Note that punch cards are not physically moved through the machines.
+The original file used to load the cards is never changed (unless you
+save some stacker over it). So, if you pass a deck of cards through a machine,
+then save the stacker contents into a new file, you have two copies of the
+same card deck.
+
+<P>Default behaviors for hoppers and stackers is as follows.
+Some machines may not support all of these, or may alter some of them.
+
+<H4>Hoppers</H4>
+
+<P>Left-clicking on a hopper will normally start a dialog to pick a file
+(deck of cards) to add to the hopper. An option "Remove All" is normally present to
+remove existing cards first, otherwise the new deck will be added to the end.
+If the hopper contains blank cards, all black cards will be removed
+(in other words, it is not possible to have both blank cards and pre-punched cards in
+a hopper at the same time).
+
+<P>Right-clicking on a hopper will remove any pre-punched cards and
+add 50 blank cards. If the hopper already contains blank cards, then
+50 more blank cards are added.
+
+<P>Shift-right-clicking on a hopper will empty the hopper
+(removing any cards, blank or pre-punched).
+
+<H4>Stackers</H4>
+
+<P>Left-clicking on a stacker will normally start a dialog to save the
+contents to a file.
+
+<P>Shift-left-clicking on a stacker will start up the Punch Card Viewer
+on the current contents, provided the machine is operating from the
+DataCenter application.
+
+<P>Right-clicking on a stacker will empty the stacker, discarding any
+contents (contents will be lost).
+
+</BODY>
+</HTML>

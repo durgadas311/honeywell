@@ -8,38 +8,25 @@
 The card "pockets" (output stackers) are located on the lower left,
 and arranged in the traditional order starting with the "9" punch.
 "R" indicates the reject pocket.
-The column selector/indicator is located immediately left of the input hopper.
-Selection switches for digits/zones are located to the left of the
-input hopper and column selector.
-The START and STOP buttons should function as on original equipment.
-The run rate is set to 20 cards per second.
-
-<P>The hoppers/stackers are set to show 100 cards, with each card represented
-by a line of pixels. More cards may be in the hopper/stackers, in fact
-there is no practical limit (unlike original equipment). When a hopper/stacker
-has exceeded its display limit, there will be a red line on top of the stack.
-
-<P>Clicking on the input hopper will start a dialog to add a PCD file to the hopper.
-By default, this will add the new file after all existing files in the hopper,
-but the option "Remove All" may be used to clear the hopper first.
-
-<P>Clicking on any pocket will start a dialog to save multiple pockets into
-and single PCD file. The dialog presents checkboxes for each pocket, plus one
-for a "Pick L-R" option that reverse the order of pockets in the file.
+The hopper and stackers behave in the
+<A HREF="Hoppers.html">normal fashion</A>, except that
+the all stackers contents are saved in a single dialog.
+This dialog presents checkboxes for each pocket, plus one
+for a "Pick L-R" option that reverses the order of pockets in the file.
 By default, the order will be R-L for all selected pockets,
 which means that the right-most selected pocket will be first in the file
-(on top of the deck). Pockets that are not selected will be left un-changed
+(on top of the deck). Pockets that are not selected will remain un-changed
 after the save, but all saved pockets will be cleared.
 The "Recycle" option is a short-hand to simply take the resulting
 card stack and place it on the input hopper. This option does not
 require entry of a file name (any file name is ignored).
+Viewing or discarding stacker contents is done on each stacker individually.
 
-<P>Shift+Clicking on the pocket will show the cards in the Viewer, if
-running from the DataCenter app.
-
-<P>Individual pockets may be cleared (discarding any cards) by right-clicking
-on the desired pocket. Note, discarding cards from a pocket has no effect on
-the original file from which the cards originated.
+<P>The column selector/indicator is located immediately left of the input hopper.
+Selection switches for digits/zones are located to the left of the
+input hopper and column selector.
+The START and STOP buttons should function as on original equipment.
+The run rate is set to 20 cards per second.
 
 <P>The column selector may be operated using mouse clicks. Left click will
 decrease the column by one. Right click will increase. Using SHIFT with
