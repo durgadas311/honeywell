@@ -735,7 +735,7 @@ class PunchCardDeck extends PunchCard
 		_tranX = _tranY = 0;
 		_animate = true;
 		int tEnd = -_image.getIconWidth();
-		for (; _tranX > tEnd; _tranX -= 10) {
+		for (; _tranX >= tEnd; _tranX -= 10) {
 			repaint();
 			try {
 				Thread.sleep(5);
@@ -750,7 +750,7 @@ class PunchCardDeck extends PunchCard
 		setCursor(0);
 		_tranY = -_image.getIconHeight();
 		_animate = true;
-		for (; _tranY < 0; _tranY += 10) {
+		for (; _tranY <= 0; _tranY += 10) {
 			repaint();
 			try {
 				Thread.sleep(5);
@@ -797,7 +797,7 @@ class PunchCardDeck extends PunchCard
 		_tranY = 0;
 		_tranX = _image.getIconWidth();
 		_animate = true;
-		for (; _tranX > 0; _tranX -= 10) {
+		for (; _tranX >= 0; _tranX -= 10) {
 			repaint();
 			try {
 				Thread.sleep(5);
