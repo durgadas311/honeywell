@@ -597,8 +597,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 		}
 		if (recycle.isSelected()) {
 			deckAdd(fi, true);
-		}
-		if (manager != null) {
+		} else if (manager != null) {
 			manager.setCardDir(fi);
 		}
 	}
