@@ -209,8 +209,6 @@ class CardViewer implements Machine, ActionListener
 	private void reFont(Font f) {
 		ruler.setFont(f);
 		text.setFont(f);
-		_frame.validate();
-		_frame.pack();
 		_frame.repaint();
 	}
 

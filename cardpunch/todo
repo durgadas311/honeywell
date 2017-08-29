@@ -1,7 +1,37 @@
-8-28-2017
+8-29-2017
 
-general help on hoppers/stackers (All machines? at least DataCenter)
+FIX THIS:
 
-Repro Punch (all?) hopper tooltip not updated after SHIFT-RIGHTCLICK.
+java.lang.ArrayIndexOutOfBoundsException: 2
+        at javax.swing.text.CompositeView.getView(CompositeView.java:160)
+        at javax.swing.text.View.forwardUpdate(View.java:1159)
+        at javax.swing.text.BoxView.forwardUpdate(BoxView.java:240)
+        at javax.swing.text.View.insertUpdate(View.java:710)
+        at javax.swing.plaf.basic.BasicTextUI$RootView.insertUpdate(BasicTextUI.java:1610)
+        at javax.swing.plaf.basic.BasicTextUI$UpdateHandler.insertUpdate(BasicTextUI.java:1869)
+        at javax.swing.text.AbstractDocument.fireInsertUpdate(AbstractDocument.java:201)
+        at javax.swing.text.DefaultStyledDocument.insert(DefaultStyledDocument.java:219)
+        at javax.swing.text.html.HTMLDocument.insert(HTMLDocument.java:431)
+        at javax.swing.text.html.HTMLDocument$HTMLReader.flushBuffer(HTMLDocument.java:3738)
+        at javax.swing.text.html.HTMLDocument$HTMLReader.addContent(HTMLDocument.java:3678)
+        at javax.swing.text.html.HTMLDocument$HTMLReader.blockClose(HTMLDocument.java:3609)
+        at javax.swing.text.html.HTMLDocument$HTMLReader$BlockAction.end(HTMLDocument.java:2804)
+        at javax.swing.text.html.HTMLDocument$HTMLReader.handleEndTag(HTMLDocument.java:2703)
+        at javax.swing.text.html.parser.DocumentParser.handleEndTag(DocumentParser.java:240)
+        at javax.swing.text.html.parser.Parser.endTag(Parser.java:455)
+        at javax.swing.text.html.parser.Parser.parseTag(Parser.java:1837)
+        at javax.swing.text.html.parser.Parser.parseContent(Parser.java:2094)
+        at javax.swing.text.html.parser.Parser.parse(Parser.java:2268)
+        at javax.swing.text.html.parser.DocumentParser.parse(DocumentParser.java:122)
+        at javax.swing.text.html.parser.ParserDelegator.parse(ParserDelegator.java:102)
+        at javax.swing.text.html.HTMLEditorKit.read(HTMLEditorKit.java:261)
+        at javax.swing.JEditorPane.read(JEditorPane.java:565)
+        at javax.swing.JEditorPane$PageLoader.doInBackground(JEditorPane.java:650)
+        at javax.swing.JEditorPane$PageLoader.doInBackground(JEditorPane.java:601)
+        at javax.swing.SwingWorker$1.call(SwingWorker.java:295)
+        at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+        at javax.swing.SwingWorker.run(SwingWorker.java:334)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+        at java.lang.Thread.run(Thread.java:748)
 
-viewDeck() causes resize back to original... Also File->Input...
