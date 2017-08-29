@@ -111,7 +111,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 
 	public void emptyHopper() {
 		clearHopper();
-		repaint();
+		update();
 	}
 
 	public void addInput(InputStream deck, String src, int count,
