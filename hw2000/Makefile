@@ -1,7 +1,17 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
-CPCLASSES =	CharConverter.class
+CPCLASSES =	CharConverter.class \
+		CardHandler.class \
+		NamedCardDeck.class \
+		CardHandlerEvent.class \
+		CardHopper.class \
+		CardStacker.class \
+		CardViewer.class \
+		CardPunchOptions.class \
+		DataCenter.class \
+		AppManager.class \
+		Machine.class
 
 F4CLASSES =	FortranLibrary.class
 
@@ -67,12 +77,13 @@ h2000.tgz: $(JAVAS) Makefile
 		fortran4/progs \
 		cardpunch/PunchCard*.png \
 		cardpunch/progs \
-		cardpunch/*.ttf
+		cardpunch/fonts/*.ttf
 
 H2000.jar: all docs/About.html
 	/bin/echo -e "Main-Class: System2000\nClass-Path: Fortran4Embedded.jar" >Manifest.txt
 	jar cfm $@ Manifest.txt *.class icons/*.png fonts/*.ttf \
-		docs/* $(JARES)
+		docs/* $(JARES) \
+		-C ../cardpunch fonts/IBM029.ttf -C ../cardpunch fonts/IBM026.ttf
 
 # If EasyCoder.jar was rebuilt, we need to add these classes.
 # If any of these classes get rebuilt, we need to add them also.

@@ -131,18 +131,10 @@ class PunchCard extends JLabel
 		String fn;
 		if (opts.ibm026) {
 			ink = new Color(120,0,255,175);
-			if (opts.dots) {
-				fn = "IBM026d.ttf";
-			} else {
-				fn = "IBM026.ttf";
-			}
+			fn = "fonts/IBM026.ttf";
 		} else {
 			ink = new Color(0,0,0,128);
-			if (opts.dots) {
-				fn = "IBM029d.ttf";
-			} else {
-				fn = "IBM029.ttf";
-			}
+			fn = "fonts/IBM029.ttf";
 		}
 		java.io.InputStream ttf = this.getClass().getResourceAsStream(fn);
 		if (ttf != null) {

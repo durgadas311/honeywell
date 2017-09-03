@@ -59,9 +59,9 @@ class CardViewer implements Machine, ActionListener
 		//f222 = new Font("Monospaced", Font.PLAIN, 12);
 		// font size must be multiple of artifact geometry
 		// for best appearance. For keypunch fonts that is 8.
-		f222 = loadFont("HW222.ttf", 10);
-		f029 = loadFont("IBM029.ttf", 8);
-		f026 = loadFont("IBM026.ttf", 8);
+		f222 = loadFont("fonts/HW222.ttf", 10);
+		f029 = loadFont("fonts/IBM029.ttf", 8);
+		f026 = loadFont("fonts/IBM026.ttf", 8);
 
 		_card = new byte[2*80];
 		hopper = new CardHopper("Input Hopper", 125, 90, 1, false);

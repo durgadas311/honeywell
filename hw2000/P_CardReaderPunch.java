@@ -42,93 +42,17 @@ import java.util.concurrent.Semaphore;
 // instructions, adapted to Word mode (i.e. same control chars).
 
 public class P_CardReaderPunch extends JFrame
-		implements Peripheral, SequentialRecordIO, ActionListener, WindowListener {
-	static final int defBlank = 100;
-
+		implements Peripheral, SequentialRecordIO,
+			ActionListener, WindowListener {
 	static final byte[] rev4 = new byte[]{
 		0b0000, 0b1000, 0b0100, 0b1100, 0b0010, 0b1010, 0b0110, 0b1110,
 		0b0001, 0b1001, 0b0101, 0b1101, 0b0011, 0b1011, 0b0111, 0b1111,
 	};
 
 	Semaphore stall;
-	LinkedList<NamedInputStream> hopper;
-
-	class NamedInputStream {
-		InputStream real;
-		String name;
-		int count;
-		public NamedInputStream(InputStream in, String nm, int num) {
-			real = in;
-			name = nm;
-			count = num;
-		}
-	}
-
-	class CardStack extends JPanel implements MouseListener {
-		private PunchCardStatus pcs;
-		private Color cards;
-		private boolean topDown;
-		private int scale;
-		private ActionListener listener;
-		public CardStack(PunchCardStatus pcs, boolean topDown) {
-			super();
-			this.pcs = pcs;
-			this.topDown = topDown;
-			setPreferredSize(new Dimension(26, 106));
-			setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
-			setBackground(Color.white);
-			cards = new Color(215,205,154);
-			scale = 5;
-			listener = null;
-			addMouseListener(this);
-		}
-		public void setListener(ActionListener lstn) {
-			listener = lstn;
-		}
-		@Override
-		public void paint(Graphics g) {
-			super.paint(g);
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.translate(3, 3);
-			g2d.setColor(cards);
-			int n = (pcs.rest + pcs.cards + scale - 1) / scale;
-			boolean max = false;
-			if (n > 100) {
-				max = true;
-				n = 100;
-			}
-			if (n > 0) {
-				if (topDown) {
-					g2d.fillRect(0, 0, 21, n + 1);
-				} else {
-					g2d.fillRect(0, 100 - n, 21, n + 1);
-				}
-				if (max) {
-					g2d.setColor(Color.red);
-					g2d.drawLine(0, 0, 20, 0);
-				}
-			}
-		}
-
-		public void mouseClicked(MouseEvent e) {
-			if (listener == null) {
-				return;
-			}
-			ActionEvent ae;
-			if (e.getButton() == MouseEvent.BUTTON1) {
-				ae = new ActionEvent(this, e.getID(), "left");
-			} else if (e.getButton() == MouseEvent.BUTTON3) {
-				ae = new ActionEvent(this, e.getID(), "right");
-			} else {
-				return;
-			}
-			listener.actionPerformed(ae);
-		}
-		public void mouseEntered(MouseEvent e) {}
-		public void mouseExited(MouseEvent e) {}
-		public void mousePressed(MouseEvent e) {}
-		public void mouseReleased(MouseEvent e) {}
-	}
+	CardHopper hopper;
+	CardStacker stacker;
+	CardViewer viewer;
 
 	private class PunchCardStatus {
 		boolean busy = false;
@@ -142,30 +66,21 @@ public class P_CardReaderPunch extends JFrame
 		boolean offset_next = false;
 		boolean interrupt = false;
 		int code = 0;
-		int cards = 0;
-		int rest = 0;
 		byte[] card;
 		JLabel count_pn;
 		JLabel deck_pn;
-		CardStack hopr_pn;
+		CardHandler hopr_pn;
 		public PunchCardStatus() {
 		}
 	}
 
 	PunchCardStatus[] sts;
 
-	SuffFileChooser ch;
 	boolean readPunch = false;
 	File _last = null;
 	boolean isOn = false;
-	InputStream idev;
-	OutputStream odev;
-	File ofil;
 	CharConverter cvt;
 	int vUnit;
-	JPanel acc; // Accessories for file chooser
-	JCheckBox acc_cb;
-	JTextArea acc_stk;
 	LightedButton start;
 	LightedButton stop;
 	LightedButton runout;
@@ -178,17 +93,13 @@ public class P_CardReaderPunch extends JFrame
 			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
 		}
 		this.cvt = cvt;
+		viewer = null;
 		stall = new Semaphore(0);
-		// First element is *current* deck...
-		hopper = new LinkedList<NamedInputStream>();
+		hopper = new CardHopper("Hopper", 20, 100, 4, false);
+		stacker = new CardStacker("Stacker", 20, 100, 4, true);
+		hopper.setListener(this);
+		stacker.setListener(this);
 		_last = new File(System.getProperty("user.dir"));
-		try {
-			ofil = File.createTempFile("h214-", ".pcd");
-		} catch(Exception ee) {
-			System.err.println(ee.getMessage());
-			ofil = new File("/tmp/h214.pcd");
-		}
-		ofil.deleteOnExit();
 		JButton bt;
 		JPanel pn;
 		JLabel lb;
@@ -206,44 +117,20 @@ public class P_CardReaderPunch extends JFrame
 		gc.insets.left = 0;
 		gc.insets.right = 0;
 		gc.anchor = GridBagConstraints.CENTER;
-		acc = new JPanel();
-		gb = new GridBagLayout();
-		acc.setLayout(gb);
-		gc.anchor = GridBagConstraints.WEST;
-		lb = new JLabel("Input Hopper:");
-		gb.setConstraints(lb, gc);
-		acc.add(lb);
-		++gc.gridy;
-		acc_cb = new JCheckBox("Remove All");
-		gb.setConstraints(acc_cb, gc);
-		acc.add(acc_cb);
-		++gc.gridy;
-		acc_stk = new JTextArea(4, 15);
-		//acc_stk.setFont();
-		acc_stk.setEditable(false);
-		gb.setConstraints(acc_stk, gc);
-		acc.add(acc_stk);
-		++gc.gridy;
-		gc.anchor = GridBagConstraints.CENTER;
-		// Can't seem to get separator to be vertically centered...
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 10));
-		gb.setConstraints(pn, gc);
-		acc.add(pn);
-		gc.gridy = 0;
 
 		sts = new PunchCardStatus[2];
+		// Output
 		sts[0] = new PunchCardStatus(); // output - punch
 		sts[0].card = new byte[160]; // 80 columns, 16 bits each
-		sts[1] = new PunchCardStatus(); // input - reader
-		sts[1].card = new byte[160]; // 80 columns, 16 bits each
 		sts[0].count_pn = new JLabel();
 		sts[0].count_pn.setPreferredSize(new Dimension(75, 20));
 		sts[0].count_pn.setOpaque(true);
 		sts[0].count_pn.setBackground(Color.white);
-		sts[0].deck_pn = new JLabel();
-		sts[0].hopr_pn = new CardStack(sts[0], true);
-		sts[0].hopr_pn.setListener(this);
+		sts[0].deck_pn = new JLabel(); // not used...
+		sts[0].hopr_pn = stacker;
+		// Input
+		sts[1] = new PunchCardStatus(); // input - reader
+		sts[1].card = new byte[160]; // 80 columns, 16 bits each
 		sts[1].count_pn = new JLabel();
 		sts[1].count_pn.setPreferredSize(new Dimension(75, 20));
 		sts[1].count_pn.setOpaque(true);
@@ -251,15 +138,16 @@ public class P_CardReaderPunch extends JFrame
 		sts[1].deck_pn = new JLabel();
 		sts[1].deck_pn.setPreferredSize(new Dimension(350, 20));
 		sts[1].deck_pn.setBackground(Color.white);
+		sts[1].deck_pn.setHorizontalAlignment(SwingConstants.RIGHT);
 		sts[1].deck_pn.setOpaque(true);
-		sts[1].hopr_pn = new CardStack(sts[1], false);
-		sts[1].hopr_pn.setListener(this);
+		sts[1].hopr_pn = hopper;
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
 		gb = new GridBagLayout();
 		setLayout(gb);
 
+		// Top border
 		gc.gridwidth = 15;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 5));
@@ -269,18 +157,46 @@ public class P_CardReaderPunch extends JFrame
 		int top = gc.gridy;
 		gc.gridwidth = 1;
 ///
-		gc.gridheight = 4;
+		// Left border
+		gc.gridheight = 6;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 20));
 		gb.setConstraints(pn, gc);
 		add(pn);
-		++gc.gridx;
+		// Left inner border
+		gc.gridx = 2;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 20));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		// Right inner border
+		gc.gridx = 12;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 20));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		// Right border
+		gc.gridx = 14;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 20));
+		gb.setConstraints(pn, gc);
+		add(pn);
+
+		// Left side card handler...
+		gc.gridheight = 4;
+		gc.gridy = 3;
+		gc.gridx = 1;
+		gb.setConstraints(sts[0].hopr_pn, gc);
+		add(sts[0].hopr_pn);
+		// Right side card handler...
+		gc.gridy = top;
+		gc.gridx = 13;
 		gb.setConstraints(sts[1].hopr_pn, gc);
 		add(sts[1].hopr_pn);
-		++gc.gridx;
-		int left = gc.gridx;
-///
+		int left = gc.gridx = 3;
 		gc.gridheight = 1;
+///
+		// Card hopper contents (top)
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 5));
 		gb.setConstraints(pn, gc);
@@ -289,22 +205,20 @@ public class P_CardReaderPunch extends JFrame
 		gc.gridwidth = 8;
 		gb.setConstraints(sts[1].deck_pn, gc);
 		add(sts[1].deck_pn);
-		gc.gridx += 8;
-		gc.gridwidth = 2;
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 20));
-		gb.setConstraints(pn, gc);
-		add(pn);
-		gc.gridwidth = 1;
 		++gc.gridy;
 
 		gc.gridx = left;
+		gc.gridwidth = 9;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 5));
+		// TODO: adjust height if needed
+		pn.setPreferredSize(new Dimension(10, 50));
 		gb.setConstraints(pn, gc);
 		add(pn);
-		++gc.gridx;
-		lb = new JLabel("Hopper");
+		++gc.gridy;
+		gc.gridwidth = 1;
+
+		// Card handler counter headers...
+		lb = new JLabel("Stacker");
 		gb.setConstraints(lb, gc);
 		add(lb);
 		++gc.gridx;
@@ -315,24 +229,15 @@ public class P_CardReaderPunch extends JFrame
 		add(pn);
 		gc.gridx += 7;
 		gc.gridwidth = 1;
-		lb = new JLabel("Stacker");
+		lb = new JLabel("Hopper");
 		gb.setConstraints(lb, gc);
 		add(lb);
-		++gc.gridx;
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 5));
-		gb.setConstraints(pn, gc);
-		add(pn);
 		++gc.gridy;
 ///
+		// Card handler counters... and button headers
 		gc.gridx = left;
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 5));
-		gb.setConstraints(pn, gc);
-		add(pn);
-		++gc.gridx;
-		gb.setConstraints(sts[1].count_pn, gc);
-		add(sts[1].count_pn);
+		gb.setConstraints(sts[0].count_pn, gc);
+		add(sts[0].count_pn);
 		++gc.gridx;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(50, 5));
@@ -368,22 +273,18 @@ public class P_CardReaderPunch extends JFrame
 		gb.setConstraints(pn, gc);
 		add(pn);
 		++gc.gridx;
-		gb.setConstraints(sts[0].count_pn, gc);
-		add(sts[0].count_pn);
-		++gc.gridx;
-		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 5));
-		gb.setConstraints(pn, gc);
-		add(pn);
+		gb.setConstraints(sts[1].count_pn, gc);
+		add(sts[1].count_pn);
 		++gc.gridy;
 		gc.gridx = left;
 ///
-		gc.gridwidth = 3;
+		// Buttons...
+		gc.gridwidth = 2;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(50, 5));
 		gb.setConstraints(pn, gc);
 		add(pn);
-		gc.gridx += 3;
+		gc.gridx += 2;
 		gc.gridwidth = 1;
 		gc.anchor = GridBagConstraints.NORTH;
 		start = new LightedButton(Peripheral.btnWhiteOn,
@@ -418,25 +319,23 @@ public class P_CardReaderPunch extends JFrame
 		add(runout);
 		++gc.gridx;
 		gc.anchor = GridBagConstraints.CENTER;
-		gc.gridwidth = 3;
+		gc.gridwidth = 2;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(50, 5));
 		gb.setConstraints(pn, gc);
 		add(pn);
-		gc.gridx += 3;
-		gc.gridwidth = 1;
+		++gc.gridy;
 ///
-		gc.gridy = top;
-		gc.gridheight = 4;
-		gb.setConstraints(sts[0].hopr_pn, gc);
-		add(sts[0].hopr_pn);
-		++gc.gridx;
+		gc.gridx = left;
+		gc.gridwidth = 9;
 		pn = new JPanel();
-		pn.setPreferredSize(new Dimension(10, 20));
+		// TODO: adjust height if needed
+		pn.setPreferredSize(new Dimension(10, 30));
 		gb.setConstraints(pn, gc);
 		add(pn);
+		++gc.gridy;
+		// Bottom border
 		gc.gridx = 0;
-		gc.gridy += 4;
 		gc.gridwidth = 15;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(10, 5));
@@ -446,8 +345,8 @@ public class P_CardReaderPunch extends JFrame
 		addWindowListener(this);
 		pack();
 
-		setBlank(defBlank);
-		initStacker();
+		hopper.addBlank(50);
+		updateStacker();
 		setReady(true);
 	}
 
@@ -473,10 +372,9 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public void addInput(InputStream deck, String src, int count) {
-		// TODO: reject if hopper not empty? close it?
-		// stack after? stack before?
+		// TODO: clear hopper before adding?
 		if (src == null) src = "Program";
-		addDeck(new NamedInputStream(deck, src, count));
+		hopper.addInput(deck, src, count, false);
 	}
 
 	private int getCol(PunchCardStatus pcs, int ix) {
@@ -491,7 +389,7 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public void io(RWChannel rwc) {
-		// can't abort input if idev == null: means blank cards.
+		// can't abort input if hopper empty.
 		// need to stall anyway.
 		if (rwc.isInput()) {
 			sts[1].busy = true;
@@ -520,18 +418,9 @@ public class P_CardReaderPunch extends JFrame
 		}
 	}
 
-	private void putCard(PunchCardStatus pcs) {
-		if (odev != null) {
-			try {
-				odev.write(pcs.card);
-			} catch (Exception ee) {
-				// TODO: handle exceptions? pass along?
-			}
-		}
-		pcs.empty = true;
-		++pcs.cards;
-		pcs.count_pn.setText(String.format("%d", pcs.cards));
-		pcs.hopr_pn.repaint();
+	private void putCard() {
+		sts[0].empty = true;
+		stacker.putCard(sts[0].card);
 	}
 
 	private void passCard() {
@@ -540,124 +429,24 @@ public class P_CardReaderPunch extends JFrame
 		sts[0].empty = false;
 	}
 
-	// 'idev' is at EOF... regardless of whether 'null'
-	private boolean finishDeck() {
-		if (idev != null) {
-			try {
-				idev.close();
-			} catch (Exception ee) {}
-			idev = null;
-		}
-		hopper.remove();
-		return nextDeck();
-	}
-
-	// Consistency:
-	//	ASSERT if !hopper.isEmpty() then idev != null
-	//	ASSERT if idev == null then hopper.isEmpty()
-	//	if idev == null && cards > 0 then BLANK CARDS are loaded
-	//	if idev == null && cards == 0 then NO CARDS at all are loaded
-
-	// Hopper contains no cards at all.
-	// Cannot be used during transitions (when idev or cards are inconsistent).
-	private boolean hopperIsEmpty() {
-		return idev == null && sts[1].cards == 0;
-	}
-
-	// Hopper contains BLANK cards (only)
-	// Cannot be used during transitions (when idev or cards are inconsistent).
-	private boolean hopperHasBlank() {
-		return  idev == null && sts[1].cards > 0;
-	}
-
-	// Hopper contains non-BLANK cards
-	private boolean hopperHasDeck() {
-		return  idev != null;
-	}
-
-	// Caller confirms "idev == null" before calling.
-	// Note, this is transition code: idev and cards are not consistent.
-	// Upon return, the state should be consistent.
-	private boolean nextDeck() {
-		if (hopper.isEmpty()) {
-			// NOTE: this is not BLANK cards...
-			sts[1].deck_pn.setText("");
-			sts[1].cards = 0;
-			sts[1].rest = 0;
-			sts[1].count_pn.setText("0");
-			sts[1].hopr_pn.repaint();
-			return false;
-		}
-		NamedInputStream nis = hopper.peek();
-		idev = nis.real;
-		sts[1].deck_pn.setText(stackList(',', true));
-		sts[1].cards = nis.count;
-		sts[1].rest = stackCount() - nis.count;
-		sts[1].count_pn.setText(String.format("%d", sts[1].rest + sts[1].cards));
-		sts[1].hopr_pn.repaint();
-		return true;
-	}
-
-	private void addDeck(NamedInputStream nis) {
-		hopper.add(nis);
-		if (!hopperHasDeck()) {
-			nextDeck(); // updates display
-			return;
-		}
-		// update display... might be partway through
-		// current deck, so must be surgical...
-		// leave sts[1].cards alone...
-		sts[1].deck_pn.setText(stackList(',', true));
-		sts[1].rest = stackCount() - hopper.peek().count;
-		sts[1].count_pn.setText(String.format("%d", sts[1].rest + sts[1].cards));
-		sts[1].hopr_pn.repaint();
-	}
-
-	private boolean getCard(PunchCardStatus pcs) {
+	private boolean getCard() {
 		// 'pcs' must be sts[1]...
 		int a;
 		while (true) {
-			if (pcs.cards == 0 || !ready) {
+			if (hopper.stackCount() == 0 || !ready) {
 				// Not an error, just stall...
 				doStall();
-				if (pcs.cards == 0) { // implied abort
+				if (hopper.stackCount() == 0) { // implied abort
 					// assumed to be INITIALIZE - abort I/O
 					// processor should not be running.
 					return false;
 				}
 			}
-			a = -1;
-			if (hopperHasBlank()) {
-				Arrays.fill(pcs.card, (byte)0);
-				a = pcs.card.length;
-			} else if (!hopperIsEmpty()) {
-				try {
-					// only one card read at a time... (?)
-					a = idev.read(pcs.card);
-				} catch (Exception ee) {
-					// TODO: pass along EI/II exceptions
-				}
-				// Should not normally reach "a < 0", but...
-				if (a < 0 && finishDeck()) {
-					continue;
-				}
-			}
-			pcs.empty = !(a > 0);
-			if (!pcs.empty) {
+			a = hopper.getCard(sts[1].card);
+			sts[1].empty = !(a > 0);
+			if (!sts[1].empty) {
 				break;
 			}
-			pcs.cards = 0;
-			pcs.rest = 0;
-			// what status to set?
-			pcs.count_pn.setText("0");
-			pcs.hopr_pn.repaint();
-		}
-		--pcs.cards;
-		if (pcs.cards <= 0) {
-			finishDeck();
-		} else {
-			pcs.count_pn.setText(String.format("%d", pcs.rest + pcs.cards));
-			pcs.hopr_pn.repaint();
 		}
 		return true;
 	}
@@ -681,7 +470,7 @@ public class P_CardReaderPunch extends JFrame
 			return;
 		}
 		while (!sts[0].empty) {
-			putCard(sts[0]);
+			putCard();
 			if (!sts[1].empty) {
 				passCard();
 			}
@@ -693,7 +482,7 @@ public class P_CardReaderPunch extends JFrame
 			return;
 		}
 		// eject card from punch station...
-		putCard(sts[0]);
+		putCard();
 	}
 
 	private void vacateReader() {
@@ -721,7 +510,7 @@ public class P_CardReaderPunch extends JFrame
 		// need a card to punch...
 		if (sts[1].empty) {
 			// load card into read station...
-			getCard(sts[1]);
+			getCard();
 		}
 		// move card from read to punch...
 		passCard();
@@ -731,7 +520,7 @@ public class P_CardReaderPunch extends JFrame
 		rwc.startCLC();
 		// 'pcs' must be sts[1]...
 		vacateReader();	// just in case - should be no-op
-		if (!getCard(pcs)) {
+		if (!getCard()) {
 			return;
 		}
 		byte m;
@@ -897,20 +686,6 @@ public class P_CardReaderPunch extends JFrame
 		return branch;
 	}
 
-	private File pickFile(String purpose, boolean input) {
-		File file = null;
-		ch = new SuffFileChooser(purpose,
-			new String[]{"pcd"}, new String[]{"Punch Card Deck"}, _last,
-				input ? acc: null);
-		int rv = ch.showDialog(this);
-		if (rv != JFileChooser.APPROVE_OPTION) {
-			return null;
-		}
-		file = ch.getSelectedFile();
-		_last = file;
-		return file;
-	}
-
 	private void doStall() {
 		ready = false;
 		stop.setOn(!ready);
@@ -925,170 +700,44 @@ public class P_CardReaderPunch extends JFrame
 		// TODO: implement abort option
 		// TODO: prevent count > 0 ?
 		if (abort) { // cleanup display
-			sts[1].count_pn.setText(String.format("%d",
-						sts[1].rest + sts[1].cards));
-			sts[1].hopr_pn.repaint();
+			hopper.repaint();
 		}
-		if (sts[1].cards > 0) {
+		if (hopper.stackCount() > 0) {
 			stall.release();
 		}
 	}
 
-	// does not update any display elements
-	private void clearHopper() {
-		hopper.clear();	// TODO: need to close all?
-		if (idev != null) {
-			try {
-				idev.close();
-			} catch (Exception ee) {}
-			idev = null;
-		}
-		sts[1].cards = 0;
-		sts[1].rest = 0;
+	private void updateStacker() {
+		sts[0].count_pn.setText(String.format("%d", stacker.stackCount()));
 	}
 
-	private void setBlank(int num) {
-		clearHopper();
-		sts[1].deck_pn.setText("BLANK");
-		sts[1].cards = num;
-		sts[1].count_pn.setText(String.format("%d", sts[1].cards));
-		sts[1].hopr_pn.repaint();
+	private void updateHopper() {
+		sts[1].count_pn.setText(String.format("%d", hopper.stackCount()));
+		sts[1].deck_pn.setText(hopper.stackList(',', true));
 	}
 
-	private String stackList(char delim, boolean blanks) {
-		if (hopperHasBlank() && blanks) {
-			return "BLANK";
+	private void viewStacker() {
+		if (viewer == null) {
+			viewer = DataCenter.makeViewer();
 		}
-		String ret = "";
-		for (NamedInputStream nis : hopper) {
-			if (!ret.isEmpty()) {
-				ret += delim;
-			}
-			ret += nis.name;
-		}
-		return ret;
-	}
-
-	private int stackCount() {
-		int ret = 0;
-		for (NamedInputStream nis : hopper) {
-			ret += nis.count;
-		}
-		return ret;
-	}
-
-	private void doInputHopperRight() {
-		// Set/Add BLANK cards
-		if (hopperHasDeck()) {
-			clearHopper();
-		}
-		setBlank(sts[1].cards + defBlank);
-	}
-
-	private void doInputHopperLeft() {
-		// Add/Replace file (card deck)
-		acc_stk.setText(stackList('\n', false));
-		acc_cb.setSelected(false);
-		File f = pickFile("Input Hopper", true);
-		if (f == null) { // cancel
-			return;
-		}
-		InputStream in;
-		try {
-			in = new FileInputStream(f);
-		} catch (Exception ee) {
-			PopupFactory.warning(this, "Input Hopper", ee.toString());
-			return;
-		}
-		if (acc_cb.isSelected()) {
-			clearHopper();
-		}
-		int count = (int)((f.length() + 159) / 160);
-		String n = f.getName();
-		if (n.endsWith(".pcd")) {
-			n = n.substring(0, n.length() - 4);
-		}
-		NamedInputStream nis = new NamedInputStream(in, n, count);
-		addDeck(nis);
-	}
-
-	private void doOutputStacker(boolean left) {
-		String s = "Output Stacker";
-		File f = null;
-		if (left) {
-			f = pickFile("Save", false);
-			if (f == null) { // Cancel - no change
-				return;
-			}
-		}
-		// Always close current file?
-		if (odev != null) {
-			try {
-				odev.close();
-			} catch (Exception ee) {}
-			odev = null;
-		}
-		if (left) {
-			boolean ok = false;
-			try {
-				f.delete();
-			} catch (Exception ee) {}
-			try {
-				ok = ofil.renameTo(f);
-				if (!ok) {
-					PopupFactory.warning(this, s, "Cannot rename");
-				}
-			} catch (Exception ee) {
-				PopupFactory.warning(this, s, ee.toString());
-				ok = false;
-			}
-			if (!ok) {
-				// Restore output deck...
-				restoreStacker();
-				return;
-			}
-		}
-		initStacker();
-	}
-
-	private void restoreStacker() {
-		sts[0].cards = (int)((ofil.length() + 159) / 160);
-		sts[0].count_pn.setText(String.format("%d", sts[0].cards));
-		sts[0].hopr_pn.repaint();
-		try {
-			odev = new FileOutputStream(ofil, true);
-		} catch (Exception ee) {
-			PopupFactory.warning(this, "Output Stacker", ee.toString());
-			return;
-		}
-	}
-
-	private void initStacker() {
-		sts[0].cards = 0;
-		sts[0].count_pn.setText(String.format("%d", sts[0].cards));
-		sts[0].hopr_pn.repaint();
-		try {
-			ofil.delete();
-			ofil.createNewFile();
-			odev = new FileOutputStream(ofil);
-		} catch (Exception ee) {
-			PopupFactory.warning(this, "Output Stacker", ee.toString());
-			return;
-		}
+		viewer.viewDeck(stacker.getDeck(), false, false);
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() instanceof CardStack) {
-			CardStack cs = (CardStack)e.getSource();
-			boolean left = e.getActionCommand().equals("left");
-			if (cs == sts[1].hopr_pn) { // reader
-				if (left) {
-					doInputHopperLeft();
+		if (e instanceof CardHandlerEvent) {
+			CardHandlerEvent ae = (CardHandlerEvent)e;
+			CardHandler cs = (CardHandler)e.getSource();
+			String act = e.getActionCommand();
+			if (act.equals("repaint")) {
+				// don't consume, we also want default...
+				if (cs == sts[0].hopr_pn) {
+					updateStacker();
 				} else {
-					doInputHopperRight();
+					updateHopper();
 				}
-			} else {
-				doOutputStacker(left);
+			} else if (act.equals("LEFT") && cs == sts[0].hopr_pn) {
+				ae.consume();
+				viewStacker();
 			}
 			return;
 		}
@@ -1128,11 +777,11 @@ public class P_CardReaderPunch extends JFrame
 	// TODO: clean all this up...
 	public boolean ready() {
 		// Don't know if input or output,
-		// so only report the obvious case.
-		return (odev != null || idev != null);
+		// but output is already ready...
+		return true;
 	}
 	public boolean empty() {
-		return (idev == null);
+		return (hopper.stackCount() == 0);
 	}
 	public boolean rewind() {
 		// Rewind not possible
@@ -1145,7 +794,7 @@ public class P_CardReaderPunch extends JFrame
 	public byte[] nextRecord() {
 		// TODO: is it safe to stall here?
 		vacateReader();	// just in case - should be no-op
-		if (!getCard(sts[1])) {
+		if (!getCard()) {
 			return null;	// should only be abort...
 		}
 		byte[] b = new byte[vUnit == 2 ? 160 : 80];

@@ -12,33 +12,33 @@ jar: CardPunch.jar Viewer.jar DataCenter.jar
 
 CardPunch.jar: all docs/About.html
 	echo "Main-Class: CardPunch" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf PunchCard*.png *.class \
+	jar cfm $@ Manifest.txt fonts/*.ttf PunchCard*.png *.class \
 		icons/*.png docs/*
 
 Sorter.jar: all docs/About2.html
 	echo "Main-Class: Sorter" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf *.class \
+	jar cfm $@ Manifest.txt fonts/*.ttf *.class \
 		icons/*.png docs/*
 
 Accounting.jar: all docs/About3.html
 	echo "Main-Class: Accounting" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf *.class \
+	jar cfm $@ Manifest.txt fonts/*.ttf *.class \
 		icons/*.png docs/*
 
 Collator.jar: all docs/About4.html
 	echo "Main-Class: Collator" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf *.class \
+	jar cfm $@ Manifest.txt fonts/*.ttf *.class \
 		icons/*.png docs/*
 
 Viewer.jar: all
 	echo "Main-Class: Viewer" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf *.class \
+	jar cfm $@ Manifest.txt fonts/*.ttf *.class \
 		icons/*.png docs/*
 
 # All apps from a single control center...
 DataCenter.jar: all docs/About2.html docs/About3.html docs/About4.html docs/About5.html
 	echo "Main-Class: DataCenter" >Manifest.txt
-	jar cfm $@ Manifest.txt *.ttf PunchCard*.png *.class \
+	jar cfm $@ Manifest.txt fonts/*.ttf PunchCard*.png *.class \
 		icons/*.png docs/*
 
 docs/About.html: __FRC__
