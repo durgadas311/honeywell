@@ -283,7 +283,6 @@ public class HW2000FrontPanel extends JFrame
 		xbl_pn = new UtilExecutable(sys);
 
 		// Dialog for Dump Full / Trace Full
-		// for some reason, TAB doesn't traverse fields, even if setFocusTraversalKeysEnabled
 		dump_pn = new JPanel();
 		dump_pn.setLayout(new BoxLayout(dump_pn, BoxLayout.Y_AXIS));
 		dump_btns = new Object[2];
@@ -2881,7 +2880,6 @@ ee.printStackTrace();
 	}
 
 	private int dumpDialog(String name) {
-		JOptionPane dump_dia;
 		int res = JOptionPane.showOptionDialog(this, dump_pn, name,
 			JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
 			null, dump_btns, dump_btns[OPTION_YES]);

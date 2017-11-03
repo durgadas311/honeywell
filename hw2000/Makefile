@@ -51,7 +51,7 @@ www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/hw2000
 
 ship: $(SHIPS)
-	rsync -Wuv $(SHIPS) ../cardpunch/*.jar \
+	rsync -Wuv $(SHIPS) LICENSE ../cardpunch/*.jar \
 		../fortran4/Fortran4Embedded.jar \
 		../easycoder/EasyCoder.jar \
 		durgadas.com:/http/durgadas.com/sebhc/hw2000
@@ -65,6 +65,7 @@ src: h2000.tgz
 
 h2000.tgz: $(JAVAS) Makefile
 	cd ..; tar -czhf hw2000/h2000.tgz \
+		*/LICENSE \
 		*/Makefile \
 		*/mkAbout \
 		*/*.java \
