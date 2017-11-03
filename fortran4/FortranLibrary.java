@@ -1,3 +1,5 @@
+// Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
+
 public class FortranLibrary {
 	// System runtime calls - not callable from FORTRAN statements
 	static final String name = "FORTRAN";
