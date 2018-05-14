@@ -234,6 +234,11 @@ class CharConverter {
 				xlate_char['='] = (short)0x1000;
 			}
 		}
+		// non-ascii
+		xlate_char['^'] = (short)0x882;	// cent
+		xlate_char['['] = (short)0x822;	// loz,),<
+		xlate_char[']'] = (short)0x282;	// (none) [0][8][2]
+		xlate_char['\\'] = (short)0x406;// not
 
 		// This defines how HW codes convert to punch codes.
 		hw2pun = new short[64];
