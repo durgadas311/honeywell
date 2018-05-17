@@ -732,6 +732,8 @@ class ReproducingPunch implements Machine, ActionListener, Runnable
 
 	private void labeledToggle(JPanel pn_pn, AbstractButton sw, String lab) {
 		JPanel spc;
+		pn_pn.setBackground(off);
+		pn_pn.setOpaque(true);
 		pn_gc.gridheight = 2;
 		pn_gc.anchor = GridBagConstraints.CENTER;
 		pn_gb.setConstraints(sw, pn_gc);
