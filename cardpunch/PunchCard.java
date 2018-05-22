@@ -29,10 +29,10 @@ class PunchCard extends JLabel
 	private int _bit_spacing = 23;
 	private int _bit_start = 15;
 	private int _row_spacing = 8;
-	private int _row_start = 18;
+	private int _row_start = 19;
 	private int _baseline = 10;
-	private int _bit_width = _row_spacing - 2;
-	private int _bit_height = 13;
+	private int _bit_width = _row_spacing - 3;
+	private int _bit_height = 12;
 	private int _cols_per_card = 80;
 	private int _curs_y0 = 10;
 	private int _curs_y1;

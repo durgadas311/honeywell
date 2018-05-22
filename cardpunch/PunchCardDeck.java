@@ -35,6 +35,10 @@ class PunchCardDeck extends PunchCard
 	byte[] bb;
 	static final int _inset = 2;
 
+	int pc_wid;
+	int pc_hgt;
+	int pc_dx;
+
 	byte[] _code;
 	byte[] _prog;
 	byte[] _prev;
@@ -99,6 +103,9 @@ class PunchCardDeck extends PunchCard
 		manager = mgr;
 		viewer = null;
 		labels = new Font("Sans-Serif", Font.PLAIN, 10);
+		pc_hgt = _image.getIconHeight();
+		pc_wid = _image.getIconWidth();
+		pc_dx = pc_wid / 100;
 		pgm_on = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-on.png"));
 		pgm_off = new ImageIcon(getClass().getResource("icons/ibm029-pgm-30-off.png"));
 		_ibm026 = opts.ibm026;
@@ -119,7 +126,7 @@ class PunchCardDeck extends PunchCard
 
 		_cwd = new File(System.getProperty("user.dir"));
 		_top = new Rectangle(0, 0, 10, 10);
-		_bottom = new Rectangle(0, _image.getIconHeight() - 10, 10, 10);
+		_bottom = new Rectangle(0, pc_hgt - 10, 10, 10);
 
 		_code = null;
 		_curr = _code;
@@ -231,12 +238,12 @@ class PunchCardDeck extends PunchCard
 		pn_gb = new GridBagLayout();
 		JPanel hp = pn_pn = new JPanel();
 		pn_pn.setLayout(pn_gb);
-		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 108));
+		pn_pn.setPreferredSize(new Dimension(pc_wid + 2 * _inset, 108));
 		hopperPanel(opts);
 		pn_gb = new GridBagLayout();
 		pn_pn = new JPanel();
 		pn_pn.setLayout(pn_gb);
-		pn_pn.setPreferredSize(new Dimension(_image.getIconWidth() + 2 * _inset, 100));
+		pn_pn.setPreferredSize(new Dimension(pc_wid + 2 * _inset, 100));
 		if (_ibm026) {
 			ibm026Panel(opts);
 		} else {
@@ -590,7 +597,7 @@ class PunchCardDeck extends PunchCard
 		pn_pn.add(spc);
 		++pn_gc.gridy;
 		JSeparator sp = new JSeparator(SwingConstants.HORIZONTAL);
-		sp.setPreferredSize(new Dimension(_image.getIconWidth(), 3));
+		sp.setPreferredSize(new Dimension(pc_wid, 3));
 		sp.setForeground(Color.black);
 		pn_gb.setConstraints(sp, pn_gc);
 		pn_pn.add(sp);
@@ -734,8 +741,8 @@ class PunchCardDeck extends PunchCard
 		setCursor(0);
 		_tranX = _tranY = 0;
 		_animate = true;
-		int tEnd = -_image.getIconWidth();
-		for (; _tranX >= tEnd; _tranX -= 10) {
+		int tEnd = -pc_wid;
+		for (; _tranX >= tEnd; _tranX -= pc_dx) {
 			repaint();
 			try {
 				Thread.sleep(5);
@@ -748,9 +755,9 @@ class PunchCardDeck extends PunchCard
 	// Animate movement of card into sight from the top (moving down).
 	private void cardInDown() {
 		setCursor(0);
-		_tranY = -_image.getIconHeight();
+		_tranY = -pc_hgt;
 		_animate = true;
-		for (; _tranY <= 0; _tranY += 10) {
+		for (; _tranY <= 0; _tranY += pc_dx) {
 			repaint();
 			try {
 				Thread.sleep(5);
@@ -765,9 +772,9 @@ class PunchCardDeck extends PunchCard
 	private void cardOutUp() {
 		setCursor(0);
 		_tranX = _tranY = 0;
-		int tEnd = -_image.getIconHeight();
+		int tEnd = -pc_hgt;
 		_animate = true;
-		for (; _tranY >= tEnd; _tranY -= 10) {
+		for (; _tranY >= tEnd; _tranY -= pc_dx) {
 			repaint();
 			try {
 				Thread.sleep(5);
@@ -781,8 +788,8 @@ class PunchCardDeck extends PunchCard
 		setCursor(0);
 		_tranX = _tranY = 0;
 		_animate = true;
-		int tEnd = _image.getIconWidth();
-		for (; _tranX <= tEnd; _tranX += 10) {
+		int tEnd = pc_wid;
+		for (; _tranX <= tEnd; _tranX += pc_dx) {
 			repaint();
 			try {
 				Thread.sleep(5);
@@ -795,9 +802,9 @@ class PunchCardDeck extends PunchCard
 	private void cardInRight() {
 		setCursor(0);
 		_tranY = 0;
-		_tranX = _image.getIconWidth();
+		_tranX = pc_wid;
 		_animate = true;
-		for (; _tranX >= 0; _tranX -= 10) {
+		for (; _tranX >= 0; _tranX -= pc_dx) {
 			repaint();
 			try {
 				Thread.sleep(5);
