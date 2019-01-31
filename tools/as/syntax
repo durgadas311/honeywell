@@ -1,0 +1,41 @@
+New/revised 'as' directives:
+	.word	<addr>...	[left, word]
+	.byte	<char>...	[left, word]
+	.string	"<ascii>"	[left, word; right, record?]
+		(converts ASCII to HW200)
+	.float	<float>		[?]
+	.dec	<bcd>		[left, word]
+	.bin	<binary>	[left, word]
+
+All accept a "A:" prefix which determines punctuation according to
+"Type II Punctuation Indicators". The entire statement is considered
+one data field (exceptions?). Default punctuation shown in [].
+"<binary>" uses standard C notation ("0" octal, "0x" hex, ...) but
+value is arbitrary precision. "<char>" values use same notation but must
+evaluate to 6-bit values. "<ascii>" must only include characters that map
+to the H200 character set - lowercase are silently forced to uppercase.
+
+Instructions always have left-most word mark (on op-code).
+
+Instruction formats:
+
+	<opcode>
+	<opcode> <aaddr>
+	<opcode> <aaddr>,<baddr>
+	<opcode> <aaddr>,<baddr>,<var>...
+	<opcode> <aaddr>,<baddr>,<caddr>
+	<opcode> <aaddr>,<var>...
+	<opcode> <var>...
+
+<addr> expressions:
+
+	<expr>(x1)
+		Index register X1 plus <expr>. Must use "0" not empty <expr>.
+		(index registers are X1..X15, Y1..Y15)
+
+	(<expr>)
+		Indirect access via <expr>.
+
+TODO: auto constant create?
+
+TODO: shared constants between modules?

@@ -53,10 +53,8 @@ int fd;
 	int d;
 
         d = read(fd, &q, 2);
-#ifndef __ti990__
         w = q << 8;
         w |= (q >> 8 ) & 255;
-#endif
         return w;
 }
 

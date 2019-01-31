@@ -8,17 +8,25 @@
 #ifndef _AR_H_
 #define _AR_H_ 1
 
-#define	ARCMAGIC 0177545
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdint.h>
 
-struct ar_hdr {
-	char ar_name[14];		/* name */
-	long ar_date;			/* modification time */
-	char ar_uid;			/* user id */
-	char ar_gid;			/* group id */
-	int ar_mode;			/* octal file permissions */
-	long ar_size;			/* size in bytes */
+#define	ARCMAGIC 0172040
+
+struct ar_file {
+	uint32_t ar_magic;
 };
 
-#define AR_HDRSIZE	(14 + 4 + 1 + 1 + 2 + 4)
+// This is repeated for each module
+struct ar_hdr {
+	char ar_name[14];		/* name */
+	time_t ar_date;			/* modification time */
+	uid_t ar_uid;			/* user id */
+	gid_t ar_gid;			/* group id */
+	mode_t ar_mode;			/* octal file permissions */
+	off_t ar_size;			/* size in bytes */
+};
 
 #endif /* _AR_H_ */

@@ -9,16 +9,17 @@ SYMBOL *curcomm;	/* current COMN or STRUC name */
 int	currel;		/* current relocatability */
 int	ifcount;	/* count of open .if's */
 
-#ifndef __ti990__
 #include <setjmp.h>
 extern jmp_buf err_jmp;
-#endif
 extern void sym_reset();
 
-void do_pseudo(op)
-	int op;
-{
+static int pnc;
+
+void do_pseudo(int op) {
 	int t, count;
+	char *s;
+	int c, b;
+	EXPR reg;
 
 	switch (op) {
 
@@ -29,7 +30,7 @@ void do_pseudo(op)
 			ifcount++;
 			break;
 		}
-		putline();
+		putline(0);
 		count = 1;
 		while (count > 0) {
 			t = tok(0);
@@ -52,39 +53,61 @@ void do_pseudo(op)
 	case PDATA:
 		curseg = &data;
 		currel = RDATA;
-		align(2);
 		nexttoken = EOL;
 		break;
 
 	case PTEXT:
 		curseg = &text;
 		currel = RTEXT;
-		align(2);
 		nexttoken = EOL;
 		break;
 
 	case PBSS:
 		curseg = &bss;
 		currel = RBSS;
-		align(2);
 		nexttoken = EOL;
 		break;
 
-	case PEVEN:
-		align(2);
+	case PSTRING:	// [punc] "ascii-string"
+		pnc = punct[0]; // TODO: what default?
+		check_punc(&pnc);
+		t = scanstr(pnc);
 		break;
 
-	case PBYTE:
+	case PWORD:	// [punc] addr-expr
+		pnc = punct[0]; // TODO: what default?
+		check_punc(&pnc);
+		t = parse_addr(token(), &reg);
+		putaddr(reg.val, reg.rel, pnc);
+		break;
+
+	case PFLOAT:	// [punc] fp-const
+		pnc = punct[0]; // TODO: what default?
+		check_punc(&pnc);
+		t = scanfp(pnc);
+		break;
+
+	case PDEC:	// [punc] bcd-digits
+		pnc = punct[0]; // TODO: what default?
+		check_punc(&pnc);
+		t = scanbcd(pnc);
+		break;
+
+	case PBIN:	// [punc] arb-len-number
+		pnc = punct[0]; // TODO: what default?
+		check_punc(&pnc);
+		t = scan_bin(pnc);
+		break;
+
+	case PBYTE:	// [punc] char-expr...
 		do {
 			t = expr();
-			if (pass_gen)
-				if (t != RABS
-					|| res.val < -127 || res.val > 255)
+			if (pass_gen) {
+				if (t != RABS || res.val < -127 || res.val > 255) {
 					cerror(errv);
-			putb(res.val);
-			if (pass_lst)
-				lstb(res.val, RABS);
-
+				}
+			}
+			putb(res.val, 1);
 		} while ((t = token()) == COMMA);
 		nexttoken = t;
 		break;
@@ -114,8 +137,7 @@ void do_pseudo(op)
 	}
 }
 
-static void do_expr_or_assign()
-{
+static void do_expr_or_assign() {
 	int t,t2;
 
 	/* first check for assignment */
@@ -127,7 +149,7 @@ static void do_expr_or_assign()
 	if (t2 != EQU) {
 		rscan();
 		expr();
-		putwd(res.val, res.rel);
+		putaddr(res.val, res.rel, 0);
 		return;
 	}
 
@@ -165,6 +187,14 @@ static void do_expr_or_assign()
 	}
 }
 
+#define before(t) \
+	(curseg == &text && !(curlab->type & SREV) || \
+	curseg != &text && (curlab->type & SREV) || \
+	t == EOL)
+
+#define after (curlab && (curseg == &text && (curlab->type & SREV) || \
+		    curseg != &text && !(curlab->type & SREV)))
+
 int assemble()
 {
 	register int t, op;
@@ -177,12 +207,9 @@ int assemble()
 	seginit();
 	nlabinit();
 
-#ifndef __ti990__
 	setjmp(err_jmp);
-#else
-	setexit();
-#endif
-	for (; get_line();putline()) {
+	for (; get_line();putline(pnc)) {
+		pnc = 0;
 
 		/* list line address */
 		if (pass_lst)
@@ -194,28 +221,42 @@ next_stmt:
 			continue;
 
 		/* save statement label symbol to be defined below */
-		curlab  = 0;
+		curlab = NULL;
+		// TODO: allow 'curlab' to be valid for this?
+		//	label:
+		//		op foo,bar
 
 		while (t == LABEL || t == NLABEL) {
 			if (t == LABEL) {
+				// value might change later...
 				symlook(2);
 				curlab = cursym;
-				deflab(currel, curseg->loc);
-			}
-			else {
+				t = tok(0);
+				if (before(t)) {
+					deflab(currel, curseg->loc);
+				}
+			} else {
 				defnlab(conbuf, currel, curseg->loc);
+				t = tok(0);
 			}
-			t = tok(0);
 		}
 
 		switch (t) {
 
 		case EOL:
+		case COMMENT:
+			if (after) {
+				// TODO: defer until after next statement...
+				// need a "list" of deferred labels, though.
+				deflab(currel, curseg->loc);
+			}
 			continue;
 
 		case SEMI:
+			// TODO: define deferred label here, also?
 			goto next_stmt;
 
+		// TODO: eliminate all assembling of "loose" items
 		case STRING:
 			putstr(strsiz);
 			goto next_stmt;
@@ -235,18 +276,18 @@ next_stmt:
 		}
 
 		/* call opcode routine to parse the operands */
-		if ( (op & 0xfff0)==0) {
-			do_pseudo(op);
+		if (op & P_OP) {
+			do_pseudo(op & OP_MSK);
 		} else {
+			pnc = WM << 8;
 			do_machine(op);
+		}
+		if (after) {
+			deflab(currel, curseg->loc - 1);
 		}
 		goto next_stmt;
 
 	}
-	curseg = &text;
-	align(2);
-	curseg = &data;
-	align(2);
 	sym_reset();
 	return(errcnt);
 }

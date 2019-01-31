@@ -4,16 +4,17 @@
 
 #include "as.h"
 
-/* evaluate an expression which is expected to return
-   a 4-bit absolute value */
+int admode = 4;	// TODO: make this changeable? ".admode X" ?
+
+/* evaluate an expression which is expected to return 1..15 */
 static int regexpr()
 {
-	int ret, r;
+	int r;
 
-	ret = 0;
 	r = expr();
-	if (pass && (r != RABS || (ret = res.val) & ~0xf))
+	if (pass && (r != RABS || res.val > 15 || res.val == 0)) {
 		cerror(errv);
+	}
 	return(res.val);
 }
 
@@ -26,288 +27,146 @@ static void skip_comma()
 		cerror(errs);
 }
 
-#define WR	0x00   /* register: R */
-#define WRI	0x10   /* register indirect: (R) */
-#define WRIA 	0x30   /* register indirect, autoincrement: (R)+ */
-#define MD	0x20   /* memory direct: @M or indexed @M(R) */
-#define MASK	0x30   /* mask for mode bits */
-
-static EXPR sav_res;
-
-/* R, (R), (R)+, @abs, @abs(R) */
-static int full_reg()
-{
-	int t, bits;
-
-	t = token();
-
-	if (t==LPAREN) {
-		bits = regexpr();
-		if (token()!=RPAREN)
-			cerror(errs);
-		if ((t=token())==PLUS) {
-			bits |= WRIA;
-		} else {
-			bits |= WRI;
-			nexttoken = t;
-		}
-		return bits;
+static int nextparm() {
+	int t;
+	while ((t = token()) == SPACE);
+	if (t == COMMENT) t = EOL;
+	if (t != EOL && t != COMMA) {
+		cerror(errx);
 	}
+	if (t == COMMA) {
+		t = token();
+	}
+	return t;
+}
 
-	if (t==AT) {
+/* ident, ident(x1), (ident) */
+int parse_addr(int t, EXPR *reg) {
+	int nt;
+	int xr;
+	int rel;
+	uint32_t val;
+	while (t == SPACE) t = token();
+	if (t == LPAREN) {
+		// indirect addressing
 		expr();
-		bits = MD;
-		if ((t=token())==LPAREN) {
-			sav_res = res;
-			bits |= regexpr();
-			res = sav_res;
-			if (bits==0)
-				cerror(errv);
-			if (token()!=RPAREN)
-				cerror(errs);
+		if (token() != RPAREN) {
+			cerror(errs);
+		}
+		rel = res.rel;
+		val = res.val;
+		switch (admode) {
+		case 3:
+			val |= 0700000;
+			break;
+		case 4:
+			val |= 040000000;
+			break;
+		default:
+			cerror(errx); // TODO: pick better error
+		}
+	} else {
+		nexttoken = t;  // unget
+		expr();
+		rel = res.rel;
+		val = res.val;
+		nt = token();
+		if (nt != LPAREN) {
+			// direct addressing
+			nexttoken = nt; // unget
 		} else {
-			nexttoken = t;
-		}
-		return bits;
-	}
-
-	nexttoken = t;
-	bits = regexpr() | WR;
-	return bits;
-}
-
-/* format 1: Ts, S, Td, D */
-void opc_1(opc)
-	int opc;
-{
-	EXPR tmp;
-	
-	opc |= full_reg();
-	tmp = res;
-	skip_comma();
-	opc |= (full_reg()<<6);
-	putwd(opc, RABS);
-	if ((opc & MASK)==MD)
-		putwd(tmp.val, tmp.rel);
-	if ((opc & (MASK<<6))==(MD<<6))
-		putwd(res.val, res.rel);
-	return;
-}
-
-/* format 2: S, Td, D */
-void opc_2(opc)
-	int opc;
-{
-	EXPR tmp;
-
-	/* handle opcode 'sys syscall', which is 'xop @syscall,1' */
-	if (opc==0x2c60) {
-		if (expr() != RABS) cerror(errv);
-		putwd(opc, RABS);
-		putwd(res.val, RABS);
-		return;
-	}
-	/* handle normal format 2 opcodes */
-	opc |= full_reg();
-	tmp = res;
-	skip_comma();
-	opc |= (regexpr()<<6);
-	putwd(opc, RABS);
-	if ((opc & MASK)==MD)
-		putwd(tmp.val, tmp.rel);
-	return;
-}
-
-/* format 3: Td, D */
-void opc_3(opc)
-	int opc;
-{
-	opc |= full_reg();
-	putwd(opc, RABS);
-	if ((opc & MASK)==MD)
-		putwd(res.val, res.rel);
-	return;
-}
-
-/* format 4: R */
-void opc_4(opc)
-	int opc;
-{
-	regexpr();
-	opc |= res.val;
-	putwd(opc, RABS);
-	return;
-}
-
-/* format 5: R, immediate */
-void opc_5(opc)
-	int opc;
-{
-	regexpr();
-	opc |= res.val;
-	skip_comma();	
-	expr();
-	putwd(opc, RABS);
-	putwd(res.val, res.rel);
-	return;
-}
-
-/* format 6: relational jumps */
-void opc_6(opc)
-	int opc;
-{
-	int offs, r;
-
-	r = expr();
-	if (pass && (r != currel) && (r != RUNDEF) )
-		cerror(errv);
-	if (r!=RUNDEF && !(r&REXT)) {
-		offs = (res.val - (curseg->loc+2))>>1;
-		if (offs < -128 || offs > 127)
-			cerror(errv);
-	}
-	opc |= (offs & 0xff);
-	putwd(opc, RABS);
-	return;
-}
-
-/* format 7: immediate */
-void opc_7(opc)
-	int opc;
-{
-	expr();
-	putwd(opc, RABS);
-	putwd(res.val, res.rel);
-	return;
-}
-
-/* format 7: count, R */
-void opc_8(opc)
-	int opc;
-{
-	regexpr();
-	opc |= res.val;
-	skip_comma();	
-	regexpr();
-	opc |= (res.val<<4);
-	putwd(opc, RABS);
-	return;
-}
-
-/* format 9: none */
-void opc_9(opc)
-	int opc;
-{
-	putwd(opc, RABS);
-	return;
-}
-
-/* format 10: cru */
-void opc_10(opc)
-	int opc;
-{
-	int r;
-
-	r = expr();
-	if (pass && (r != RABS || res.val & ~0xff))
-		cerror(errv);
-	opc |= res.val;
-	putwd(opc, RABS);
-	return;
-}
-
-/* format 11: synthetic conditional far branches */
-void opc_11(opc)
-	int opc;
-{
-	int offs, r, idx;
-
-	r = expr();
-	if (pass && (r != currel) && (r != RUNDEF) )
-		cerror(errv);
-	idx = (opc & 0xf0)>>4;
-	if (r!=RUNDEF && !(r&REXT)) {
-		offs = (res.val - (curseg->loc+2))>>1;
-		if (offs < -127 || offs > 126) {
-			/* turn jmp to b */
-			if( opc==0x1000 ) {
-				putwd(0x460, RABS);
-				putwd(res.val, res.rel);
-			return;
+			// indexed addressing
+			nt = token();
+			if (nt != IDENT || !(cursym->type & (SIDX|SIDY))) {
+				cerror(errx);
 			}
-			/* reverse jump over branch */
-			idx = branchtab[idx].reverse;
-			opc = branchtab[idx].opc2;
-			if( opc ) {
-				putwd(opc|3, RABS);
+			xr = cursym->value >> 2;
+			if (token() != RPAREN) {
+				cerror(errs);
 			}
-			opc = branchtab[idx].opc1;
-			putwd(opc|2, RABS);
-			/* and branch to far destination */
-			putwd(0x460, RABS);
-			putwd(res.val, res.rel);
-			return;
+			if (cursym->type & SIDY) {
+				xr |= 0b10000;
+			}
+			switch (admode) {
+			case 3:
+				if (xr > 6) {
+					cerror(errx); // TODO: pick better error
+				}
+				val |= (xr << 15);
+				break;
+			case 4:
+				val |= (xr << 19);
+				break;
+			default:
+				cerror(errx); // TODO: pick better error
+			}
 		}
 	}
-	offs &= 0xff;
-	opc = branchtab[idx].opc2;
-	if( opc ) {
-		putwd(opc|offs, RABS);
-		offs--;
+	reg->val = val;
+	reg->rel = rel;
+	nt = nextparm();
+	return nt;
+}
+
+static int parse_var(int t) {
+	if (t != CON) {
+		cerror(errv); // TODO: pick better error
 	}
-	opc = branchtab[idx].opc1;
-	putwd(opc|offs, RABS);
-	return;
+	if (conbuf < 0 || conbuf > 077) {
+		cerror(errv); // TODO: pick better error
+	}
+	putb(conbuf, 1);
+	t = nextparm(); // see what's next
+	return t;
 }
-
-/* format 12: R, mf */
-void opc_12(opc)
-	int opc;
-{
-	regexpr();
-	opc |= res.val;
-	skip_comma();
-	regexpr();
-	if (pass && (res.val > 1))
-		cerror(errf);
-	opc |= (res.val<<4);
-	putwd(opc, RABS);
-	return;
-}
-
-
-
-/* branch table for opcode routines - indexed by class of opcode */
-#ifdef __STDC__
-static void (*oproutine[])(int) = {
-#else
-static void (*oproutine[])() = {
-#endif
-	&opc_1,
-	&opc_2,
-	&opc_3,
-	&opc_4,
-	&opc_5,
-	&opc_6,
-	&opc_7,
-	&opc_8,
-	&opc_9,
-	&opc_10,
-	&opc_11,
-	&opc_12
-};
 
 void do_machine(op)
 	int op;
 {
-	int opc, opctype;
+	int opd = 0;
+	int t;
+	EXPR aar, bar, car;
 
-	/* check even alignment */
-	if (curseg->loc & 0x01)
-		cerror(erra);
+	// must accumulate entire instruction before changing '.'
+	while ((t = token()) == SPACE);
+	if (t == COMMENT) t = EOL;
+	if (op & OP_A) {
+		if (t != EOL) {
+			t = parse_addr(t, &aar);
+			opd |= OP_A;
+		} else if (op & RQ_A) {
+			cerror(errx);
+		}
+	}
+	if (op & OP_B) {
+		if (t != EOL) {
+			t = parse_addr(t, &bar);
+			opd |= OP_B;
+		} else if (op & RQ_B) {
+			cerror(errx);
+		}
+	}
+	if (op & OP_C) {
+		if (t != EOL) {
+			t = parse_addr(t, &car);
+			opd |= OP_C;
+		} else if (op & RQ_C) {
+			cerror(errx);
+		}
+	}
 
-	/* call the handler */
-	opc     = op & 0xfff0;
-	opctype = op & 0x000f;
-	(*oproutine[opctype])(opc);
+	putb((op & OP_MSK) | WM, 1);
+	if (opd & OP_A) {
+		putaddr(aar.val, aar.rel, 0);
+	}
+	if (opd & OP_B) {
+		putaddr(bar.val, bar.rel, 0);
+	}
+	if (opd & OP_C) {
+		putaddr(car.val, car.rel, 0);
+	} else if (t != EOL) { // assemble variants even if not used
+		while (t != EOL) {
+			t = parse_var(t);
+		}
+	}
 }

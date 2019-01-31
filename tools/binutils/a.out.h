@@ -8,20 +8,22 @@
 #ifndef _AOUT_H_
 #define _AOUT_H_ 1
 
+#include <stdint.h>
+
 struct exec {
-	short		a_magic;	/* magic number */
-	unsigned short	a_text; 	/* size of text segment */
-	unsigned short	a_data; 	/* size of initialized data */
-	unsigned short	a_bss;  	/* size of unitialized data */
-	unsigned short	a_syms; 	/* size of symbol table */
-	unsigned short	a_entry; 	/* entry point */
-	unsigned short	a_unused;	/* not used */
-	unsigned short	a_flag; 	/* relocation info stripped */
+	uint32_t	a_magic;	/* magic number */
+	uint32_t	a_text; 	/* size of text segment */
+	uint32_t	a_data; 	/* size of initialized data */
+	uint32_t	a_bss;  	/* size of unitialized data */
+	uint32_t	a_syms; 	/* size of symbol table */
+	uint32_t	a_entry; 	/* entry point */
+	uint32_t	a_unused;	/* not used */
+	uint32_t	a_flag; 	/* relocation info stripped */
 };
 
-#define	A_FMAGIC	0407		/* normal */
-#define	A_NMAGIC	0410		/* read-only text */
-#define	A_IMAGIC	0411		/* separated I&D */
+#define	A_FMAGIC	020007		/* normal */
+#define	A_NMAGIC	020010		/* read-only text */
+#define	A_IMAGIC	020011		/* separated I&D */
 #define	N_BADMAG(x)	((x).a_magic != A_FMAGIC && \
 			(x).a_magic != A_NMAGIC && \
 			(x).a_magic != A_IMAGIC)
@@ -36,7 +38,6 @@ struct exec {
 /*
  * relocation types
  */
-#define A_RPCREL	001		/* PC-relative flag */
 #define A_RMASK		016		/* bit mask */
 #define A_RABS		000		/* absolute */
 #define A_RTEXT		002		/* reference to text */
@@ -46,14 +47,43 @@ struct exec {
 #define A_RINDEX(r)	((r) >> 4)	/* external symbol index */
 #define A_RPUTINDEX(r)	((r) << 4)
 
+// Routines for the .reloc bytes
+static inline uint32_t am_relmsk(int am) {
+	switch (am) {
+	case 2:	return 0b0111111111111111;
+	case 3:	return 0b001111111111111111111111;
+	case 4:	return 0b00011111111111111111111111111111;
+	}
+	return 0;
+}
+// NOTE! this is used on the hi byte only!
+static inline uint32_t am_reltag(int am) {
+	// first (hi) byte must be non-zero to flag a reloc
+	switch (am) {
+	case 2:	return 0b10000000;
+	case 3:	return 0b01000000;
+	case 4:	return 0b00100000;
+	}
+	return 0;
+}
+
 /*
  * symbol table entry
  */
 struct nlist {
 	char    	n_name[8];	/* symbol name */
-	short     	n_type;    	/* type flag */
-	unsigned short	n_value;	/* value */
+	uint16_t     	n_type;    	/* type flag */
+	uint16_t	n_pad1;
+	uint32_t	n_value;	/* value */
 };
+/*
+ * n_value is stored in files as "memory image" - i.e. 6-bit chars:
+ *
+ *    0b00xxxxxx00xxxxxx00xxxxxx00xxxxxx
+ *
+ * Address size is 19 bits, plus 5 bits for addressing mode.
+ * Stored big-endian.
+ */
 
 /*
  * values for type flag

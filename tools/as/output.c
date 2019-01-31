@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include "as.h"
+#include "a.out.h"
 
 int		ofile;		/* fd of output file */
 int		symseek;	/* offset of symbol table in a.out */
@@ -20,67 +21,35 @@ void seginit()
 	currel = RTEXT;
 }
 
+struct exec hdr;
+
 /* write out the a.out header and initialize output buffers
    (at the beginning of code-generation pass(es)) */
-
-/*
- * a.out file header
- */
-static struct {
-	short mword;		/* 'magic word'				*/
-	short tsize;		/* size of text (rounded to word)	*/
-	short dsize;		/*		"  data		"	*/
-	short bsize;		/*		"  bss		"	*/
-	short ssize;		/* size of symbol table			*/
-	short entrypt;		/* entry point (NOT IMPLEMENTED)	*/
-	short unused;
-	short rflag;		/* relocation bits suppressed		*/
-} hdr;
-
-/*
- * put a word to outfile in big-endian order.
- */
-void putshort(n)
-	short n;
-{
-	char hi,lo;
-	hi = n>>8;
-	lo = n&255;
-	n = write(ofile, &hi, 1);
-	n = write(ofile, &lo, 1);
-}
 
 void outhdr()
 {
 	int n;
 
-	if (text.maxloc < text.loc)		text.maxloc = text.loc;
-	if (data.maxloc < data.loc)		data.maxloc = data.loc;
-	if (bss.maxloc < bss.loc) 		bss.maxloc = bss.loc;
+	if (text.maxloc < text.loc) text.maxloc = text.loc;
+	if (data.maxloc < data.loc) data.maxloc = data.loc;
+	if (bss.maxloc < bss.loc)  bss.maxloc = bss.loc;
 
-	hdr.mword	= 0407;
-	hdr.tsize	= (text.maxloc+01) & ~01;
-	hdr.dsize	= (data.maxloc+01) & ~01;
-	hdr.bsize	= (bss.maxloc+01)  & ~01;
-	hdr.ssize	= 12*symcount;
-	hdr.entrypt	= 0;
-	hdr.unused 	= 0;
-	hdr.rflag  	= 0;
+	hdr.a_magic	= A_FMAGIC;
+	hdr.a_text	= text.maxloc;
+	hdr.a_data	= data.maxloc;
+	hdr.a_bss	= bss.maxloc;
+	hdr.a_syms	= symcount * sizeof(struct nlist);
+	hdr.a_entry	= 0;
+	hdr.a_unused 	= 0;
+	hdr.a_flag  	= 0;
 
-	putshort(hdr.mword);
-	putshort(hdr.tsize);
-	putshort(hdr.dsize);
-	putshort(hdr.bsize);
-	putshort(hdr.ssize);
-	putshort(hdr.entrypt);
-	putshort(hdr.unused);
-	putshort(hdr.rflag);
+	n = write(ofile, &hdr, sizeof(hdr));
 
-	text.tseek  = n = sizeof hdr;
-	data.tseek  = (n += hdr.tsize);
-	text.rseek  = (n += hdr.dsize);
-	data.rseek  = (n += hdr.tsize);
-	symseek     = (n += hdr.dsize);
+	text.tseek  = n = sizeof(hdr);
+	data.tseek  = (n += hdr.a_text);
+	text.rseek  = (n += hdr.a_data);
+	data.rseek  = (n += hdr.a_text);
+	symseek     = (n += hdr.a_data);
 
 	text.nchar  = 0;
 	data.nchar  = 0;
@@ -92,20 +61,15 @@ void outhdr()
 void oflush(sp)
 	SEGMNT *sp;
 {
-	int n, off, d;
+	int n, d;
 
-	/*
-	 * If text in buffer begins on an odd byte boundary, adjust offset
-	 *	and length for writes
-	 */
-	off = sp->tseek & 01;
-	if ((n = sp->nchar-off) == 0)
+	if ((n = sp->nchar) == 0)
 		return;
 
 	lseek(ofile, (long)sp->tseek, 0);
-	d = write(ofile, sp->tbuf+off, n);
+	d = write(ofile, sp->tbuf, n);
 	lseek(ofile, (long)sp->rseek, 0);
-	d = write(ofile, sp->rbuf+off, n);
+	d = write(ofile, sp->rbuf, n);
 	sp->tseek += n;
 	sp->rseek += n;
 }
@@ -118,9 +82,7 @@ void oflush(sp)
  * 	- allow redefintion of common symbols to data symbols (the linker
  * 	  will resolve this)
  */
-void deflab(rel, val)
-int rel, val;
-{
+void deflab(int rel, uint32_t val) {
 	int type, otype;
 
 	if (!curlab)
@@ -139,16 +101,18 @@ int rel, val;
 	 */
 	otype = curlab->type & SSEG;
 	if (pass == 0) {
-		if (otype!=SUNDEF && (otype!=SABS || type!=SABS))
+		if (otype!=SUNDEF && (otype!=SABS || type!=SABS)) {
 			cerror(errm);
-	}
-	else if (otype != type) {
+		}
+	} else if (otype != type) {
 		cerror(errm);
 	}
 	else if (pass_gen && type!=SABS && !(curlab->type&SEXT) && curlab->value!=val) {
 		cerror(errp);
 	}
 
+	// must preserve SREV...
+	if (curlab->type & SREV) type |= SREV;
 	curlab->type = (curlab->type & SEXT) | type;
 	curlab->value = val;
 }
@@ -190,57 +154,86 @@ void putstr(len)
 /*
  * Relocate a value in segment rel
  */
-int reloc(val, rel)
-	int val, rel;
-{
+int reloc(uint32_t val, int rel) {
 	switch (rel) {
-	case RBSS:	val += hdr.dsize;
-	case RDATA:	val += hdr.tsize;
+	case RBSS:	val += hdr.a_data;
+	case RDATA:	val += hdr.a_text;
 	}
 	return val;
 }
 
 /*
- * Emit a word - current location counter must be even
+ * Emit a string in HW200 character set
  */
-void putwd(val, rel)
-	int val, rel;
-{
-	SEGMNT	*sp;
-	int		n;
+void putstrhw(char *val, int pnc) {
+	int v;
+	char *vp = val;
 
-	if ((sp = curseg) != &text && sp != &data)
-		xerror(errd);
-
-	sp->loc += 2;
-
-	if (pass_gen) {
-
-		val = reloc(val, rel);
-
-		if ((n = sp->nchar) >= OBSIZE) {
-			oflush(sp);
-			n = 0;
+	while (*vp) {
+		v = hw200[*vp & 0x7f];
+		if (vp == val) {
+			v |= (pnc >> 8);
 		}
-		sp->tbuf[n] = val>>8;
-		sp->tbuf[n+1] = val&255;
-		sp->rbuf[n] = rel>>8;
-		sp->rbuf[n+1] = rel&255;
-		sp->nchar = n+2;
+		++vp;
+		if (!*vp) {
+			v |= (pnc & 0377);
+		}
+		putb(v, 1);
 	}
-
-	if (pass_lst)
-		lstw(val, rel);
 }
 
 /*
- * Emit a byte
+ * Emit an address
  */
-void putb(val)
-	int val;
-{
+void putaddr(uint32_t val, int rel, int pnc) {
 	SEGMNT	*sp;
-	int		n;
+	int	n, x;
+	uint32_t v, r;
+
+	if ((sp = curseg) != &text && sp != &data) {
+		xerror(errd);
+	}
+	sp->loc += admode;
+	if (pass_gen) {
+		val = reloc(val, rel);
+		if ((n = sp->nchar) + admode >= OBSIZE) {
+			oflush(sp);
+			n = 0;
+		}
+		v = val;
+		r = rel;
+		if (r) {
+			if (rel & ~am_relmsk(admode)) {
+				// error: sym index overflow
+			}
+			r |= am_reltag(admode);
+		}
+		for (x = admode - 1; x >= 0; --x) {
+			sp->tbuf[n + x] = (v & 077);
+			sp->rbuf[n + x] = (r & 0xff);
+			v >>= 6;
+			r >>= 8;
+		}
+		if (pnc & 0377) {
+			sp->tbuf[n + admode - 1] |= (pnc & 0377);
+		}
+		pnc >>= 8;
+		if (pnc & 0377) {
+			sp->tbuf[n] |= (pnc & 0377);
+		}
+		sp->nchar += admode;
+	}
+
+	if (pass_lst)
+		lstaddr(val, rel);
+}
+
+/*
+ * Emit a byte (character). May include punctuation.
+ */
+void putb(int val, int lst) {
+	SEGMNT	*sp;
+	int	n;
 
 	if ((sp = curseg) != &data && sp != &text)
 		xerror(errd);
@@ -248,14 +241,16 @@ void putb(val)
 	sp->loc++;
 
 	if (pass_gen) {
-		if ((n = sp->nchar) >= OBSIZE) {
+		if ((n = sp->nchar) + 1 >= OBSIZE) {
 			oflush(sp);
 			n = 0;
 		}
 		sp->tbuf[n] = val;
-		sp->rbuf[n] = (n&1) ? RABS : 0;
-		sp->nchar = ++n;
+		sp->rbuf[n] = RABS;
+		sp->nchar += 1;
 	}
+	if (pass_lst && lst)
+		lstb(val, RABS);
 }
 
 /*
@@ -273,7 +268,7 @@ void align(boundary)
 		return;
 	}
 	while (sp->loc&n)
-		putb(0);
+		putb(0, 0);
 }
 
 /*
@@ -292,7 +287,7 @@ void org(loc)
 		xerror(erro);
 
 	if (pass_gen && (sp == &data || sp == &text)) {
-		while (sp->loc <  loc) putb(0);
+		while (sp->loc <  loc) putb(0, 0);
 	}
 	else
 		sp->loc = loc;
@@ -307,6 +302,7 @@ void org(loc)
 void symout()
 {
 	register SYMBOL *sp;
+	struct nlist symout;
 	int d;
 
 	lseek(ofile, (long)symseek, 0);
@@ -320,13 +316,14 @@ void symout()
 			break;
 
 		case SBSS:
-			sp->value += hdr.dsize;
+			sp->value += hdr.a_data;
 		case SDATA:
-			sp->value += hdr.tsize;
+			sp->value += hdr.a_text;
 
 		}
-		d = write(ofile, sp->name, 8);
-		putshort(sp->type);
-		putshort(sp->value);
+		memcpy(symout.n_name, sp->name, sizeof(symout.n_name));
+		symout.n_type = sp->type;
+		symout.n_value = sp->value;
+		d = write(ofile, &symout, sizeof(symout));
 	}
 }

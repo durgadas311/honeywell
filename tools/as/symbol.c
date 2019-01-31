@@ -10,6 +10,7 @@
 SYMBOL	*hashtab[HASHSIZE];	/* index to symbol table */
 SYMBOL	*cursym;
 char	symbuf[8];
+char	symrev;
 int	symcount;
 
 void sym_reset();
@@ -60,6 +61,9 @@ int symlook(flag)
 			}
 			if (sp->name[0]=='~') sp->name[0] = '1'; 
 			cursym = sp;
+			if (symrev) {
+				cursym->type |= SREV;
+			}
 			return(1);
 		}
 	}
@@ -72,6 +76,9 @@ int symlook(flag)
 		cursym->next  = NULL;
 		cursym->type  = 0;
 		cursym->value = 0;
+		if (symrev) {
+			cursym->type |= SREV;
+		}
 
 		/* link in index order */
 		cursym->idx   = symcount++;
@@ -116,11 +123,7 @@ int nlabidx = -1;
 
 struct nlabel nlabtab[512];
 
-void defnlab(num, seg, loc)
-	long num;
-	int loc;
-	char seg;
-{
+void defnlab(uint32_t num, char seg, int loc) {
 	struct nlabel *p;
 
 	if (nlabidx++==NLABMAX)
@@ -133,9 +136,7 @@ void defnlab(num, seg, loc)
 	p->loc = loc;
 }
 
-struct nlabel *getnlab(num)
-	long num;
-{
+struct nlabel *getnlab(uint32_t num) {
 	struct nlabel *p;
 	int i;
 

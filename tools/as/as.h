@@ -1,54 +1,62 @@
+#ifndef __AS_H__
+#define __AS_H__
+
+#include <stdio.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 /* tables.c */
 
-enum optypes
-{
-   type_1=0,
-   type_2,
-   type_3,
-   type_4,
-   type_5,
-   type_6,
-   type_7,
-   type_8,
-   type_9,
-   type_10,
-   type_11,	/* "long jumps" */
-   type_12,	/* lmf */
-   type_p	/* pseudo op */
-};
+#define OP_A	0x00100	// May have A operand
+#define OP_B	0x00200	// May have B operand
+#define OP_C	0x00400	// May have C operand
+#define OP_V	0x00800	// May have Variant
+#define RQ_A	0x01000	// Requires A operand
+#define RQ_B	0x02000	// Requires B operand
+#define RQ_C	0x04000	// Requires C operand
+#define RQ_V	0x08000	// Requires Variant
+
+#define OP_MSK	0x000ff
+#define P_OP	0x10000	// pseudo-ops (directives)
+
+#define WM	0100
+#define IM	0200
+#define RM	0300
+
+#define NEG	0040	// BCD negative values, LSD
 
 #define type_opc type_p
-#define OPCODE   (-1)
+#define OPCODE   (uint16_t)(-1)
 
 extern void sym_init();
-
+extern int punct[];
+extern char hw200[];
 
 /* symbol.c */
 
 struct symbol {				
-	struct symbol		*next;		/* chain to next symbol with same hash code */
-	struct symbol		*link;		/* chain to next symbol with next index */
-	char			name[8];	/* left-justified, zero-padded */
-	short			type;		/* relocatability type */
-	short			value;
-	short			idx;		/* symbol index in symbol table */
+	struct symbol	*next;		/* chain to next symbol with same hash code */
+	struct symbol	*link;		/* chain to next symbol with next index */
+	char		name[8];	/* left-justified, zero-padded */
+	uint32_t	value;
+	uint16_t	type;		/* relocatability type */
+	uint16_t	idx;		/* symbol index in symbol table */
 };
 typedef struct symbol SYMBOL;
 
 extern SYMBOL	*cursym;
 extern char	symbuf[];
+extern char	symrev;	// did it end in ::
 extern int	symcount;
 extern SYMBOL	*firstsym;
 extern SYMBOL	*linksym;
+extern int      admode;	// current address mode (always 4?)
 
-#ifdef __STDC__
 extern SYMBOL	*sym_enter(char *name);
 extern int	symlook(int flag);
-#else
-extern SYMBOL	*sym_enter();
-extern int	symlook();
-#endif
 extern void	sym_iter();
 
 /* main.c */
@@ -78,13 +86,8 @@ extern void	sym_iter();
 #define errt	20	/* numeric label overflow */
 #define errf	21	/* illegal map file */
 
-#ifdef __STDC__
 extern void	cerror(int type);
 extern void	xerror(int type);
-#else
-extern void	cerror();
-extern void	xerror();
-#endif
 extern int 	errcnt;
 
 extern int	fd_in;			/* fd of current input file */
@@ -128,26 +131,31 @@ extern int	line;			/* line counter */
 extern int	nexttoken;		/* look-ahead token */
 extern int 	ucase;			/* if true, convert uppercase to lowercase symbols */
 extern int 	uflag;			/* if true, make undefined symbols external */
-extern char	strbuf[71];		/* returned value of last string */
+extern char	strbuf[128];		/* returned value of last string */
 extern long	conbuf;			/* returned value of last constant */
 extern int	strsiz;			/* returned length of last string */
 
 extern int get_line();
 extern int token();
-#ifdef __STDC__
 extern int tok(int lookup);
-#else
-extern int tok();
-#endif
 extern int getsym();
 extern int eol();
 extern void sscan();
 extern void rscan();
+extern void check_punc(int *pnc);
+extern int scanhex(int pnc);
+extern int scanoct(int pnc);
+extern int scanbin(int pnc);
+extern int scandec(int pnc);
+extern int scan_bin(int pnc); // entry to scandec,scanbin,scanoct,scanhex
+extern int scanfp(int pnc);
+extern int scanbcd(int pnc);
+extern int scanstr(int pnc);
 
 /* assem.c */
 
 #define PBYTE	1
-#define PEVEN	2
+#define PSTRING	2
 #define PIF	3
 #define PENDIF	4
 #define PGLOBL	5
@@ -155,16 +163,23 @@ extern void rscan();
 #define PDATA	7
 #define PBSS	8
 #define PCOMM	9
+#define PWORD	10
+#define PFLOAT	11
+#define PDEC	12
+#define PBIN	13
 
 /* symbol types */
 
-#define	SUNDEF	 00		/* undefined */
-#define	SABS	 01		/* absolute */
-#define	STEXT	 02		/* text */
-#define	SDATA	 03		/* data */
-#define	SBSS	 04		/* bss */
-#define	SSEG	 07		/* mask for segment */
-#define	SEXT	040		/* external (global) symbol */
+#define	SUNDEF	  00		/* undefined */
+#define	SABS	  01		/* absolute */
+#define	STEXT	  02		/* text */
+#define	SDATA	  03		/* data */
+#define	SBSS	  04		/* bss */
+#define	SSEG	  07		/* mask for segment */
+#define	SEXT	 040		/* external (global) symbol */
+#define	SREV	0100		/* use opposite end of item */
+#define	SIDX	0200		/* index register X... */
+#define	SIDY	0400		/* index register Y... */
 
 /* segment relocation bits -- used in a.out relocation sections */
 
@@ -175,15 +190,6 @@ extern void rscan();
 #define	RBSS	 06		/* bss */
 #define	REXT	010		/* external reference -- bits 15-4 contain symbol number */
 #define	RSEG	017		/* Mask for segment */
-
-/* branch tab for synthetic relational far branches */
-struct branch {
-	int opc1;
-	int opc2;
-	int reverse;
-};
-
-extern struct branch branchtab[];
 
 /* table for numeric labels, e.g. 1f */
 struct nlabel {
@@ -199,8 +205,8 @@ extern struct nlabel nlabtab[];
 #define	OBSIZE	512		/* size of output buffers (must be even) */
 
 extern struct segment {
-	int loc;		/* location counter */
-	int maxloc;		/* highest address so far */
+	uint32_t loc;		/* location counter */
+	uint32_t maxloc;	/* highest address so far */
 	/* buffers below, only used for .text and .data segments */
 	int nchar;		/* number of chars in buffers */
 	int tseek;		/* seek address for text buffer */
@@ -215,39 +221,27 @@ extern SEGMNT *curseg;		/* current segment */
 extern SYMBOL *curcomm;		/* current COMN or STRUC name */
 extern SYMBOL *curlab;		/* current label */
 
-extern int	   currel;		/* current relocatability */
+extern int     currel;		/* current relocatability */
 
 extern int	pass;		/* pass number */
 extern int	pass_gen;	/* generate code in this pass ?    */
 extern int	pass_lst;	/* generate listing in this pass ? */
 
 extern int  assemble();
-#ifdef __STDC__
 extern void do_pseudo(int op);
 extern void do_machine(int op);
-#else
-extern void do_pseudo();
-extern void do_machine();
-#endif
 
 /* list.c */
 
-extern void putline();
+extern void putline(int pnc);
 extern void lstinit();
 extern void lstloc();
-#ifdef __STDC__
 extern void lstb(int val, int rel);
-extern void lstw(int val, int rel);
-extern void lstaddr(int val, int rel);
-#else
-extern void lstb();
-extern void lstw();
-extern void lstaddr();
-#endif
+extern void lstaddr(uint32_t val, int rel);
 
 /* output.c */
 
-extern int	ofile;		/* fd of output file */
+extern int ofile;	/* fd of output file */
 
 extern void seginit();
 extern void outhdr();
@@ -255,35 +249,23 @@ extern void symout();
 extern void relocate_0407();
 extern void nlabinit();
 
-#ifdef __STDC__
-extern int  reloc(int val, int rel);
-extern void putwd(int val, int seg);
-extern void putb(int val);
+extern int  reloc(uint32_t val, int rel);
+extern void putaddr(uint32_t val, int rel, int pnc);
+extern void putb(int val, int lst);
 extern void putstr(int len);
+extern void putstrhw(char *val, int pnc);
 extern void org(int loc);
-extern void deflab(int rel, int val);
+extern void deflab(int rel, uint32_t val);
 extern void align(int boundary);
 extern void oflush(SEGMNT *sp);
-extern void defnlab(long num, char seg, int loc);
-extern struct nlabel *getnlab(long num);
-#else
-extern int  reloc();
-extern void putwd();
-extern void putb();
-extern void putstr();
-extern void org();
-extern void deflab();
-extern void align();
-extern void oflush();
-extern void defnlab();
-extern struct nlabel *getnlab();
-#endif
+extern void defnlab(uint32_t num, char seg, int loc);
+extern struct nlabel *getnlab(uint32_t num);
 
 /* expr.c */
 
 struct expr {
 	int rel;		/* relocatability of expression */
-	int val;		/* value of expression */
+	uint32_t val;		/* value of expression */
 };
 
 typedef struct expr EXPR;
@@ -292,4 +274,7 @@ extern EXPR res;
 
 extern int expr();
 
+extern int parse_addr(int t, EXPR *reg);
 
+
+#endif // __AS_H__

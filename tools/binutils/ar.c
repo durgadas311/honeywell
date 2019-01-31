@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include "ar.h"
 
-struct ar_hdr arbuf;
+struct ar_hdr arhdr;
 struct stat stbuf;
 
 #define	SKIP	1
@@ -64,101 +64,21 @@ int	tf2 = -1;
 int	bastate;
 char	buf[512];
 
-/*
- * Write 16-bit value to file.
- */
-void
-putword (w, fd)
-	unsigned int w;
-	int fd;
-{
-#ifdef __ti990__
-	write(fd, &w, 2);
-#else
-	unsigned char buf [2];
-
-	buf[0] = w >> 8;
-	buf[1] = w;
-	w = write(fd, buf, 2);
-#endif
-}
-
-/*
- * Read 16-bit value from file.
- */
-unsigned int
-getword (fd)
-	int fd;
-{
-#ifdef __ti990__
-	unsigned int w;
-	read(fd, &w, 2);
-	return w;
-#else
-	unsigned char buf [2];
-	int d;
-
-	d = read(fd, buf, 2);
-	return buf[1] | buf[0] << 8;
-#endif
-}
-
 int
-getarhdr(hdr, fd)
-	register struct ar_hdr *hdr;
-	int fd;
-{
-#ifdef __ti990__
-	return read(fd, hdr, AR_HDRSIZE) == AR_HDRSIZE;
-#else
-	unsigned char buf [AR_HDRSIZE];
-
-	if (read(fd, buf, AR_HDRSIZE) != AR_HDRSIZE)
+getarhdr(struct ar_hdr *hdr, int fd) {
+	if (read(fd, hdr, sizeof(*hdr)) != sizeof(*hdr)) {
 		return 0;
-	memcpy(hdr->ar_name, buf, sizeof(hdr->ar_name));
-	hdr->ar_date = buf[17] | buf[16] << 8 |
-		(unsigned long) buf[15] << 16 | (unsigned long) buf[14] << 24;
-	hdr->ar_uid = buf[18];
-	hdr->ar_gid = buf[19];
-	hdr->ar_mode = buf[21] | buf[20] << 8;
-	hdr->ar_size = buf[25] | buf[24] << 8 |
-		(unsigned long) buf[23] << 16 | (unsigned long) buf[22] << 24;
+	}
 	return 1;
-#endif
 }
 
 void
-putarhdr(hdr, fd)
-	register struct ar_hdr *hdr;
-	int fd;
-{
-#ifdef __ti990__
-	write(fd, hdr, sizeof(*hdr));
-#else
-	unsigned char buf [AR_HDRSIZE];
-	int d;
-
-	memcpy(buf, hdr->ar_name, sizeof(hdr->ar_name));
-	buf[14] = hdr->ar_date >> 24;
-	buf[15] = hdr->ar_date >> 16;
-	buf[16] = hdr->ar_date >> 8;
-	buf[17] = hdr->ar_date;
-	buf[18] = hdr->ar_uid;
-	buf[19] = hdr->ar_gid;
-	buf[20] = hdr->ar_mode >> 8;
-	buf[21] = hdr->ar_mode;
-	buf[22] = hdr->ar_size >> 24;
-	buf[23] = hdr->ar_size >> 16;
-	buf[24] = hdr->ar_size >> 8;
-	buf[25] = hdr->ar_size;
-	d = write(fd, buf, sizeof(buf));
-#endif
+putarhdr(struct ar_hdr *hdr, int fd) {
+	int d = write(fd, hdr, sizeof(*hdr));
 }
 
 void
-done(exitval)
-	int exitval;
-{
+done(int exitval) {
 	unlink(tfnam);
 	unlink(tf1nam);
 	unlink(tf2nam);
@@ -166,10 +86,8 @@ done(exitval)
 }
 
 void
-setcom(fun)
-	void (*fun)();
-{
-	if (comfun != 0) {
+setcom(void (*fun)()) {
+	if (comfun != NULL) {
 		printf("only one of [%s] allowed\n", man);
 		done(1);
 	}
@@ -177,26 +95,32 @@ setcom(fun)
 }
 
 void
-init()
-{
+init() {
+	struct ar_file fh;
+	fh.ar_magic = ARCMAGIC;
+	int d;
+
 	tf = mkstemp(tfnam);
 	if (tf < 0) {
 		printf("cannot create temp file\n");
 		done(1);
 	}
-	putword(ARCMAGIC, tf);
+	d = write(tf, &fh, sizeof(fh));
 }
 
 int
-getaf()
-{
-	int magic;
+getaf() {
+	struct ar_file fh;
 
 	af = open(arnam, 0);
-	if (af < 0)
+	if (af < 0) {
 		return(1);
-	magic = getword(af);
-	if (magic != ARCMAGIC) {
+	}
+	if (read(af, &fh, sizeof(fh)) != sizeof(fh)) {
+		printf("%s not in archive format\n", arnam);
+		done(1);
+	}
+	if (fh.ar_magic != ARCMAGIC) {
 		printf("%s not in archive format\n", arnam);
 		done(1);
 	}
@@ -204,15 +128,13 @@ getaf()
 }
 
 void
-noar()
-{
+noar() {
 	printf("%s does not exist\n", arnam);
 	done(1);
 }
 
 void
-install()
-{
+install() {
 	register int i, d;
 
 	for (i=1; i<4; i++)
@@ -240,7 +162,7 @@ install()
 
 /*
  * copy next file
- * size given in arbuf
+ * size given in arhdr
  */
 void
 copyfil(fi, fo, flag)
@@ -250,12 +172,12 @@ copyfil(fi, fo, flag)
 	int pe;
 
 	if (flag & HEAD)
-		putarhdr(&arbuf, fo);
+		putarhdr(&arhdr, fo);
 	pe = 0;
-	while (arbuf.ar_size > 0) {
+	while (arhdr.ar_size > 0) {
 		i = o = 512;
-		if (arbuf.ar_size < i) {
-			i = o = arbuf.ar_size;
+		if (arhdr.ar_size < i) {
+			i = o = arhdr.ar_size;
 			if (i&1) {
 				if (flag & IODD)
 					i++;
@@ -267,7 +189,7 @@ copyfil(fi, fo, flag)
 			pe++;
 		if ((flag & SKIP) == 0)
 			d = write(fo, buf, o);
-		arbuf.ar_size -= 512;
+		arhdr.ar_size -= 512;
 	}
 	if (pe)
 		printf("phase error on %s\n", file);
@@ -306,17 +228,17 @@ movefil(f)
 
 	cp = trim(file);
 	for (i=0; i<14; i++) {
-		arbuf.ar_name[i] = *cp;
+		arhdr.ar_name[i] = *cp;
 		if (*cp)
 			cp++;
 	}
-	arbuf.ar_size = stbuf.st_size;
-	arbuf.ar_date = stbuf.st_mtime;
-	arbuf.ar_uid = stbuf.st_uid;
+	arhdr.ar_size = stbuf.st_size;
+	arhdr.ar_date = stbuf.st_mtime;
+	arhdr.ar_uid = stbuf.st_uid;
 #ifdef UNIX
-	arbuf.ar_gid = stbuf.st_gid;
+	arhdr.ar_gid = stbuf.st_gid;
 #endif
-	arbuf.ar_mode = stbuf.st_mode;
+	arhdr.ar_mode = stbuf.st_mode;
 	copyfil(f, tf, OODD+HEAD);
 	close(f);
 }
@@ -371,7 +293,7 @@ getdir()
 {
 	register int i;
 
-	if (! getarhdr(&arbuf, af)) {
+	if (!getarhdr(&arhdr, af)) {
 		if (tf1 >= 0) {
 			i = tf;
 			tf = tf1;
@@ -380,7 +302,7 @@ getdir()
 		return(1);
 	}
 	for (i=0; i<14; i++)
-		name[i] = arbuf.ar_name[i];
+		name[i] = arhdr.ar_name[i];
 	file = name;
 	return(0);
 }
@@ -433,8 +355,9 @@ r_cmd()
 
 	init();
 	if (getaf()) {
-		if (! flg['c'-'a'])
+		if (! flg['c'-'a']) {
 			printf("creating %s\n", arnam);
+		}
 		cleanup();
 		return;
 	}
@@ -448,7 +371,7 @@ r_cmd()
 				goto cp;
 			}
 			if (flg['u'-'a'])
-				if (stbuf.st_mtime <= arbuf.ar_date) {
+				if (stbuf.st_mtime <= arhdr.ar_date) {
 					close(f);
 					goto cp;
 				}
@@ -490,7 +413,7 @@ x_cmd()
 		noar();
 	while (!getdir()) {
 		if (namc == 0 || match()) {
-			f = creat(file, arbuf.ar_mode & 0777);
+			f = creat(file, arhdr.ar_mode & 0777);
 			if (f < 0) {
 				printf("%s cannot create\n", file);
 				goto sk;
@@ -562,7 +485,7 @@ pmode()
 	for (mp = &m[0]; mp < &m[9]; mp++) {
 		ap = *mp;
 		n = *ap++;
-		while (--n>=0 && (arbuf.ar_mode & *ap++)==0)
+		while (--n>=0 && (arhdr.ar_mode & *ap++)==0)
 			ap++;
 		putchar(*ap);
 	}
@@ -579,10 +502,10 @@ t_cmd()
 		if (namc == 0 || match()) {
 			if (flg['v'-'a']) {
 				pmode();
-				printf("%3d/%1d", (unsigned char) arbuf.ar_uid,
-					(unsigned char) arbuf.ar_gid);
-				printf("%6ld", arbuf.ar_size);
-				cp = ctime(&arbuf.ar_date);
+				printf("%3d/%1d", (unsigned char) arhdr.ar_uid,
+					(unsigned char) arhdr.ar_gid);
+				printf("%6ld", arhdr.ar_size);
+				cp = ctime(&arhdr.ar_date);
 				printf(" %-6.6s %-4.4s ", cp+4, cp+20);
 			}
 			printf("%s\n", trim(file));

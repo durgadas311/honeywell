@@ -3,25 +3,21 @@
  */
 
 #include "as.h"
-#include <unistd.h>
+#include <math.h>
 
 char*	getstr();
 int	getsym();
-#ifdef __STDC__
 int	getnum(int base);
-#else
-int	getnum();
-#endif
 
 /*
  * Parser information
  */
 
-char	linebuf[74];	/* input line buffer */
+char	linebuf[128];	/* input line buffer */
 int	line;		/* line counter */
 
 int	nexttoken;	/* look-ahead token */
-char	strbuf[71];	/* returned value of last string */
+char	strbuf[128];	/* returned value of last string */
 long	conbuf;		/* returned value of last constant */
 int	strsiz;		/* returned length of last string */
 
@@ -57,6 +53,7 @@ unsigned char ctab[128] = {
 	0x80,	0x80,	0x80,	0,	0x10,	0,	0x80,	0
 };
 
+// TODO: minimize... (no ctrl chars in HW200)
 int xlate_c(c)
 	int c;
 {
@@ -156,12 +153,15 @@ int tok(lookup)
 			getsym();
 			if (lookup)
 				symlook(2);
-			if (*scanp==COLON) {
+			if (*scanp == COLON) {
 				++scanp;
+				if (*scanp == COLON) {
+					++scanp;
+				}
 				return (LABEL);
-			}
-			else
+			} else {
 				return (IDENT);
+			}
 		}
 		/*
 		 * first character numeric -- numeric constant or label
@@ -171,6 +171,9 @@ int tok(lookup)
 				if (p[1]=='x') {
 					scanp = p+2;
 					conbuf = getnum(16);
+				} else if (p[1]=='b') {
+					scanp = p+2;
+					conbuf = getnum(2);
 				} else {
 					scanp = p;
 					conbuf = getnum(8);
@@ -261,6 +264,244 @@ testnlab:
 int token()
 {
 	return tok(1);
+}
+
+static int isodigit(int c) {
+	return (c >= '0' && c <= '7');
+}
+
+static int isbdigit(int c) {
+	return (c == '0' || c == '1');
+}
+
+static int cvxdigit(int c) {
+	if (c <= '9') {
+		return (c - '0');
+	} else {
+		return (c - '7');
+	}
+}
+static int cvodigit(int c) {
+	return (c - '0');
+}
+static int cvbdigit(int c) {
+	return (c - '0');
+}
+
+void check_punc(int *pnc) {
+	int t, c;
+	while (*scanp == ' ' || *scanp == '\t') ++scanp;
+	if (!isalpha(*scanp) || scanp[1] != COLON) {
+		return;
+	}
+	c = punct[toupper(*scanp) - 'A'];
+	if (c < 0) {
+		return;
+	}
+	scanp += 2; // skip COLON
+	*pnc = c;
+	while (*scanp == ' ' || *scanp == '\t') ++scanp;
+}
+
+static char *field_width(char *p, int *w) {
+	char *e;
+	unsigned long n;
+	if (*p != '#') {
+		return p;
+	}
+	n = strtoul(++p, &e, 10);
+	if (p == e || n == 0) {
+		cerror(errv);
+	}
+	*w = n;
+	return e;
+}
+
+int scanit(int pnc, int (*isdig)(int), int (*cvdig)(int), int bpd) {
+	int c = 0;
+	int v = 0, vv;
+	int n = 0;
+	int w;
+	char *p = scanp, *e;
+	while (isdig(*p)) ++p;
+	if (scanp == p) {
+		xerror(errv);
+	}
+	c = (p - scanp) * bpd; // num bits to scan
+	w = (c + 5) / 6;
+	e = field_width(p, &w);
+	// TODO: check termination
+	// guarantee we end on 6-bit
+	if (c > w * 6) { // truncate constant
+		scanp += (c - w * 6) / bpd;
+		c = 0;
+	} else if (c < w * 6) { // left-fill
+		c = w * 6 - c;
+		while (c >= 6) {
+			c -= 6;
+			putb(0, 1);
+			++n;
+		}
+	} else {
+		c = 0;
+	}
+	while (scanp < p) {
+		v <<= bpd;
+		v |= cvdig(*scanp++);
+		c += bpd;
+		if (c >= 6) {
+			c -= 6;
+			vv = ((v >> c) & 077);
+			if (!n) {
+				vv |= (pnc >> 8);
+			}
+			if (scanp == p) {
+				vv |= (pnc & 0377);
+			}
+			putb(vv, 1);
+			++n;
+		}
+	}
+	scanp = e;
+	return token();
+}
+
+// scan an arbitrary-length binary number, in hex
+int scanhex(int pnc) {
+	return scanit(pnc, isxdigit, cvxdigit, 4);
+}
+
+// scan an arbitrary-length binary number, in octal
+int scanoct(int pnc) {
+	return scanit(pnc, isodigit, cvodigit, 3);
+}
+
+// scan an arbitrary-length binary number, in binary
+int scanbin(int pnc) {
+	return scanit(pnc, isbdigit, cvbdigit, 1);
+}
+
+// scan an arbitrary-length binary number, in decimal
+// TODO: how to control field size? Leading zeroes not allowed.
+int scandec(int pnc) {
+	// TODO: how to do this?
+#if 0
+	char *p = scanp;
+	while (isdigit(*p)) ++p;
+	if (scanp == p) {
+#endif
+		xerror(errv);
+#if 0
+	}
+	c = ((p - scanp) + 1) / 2; // num bytes
+	v = malloc(c);	// [0] is LSD
+	memset(v, 0, c);
+	m = 0;	// max used bit
+	while (scanp < p) {
+		mult10(v, c, &m);
+		add(v, c, *scanp++ - '0', &m);
+	}
+	for (;;) {
+		putb(vv, 1);
+	}
+	return token();
+#endif
+}
+
+int scan_bin(int pnc) {
+	if (*scanp == '0') {
+		if (scanp[1] == 'x') {
+			scanp += 2;
+			return scanhex(pnc);
+		} else if (scanp[1] == 'b') {
+			scanp += 2;
+			return scanbin(pnc);
+		} else {
+			return scanoct(pnc);
+		}
+	} else {
+		return scandec(pnc);
+	}
+}
+
+// scan a floating-point number
+int scanfp(int pnc) {
+	char *e;
+	char *p = --scanp; // backup to 't'
+	double d;
+	int x;
+	long long m, h;
+	int ms;
+
+	d = strtod(p, &e);
+	if (e == p) {
+		xerror(errv);
+	}
+	// TODO: check end...
+	scanp = e;
+	x = ilogb(d);			// exponent
+	m = (long long)significand(d);	// mantissa
+	if (m == 0) {
+		h = 0;
+	} else {
+		ms = (m < 0);
+		if (ms) {
+			m = -m;
+		}
+		// TODO: 'ms'
+		h = (m << 12) | (x & 0xfff);
+	}
+	for (x = 42; x >= 0; x -= 6) {
+		ms = (h >> x) & 077;
+		if (x == 42) {
+			ms |= (pnc >> 8);
+		}
+		if (x == 0) {
+			ms |= (pnc & 0377);
+		}
+		putb(ms, 1);
+	}
+	return token();
+}
+
+int scanbcd(int pnc) {
+	int v, c;
+	if (*scanp == PLUS) {
+		++scanp;
+	} else if (*scanp == MINUS) {
+		++scanp;
+		pnc |= NEG;
+	}
+	char *p = scanp;
+	while (isdigit(*p)) ++p;
+	if (scanp == p) {
+		cerror(errv);
+	}
+	// TODO: check termination
+	c = 0;
+	while (scanp < p) {
+		v = *scanp++ - '0';
+		if (!c) {
+			v |= (pnc >> 8);
+		}
+		if (scanp == p) {
+			v |= (pnc & 0377);
+		}
+		++c;
+		putb(v, 1);
+	}
+	return token();
+}
+
+int scanstr(int pnc) {
+	char *s;
+	if (*scanp != DQUOTE) {
+		cerror(errv);
+	}
+	++scanp;
+	s = getstr();
+	putstrhw(s, pnc);
+	return token();
 }
 
 /*
@@ -356,6 +597,8 @@ int getsym()
 	} while ( ctype & (C_ALPHA|C_DIGIT) );
 
 	scanp = p;
+	// this doesn't belong here?
+	symrev = (*scanp == COLON && scanp[1] == COLON);
 	return(1);
 }
 

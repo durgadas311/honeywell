@@ -23,27 +23,10 @@ int pflg;
  * Read a.out header. Return 0 on error.
  */
 int
-readhdr(fd, hdr)
-	int fd;
-	register struct exec *hdr;
-{
-#ifdef __pdp11__
-	if (read(fd, hdr, sizeof(struct exec)) != sizeof(struct exec))
+readhdr(int fd, struct exec *hdr) {
+	if (read(fd, hdr, sizeof(*hdr)) != sizeof(*hdr)) {
 		return 0;
-#else
-	unsigned char buf [16];
-
-	if (read(fd, buf, 16) != 16)
-		return 0;
-	hdr->a_magic =	buf[0]  << 8 | buf[1];
-	hdr->a_text =	buf[2]  << 8 | buf[3];
-	hdr->a_data =	buf[4]  << 8 | buf[5];
-	hdr->a_bss =	buf[6]  << 8 | buf[7];
-	hdr->a_syms =	buf[8]  << 8 | buf[9];
-	hdr->a_entry =	buf[10] << 8 | buf[11];
-	hdr->a_unused = buf[12] << 8 | buf[13];
-	hdr->a_flag =	buf[14] << 8 | buf[15];
-#endif
+	}
 	return 1;
 }
 
@@ -51,55 +34,41 @@ readhdr(fd, hdr)
  * Read a.out symbol. Return 0 on error.
  */
 int
-readsym(fd, sym)
-	int fd;
-	register struct nlist *sym;
-{
-#ifdef __pdp11__
-	if (read(fd, sym, sizeof(struct nlist)) != sizeof(struct nlist))
+readsym(int fd, struct nlist *sym) {
+	if (read(fd, sym, sizeof(*sym)) != sizeof(*sym)) {
 		return 0;
-#else
-	unsigned char buf [4];
-
-	if (read(fd, sym->n_name, sizeof(sym->n_name)) != sizeof(sym->n_name))
-		return 0;
-	if (read(fd, buf, 4) != 4)
-		return 0;
-	sym->n_type =	buf[0] << 8 | buf[1];
-	sym->n_value =	buf[2] << 8 | buf[3];
-#endif
+	}
 	return 1;
 }
 
 int
-compare(p1, p2)
-	struct nlist *p1, *p2;
-{
+compare(const void *v1, const void *v2) {
+	const struct nlist *p1 = v1;
+	const struct nlist *p2 = v2;
 	if (nflg) {
-		if (p1->n_value > p2->n_value)
+		if (p1->n_value > p2->n_value) {
 			return rflg;
-		if (p1->n_value < p2->n_value)
+		}
+		if (p1->n_value < p2->n_value) {
 			return -rflg;
+		}
 	}
-	return rflg * strncmp (p1->n_name, p2->n_name, sizeof(p1->n_name));
+	return rflg * strncmp(p1->n_name, p2->n_name, sizeof(p1->n_name));
 }
 
 int
-names(filename, nameflg)
-	char *filename;
-	int nameflg;
-{
+names(char *filename, int nameflg) {
 	struct exec hdr;
 	struct nlist *nlp;
 	long off;
 	int fi, n, i, j;
 
-	fi = open(filename, 0);
+	fi = open(filename, O_RDONLY);
 	if (fi < 0) {
-		printf("%s: cannot open\n", filename);
+		perror(filename);
 		return 1;
 	}
-	if (! readhdr(fi, &hdr) || N_BADMAG(hdr)) {
+	if (!readhdr(fi, &hdr) || N_BADMAG(hdr)) {
 		printf("%s: bad format\n", filename);
 		return 1;
 	}
@@ -108,24 +77,27 @@ names(filename, nameflg)
 		printf("%s: no name list\n", filename);
 		return 1;
 	}
-	nlp = (struct nlist *)malloc (hdr.a_syms);
-	if (! nlp) {
+	nlp = (struct nlist *)malloc(hdr.a_syms);
+	if (!nlp) {
 		printf("%s: out of memory\n", filename);
 		return 1;
 	}
-	off = (long)(N_SYMOFF(hdr));
+	off = (N_SYMOFF(hdr));
 	if (lseek(fi, off, 0) < 0) {
 badsym:		printf("%s: cannot read symbol table\n", filename);
 		return 1;
 	}
-	for (i=0; i<n; i++) {
-		if (! readsym(fi, nlp + i))
+	for (i = 0; i < n; i++) {
+		if (!readsym(fi, nlp + i)) {
 			goto badsym;
+		}
 	}
-	if (pflg == 0)
-		qsort(nlp, n, sizeof(struct nlist), compare);
-	if (nameflg)
+	if (pflg == 0) {
+		qsort(nlp, n, sizeof(*nlp), compare);
+	}
+	if (nameflg) {
 		printf("\n%s:\n", filename);
+	}
 	for (i=0; i<n; i++, nlp++) {
 		if (gflg && ! (nlp->n_type & N_EXT))
 			continue;
@@ -137,17 +109,21 @@ badsym:		printf("%s: cannot read symbol table\n", filename);
 			nlp->n_name[sizeof(nlp->n_name)-1] = '\0';
 		}
 		j = nlp->n_type & N_TYPE;
-		if (j > N_BSS)
+		if (j > N_BSS) {
 			j = N_ABS;
-		if (j==0 && nlp->n_value)
+		}
+		if (j==0 && nlp->n_value) {
 			j = N_COMM;
-		if (uflg && j != 0)
+		}
+		if (uflg && j != 0) {
 			continue;
+		}
 		if (! uflg || nameflg) {
-			if (j == 0)
-				printf("     ");
-			else
-				printf("%04x ", nlp->n_value);
+			if (j == 0) {
+				printf("        ");
+			} else {
+				printf("%07o ", nlp->n_value);
+			}
 			printf("%c ", (nlp->n_type & N_EXT ?
 				"UATDBC" : "uatdbc") [j]);
 		}
@@ -157,45 +133,41 @@ badsym:		printf("%s: cannot read symbol table\n", filename);
 }
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
-{
-	if (--argc > 0 && *argv[1] == '-') {
-		argv++;
-		while (*++*argv) {
-			switch (**argv) {
-			case 'n':		/* sort numerically */
-				nflg++;
-				continue;
-			case 'c':		/* c-style names */
-				cflg++;
-				continue;
-			case 'g':		/* globl symbols only */
-				gflg++;
-				continue;
-			case 'u':		/* undefined symbols only */
-				uflg++;
-				continue;
-			case 'r':		/* sort in reverse order */
-				rflg = -1;
-				continue;
-			case 'p':		/* don't sort -- symbol table order */
-				pflg ++;
-				continue;
-			default:
-				continue;
-			}
+main(int argc, char **argv) {
+	int x;
+	extern int optind;
+	while ((x = getopt(argc, argv, "ncgurp")) != EOF) {
+		switch (x) {
+		case 'n':		/* sort numerically */
+			nflg++;
+			break;
+		case 'c':		/* c-style names */
+			cflg++;
+			break;
+		case 'g':		/* globl symbols only */
+			gflg++;
+			break;
+		case 'u':		/* undefined symbols only */
+			uflg++;
+			break;
+		case 'r':		/* sort in reverse order */
+			rflg = -1;
+			break;
+		case 'p':		/* don't sort -- symbol table order */
+			pflg ++;
+			break;
+		default:
+			break;
 		}
-		argc--;
 	}
-	if (argc == 0)
+	if (optind + 1 < argc) {
+		while (optind < argc) {
+			names(argv[optind++], 1);
+		}
+		return 0;
+	} else if (optind < argc) {
+		return names(argv[optind], 0);
+	} else {
 		return names("a.out", 0);
-
-	if (argc == 1)
-		return names(*++argv, 0);
-
-	while (argc-- > 0)
-		names(*++argv, 1);
-	return 0;
+	}
 }

@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
-#ifndef __ti990__
 #include <setjmp.h>
-#endif
 
 #include "as.h"
 
@@ -23,10 +21,8 @@ char *ofname = "a.out";
 
 char *usage = "Usage: as [-o object-file] [-u] [-l] input-file [...]\n";
 
-#ifndef __ti990__
 jmp_buf err_jmp;
-#endif
-  
+
 int main(argc, argv)
 	int argc; char **argv;
 {
@@ -77,11 +73,7 @@ int main(argc, argv)
 			exit(errcnt);
 	} while ( textlen!=text.loc);
 
-#ifndef __ti990__
 	if ((ofile = open(ofname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0) {
-#else
-	if ((ofile = creat(ofname, 0700)) < 0) {
-#endif
 		printf("%s: can't create\n", ofname);
 		exit(1);
 	}
@@ -175,9 +167,5 @@ int type;
 {
 	cerror(type);
 	nexttoken = 0;
-#ifndef __ti990__
 	longjmp(err_jmp, 0);
-#else
-	reset();
-#endif
 }

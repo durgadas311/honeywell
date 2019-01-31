@@ -19,27 +19,10 @@ int	tf;
  * Read a.out header. Return 0 on error.
  */
 int
-readhdr(fd, hdr)
-	int fd;
-	register struct exec *hdr;
-{
-#ifdef __ti990__
-	if (read(fd, hdr, sizeof(struct exec)) != sizeof(struct exec))
+readhdr(int fd, struct exec *hdr) {
+	if (read(fd, hdr, sizeof(*hdr)) != sizeof(*hdr)) {
 		return 0;
-#else
-	unsigned char buf [16];
-
-	if (read(fd, buf, 16) != 16)
-		return 0;
-	hdr->a_magic	= buf[0] << 8 | buf[1];
-	hdr->a_text	= buf[2] << 8 | buf[3];
-	hdr->a_data	= buf[4] << 8 | buf[5];
-	hdr->a_bss	= buf[6] << 8 | buf[7];
-	hdr->a_syms	= buf[8] << 8 | buf[9];
-	hdr->a_entry	= buf[10] << 8 | buf[11];
-	hdr->a_unused	= buf[12] << 8 | buf[13];
-	hdr->a_flag	= buf[14] << 8 | buf[15];
-#endif
+	}
 	return 1;
 }
 
@@ -47,49 +30,20 @@ readhdr(fd, hdr)
  * Write a.out header.
  */
 void
-writehdr(fd, hdr)
-	int fd;
-	register struct exec *hdr;
-{
-#ifdef __ti990__
-	write(fd, hdr, sizeof(struct exec));
-#else
-	unsigned char buf [16];
-	int d;
-
-	buf[0] = hdr->a_magic >> 8;
-        buf[1] = hdr->a_magic;
-	buf[2] = hdr->a_text >> 8;
-	buf[3] = hdr->a_text;
-	buf[4] = hdr->a_data >> 8;
-	buf[5] = hdr->a_data;
-	buf[6] = hdr->a_bss >> 8;
-	buf[7] = hdr->a_bss;
-	buf[8] = hdr->a_syms >> 8;
-	buf[9] = hdr->a_syms;
-	buf[10] = hdr->a_entry >> 8;
-	buf[11] = hdr->a_entry;
-	buf[12] = hdr->a_unused >> 8;
-	buf[13] = hdr->a_unused;
-	buf[14] = hdr->a_flag >> 8;
-	buf[15] = hdr->a_flag;
-	d = write(fd, buf, 16);
-#endif
+writehdr(int fd, struct exec *hdr) {
+	int d = write(fd, hdr, sizeof(*hdr));
 }
 
 int
-copy(name, fr, to, size)
-	char *name;
-	int fr, to;
-	long size;
-{
+copy(char *name, int fr, int to, long size) {
 	register int s, n;
 	char buf[512];
 
 	while (size != 0) {
 		s = 512;
-		if (size < 512)
+		if (size < 512) {
 			s = size;
+		}
 		n = read(fr, buf, s);
 		if (n != s) {
 			printf("%s unexpected eof\n", name);
@@ -106,22 +60,20 @@ copy(name, fr, to, size)
 }
 
 int
-strip(name)
-	char *name;
-{
+strip(char *name) {
 	register int f;
 	long size;
 	int status;
 	struct exec head;
 
 	status = 0;
-	f = open(name, 0);
+	f = open(name, O_RDONLY);
 	if (f < 0) {
-		printf("cannot open %s\n", name);
+		perror(name);
 		status = 1;
 		goto out;
 	}
-	if (! readhdr(f, &head) || N_BADMAG(head)) {
+	if (!readhdr(f, &head) || N_BADMAG(head)) {
 		printf("%s not in a.out format\n", name);
 		status = 1;
 		goto out;
@@ -134,7 +86,7 @@ strip(name)
 	head.a_syms = 0;
 	head.a_flag |= A_NRELFLG;
 
-	lseek(tf, (long) 0, 0);
+	lseek(tf, (off_t)0, SEEK_SET);
 	writehdr(tf, &head);
 	if (copy(name, f, tf, size) != 0) {
 		status = 1;
@@ -144,11 +96,11 @@ strip(name)
 	close(f);
 	f = creat(name, 0666);
 	if (f < 0) {
-		printf("%s cannot recreate\n", name);
+		perror(name);
 		status = 1;
 		goto out;
 	}
-	lseek(tf, (long)0, 0);
+	lseek(tf, (off_t)0, SEEK_SET);
 	if (copy(name, tf, f, size) != 0)
 		status = 2;
 out:
@@ -169,11 +121,6 @@ main(argc, argv)
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	tf = mkstemp(tname);
-#ifdef __ti990__
-	/* change from write only to read-write mode */
-	close(tf);
-	tf = open(tname, 2);
-#endif
 	if (tf < 0) {
 		printf("cannot create temp file\n");
 		return 2;

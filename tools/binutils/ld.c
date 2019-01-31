@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <limits.h>
 #include "a.out.h"
 #include "ar.h"
 
@@ -45,11 +46,7 @@ struct nlocal {
 
 struct	nlocal	local[NSYM/2];
 
-#ifdef __ti990__
-unsigned aflag = 0x1000;/* address to relocate, default for ti990 */
-#else
-unsigned aflag = 00000;	/* address to relocate */
-#endif
+unsigned aflag = 1340;	/* address to relocate, HW monitor reserved */
 unsigned tflag;		/* stack size to add to .bss, default 0 */
 int	xflag;		/* discard local symbols */
 int	Xflag;		/* discard locals starting with 'L' */
@@ -89,8 +86,7 @@ FILE	*droutb;
 FILE	*soutb;
 
 void
-cleanup()
-{
+cleanup() {
 	unlink(tdname);
 	unlink(tsname);
 	unlink(ttrname);
@@ -98,8 +94,7 @@ cleanup()
 }
 
 void
-fatal()
-{
+fatal() {
 	cleanup();
 	unlink(outname);
 	exit(4);
@@ -200,65 +195,94 @@ lookloc(limit, r)
 	return 0;
 }
 
+int admode;	// address mode for *current* item, if getreloc() != 0.
+
 /*
- * Write 16-bit value to file.
+ * Write 24-bit value big-endian to file.
  */
 void
-putword (w, fd)
-	unsigned int w;
-	FILE *fd;
-{
-#ifdef __pdp11__
-	fwrite(&w, 2, 1, fd);
-#else
-	putc(w >> 8, fd);
-	putc(w, fd);
-#endif
+putword(uint32_t w, FILE *fd) {
+	switch(admode) {
+	case 4:
+		putc((w >> 18) & 077, fd);
+		/* FALLTHROUGH */
+	case 3:
+		putc((w >> 12) & 077, fd);
+		/* FALLTHROUGH */
+	case 2:
+		putc((w >> 6) & 077, fd);
+		putc(w & 077, fd);
+		break;
+	}
 }
 
 /*
- * Read 16-bit value from file.
+ * Write 32-bit value big-endian to file.
  */
-unsigned int
-getword (fd)
-	FILE *fd;
-{
-	unsigned int w;
+void
+putint (uint32_t w, FILE *fd) {
+	switch(admode) {
+	case 4:
+		putc((w >> 24) & 0xff, fd);
+		/* FALLTHROUGH */
+	case 3:
+		putc((w >> 16) & 0xff, fd);
+		/* FALLTHROUGH */
+	case 2:
+		putc((w >> 8) & 0xff, fd);
+		putc(w & 0xff, fd);
+	}
+}
 
-#ifdef __pdp11__
-	fread(&w, 2, 1, fd);
-#else
-	w = getc(fd) << 8;
-	w |= getc(fd);
-#endif
+/*
+ * Read 24-bit value/4-bytes big-endian from file.
+ */
+uint32_t
+getword(FILE *fd) {
+	uint32_t w = 0;
+	int x = admode;
+	while (x > 0) {
+		w <<= 6;
+		w |= getc(fd) & 077;
+		--x;
+	}
 	return w;
+}
+
+uint32_t
+getreloc(FILE *fd) {
+	int x;
+	uint32_t r = getc(fd);
+	if (r <= 0) {
+		admode = 0;
+		return 0;	// "0" means one byte only
+	}
+	if (r & am_reltag(2)) {
+		admode = 2;
+	} else if (r & am_reltag(3)) {
+		admode = 3;
+	} else if (r & am_reltag(4)) {
+		admode = 4;
+	} else {
+		// error: corrupt .reloc
+	}
+	x = admode - 1;
+	while (x > 0) {
+		r <<= 8;
+		r |= getc(fd);
+		--x;
+	}
+	return r; // caller must ignore, but preserve, reloc tag bits
 }
 
 /*
  * Read a.out header. Return 0 on error.
  */
 int
-gethdr(fd, hdr)
-	FILE *fd;
-	register struct exec *hdr;
-{
-#ifdef __ti990__
-	if (fread(hdr, sizeof(struct exec), 1, fd) != 1)
+gethdr(FILE *fd, struct exec *hdr) {
+	if (fread(hdr, sizeof(*hdr), 1, fd) != 1) {
 		return 0;
-#else
-	unsigned char buf [16];
-
-	if (fread(buf, 16, 1, fd) != 1)
-		return 0;
-	hdr->a_magic =	buf[0] << 8  | buf[1];
-	hdr->a_text =	buf[2] << 8  | buf[3];
-	hdr->a_data =	buf[4] << 8  | buf[5];
-	hdr->a_bss =	buf[6] << 8  | buf[7];
-	hdr->a_syms =	buf[8] << 8  | buf[9];
-	hdr->a_entry =	buf[10] << 8 | buf[11];
-	hdr->a_unused =	buf[12] << 8 | buf[13];
-	hdr->a_flag =	buf[14] << 8 | buf[15];
-#endif
+	}
 	return 1;
 }
 
@@ -266,49 +290,18 @@ gethdr(fd, hdr)
  * Write a.out header.
  */
 void
-puthdr(fd, hdr)
-	FILE *fd;
-	register struct exec *hdr;
-{
-#ifdef __ti990__
-	fwrite(hdr, sizeof(struct exec), 1, fd);
-#else
-	putword(hdr->a_magic, fd);
-	putword(hdr->a_text, fd);
-	putword(hdr->a_data, fd);
-	putword(hdr->a_bss, fd);
-	putword(hdr->a_syms, fd);
-	putword(hdr->a_entry, fd);
-	putword(hdr->a_unused, fd);
-	putword(hdr->a_flag, fd);
-#endif
+puthdr(FILE *fd, struct exec *hdr) {
+	fwrite(hdr, sizeof(*hdr), 1, fd);
 }
 
 /*
  * Read archive header. Return 0 on error.
  */
 int
-getarhdr(fd, hdr)
-	FILE *fd;
-	register struct ar_hdr *hdr;
-{
-#ifdef __ti990__
-	if (fread(hdr, AR_HDRSIZE, 1, fd) != 1)
+getarhdr(FILE *fd, struct ar_hdr *hdr) {
+	if (fread(hdr, sizeof(*hdr), 1, fd) != 1) {
 		return 0;
-#else
-	unsigned char buf [AR_HDRSIZE];
-
-	if (fread(buf, AR_HDRSIZE, 1, fd) != 1)
-		return 0;
-	memcpy(hdr->ar_name, buf, sizeof(hdr->ar_name));
-	hdr->ar_date	= buf[17] | buf[16] << 8 |
-		(unsigned long) buf[14] << 24 | (unsigned long) buf[15] << 16;
-	hdr->ar_uid	= buf[18];
-	hdr->ar_gid	= buf[19];
-	hdr->ar_mode	= buf[21] | buf[20] << 8;
-	hdr->ar_size	= buf[25] | buf[24] << 8 |
-		(unsigned long) buf[22] << 24 | (unsigned long) buf[23] << 16;
-#endif
+	}
 	return 1;
 }
 
@@ -316,19 +309,10 @@ getarhdr(fd, hdr)
  * Read a.out symbol. Return 0 on error.
  */
 int
-getsym(fd, sym)
-	FILE *fd;
-	register struct nlist *sym;
-{
-#ifdef __ti990__
-	if (fread(sym, sizeof(struct nlist), 1, fd) != 1)
+getsym(FILE *fd, struct nlist *sym) {
+	if (fread(sym, sizeof(*sym), 1, fd) != 1) {
 		return 0;
-#else
-	if (fread(sym->n_name, sizeof(sym->n_name), 1, fd) != 1)
-		return 0;
-	sym->n_type	= getword(fd);
-	sym->n_value	= getword(fd);
-#endif
+	}
 	return 1;
 }
 
@@ -336,32 +320,22 @@ getsym(fd, sym)
  * Write a.out symbol.
  */
 void
-putsym(fd, sym)
-	FILE *fd;
-	register struct nlist *sym;
-{
+putsym(FILE *fd, struct nlist *sym) {
 	if (!fd) return;
-#ifdef __ti990__
-	fwrite(sym, sizeof(struct nlist), 1, fd);
-#else
-	fwrite(sym->n_name, sizeof(sym->n_name), 1, fd);
-	putword(sym->n_type, fd);
-	putword(sym->n_value, fd);
-#endif
+	fwrite(sym, sizeof(*sym), 1, fd);
 }
 
 /*
  * Create temporary file.
  */
 FILE *
-tcreat(name)
-	char *name;
-{
+tcreat(char *name) {
 	int fd;
 
-	fd = mkstemp (name);
-	if (fd < 0)
+	fd = mkstemp(name);
+	if (fd < 0) {
 		error(1, "Can't create temp");
+	}
 	return fdopen(fd, "r+");
 }
 
@@ -369,9 +343,7 @@ tcreat(name)
  * Copy temporary file to output and close it.
  */
 void
-copy(fd)
-	register FILE *fd;
-{
+copy(FILE *fd) {
 	register int n;
 	char buf[512];
 
@@ -384,49 +356,42 @@ copy(fd)
 }
 
 void
-readhdr(loff)
-	long loff;
-{
+readhdr(long loff) {
 	register unsigned int st, sd;
 
 	fseek(text, loff, 0);
 	if (! gethdr(text, &filhdr)) {
-/*printf("loff = %ld (%ld)\n", loff, ftell(text));*/
 		error(1, "Cannot read header");
 	}
 	if (filhdr.a_magic != A_FMAGIC) {
-/*printf("loff = %ld (%ld)\n", loff, ftell(text));*/
-/*printf("text/data/bss = %d / %d / %d\n", filhdr.a_text, filhdr.a_data, filhdr.a_bss);*/
 		error(1, "Bad format");
 	}
-	st = (filhdr.a_text + 01) & ~01;
-	filhdr.a_text = st;
+	st = filhdr.a_text;
 	cdrel = - st;
-	sd = (filhdr.a_data + 01) & ~01;
+	sd = filhdr.a_data;
 	cbrel = - (st + sd);
-	filhdr.a_bss = (filhdr.a_bss + 01) & ~01;
 }
 
 int
-getfile(cp)
-	register char *cp;
-{
+getfile(char *cp) {
 	register int c;
 	char **dir;
-	static char namebuf[100];
+	static char namebuf[PATH_MAX];
+	struct ar_file fh;
 
 	filname = cp;
 	archdr.ar_name[0] = '\0';
 	if (cp[0] != '-' || cp[1] != 'l') {
 		/* Open plain file. */
 		text = fopen(filname, "r");
-		if (! text)
+		if (!text)
 			error(1, "Cannot open");
 	} else {
 		/* Search for library. */
-		for (dir=libpath; dir<pathp; ++dir) {
-			if (strlen(*dir) + strlen(cp+2) > sizeof(namebuf)-8)
+		for (dir = libpath; dir < pathp; ++dir) {
+			if (strlen(*dir) + strlen(cp+2) > sizeof(namebuf)-8) {
 				continue;
+			}
 			strcpy (namebuf, *dir);
 			strcat (namebuf, "/lib");
 			strcat (namebuf, cp+2);
@@ -441,30 +406,28 @@ getfile(cp)
 			error(1, "Library not found");
 	}
 	/* Is it an archive? */
-	c = getword(text);
-	if (feof(text) || ferror(text))
+	if (fread(&fh, sizeof(fh), 1, text) != 1 ||
+			feof(text) || ferror(text)) {
 		error(1, "Empty file");
-	return (c == ARCMAGIC);
+	}
+	return (fh.ar_magic == ARCMAGIC);
 }
 
 void
 symreloc()
 {
-	switch (cursym.n_type) {
+	switch (cursym.n_type & (N_TYPE | N_EXT)) {
 	case N_TEXT:
 	case N_EXT+N_TEXT:
 		cursym.n_value += ctrel;
-/*printf("%.8s = %#o (torigin = %#o, aflag = %#o)\n", cursym.n_name, cursym.n_value, torigin, aflag);*/
 		return;
 	case N_DATA:
 	case N_EXT+N_DATA:
 		cursym.n_value += cdrel;
-/*printf("%.8s = %#o\n", cursym.n_name, cursym.n_value);*/
 		return;
 	case N_BSS:
 	case N_EXT+N_BSS:
 		cursym.n_value += cbrel;
-/*printf("%.8s = %#o\n", cursym.n_name, cursym.n_value);*/
 		return;
 	case N_EXT+N_UNDF:
 		return;
@@ -580,12 +543,12 @@ again:
 			}
 			break;
 		}
-		if (load1(1, loff + AR_HDRSIZE)) {
+		if (load1(1, loff + sizeof(struct ar_hdr))) {
 /*printf("load1arg: %s(%.14s) offset %ld\n", filename, archdr.ar_name, loff);*/
 			*libp++ = loff;
 			nlinked++;
 		}
-		loff += archdr.ar_size + AR_HDRSIZE;
+		loff += archdr.ar_size + sizeof(struct ar_hdr);
 	}
 	fclose(text);
 	*libp++ = 0;
@@ -731,8 +694,8 @@ setupout()
 }
 
 void
-load2td(words, lp, creloc, b1, b2)
-	unsigned int words;
+load2td(bytes, lp, creloc, b1, b2)
+	unsigned int bytes;
 	struct nlocal *lp;
 	int creloc;
 	FILE *b1, *b2;
@@ -740,11 +703,20 @@ load2td(words, lp, creloc, b1, b2)
 	register int r, t;
 	register struct nlist *sp;
 
-	while (words-- > 0) {
-		t = getword (text);
-		r = getword (reloc);
-		if (feof(reloc) || ferror (reloc))
+	while (bytes > 0) {
+		r = getreloc(reloc);
+		if (feof(reloc) || ferror (reloc)) {
 			error(1, "Relocation error");
+		}
+		if (!r) { // not a relocatable field...
+			t = getc(text);
+			putc(t, b1);
+			if (rflag)
+				putc(r, b2);
+			--bytes;
+			continue;
+		}
+		t = getword(text);	// special format
 		switch (r & A_RMASK) {
 		case A_RTEXT:
 			t += ctrel;
@@ -758,19 +730,17 @@ load2td(words, lp, creloc, b1, b2)
 		case A_REXT:
 			sp = lookloc(lp, r);
 			if (sp->n_type == N_EXT+N_UNDF) {
-				r = (r & A_RPCREL) + A_REXT +
-					((nsym + (sp - symtab)) << 4);
+				r = A_REXT + ((nsym + (sp - symtab)) << 4);
 				break;
 			}
 			t += sp->n_value;
-			r = (r & A_RPCREL) + ((sp->n_type - (N_EXT+N_ABS)) << 1);
+			r = ((sp->n_type - (N_EXT+N_ABS)) << 1);
 			break;
 		}
-		if (r & A_RPCREL)
-			t -= creloc;
 		putword(t, b1);
 		if (rflag)
-			putword(r, b2);
+			putint(r, b2);
+		bytes -= admode;
 	}
 }
 
@@ -825,12 +795,12 @@ load2(loff)
 	if (filhdr.a_text > 1) {
 		fseek(text, loff, 0);
 		fseek(reloc, loff + filhdr.a_text + filhdr.a_data, 0);
-		load2td(filhdr.a_text/2, lp, ctrel, toutb, troutb);
+		load2td(filhdr.a_text, lp, ctrel, toutb, troutb);
 	}
 	if (filhdr.a_data > 1) {
 		fseek(text, loff + filhdr.a_text, 0);
 		fseek(reloc, loff + filhdr.a_text + filhdr.a_text + filhdr.a_data, 0);
-		load2td(filhdr.a_data/2, lp, cdrel, doutb, droutb);
+		load2td(filhdr.a_data, lp, cdrel, doutb, droutb);
 	}
 	torigin += filhdr.a_text;
 	dorigin += filhdr.a_data;
@@ -867,13 +837,15 @@ load2arg(filename)
 /*printf("load2arg%d/%d: %s(%.14s) offset %ld\n", fileno(text), fileno(reloc), filename, archdr.ar_name, *lp);*/
 		mkfsym(archdr.ar_name);
 		putsym(soutb, &cursym);
-		load2(*lp + AR_HDRSIZE);
+		load2(*lp + sizeof(struct ar_hdr));
 	}
 	libp = ++lp;
 	fclose(text);
 	fclose(reloc);
 }
 
+// TODO: ensure .text ends with a word mark (e.g. halt instruction).
+// (if output is executable) Or else, make 'out2brt' (et al.) do that.
 void
 finishout()
 {
@@ -881,6 +853,7 @@ finishout()
 	struct nlist *p;
 
 	if (nflag || iflag) {
+#if 0	// TODO: when is this needed?
 		n = torigin;
 		while (n & 077) {
 			n += 2;
@@ -888,6 +861,7 @@ finishout()
 			if (rflag)
 				putword(0, troutb);
 		}
+#endif
 	}
 	copy(doutb);
 	if (rflag) {

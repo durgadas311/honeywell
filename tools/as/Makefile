@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -O ${DEBUG}
+CFLAGS = -I../binutils -O ${DEBUG}
 
 OBJS = assem.o lexer.o machine.o output.o tables.o expr.o list.o main.o symbol.o
 SRCS = assem.c lexer.c machine.c output.c tables.c expr.c list.c main.c symbol.c
@@ -13,7 +13,7 @@ clean:
 	rm -f *.o as200
 
 as200: ${OBJS}
-	${CC} ${CFLAGS} -o $@ ${OBJS}
+	${CC} ${CFLAGS} -o $@ ${OBJS} -lm
 
 assem.o: assem.c as.h
 lexer.o: lexer.c as.h

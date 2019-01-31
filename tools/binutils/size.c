@@ -16,50 +16,33 @@ int base;
  * Read a.out header. Return 0 on error.
  */
 int
-readhdr(fd, hdr)
-	int fd;
-	register struct exec *hdr;
-{
-#ifdef __ti990__
-	if (read(fd, hdr, sizeof(struct exec)) != sizeof(struct exec))
-		return 0;
-#else
+readhdr(int fd, struct exec *hdr) {
 	unsigned char buf [16];
 
-	if (read(fd, buf, 16) != 16)
+	if (read(fd, hdr, sizeof(*hdr)) != sizeof(*hdr)) {
 		return 0;
-	hdr->a_magic =	buf[0]  << 8 | buf[1];
-	hdr->a_text =	buf[2]  << 8 | buf[3];
-	hdr->a_data =	buf[4]  << 8 | buf[5];
-	hdr->a_bss =	buf[6]  << 8 | buf[7];
-	hdr->a_syms =	buf[8]  << 8 | buf[9];
-	hdr->a_entry =	buf[10] << 8 | buf[11];
-	hdr->a_unused = buf[12] << 8 | buf[13];
-	hdr->a_flag =	buf[14] << 8 | buf[15];
-#endif
+	}
 	return 1;
 }
 
 void
-size(filename)
-	char *filename;
-{
+size(char *filename) {
 	struct exec hdr;
 	int f;
 	unsigned sum;
 	static int header_printed;
 
-	f = open(filename, 0);
+	f = open(filename, O_RDONLY);
 	if (f < 0) {
-		printf("%s: not found\n", filename);
+		perror(filename);
 		return;
 	}
-	if (! header_printed) {
+	if (!header_printed) {
 		printf("   text    data     bss     %s     hex filename\n",
 			base==8 ? "oct" : "dec");
 		header_printed = 1;
 	}
-	if (! readhdr(f, &hdr) || N_BADMAG(hdr)) {
+	if (!readhdr(f, &hdr) || N_BADMAG(hdr)) {
 		printf("%s: bad format\n", filename);
 		close(f);
 		return;
@@ -74,10 +57,7 @@ size(filename)
 }
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
-{
+main(int argc, char **argv) {
 	register char *cp;
 	int nfiles;
 
