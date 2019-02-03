@@ -167,6 +167,8 @@ extern int scanstr(int pnc);
 #define PFLOAT	11
 #define PDEC	12
 #define PBIN	13
+#define PSPACE	14
+#define PADMODE	15
 
 /* symbol types */
 

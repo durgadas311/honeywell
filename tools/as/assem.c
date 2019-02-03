@@ -112,24 +112,50 @@ void do_pseudo(int op) {
 		nexttoken = t;
 		break;
 
+	case PSPACE:
+		t = expr();
+		if (t != RABS || res.val < 0) { // TODO: maximum?
+			cerror(errv);
+		}
+		if (curseg == &text || curseg == &data) {
+			b = res.val;
+			for (c = 0; c < b; ++c) {
+				putb(0, 0);
+			}
+		} else {
+			curseg->loc += res.val;
+		}
+		break;
+
+	case PADMODE:
+		t = expr();
+		if (t != RABS || res.val < 2 || res.val > 4) {
+			cerror(errv);
+		}
+		admode = res.val;
+		break;
+
 	case PCOMM:
-		if (tok(1)!=IDENT)
+		if (tok(1) != IDENT) {
 			cerror(errx);
+		}
 		curlab = cursym;
 		cursym->type |= SEXT;
 
-		if (tok(1)!=COMMA)
+		if (tok(1) != COMMA) {
 			cerror(errx);
+		}
 		expr();
 		cursym->value = res.val;
 		break;
 
 	case PGLOBL:
 		do {
-			if ((t = tok(1))!=IDENT)
+			if ((t = tok(1)) != IDENT) {
 				break;
-			else
+			} else {
 				cursym->type |= SEXT;
+			}
 		} while ((t = token()) == COMMA);
 		nexttoken = t;
 		break;
@@ -199,6 +225,7 @@ int assemble()
 {
 	register int t, op;
 	register int optype;
+	int start_loc;
 
 	/*
 	 * Initialize for assembly pass
@@ -210,6 +237,7 @@ int assemble()
 	setjmp(err_jmp);
 	for (; get_line();putline(pnc)) {
 		pnc = 0;
+		start_loc = curseg->loc; // TODO: what if curseg changes?
 
 		/* list line address */
 		if (pass_lst)
@@ -283,7 +311,9 @@ next_stmt:
 			do_machine(op);
 		}
 		if (after) {
-			deflab(currel, curseg->loc - 1);
+			int l = curseg->loc - 1;
+			if (l < start_loc) l = start_loc;
+			deflab(currel, start_loc);
 		}
 		goto next_stmt;
 

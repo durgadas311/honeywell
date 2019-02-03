@@ -17,6 +17,9 @@ struct optab opcodes[] = {
 	{ ".float",	P_OP | PFLOAT }, // * FP constants
 	{ ".dec",	P_OP | PDEC   }, // * variable-length BCD fields
 	{ ".bin",	P_OP | PBIN   }, // * variable-length numeric fields
+	{ ".space",	P_OP | PSPACE },
+	{ ".admode",	P_OP | PADMODE},
+
 	{ ".globl",	P_OP | PGLOBL },
 	{ ".if",	P_OP | PIF    },
 	{ ".endif",	P_OP | PENDIF },

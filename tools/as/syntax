@@ -1,3 +1,13 @@
+
+Standard directives:
+
+	.globl
+	.if/.endif
+	.text
+	.data
+	.bss
+	.comm
+
 New/revised 'as' directives:
 	.word	<addr>...	[left, word]
 	.byte	<char>...	[left, word]
@@ -6,6 +16,8 @@ New/revised 'as' directives:
 	.float	<float>		[?]
 	.dec	<bcd>		[left, word]
 	.bin	<binary>	[left, word]
+	.space	<num>
+	.admode	<addr-mode>
 
 All accept a "A:" prefix which determines punctuation according to
 "Type II Punctuation Indicators". The entire statement is considered
@@ -14,6 +26,9 @@ one data field (exceptions?). Default punctuation shown in [].
 value is arbitrary precision. "<char>" values use same notation but must
 evaluate to 6-bit values. "<ascii>" must only include characters that map
 to the H200 character set - lowercase are silently forced to uppercase.
+
+<bcd> and <binary> accept a trailing "#len" to specify the field length
+('len' is always decimal). Otherwise, field length is inferred from digit string.
 
 Instructions always have left-most word mark (on op-code).
 
@@ -36,6 +51,12 @@ Instruction formats:
 	(<expr>)
 		Indirect access via <expr>.
 
+Labels in .text always default "left" assignment (first address
+of statement). All other sections' labels default to "right".
+This may be reversed by appending a second colon on the label
+(e.g. "label::").
+
 TODO: auto constant create?
 
 TODO: shared constants between modules?
+
