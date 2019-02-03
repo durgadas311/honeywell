@@ -693,6 +693,15 @@ setupout()
 	puthdr(toutb, &filhdr);
 }
 
+static uint32_t am_mask(int am) {
+	switch(am) {
+	case 2:	return             0b111111111111;
+	case 3:	return       0b000111111111111111;
+	case 4:	return 0b000001111111111111111111;
+	}
+	return 0;
+}
+
 void
 load2td(bytes, lp, creloc, b1, b2)
 	unsigned int bytes;
@@ -702,6 +711,7 @@ load2td(bytes, lp, creloc, b1, b2)
 {
 	register int r, t;
 	register struct nlist *sp;
+	uint32_t amm;
 
 	while (bytes > 0) {
 		r = getreloc(reloc);
@@ -716,7 +726,9 @@ load2td(bytes, lp, creloc, b1, b2)
 			--bytes;
 			continue;
 		}
-		t = getword(text);	// special format
+		t = getword(text);	// special format - might have adr mod!
+		amm = (t & ~am_mask(admode));
+		t &= am_mask(admode);
 		switch (r & A_RMASK) {
 		case A_RTEXT:
 			t += ctrel;
@@ -729,17 +741,19 @@ load2td(bytes, lp, creloc, b1, b2)
 			break;
 		case A_REXT:
 			sp = lookloc(lp, r);
-			if (sp->n_type == N_EXT+N_UNDF) {
+			if ((sp->n_type & (N_TYPE | N_EXT)) == N_EXT+N_UNDF) {
 				r = A_REXT + ((nsym + (sp - symtab)) << 4);
-				break;
+			} else {
+				t += sp->n_value;
+				r = (((sp->n_type & (N_TYPE | N_EXT)) - (N_EXT+N_ABS)) << 1);
 			}
-			t += sp->n_value;
-			r = ((sp->n_type - (N_EXT+N_ABS)) << 1);
 			break;
 		}
-		putword(t, b1);
-		if (rflag)
+		t &= am_mask(admode); // trunc over/underflow
+		putword(t | amm, b1);
+		if (rflag) {
 			putint(r, b2);
+		}
 		bytes -= admode;
 	}
 }
