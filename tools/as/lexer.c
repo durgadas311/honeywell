@@ -381,31 +381,77 @@ int scanbin(int pnc) {
 	return scanit(pnc, isbdigit, cvbdigit, 1);
 }
 
+// LSD is [0]... 6-bits per byte...
+static void add(uint8_t *v, int n, int a, int *m) {
+	int b = 0;
+	int c, d, x = 0;
+	int y = a;	// 'a' is 0-9
+	while (x < n && (b < *m || y != 0)) {
+		c = v[x] + y;
+		v[x] = (c & 0x3f);
+		y = c >> 6;
+		++x;
+		b += 6; // what if less bits?
+	}
+	*m = b;	// what if less bits?
+}
+
+// LSD is [0]... 6-bits per byte...
+static void mult10(uint8_t *v, int n, int *m) {
+	if (*m == 0) {
+		return;
+	}
+	int b = 0;
+	int c, d, x = 0;
+	int y = 0;
+	while (x < n && (b < *m || y != 0)) {
+		c = (((v[x] << 2) + v[x]) << 1) + y;
+		v[x] = (c & 0x3f);
+		y = c >> 6;
+		++x;
+		b += 6; // what if less bits?
+	}
+	*m = b;	// what if less bits?
+}
+
 // scan an arbitrary-length binary number, in decimal
 // TODO: how to control field size? Leading zeroes not allowed.
 int scandec(int pnc) {
 	// TODO: how to do this?
-#if 0
-	char *p = scanp;
+	int c;
+	int w;
+	uint8_t *v;
+	int m;
+	int vv;
+	char *p = scanp, *e;
 	while (isdigit(*p)) ++p;
 	if (scanp == p) {
-#endif
 		xerror(errv);
-#if 0
 	}
-	c = ((p - scanp) + 1) / 2; // num bytes
-	v = malloc(c);	// [0] is LSD
-	memset(v, 0, c);
+	w = ((p - scanp) * 8 + 5) / 6;	// num chars
+	e = field_width(p, &w);
+	v = malloc(w);	// [0] is LSD
+	memset(v, 0, w);
 	m = 0;	// max used bit
 	while (scanp < p) {
-		mult10(v, c, &m);
-		add(v, c, *scanp++ - '0', &m);
+		mult10(v, w, &m);
+		add(v, w, *scanp++ - '0', &m);
 	}
-	for (;;) {
+	c = w;
+	while (c > 0) {
+		vv = 0;
+		if (c == w) {
+			vv |= (pnc >> 8);
+		}
+		--c;
+		vv |= v[c];
+		if (c == 0) {
+			vv |= (pnc & 0377);
+		}
 		putb(vv, 1);
 	}
+	scanp = e;
 	return token();
-#endif
 }
 
 int scan_bin(int pnc) {
