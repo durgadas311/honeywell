@@ -109,7 +109,9 @@ badsym:		printf("%s: cannot read symbol table\n", filename);
 			nlp->n_name[sizeof(nlp->n_name)-1] = '\0';
 		}
 		j = nlp->n_type & N_TYPE;
-		if (j > N_BSS) {
+		if (j == N_FN) {
+			j = 6; // TODO: don't hard-code
+		} else if (j > N_BSS) {
 			j = N_ABS;
 		}
 		if (j==0 && nlp->n_value) {
@@ -124,8 +126,11 @@ badsym:		printf("%s: cannot read symbol table\n", filename);
 			} else {
 				printf("%07o ", nlp->n_value);
 			}
-			printf("%c ", (nlp->n_type & N_EXT ?
-				"UATDBC" : "uatdbc") [j]);
+			if (j == N_FN) {
+			} else {
+				printf("%c ", (nlp->n_type & N_EXT ?
+					"UATDBCF" : "uatdbcf") [j]);
+			}
 		}
 		printf("%.8s\n", nlp->n_name);
 	}

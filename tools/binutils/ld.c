@@ -714,7 +714,7 @@ load2td(bytes, lp, creloc, b1, b2)
 	uint32_t amm;
 
 	while (bytes > 0) {
-		r = getreloc(reloc);
+		r = getreloc(reloc); // sets admode
 		if (feof(reloc) || ferror (reloc)) {
 			error(1, "Relocation error");
 		}
@@ -747,6 +747,7 @@ load2td(bytes, lp, creloc, b1, b2)
 				t += sp->n_value;
 				r = (((sp->n_type & (N_TYPE | N_EXT)) - (N_EXT+N_ABS)) << 1);
 			}
+			r |= am_reltag32(admode);
 			break;
 		}
 		t &= am_mask(admode); // trunc over/underflow

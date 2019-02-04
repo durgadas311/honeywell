@@ -66,6 +66,9 @@ static inline uint32_t am_reltag(int am) {
 	}
 	return 0;
 }
+static inline uint32_t am_reltag32(int am) {
+	return (am_reltag(am) << ((am - 1) * 8));
+}
 
 /*
  * symbol table entry

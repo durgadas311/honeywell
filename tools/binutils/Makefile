@@ -1,6 +1,6 @@
 CFLAGS = -O ${DEBUG}
 
-EXES = ld200 nm200 ar200 strip200 size200 # out2lmc out2cas
+EXES = ld200 nm200 ar200 strip200 size200 objdump200 # out2lmc out2cas
 
 all: ${EXES}
 
@@ -10,8 +10,9 @@ install:
 	cp ar200 ${INSTDIR}/bin/ar200
 	cp strip200 ${INSTDIR}/bin/strip200
 	cp size200 ${INSTDIR}/bin/size200
-	cp out2lmc ${INSTDIR}/bin/out2lmc
-	cp out2cas ${INSTDIR}/bin/out2cas
+	cp objdump200 ${INSTDIR}/bin/objdump200
+#	cp out2lmc ${INSTDIR}/bin/out2lmc
+#	cp out2cas ${INSTDIR}/bin/out2cas
 
 clean:
 	rm -f ${EXES}
@@ -28,6 +29,8 @@ ar200: ar.c
 strip200: strip.c
 	${CC} ${CFLAGS} -o $@ $<
 size200: size.c
+	${CC} ${CFLAGS} -o $@ $<
+objdump200: objdump.c
 	${CC} ${CFLAGS} -o $@ $<
 
 out2lmc: out2lmc.c
