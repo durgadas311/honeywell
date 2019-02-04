@@ -313,7 +313,7 @@ next_stmt:
 		if (after) {
 			int l = curseg->loc - 1;
 			if (l < start_loc) l = start_loc;
-			deflab(currel, start_loc);
+			deflab(currel, l);
 		}
 		goto next_stmt;
 
