@@ -9,22 +9,48 @@ Standard directives:
 	.comm
 
 New/revised 'as' directives:
-	.word	<addr>...	[left, word]
-	.byte	<char>...	[left, word]
-	.string	"<ascii>"	[left, word; right, record?]
-		(converts ASCII to HW200)
-	.float	<float>		[?]
-	.dec	<bcd>		[left, word]
-	.bin	<binary>	[left, word]
+
 	.space	<num>
+		Move current section location counter forward <num> characters.
+
 	.admode	<addr-mode>
+		Set current address mode to 2, 3, or 4 characters.
+
+	.byte	<char>...	[left, word]
+		Place arbitrary characters into memory. Values include punctuation
+		(all 8 bits are used).
+
+The following may have the data item prefixed with a "Type II Punctuation Indicator",
+separated with a colon.
+
+	.word	<addr>...	[left, word]
+		Create an address (relocatable) field from the expression.
+
+	.string	"<ascii>"	[left, word; right, record?]
+		Put the ASCII string into a field, converted to
+		H200 characters. Invalid characters are converted
+		to the solid lozenge. Lowercase are folded to upper.
+
+	.float	<float>		[?]
+		Create an H200 floating point data item. Item
+		will be 8 characters long.
+
+	.dec	<bcd>		[left, word]
+		Create an arbitrary length BCD data item.
+		Add a "#<len>" suffix to specify length if different from
+		digit string implied length.
+
+	.bin	<binary>	[left, word]
+		Create an arbitrary length binary data item. Uses
+		standard C notation for octal, hex, dec, and binary.
+		Add a "#<len>" suffix to specify length if different from
+		digit string implied length.
 
 All accept a "A:" prefix which determines punctuation according to
 "Type II Punctuation Indicators". The entire statement is considered
 one data field (exceptions?). Default punctuation shown in [].
 "<binary>" uses standard C notation ("0" octal, "0x" hex, ...) but
-value is arbitrary precision. "<char>" values use same notation but must
-evaluate to 6-bit values. "<ascii>" must only include characters that map
+value is arbitrary precision.  "<ascii>" must only include characters that map
 to the H200 character set - lowercase are silently forced to uppercase.
 
 <bcd> and <binary> accept a trailing "#len" to specify the field length
