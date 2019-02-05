@@ -335,7 +335,11 @@ int scanit(int pnc, int (*isdig)(int), int (*cvdig)(int), int bpd) {
 		c = w * 6 - c;
 		while (c >= 6) {
 			c -= 6;
-			putb(0, 1);
+			vv = 0;
+			if (!n) {
+				vv |= (pnc >> 8);
+			}
+			putb(vv, 1);
 			++n;
 		}
 	} else {

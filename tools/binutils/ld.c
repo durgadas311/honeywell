@@ -201,17 +201,26 @@ int admode;	// address mode for *current* item, if getreloc() != 0.
  * Write 24-bit value big-endian to file.
  */
 void
-putword(uint32_t w, FILE *fd) {
+putword(FILE *fd, uint32_t w, uint32_t p) {
+	int c;
 	switch(admode) {
 	case 4:
-		putc((w >> 18) & 077, fd);
+		c = (w >> 18) & 077;
+		c |= (p >> 24) & 0300;
+		putc(c, fd);
 		/* FALLTHROUGH */
 	case 3:
-		putc((w >> 12) & 077, fd);
+		c = (w >> 12) & 077;
+		c |= (p >> 16) & 0300;
+		putc(c, fd);
 		/* FALLTHROUGH */
 	case 2:
-		putc((w >> 6) & 077, fd);
-		putc(w & 077, fd);
+		c = (w >> 6) & 077;
+		c |= (p >> 8) & 0300;
+		putc(c, fd);
+		c = w & 077;
+		c |= p & 0300;
+		putc(c, fd);
 		break;
 	}
 }
@@ -220,7 +229,7 @@ putword(uint32_t w, FILE *fd) {
  * Write 32-bit value big-endian to file.
  */
 void
-putint (uint32_t w, FILE *fd) {
+putint(uint32_t w, FILE *fd) {
 	switch(admode) {
 	case 4:
 		putc((w >> 24) & 0xff, fd);
@@ -238,14 +247,20 @@ putint (uint32_t w, FILE *fd) {
  * Read 24-bit value/4-bytes big-endian from file.
  */
 uint32_t
-getword(FILE *fd) {
+getword(FILE *fd, uint32_t *pp) {
 	uint32_t w = 0;
+	uint32_t p = 0;
+	int c;
 	int x = admode;
 	while (x > 0) {
+		c = getc(fd);
 		w <<= 6;
-		w |= getc(fd) & 077;
+		w |= c & 077;
+		p <<= 8;
+		p |= (c & 0300);
 		--x;
 	}
+	if (pp) *pp = p;
 	return w;
 }
 
@@ -711,7 +726,7 @@ load2td(bytes, lp, creloc, b1, b2)
 {
 	register int r, t;
 	register struct nlist *sp;
-	uint32_t amm;
+	uint32_t amm, p;
 
 	while (bytes > 0) {
 		r = getreloc(reloc); // sets admode
@@ -726,7 +741,7 @@ load2td(bytes, lp, creloc, b1, b2)
 			--bytes;
 			continue;
 		}
-		t = getword(text);	// special format - might have adr mod!
+		t = getword(text, &p);	// special format - might have adr mod!
 		amm = (t & ~am_mask(admode));
 		t &= am_mask(admode);
 		switch (r & A_RMASK) {
@@ -751,7 +766,7 @@ load2td(bytes, lp, creloc, b1, b2)
 			break;
 		}
 		t &= am_mask(admode); // trunc over/underflow
-		putword(t | amm, b1);
+		putword(b1, t | amm, p);
 		if (rflag) {
 			putint(r, b2);
 		}
