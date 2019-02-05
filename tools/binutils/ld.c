@@ -349,8 +349,8 @@ copy(FILE *fd) {
 
 	if (!fd) return;
 	fseek(fd, 0L, 0);
-	while ((n = fread(buf, 2, 256, fd)) > 0) {
-		fwrite(buf, 2, n, toutb);
+	while ((n = fread(buf, 1, 512, fd)) > 0) {
+		fwrite(buf, 1, n, toutb);
 	}
 	fclose(fd);
 }

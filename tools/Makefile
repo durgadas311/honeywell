@@ -11,3 +11,6 @@ tools:
 
 distclean:
 	for i in ${TOOLS}; do $(MAKE) -C $$i clean; done
+
+%.o: %.s
+	./as/as200 -l -o $@ $? >$*.l

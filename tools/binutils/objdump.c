@@ -203,7 +203,7 @@ static int get_symbol(int a, int y) {
 	int z;
 	if (y & A_REXT) {
 		y = A_RINDEX(y);
-	} else {
+	} else if (by_val != END) {
 		for (y = by_val; symtab[y].n_pad1 != END; y = z) {
 			z = symtab[y].n_pad1;
 			if (a < symtab[y].n_value) {
@@ -213,6 +213,8 @@ static int get_symbol(int a, int y) {
 				break; // 'y' is the symbol
 			}
 		}
+	} else {
+		y = -1;
 	}
 	return y;
 }
@@ -263,7 +265,10 @@ static int get_symtab(FILE *fp) {
 		return -1;
 	}
 	o = sizeof(hdr);
-	o += (hdr.a_text + hdr.a_data) * 2;
+	o += (hdr.a_text + hdr.a_data);
+	if (!(hdr.a_flag & A_NRELFLG)) {
+		o += (hdr.a_text + hdr.a_data);
+	}
 	fseek(fp, o, SEEK_SET);
 	if (fread(symtab, hdr.a_syms, 1, fp) != 1) {
 		free(symtab);
@@ -377,7 +382,7 @@ static char *disas(FILE *fp) {
 	if (fread(buf, hdr.a_text, 1, fp) != 1) {
 		return "corrupt file";
 	}
-	if (rflg) {
+	if (rflg && !(hdr.a_flag & A_NRELFLG)) {
 		rel = malloc(hdr.a_text);
 		if (rel == NULL) {
 			return "out of memory";
@@ -448,23 +453,33 @@ static char *fhdr(FILE *fp) {
 	if (base < 0) {
 		return "corrupt object file";
 	}
-	printf(	"Idx  Name   Size       VMA(oct)  LMA(oct)   File off\n");
-	printf(	"  %d  .text  %08x   %07o   %07o    %08x\n",
-			idx++, hdr.a_text, base, 0, off);
-	off += hdr.a_text;
-	base += hdr.a_text;
-	printf(	"  %d  .data  %08x   %07o   %07o    %08x\n",
-			idx++, hdr.a_data, base, 0, off);
-	off += hdr.a_data;
-	base += hdr.a_data;
-	printf(	"  %d  .bss   %08x   %07o   %07o    %08x\n",
-			idx++, hdr.a_bss, base, 0, off);
-	// no 'off' change - .bss not in file
-	printf(	"  %d  .reloc %08x   %07o   %07o    %08x\n",
-			idx++, hdr.a_text + hdr.a_data, 0, 0, off);
-	off += hdr.a_text + hdr.a_data;
-	printf(	"  %d  .syms  %08x   %07o   %07o    %08x\n",
-			idx++, hdr.a_syms, 0, 0, off);
+	printf(		"Idx  Name   Size       VMA(oct)  LMA(oct)   File off\n");
+	if (hdr.a_text) {
+		printf(	"  %d  .text  %08x   %07o   %07o    %08x\n",
+				idx++, hdr.a_text, base, 0, off);
+		off += hdr.a_text;
+		base += hdr.a_text;
+	}
+	if (hdr.a_data) {
+		printf(	"  %d  .data  %08x   %07o   %07o    %08x\n",
+				idx++, hdr.a_data, base, 0, off);
+		off += hdr.a_data;
+		base += hdr.a_data;
+	}
+	if (hdr.a_bss) {
+		printf(	"  %d  .bss   %08x   %07o   %07o    %08x\n",
+				idx++, hdr.a_bss, base, 0, off);
+		// no 'off' change - .bss not in file
+	}
+	if (!(hdr.a_flag & A_NRELFLG)) {
+		printf(	"  %d  .reloc %08x   %07o   %07o    %08x\n",
+				idx++, hdr.a_text + hdr.a_data, 0, 0, off);
+		off += hdr.a_text + hdr.a_data;
+	}
+	if (hdr.a_syms) {
+		printf(	"  %d  .syms  %08x   %07o   %07o    %08x\n",
+				idx++, hdr.a_syms, 0, 0, off);
+	}
 	return NULL;
 }
 
