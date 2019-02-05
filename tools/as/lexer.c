@@ -204,14 +204,10 @@ testnlab:
 		if (c == QUOTE) {
 			c = *++p;
 			conbuf = (c == '\\') ? xlate_c(*++p) : c;
-			if (p[1] != QUOTE) {
-				conbuf <<= 8;
-				c = *++p;
-				conbuf += (c == '\\') ? xlate_c(*++p) : c;
-			}
 			if (*++p != QUOTE)
 				xerror(errx);
 			scanp = p + 1;
+			conbuf = hw200[conbuf & 0x7f];
 			return(CON);
 		}
 		/*
