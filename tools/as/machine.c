@@ -40,6 +40,33 @@ static int nextparm() {
 	return t;
 }
 
+// indirect address tag
+static uint32_t am_ind(int am) {
+	switch(am) {
+	case 3: return 000700000;
+	case 4: return 040000000;
+	}
+	return 0;
+}
+
+// indexed address tag
+static uint32_t am_idx(int am, int xr) {
+	switch(am) {
+	case 3: return (xr << 15);
+	case 4: return (xr << 19);
+	}
+	return 0;
+}
+
+static uint32_t am_mask(int am) {
+	switch(am) {
+	case 2: return             0b111111111111;
+	case 3: return       0b000111111111111111;
+	case 4: return 0b000001111111111111111111;
+	}
+	return 0;
+}
+
 /* ident, ident(x1), (ident) */
 int parse_addr(int t, EXPR *reg) {
 	int nt;
@@ -55,21 +82,15 @@ int parse_addr(int t, EXPR *reg) {
 		}
 		rel = res.rel;
 		val = res.val;
-		switch (admode) {
-		case 3:
-			val |= 0700000;
-			break;
-		case 4:
-			val |= 040000000;
-			break;
-		default:
-			cerror(errx); // TODO: pick better error
-		}
+		val &= am_mask(admode);
+		// TODO: detect error?
+		val |= am_ind(admode);
 	} else {
 		nexttoken = t;  // unget
 		expr();
 		rel = res.rel;
 		val = res.val;
+		val &= am_mask(admode);
 		nt = token();
 		if (nt != LPAREN) {
 			// direct addressing
@@ -87,19 +108,8 @@ int parse_addr(int t, EXPR *reg) {
 			if (cursym->type & SIDY) {
 				xr |= 0b10000;
 			}
-			switch (admode) {
-			case 3:
-				if (xr > 6) {
-					cerror(errx); // TODO: pick better error
-				}
-				val |= (xr << 15);
-				break;
-			case 4:
-				val |= (xr << 19);
-				break;
-			default:
-				cerror(errx); // TODO: pick better error
-			}
+			// TODO: detect error?
+			val |= am_idx(admode, xr);
 		}
 	}
 	reg->val = val;

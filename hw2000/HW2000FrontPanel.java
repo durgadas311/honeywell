@@ -2490,6 +2490,7 @@ public class HW2000FrontPanel extends JFrame
 		currLow = adr;
 		currHi = adr + txt + dat + bss;
 		sys.SR = adr;
+		_last = src;
 	}
 
 	private void fortranFile() {

@@ -216,7 +216,7 @@ static void do_expr_or_assign() {
 #define before(t) \
 	(curseg == &text && !(curlab->type & SREV) || \
 	curseg != &text && (curlab->type & SREV) || \
-	t == EOL)
+	t == EOL || t == COMMENT)
 
 #define after (curlab && (curseg == &text && (curlab->type & SREV) || \
 		    curseg != &text && !(curlab->type & SREV)))
@@ -273,11 +273,7 @@ next_stmt:
 
 		case EOL:
 		case COMMENT:
-			if (after) {
-				// TODO: defer until after next statement...
-				// need a "list" of deferred labels, though.
-				deflab(currel, curseg->loc);
-			}
+			// 'before' handled this case
 			continue;
 
 		case SEMI:
