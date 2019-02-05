@@ -474,27 +474,33 @@ int scan_bin(int pnc) {
 int scanfp(int pnc) {
 	char *e;
 	char *p = --scanp; // backup to 't'
-	double d;
+	union {
+		double d;
+		long long i;
+	} dd;
 	int x;
 	long long m, h;
 	int ms;
 
-	d = strtod(p, &e);
+	dd.d = strtod(p, &e);
 	if (e == p) {
 		xerror(errv);
 	}
 	// TODO: check end...
 	scanp = e;
-	x = ilogb(d);			// exponent
-	m = (long long)significand(d);	// mantissa
-	if (m == 0) {
+	if (dd.d == 0.0) {
 		h = 0;
 	} else {
-		ms = (m < 0);
+		ms = (dd.i >> 63) & 1;
+		x = ((dd.i >> 52) & 0x7ff);
+		x -= 1023;
+		m = ((dd.i >> 18) & 0x03ffffffffL);
+		if (1) { // !denorm
+			m |= 0x0400000000L;
+		}
 		if (ms) {
 			m = -m;
 		}
-		// TODO: 'ms'
 		h = (m << 12) | (x & 0xfff);
 	}
 	for (x = 42; x >= 0; x -= 6) {
