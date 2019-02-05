@@ -153,6 +153,9 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Assemble", KeyEvent.VK_A);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Load Obj", KeyEvent.VK_B);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Monitor", KeyEvent.VK_M);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -2436,6 +2439,55 @@ public class HW2000FrontPanel extends JFrame
 		}
 	}
 
+	private int ldInt(byte[] b, int s) {
+		s *= 4;
+		int v = b[s + 3] & 0xff;
+		v <<= 8;
+		v |= b[s + 2] & 0xff;
+		v <<= 8;
+		v |= b[s + 1] & 0xff;
+		v <<= 8;
+		v |= b[s + 0] & 0xff;
+		return v;
+	}
+
+	// This is a bit of a cheat, as the H200/H2000 cannot
+	// load punctuation from I/O.
+	private void loadObjFile() {
+		String op = "AS200 OBJ";
+		RandomAccessFile obj;
+		byte[] hdr = new byte[8*4];
+		File src = pickFile(op + " File",
+				"ohw", "AS200 OBJ", _last);
+		if (src == null) {
+			return;
+		}
+		try {
+			obj = new RandomAccessFile(src, "r");
+			obj.read(hdr);
+		} catch (Exception ee) {
+			PopupFactory.warning(this, op, ee.getMessage());
+			return;
+		}
+		// TODO: other A_xMAGIC values
+		if (ldInt(hdr, 0) != 020007) {
+			PopupFactory.warning(this, op, src.getName() + ": not object file format: " + hdr[0]);
+			try { obj.close(); } catch (Exception ee) {}
+			return;
+		}
+		int adr = ldInt(hdr, 5);	// a_entry
+		int txt = ldInt(hdr, 1);	// a_text
+		int dat = ldInt(hdr, 2);	// a_data
+		// TODO: celar .bss also...
+		try {
+			obj.read(sys.mem, adr, txt + dat);
+		} catch (Exception ee) {
+			PopupFactory.warning(this, op, ee.getMessage());
+		}
+		try { obj.close(); } catch (Exception ee) {}
+		sys.SR = adr;
+	}
+
 	private void fortranFile() {
 		if (ftn != null) {
 			ftn.kill();
@@ -2912,6 +2964,8 @@ ee.printStackTrace();
 		} else if (mi.getMnemonic() == KeyEvent.VK_F) {
 			// This should NOT be run in the event thread!
 			fortranFile();
+		} else if (mi.getMnemonic() == KeyEvent.VK_B) {
+			loadObjFile();
 		} else if (mi.getMnemonic() == KeyEvent.VK_M) {
 			// run automatically?
 			// set 'true' only after running?
