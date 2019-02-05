@@ -1,0 +1,223 @@
+.TH A.OUT 5 9/9/73 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+a.out \- assembler and link editor output for Honeywell 200/2000 Tools
+.SH DESCRIPTION
+.B A.out
+is the output file of the assembler
+.B as200
+and the link editor
+.BR ld200 .
+Both programs make
+.B a.out
+executable if there were no
+errors and no unresolved external references.
+The name
+.B a.out
+represents any object file, regardless of whether the default name was overridden.
+
+This file has four sections:
+a header, the program and data, relocation bits, and a symbol table
+(in that order).
+The last two may be empty
+if the program was loaded
+with the \fB\-s\fR option
+of
+.B ld200
+or if the symbols and relocation have been removed by
+.BR strip200 .
+
+The header always contains 8 words (32-bit, LE):
+
+.TP
+1
+A magic number (020007, 020010, or 020011)
+.TP
+2
+The size of the program text segment
+.TP
+3
+The size of the initialized portion of the data segment
+.TP
+4
+The size of the uninitialized (bss) portion of the data segment
+.TP
+5
+The size of the symbol table
+.TP
+6
+The entry location (0 until set by \fBld200\fR)
+.TP
+7
+Unused
+.TP
+8
+A flag indicating relocation bits have been suppressed
+
+.PP
+The sizes of each segment are in bytes. No alignment
+is required or enforced.
+The size of the header is not included in any of the other sizes.
+The text and data sections contain raw memory data, i.e. 6-bit character
+plus WM and IM bits stored in an 8-bit byte. This means that addresses
+stored in the program image cannot be directly interpreted, they must have
+the 6-bit character values assembled into a 24-bit integer (in the case
+of 4-character address mode).
+
+These object files do not conform to anything used on
+original Honeywell 200 Series computers, and thus cannot be
+loaded by conventional means. Use \fBout2brt\fR to convert an object file
+to BRT (binary run tape) format for conventional loading.
+The simulator does allow direct loading of object files into memory.
+In that case, text and data are loaded into contiguous memory at
+the entry address, and following is a cleared area of the size specified for bss.
+
+There is no formal concept of a stack on Honeywell 200 Series computers,
+so it is up to user code to establish any conventions there.
+Typically, an index register would be used to implement a stack-like
+environment.
+
+\fBobjdump200\fR may be used to dump various parts of the object file.
+
+The symbol table consists of the following 16-byte structure,
+repeated for each entry:
+
+.TP
++0
+8-byte symbol name field, NUL terminated.
+.TP
++8
+16-bit LE type field.
+.TP
++10
+16-bit unused field.
+.TP
++12
+32-bit LE value field.
+.PP
+The symbol type uses the following values:
+
+.TP
+000
+undefined symbol
+.TP
+001
+absolute symbol
+.TP
+002
+text segment symbol
+.TP
+003
+data segment symbol
+.TP
+037
+file name symbol (produced by ld)
+.TP
+004
+bss segment symbol
+.TP
+040
+undefined external (.globl) symbol
+.TP
+041
+absolute external symbol
+.TP
+042
+text segment external symbol
+.TP
+043
+data segment external symbol
+.TP
+044
+bss segment external symbol
+.PP
+
+Values other than those given above may
+occur if the user has defined some of his own instructions.
+
+If the symbol's type is undefined external,
+and the value field is non-zero,
+the symbol is interpreted by the loader
+.I ld200
+as the name of a common region
+whose size is indicated by the value of the
+symbol.
+
+The value of a word in the text or data portions which is not
+a reference to an undefined external symbol
+is exactly that value which will appear in core
+when the file is executed.
+If a word in the text or data portion
+involves a reference to an undefined external symbol,
+as indicated by the relocation bits
+for that word,
+then the value of the word as stored in the file
+is an offset from the associated external symbol.
+When the file is processed by the
+link editor and the external symbol becomes
+defined, the value of the symbol will
+be added into the word in the file.
+
+If relocation information is present, it amounts to one byte per
+character of program text or initialized data.
+There is no relocation information if the ``suppress relocation''
+flag in the header is on.
+
+The first byte of the relocation information indicates the address mode
+of the corresponding address. The following binary values are recognized:
+
+.TP
+00000000
+This location is not part of a relocation. During linking, this
+byte and the corresponding program character is skipped.
+.TP
+1xxxxxxx
+The start of a 2-character address-mode relocation. Two characters
+at the corresponding location in the text/data image contain the
+value, and the two bytes in the relocation data contain symbol
+information. Relocation data consists of bits 14-0.
+.TP
+01xxxxxx
+The start of a 3-character address-mode relocation. Three characters
+at the corresponding location in the text/data image contain the
+value, and the three bytes in the relocation data contain symbol
+information. Relocation data consists of bits 21-0.
+.TP
+001xxxxx
+The start of a 4-character address-mode relocation. Four characters
+at the corresponding location in the text/data image contain the
+value, and the four bytes in the relocation data contain symbol
+information. Relocation data consists of bits 28-0.
+.PP
+
+Bits 3-1 of a (combined 2, 3, or 4 byte) relocation word indicate the segment referred
+to by the text or data word associated with the relocation
+word:
+
+.TP
+000
+indicates the reference is absolute
+.TP
+002
+indicates the reference is to the text segment
+.TP
+004
+indicates the reference is to initialized data
+.TP
+006
+indicates the reference is to bss (uninitialized data)
+.TP
+010
+indicates the reference is to an undefined external symbol.
+.PP
+
+Bit 0 of the relocation word is not used (other implementations
+used it to indicate PC-relative addressing)
+
+The remainder of the relocation word
+(bits N-4, where N is derived from the address mode)
+contains a symbol number in the case of external
+references, and is unused otherwise.
+The first symbol is numbered 0, the second 1, etc.
+This corresponds to the index of the symbol in the symbol table section.
+.SH "SEE ALSO"
+as200 (1), ld200 (1), strip200 (1), nm200 (1), objdump200 (1)

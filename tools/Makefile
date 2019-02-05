@@ -14,3 +14,14 @@ distclean:
 
 %.o: %.s
 	./as/as200 -l -o $@ $? >$*.l
+
+man:
+	@for i in nm ld ar objdump size strip; do \
+		cp -uv binutils/$${i}.1 /usr/local/man/man1/$${i}200.1; \
+	done
+	@for i in as; do \
+		cp -uv as/$${i}.1 /usr/local/man/man1/$${i}200.1; \
+	done
+	@for i in a.out; do \
+		cp -uv binutils/$${i}.5 /usr/local/man/man5/$${i}.200.5; \
+	done
