@@ -1,0 +1,26 @@
+.TH STRIP200 I 3/15/72 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+strip200  \-  remove symbols and relocation bits
+.SH SYNOPSIS
+.B strip200
+.IR name ...
+.SH DESCRIPTION
+.B Strip200
+removes the symbol
+table and relocation bits ordinarily attached to the output
+of the assembler and loader.
+This is useful to save space after a program has been
+debugged.
+
+The effect of
+.B strip200
+is the the same as use of the
+.B \-s
+option
+of
+.B ld.
+.SH FILES
+/tmp/stm?	temporary file
+.SH "SEE ALSO"
+ld200 (1), as200 (1)
+.SH BUGS

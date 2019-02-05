@@ -1,0 +1,42 @@
+.TH OBJDUMP200 1 1/15/73 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+objdump200 \- H200/H2000 object file dumper
+.SH SYNOPSIS
+.B objdump200
+[ \fIoptions\fR ]
+.IR file ...
+.SH DESCRIPTION
+.B Objdump200
+displays information about H200/H2000 object files.
+
+.SH OPTIONS
+.TP
+.BI \-d
+Disassemble the \fB.text\fR section. Sections with zero-length
+are not listed.
+.TP
+.BI \-h
+Display header information.
+.TP
+.BI \-s
+Dump section data. Default is both \fB.text\fR and \fB.data\fR.
+.TP
+.BI \-H
+Use Honeywell-style dump format for \fB-s\fR.
+.TP
+.BI \-j\  sect
+Use \fIsect\fR as the object file section for \fB-s\fR.
+Only \fB.text\fR or \fB.data\fR is recognized.
+.TP
+.BI \-r
+Display relocation/symbol information with \fB-d\fR.
+.TP
+.BI \-w\  width
+Provide a hint to the terminal line length, for \fB-s\fR.
+
+.SH "SEE ALSO"
+ld200 (1),
+nm200 (1),
+a.out.200 (5).
+.SH DIAGNOSTICS
+.SH BUGS

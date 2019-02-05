@@ -1,0 +1,126 @@
+.TH AS200 1 1/15/73 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+as200 \- H200/H2000 cross-assembler
+.SH SYNOPSIS
+.B as200
+.RB [\| \-u \|]
+.RB [\| \-l \|]
+.RB [\| \-o
+.IR file \|]
+.IR name ...
+.SH DESCRIPTION
+.B As200
+assembles the concatenation of the named files. The files are assumed to
+contain Honeywell 200/2000 instructions and recognized assembler directives.
+Comments are introduced by \fB//\fR.
+
+The output of the assembly is left on the file
+.RB "a.out."
+It is executable if no errors occurred
+during the assembly,
+and if there were no unresolved external references.
+
+While this assemble does not recognize \fB.include\fR directives,
+something similar may be accomplished using the concatenation feature.
+
+.SH OPTIONS
+.TP
+.BI \-u
+Treat undefined symbols as globals.
+.TP
+.BI \-l
+Generate listing to stdout.
+.TP
+.BI \-o\  file
+Use \fIfile\fR as the object file instead of \fBa.out\fR.
+.SH SYNTAX
+
+.SS "Standard directives"
+
+.BI \.globl
+.br
+.BI \.if/.endif
+.br
+.BI \.text
+.br
+.BI \.data
+.br
+.BI \.bss
+.br
+.BI \.comm
+.br
+
+.SS "Honeywell 200/2000 directives"
+.TP
+.BI \.space\  num
+Move current section location counter forward \fInum\fR characters.
+In \fB.text\fR and \fB.data\fR sections, space is filled with zero.
+.TP
+.BI \.admode\  addr-mode
+Set current address mode to 2, 3, or 4 characters.
+.TP
+.BI \.byte\  char\.\.\. 
+Place arbitrary characters into memory. Values include punctuation
+(all 8 bits are used).
+.TP
+.BI \.word\  addr
+Create an address (relocatable) field from the expression \fIaddr\fR.
+.TP
+\fB\.string "\fIascii\fB"\fR
+Put the ASCII string into a field, converted to
+H200 characters. Invalid characters are converted
+to the solid lozenge. Lowercase are folded to upper.
+.TP
+.BI \.float\  float
+Create an H200 floating point data item. Item
+will be 8 characters long.
+.TP
+.BI \.dec\  bcd
+Create an arbitrary length BCD data item.
+Add a \fB#\fIlen\fR to specify length if different from
+digit string implied length.
+.TP
+.BI \.bin\  binary
+Create an arbitrary length binary data item. Uses
+standard C notation for octal, hex, dec, and binary.
+Add a \fB#\fIlen\fR to specify length if different from
+digit string implied length.
+.PP
+A label may be assigned the address of a the start of a field
+or the end. For \fB.text\fR the default is the start.
+For \fB.data\fR the default is the end. This may be changed
+by appending a second colon to the label.
+
+The default punctuation is a word mark on the first character.
+For instructions, this cannot be altered.
+For data, a field may be prefixed with a letter and colon,
+where the letter is a valid "Type II Punctuation Indicator".
+
+Honeywell 200/2000 index registers may be referenced by their
+conventional names. Use \fIexpr\fB(\fRx1\fB)\fR to denote
+indexed address mode. Use \fB(\fIexpr\fB)\fR to denote
+indirect address mode.
+
+The default address mode is 4 character.
+
+.SH FILES
+/tmp/atm[1-3]?	temporary
+.br
+a.out		object
+.SH "SEE ALSO"
+ld200 (1),
+nm200 (1),
+a.out.200 (5).
+.SH DIAGNOSTICS
+When an input file cannot be read, its name
+followed by a question mark is typed and assembly
+ceases.
+When syntactic or semantic errors occur, a terse message is printed
+together with the line number and the file name in which it
+occurred.
+Errors in pass 1 cause cancellation of pass 2.
+.SH BUGS
+Symbol table overflow is not checked.
+
+\fBx\fR errors can cause incorrect line numbers
+in following diagnostics.
