@@ -2,6 +2,7 @@
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Properties;
+import java.util.Arrays;
 import java.awt.*;
 import java.io.*;
 import java.awt.event.*;
@@ -2478,13 +2479,16 @@ public class HW2000FrontPanel extends JFrame
 		int adr = ldInt(hdr, 5);	// a_entry
 		int txt = ldInt(hdr, 1);	// a_text
 		int dat = ldInt(hdr, 2);	// a_data
-		// TODO: celar .bss also...
+		int bss = ldInt(hdr, 3);	// a_bss
 		try {
 			obj.read(sys.mem, adr, txt + dat);
 		} catch (Exception ee) {
 			PopupFactory.warning(this, op, ee.getMessage());
 		}
+		Arrays.fill(sys.mem, adr + txt + dat, adr + txt + dat + bss, (byte)0);
 		try { obj.close(); } catch (Exception ee) {}
+		currLow = adr;
+		currHi = adr + txt + dat + bss;
 		sys.SR = adr;
 	}
 
