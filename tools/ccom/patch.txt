@@ -1,0 +1,37 @@
+@@ -770,18 +770,17 @@
+ 
+ %[addq9:]
+ %nub*,n
+ %n*,n
+-	FS*
+ 	SS
+-	mov	@2(sp),r0
+-	movB1	(r0),R
++	F*
++	mov	R,r1
++	movB1	#1(r1),R
+ 	>1	R,8
+ 	IBF	(sp)+,R
+-	<1	
+-	movB1	R,(r0)
++	<1	R,8
++	movB1	R,#1(r1)
+ 	>1	R,8
+-	inct	sp
+ 
+ %[addq22:]
+ %nub*,n
+ %	[addq9]
+@@ -1987,9 +1986,12 @@
+ %aub,n
+ %	[move5]
+ 
+ %nw*,1
+-%	[move2]
++	F*
++	mov	#1(R),r0
++	I'	#1(R)
++	mov	r0,r0
+ 
+ %ew*,nw*
+ %	[move9]
