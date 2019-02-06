@@ -1,0 +1,147 @@
+Function calling uses index register (x1?) as a "stack pointer".
+
+TODO: use 'x2' as frame pointer?
+
+Program initialization must ensure that 'x1' contains a word mark.
+
+All items on the stack are 4 characters (4-char addr mode assumed).
+Fixed precision numeric items may be passed by value if they fit
+in 4 characters, otherwise the address of the item is passed.
+A WM is generally required for each item.
+
+On entry to a function, the following stack is setup:
+
+       +-------------+
+ (+8)  | param2...   |
+       +-------------+
+ (+4)  | param1      |
+       +-------------+
+ x1 -> | --unused--  |
+       +-------------+
+
+The "--unused--" slot is available to store the return address,
+so the first instruction in the function must be:
+
+	scr	0(x1),070	// save BAR to stack
+
+Then the stack (x1) must be manipulated to protect from any calls made
+by this function.  This includes reserving space for local variables,
+and parameters passed to called functions. Typically, this "frame size"
+is subtraced from 'x1':
+
+	bs	_fz,x1	// requires WM at end of x1
+
+TODO: reserve parameter space based on max required, or dynamically
+for each function called?
+
+Now the stack looks like this (example for two local vars):
+
+       +-------------+
+ (+20) |  param2...  |
+       +-------------+
+ (+16) |   param1    |
+       +-------------+
+ (+12) | * return *  | (orig x1)
+       +-------------+
+ (+8)  | * local1 *  |
+       +-------------+
+ (+4)  | * local2 *  |
+       +-------------+
+ x1 -> | --unused--  |
+       +-------------+
+
+At this point, the generated code must know to access parameters
+at the new offsets.
+
+When the function is ready to return, it must reverse the procedure.
+
+	ba	_fz,x1		// restore stack
+	lcr	0(x1),077	// return addr direct to SR
+
+For functions that return a value, the caller must arrange for
+space, as needed, on the call stack for the return value.
+The return value will overwrite the 'param1' location otherwise.
+
+An example for a function the returns a value:
+
+       +-------------+
+ (+12) | param2...   |
+       +-------------+
+ (+8)  | param1      |
+       +-------------+
+ (+4)  |    ---      |
+       +-------------+
+ x1 -> | --unused--  |
+       +-------------+
+
+Which, after frame adjust, would be:
+
+       +-------------+
+ (+24) |  param2...  |
+       +-------------+
+ (+20) |   param1    |
+       +-------------+
+ (+16) |     ---     |
+       +-------------+
+ (+12) | * return *  | (orig x1)
+       +-------------+
+ (+8)  | * local1 *  |
+       +-------------+
+ (+4)  | * local2 *  |
+       +-------------+
+ x1 -> | --unused--  |
+       +-------------+
+
+So, prior to restoring the stack frame, the function would return
+a value by:
+
+	mcw	rc,16(x1)
+
+The caller and function must agree on whether the return value overwrites
+'param1' or uses additional space on the stack, otherwise the function does
+not know the locations for 'param1', 'param2', ...
+
+The calling routine code would be:
+
+	...
+	lca	param2,12(x1)
+	lca	param1,8(x1)
+	lca	zero,4(x1)	// not required
+	b	function
+	lca	4(x1),retval
+	...
+
+Note that LCA is used to fill stack parameters in order
+to ensure proper punctuation, and to ensure any "ghost"
+punctuation gets erased. The source operand for LCA must
+never be longer than 4 characters. It should typically
+be exactly 4 characters, or caller and callee must agree
+on the precision of pass-by-val parameters.
+
+For example, most "C" compilers convert function parameters
+to a max int before passing, typically the integer size that
+matches the pointer size.
+
+And the called function code would be (_fz is 12):
+
+function:
+	scr	0(x1),070
+	bs	_fz,x1
+	lca	20(x1),pparm1 // or equiv
+	lca	24(x1),pparm2 // or equiv
+	...
+	lca	result,16(x1) // or equiv
+	ba	_fz,x1
+	lcr	0(x1),077
+
+Note that paramters passed by reference (address)
+cannot be used directly off the stack. In order to
+invoke the indirect address modifier, they must be
+accessed without index address modifier. For example,
+to use 'param1' as a pointer:
+
+	...
+	lca	20(x1),pparm1
+	c	(pparm1),foo // some operation
+	...
+
