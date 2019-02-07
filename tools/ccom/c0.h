@@ -21,16 +21,16 @@
 #define	MAXCPS	32	/* # chars per symbol */
 
 #define	LTYPE	long	/* change to int if no long consts */
-#define	MAXINT	077777	/* Largest positive short integer */
-#define	MAXUINT	0177777	/* largest unsigned integer */
+#define	MAXINT	037777777	/* Largest positive short integer */
+#define	MAXUINT	077777777	/* largest unsigned integer */
 #define	HSHSIZ	300	/* # entries in hash table for names */
 #define	CMSIZ	40	/* size of expression stack */
 #define	SSIZE	40	/* size of other expression stack */
 #define	SWSIZ	300	/* size of switch table */
 #define	NMEMS	128	/* Number of members in a structure */
-#define	NBPW	16	/* bits per word, object machine */
-#define	NBPC	8	/* bits per character, object machine */
-#define	NCPW	2	/* chars per word, object machine */
+#define	NBPW	24	/* bits per word, object machine */
+#define	NBPC	6	/* bits per character, object machine */
+#define	NCPW	4	/* chars per word, object machine */
 #define	LNCPW	2	/* chars per word, compiler's machine */
 #define	LNBPW	16	/* bits per word, compiler's machine */
 /* dlf change
@@ -44,10 +44,10 @@ int	STAUTO;
  * # bytes in primitive types
  */
 #define	SZCHAR	1
-#define	SZINT	2
-#define	SZPTR	2
-#define	SZFLOAT	4
-#define	SZLONG	4
+#define	SZINT	4
+#define	SZPTR	4
+#define	SZFLOAT	8
+#define	SZLONG	8
 #define	SZDOUB	8
 
 /*
@@ -412,6 +412,7 @@ int	mossym;
 #define	SAVE	208
 #define	RETRN	209
 #define	EVEN	210
+#define	BSTR	211
 #define	PROFIL	212
 #define	SWIT	213
 #define	EXPR	214

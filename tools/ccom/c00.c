@@ -92,7 +92,7 @@ char	*argv[];
 		case 'V':		/* overlays */
 			/* allow an extra word on the stack for
 			 * each stack from to store the overlay number. */
-			STAUTO -= 2;
+			STAUTO -= NCPW;
 			break;
 		case 'w':
 		case 'W':		/* don't print warning messages */
@@ -462,15 +462,15 @@ register int max;
 	nchstr = 0;
 	if (lab) {
 		strflg++;
-		outcode("BNB", LABEL, lab, BDATA);
+		outcode("BNB", LABEL, lab, BSTR);
 		max = 10000;
 	} else
 		outcode("B", BDATA);
 	while ((c = mapch('"')) >= 0) {
 		if (nchstr < max) {
 			nchstr++;
-			if (nchstr%15 == 0)
-				outcode("0B", BDATA);
+			if (nchstr%16 == 0)
+				outcode("0B", BSTR);
 			outcode("1N", c & 0377);
 		}
 	}

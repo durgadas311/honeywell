@@ -327,19 +327,6 @@ char	alrem[]	= "@alrem";
 char	idiv[]	= "@idiv";
 char	irem[]	= "@irem";
 
-char	jeq[]	= "bjeq";
-char	jne[]	= "bjne";
-char	jls[]	= "bjls";
-char	jgt[]	= "bjgt";
-char	jlt[]	= "bjlt";
-char	jgs[]	= "bjgs";
-char	jle[]	= "bjle";
-char	jhi[]	= "bjh";
-char	jlo[]	= "bjl";
-char	jhe[]	= "bjhe";
-char	jmp[]	= "bjmp";
-
-
 /*
  * Instruction tables, accessed by
  * I (first operand) or I' (second) macros.
@@ -412,44 +399,23 @@ struct instab instab[] = {
 {	ULTOF,	ultof,	ultof },
 {	0,	0,	0 } };
 
-/* Similar table for immediate instructions,
- * accessed as I"
- */
-struct instab imm_tab[] = {
-{	PLUS,	ai,	"" },
-{	ASPLUS,	ai,	"" },
-{	MINUS,	ai,	"" },
-{	ASMINUS,ai,	"" },
-{	INCBEF,	ai,	"" },
-{	DECBEF,	ai,	"" },
-{	INCAFT,	ai,	"" },
-{	DECAFT,	ai,	"" },
-{	AND,	andi,	"" },
-{	ANDN,	andi,	"" },
-{	ASANDN,	andi,	"" },
-{	TAND,	andi,	"" },
-{	OR,	ori,	"" },
-{	ASOR,	ori,	"" },
-{	0,	0,	0  }
-};
-
 /*
  * Similar table for relationals.
  * The first string is for the positive
  * test, the second for the inverted one.
  */
-struct instab branchtab[] = {
-{	EQUAL,	jeq,	jne },
-{	NEQUAL,	jne,	jeq },
+struct boptab branchtab[] = {
+{	EQUAL,	042 },
+{	NEQUAL,	045 },
 
-{	LESSEQ,	jls,	jgt },
-{	LESS,	jlt,	jgs },
-{	GREATEQ,jgs,	jlt },
-{	GREAT,	jgt,	jls },
+{	LESSEQ,	043 },	// B <= A
+{	LESS,	041 },	// B < A
+{	GREATEQ,046 },	// B >= A
+{	GREAT,	044 },	// B > A
 
-{	LESSEQP,jle,	jhi },
-{	LESSP,	jlo,	jhe },
-{	GREATQP,jhe,	jlo },
-{	GREATP,	jhi,	jle },
+{	LESSEQP,043 },	// B <= A ?
+{	LESSP,	041 },	// B < A ?
+{	GREATQP,046 },	// B >= A ?
+{	GREATP,	044 },	// B > A ?
 
-{	0,	0,	0 } };
+{	0,	0 } };

@@ -34,33 +34,30 @@ pname(p, flag, neg)
 register union tree *p;
 int flag, neg;
 {
-	register int i, noat = 0;
+	register int i;
 	long ltmp;
 
 loop:
 	switch(p->t.op) {
 
 	case LCON:
-		ltmp = p->l.lvalue;
-		if (neg) ltmp = -ltmp;
-		printf("%d", flag<=10? UNS(ltmp>>16): UNS(ltmp));
+		printf("L%d", (p->l.label>0? p->l.label: -p->l.label));
 		return;
 
 	case SFCON:
 	case CON:
-		psoct(p->c.value);
+		//psoct(p->c.value);
+		printf("L%d", (p->c.label>0? p->c.label: -p->c.label));
 		return;
 
 	case FCON:
-		printf("L%d", (p->c.value>0? p->c.value: -p->c.value));
+		printf("L%d", (p->f.label>0? p->f.label: -p->f.label));
 		return;
 
 	case NAME:
 		i = p->n.offset;
 		if (flag>10)
 			i += 2;
-		if (!(noat || p->n.class==REG || (p->n.class==OFFS && i==0)))
-			putchar('@');
 		if (i) {
 			psoct(i);
 			if (p->n.class!=OFFS)
@@ -76,9 +73,11 @@ loop:
 
 		case OFFS:
 			if( p->n.regno==BPREG )
-				printf("(bp)");
+				// TODO: 'bp' not same as 'sp'...
+				// might need x1 and x2...
+				printf("(x1)");
 			else
-				printf("(r%d)", p->n.regno);
+				error("Illegal use of offset");
 			return;
 
 		case EXTERN:
@@ -88,9 +87,9 @@ loop:
 
 		case REG:
 			if( p->n.nloc==BPREG )
-				printf("bp");
+				printf("x1");
 			else
-				printf("r%d", p->n.nloc);
+				error("Illegal use of reg");
 			return;
 
 		}
@@ -101,12 +100,10 @@ loop:
 		p = p->t.tr1;
 		if (p->t.op==NAME && p->n.class==REG)
 			error("Illegal use of register");
-		if (p->t.op==NAME && ((i = p->n.class)==EXTERN || i==STATIC))
-			noat = 1;
 		goto loop;
 
 	case AUTOI:
-		printf("(r%d)%s", p->n.nloc, flag==1?"":"+");
+		error("Illegal use of auto-incr");
 		return;
 
 	}
@@ -134,11 +131,11 @@ int nrleft;
 	if (p==NULL)
 		return(0);
 	d = dcalc(p, nrleft);
-	if (d<20 && (p->t.type==CHAR || p->t.type==UNCHAR)) {
+	if (d<16+4 && (p->t.type==CHAR || p->t.type==UNCHAR)) {
 		if (nrleft>=1)
-			d = 20;
+			d = 16+4;
 		else
-			d = 24;
+			d = 16+8;
 	}
 	return(d);
 }
@@ -156,36 +153,32 @@ int nrleft;
 
 	case NAME:
 		if (p->n.class==REG && p->n.type!=CHAR && p->n.type!=UNCHAR)
-			return(9);
-		return(12);
+			return(DCHR);
+		return(DADR);
 
-	/* The PDP-11 can use immediate values whereever a full addressing mode
-	 * is available. On the TI990 this requires separate immediate mode
-	 * instructions. To generate efficient code, we must handle the address
-	 * of a static variable as a constant value (8).
-	 */
 	case AMPER:
-		return((c = p->t.tr1->n.class)==EXTERN || c==STATIC ? 8 : 12);
+		return(DADR);
 
 	case FCON:
 	case AUTOI:
-		return(12);
+		return(DADR);
 
 	case LCON:
 	case SFCON:
 	case CON:
 		if (p->c.value==0)
-			return(4);
+			return(DZER);
 		if (p->c.value==1)
-			return(5);
+			return(DONE);
 		if (p->c.value==2)
-			return(6);
-		return(8);
+			return(DTWO);
+		return(DCON);
 
 	}
 	if (p->t.type==LONG || p->t.type==UNLONG)
 		nrleft--;
-	return(p->t.degree <= nrleft? 20: 24);
+	// nrleft = num regs left (available)
+	return(p->t.degree <= nrleft? DREG: DNRG);
 }
 
 int
@@ -207,13 +200,13 @@ int ast, deg, op;
 		return(at!=CHAR && at!=INT && at!=UNSIGN && at<PTR);
 	if (st==1)		/* word */
 		return(at!=INT && at!=UNSIGN && at<PTR);
-	if (st==9 && (at&XTYPE))
+	if (st==UNSIGN+2 && (at&XTYPE))
 		return(0);
 	st -= 2;
 	if ((at&(~(TYPE+XTYPE))) != 0)
-		at = 020;
+		at = PTR;
 	if ((at&(~TYPE)) != 0)
-		at = (at&TYPE) | 020;
+		at = (at&TYPE) | PTR;
 	if (st==FLOAT && at==DOUBLE)
 		at = FLOAT;
 	if (p->t.op==NAME && p->n.class==REG && op==ASSIGN && st==CHAR)
@@ -647,19 +640,21 @@ void
 branch(lbl, aop, c)
 int lbl, aop, c;
 {
-	register int	op,
-			skip;
+	register int op;
+	struct boptab *bt;
 
-	if( (op = aop) ) {
-		skip = prins(op, c, branchtab, lbl);
+	if (aop) {
+		op = 040; // do not branch
+		for (bt = branchtab; bt->iop != 0; ++bt) {
+			if (bt->iop == aop) {
+				op = bt->opc;
+				break;
+			}
+		}
+		printf("bct\tL%d,0%o\n", lbl, op);
 	} else {
-		printf("bjmp");
-		skip = 0;
+		printf("b\tL%d\n", lbl);
 	}
-	if (skip)
-		printf("\tL%d\nL%d:", lbl, skip);
-	else
-		printf("\tL%d\n", lbl);
 }
 
 void
@@ -891,6 +886,35 @@ getree()
 		}
 		break;
 
+	case BSTR:
+		if (geti() == 1) {
+			int c;
+			int n = 0;
+			// TODO: need to ensure any label is "left aligned"
+			// forcing newline is a crude solution.
+			printf("\n.string n:\"");
+			for (;;)  {
+				int c = geti();
+				if (!c) { // end of string...
+					if (n) printf("\"\n");
+					printf(".string c:\"_\"");
+					geti(); // gobble '0'
+					break;
+				}
+				// 'as' does not support \000.
+				// ctrl chars useless anyway.
+				if (c < ' ' || c > '~') c = '_';
+				printf("%c", c);
+				++n;
+				if (geti() != 1) {
+					printf("\"");
+					break;
+				}
+			}
+			printf("\n");
+		}
+		break;
+
 	case PROG:
 		printf(".text\n");
 		break;
@@ -910,6 +934,9 @@ getree()
 		break;
 
 	case RETRN:
+		// TODO: need label for 'fz'...
+		// ba  fz,x1
+		// lcr 0(x1),077
 		printf("b\t@cret\n");
 		break;
 
@@ -923,15 +950,19 @@ getree()
 		totspace += (unsigned)t;
 		break;
 
-	case EVEN:
-		printf(".even\n");
-		break;
-
 	case SAVE:
+		// scr 0(x1),070
 		printf("mov\tr11,r0\nbl\t@csv\n");
 		break;
 
 	case SETSTK:
+		// TODO: need label for 'fz'...
+		// 't' is a negative number(?)
+		//     .data
+		// fz: .word %d		[-t+4]
+		//     .text
+		// lca x1,%d(x1)	[t]
+		// bs  fz,x1
 		t = geti();
 		if (t==2)
 			printf("dect\tsp\n");
@@ -1035,30 +1066,30 @@ getree()
 
 	case LCON:
 		geti();	/* ignore type, assume long */
-		t = geti();
-		op = geti();
+		op = geti();	// lo bit
+		t = geti();	// hi bit
 		if ((t==0 && op>=0) || (t == -1 && op<0)) {
 			*sp++ = tnode(ITOL, LONG, tconst(op, INT), TNULL);
 			break;
 		}
+		// TODO: try and share constants...
 		tp = getblk(sizeof(struct lconst));
-		tp->t.op = LCON;
-		tp->t.type = LONG;
-		tp->l.lvalue = ((long)t<<16) + UNS(op);	/* nonportable */
+		tp->l.op = LCON;
+		tp->l.type = LONG;
+		tp->l.label = isn++;
+		tp->l.lvalue = ((long)t<<32) | UNS(op);	/* nonportable */
 		*sp++ = tp;
 		break;
-#ifndef __ti990__
 	case FCON:
 		t = geti();
 		outname(s);
 		tp = getblk(sizeof(struct ftconst));
-		tp->t.op = FCON;
-		tp->t.type = t;
-		tp->f.value = isn++;
-		tp->f.fvalue = atof(s);
+		tp->f.op = FCON;
+		tp->f.type = t;
+		tp->f.label = isn++;
+		tp->f.fvalue = atod(s);
 		*sp++ = tp;
 		break;
-#endif
 	case FSEL:
 		tp = tnode(FSEL, geti(), *--sp, TNULL);
 		t = geti();
@@ -1119,14 +1150,16 @@ getree()
 	}
 }
 
-/* Read a little-endian 16 bit word from the input stream */
+/* Read a little-endian 32 bit word from the input stream */
 int
 geti()
 {
-	register short i;
+	register int i;
 
 	i = getchar() & 0xff;
 	i |= (getchar() & 0xff) << 8;
+	i |= (getchar() & 0xff) << 16;
+	i |= (getchar() & 0xff) << 24;
 	return(i);
 }
 

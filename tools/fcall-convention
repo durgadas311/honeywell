@@ -58,6 +58,14 @@ When the function is ready to return, it must reverse the procedure.
 	ba	_fz,x1		// restore stack
 	lcr	0(x1),077	// return addr direct to SR
 
+If the original pointer was saved at the start, then the return is:
+
+	lca	4(x1),x1
+	lcr	0(x1),077
+
+However, in either case the stack must be valid before these
+instructions can be executed.
+
 For functions that return a value, the caller must arrange for
 space, as needed, on the call stack for the return value.
 The return value will overwrite the 'param1' location otherwise.

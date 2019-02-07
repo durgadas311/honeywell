@@ -52,7 +52,8 @@ struct	xtname {
 struct	tconst {
 	int	op;
 	int	type;
-	int	value;
+	int	label;
+	uint32_t value;
 };
 
 /*
@@ -61,6 +62,7 @@ struct	tconst {
 struct	lconst {
 	int	op;
 	int	type;
+	int	label;
 	LTYPE	lvalue;
 };
 
@@ -70,7 +72,7 @@ struct	lconst {
 struct	ftconst {
 	int	op;
 	int	type;
-	int	value;
+	int	label;
 	double	fvalue;
 };
 
@@ -113,6 +115,11 @@ struct	instab {
 	int	iop;
 	char	*str1;
 	char	*str2;
+};
+
+struct	boptab {
+	int	iop;
+	int	opc;
 };
 
 struct	swtab {
@@ -321,6 +328,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	SAVE	208
 #define	RETRN	209
 #define	EVEN	210
+#define	BSTR	211
 #define	PROFIL	212
 #define	SWIT	213
 #define	EXPR	214
@@ -355,6 +363,19 @@ int	xlab1, xlab2, xop, xzero;
 #define	FUNC	040
 #define	ARRAY	060
 
+// degree constants
+#define DALL	0077	// max degree, matches all
+#define DPTR	0100	// pointer, indirection
+#define DZER	4	// "0"
+#define DONE	5	// "1"
+#define DTWO	6	// "2"
+#define DCON	8	// other constants
+#define DCHR	9
+#define DADR	12
+#define DFIX	16	// cut-off for ???
+#define DREG	20
+#define DNRG	24
+
 /*
 	storage	classes
 */
@@ -373,7 +394,7 @@ int	xlab1, xlab2, xop, xzero;
 /*
    register that holds base pointer
 */
-#define BPREG 9
+#define BPREG -1	// special case for X1
 
 /*
 	Flag	bits

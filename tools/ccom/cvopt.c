@@ -257,9 +257,8 @@ loop1:
 			t = flag();
 			m = 63;
 pf:
-			if ((c=getchar())=='*')
-				m += 0100; else
-				ungetc(c, stdin);
+			if ((c=getchar())=='*') m += 0100;
+			else ungetc(c, stdin);
 			if (side==0) {
 				if (opno==0) fprintf(curbuf,"\nstruct optab optab[]={\n");
 				fprintf(curbuf,"\t{");

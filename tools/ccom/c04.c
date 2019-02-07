@@ -93,12 +93,13 @@ int isstruct;
 		break;
 
 	case LCON:
-		outcode("BNNN", tp->l.op, tp->l.type, (unsigned short)(tp->l.lvalue>>16),
-		   (unsigned short)tp->l.lvalue);
+		outcode("BNNN", tp->l.op, tp->l.type,
+			(unsigned)(tp->l.lvalue>>32),
+			(unsigned)tp->l.lvalue);
 		break;
 
 	case CON:
-		outcode("BNN", tp->c.op, tp->c.type, tp->c.value);
+		outcode("BNN", tp->c.op, tp->c.type, tp->c.lvalue);
 		break;
 
 	case FCON:
@@ -380,12 +381,7 @@ doret()
  */
 /* VARARGS1 */
 void
-#ifdef __ti990__
-outcode(s)
-	char *s;
-#else
 outcode(char *s, ...)
-#endif
 {
 	va_list ap;
 	register FILE *bufp;
@@ -406,6 +402,8 @@ outcode(char *s, ...)
 		n = va_arg(ap, int);
 		fputc(n, bufp);
 		fputc(n>>8, bufp);
+		fputc(n>>16, bufp);
+		fputc(n>>24, bufp);
 		continue;
 
 	case 'F':

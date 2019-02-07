@@ -11,7 +11,6 @@ register union tree *tree;
 	register int op, dope;
 	int d1, d2;
 	union tree *t;
-	union { double dv; int iv[4];} fp11;
 
 	if (tree==NULL)
 		return(NULL);
@@ -24,17 +23,6 @@ register union tree *tree;
 	}
 	dope = opdope[op];
 	if ((dope&LEAF) != 0) {
-#ifndef __ti990__
-		if (op==FCON) {
-			fp11.dv = tree->f.fvalue;
-			if (fp11.iv[1]==0
-			 && fp11.iv[2]==0
-			 && fp11.iv[3]==0) {
-				tree->t.op = SFCON;
-				tree->f.value = fp11.iv[0];
-			}
-		}
-#endif
 		return(tree);
 	}
 	if ((dope&BINARY) == 0)
@@ -44,18 +32,8 @@ register union tree *tree;
 	if (tree->t.type==CHAR)
 		tree->t.type = INT;
 	switch(op) {
-	/*
-	 * 9900 special to deal with 'szc' and 'andi' generation
-	 * generate new &=~ operator out of &= by complementing the RHS,
-	 * but don't do this if the RHS is a constant.
-	 */
 	case ASAND:
-		if (isconstant(tree->t.tr2))
-			tree->t.tr2->c.value ^= 0177777;
-		else if (tree->t.tr2->t.op==LCON)
-			tree->t.tr2->l.lvalue = ~tree->t.tr2->l.lvalue;
-		tree->t.op = ASANDN;
-		tree->t.tr2 = tnode(COMPL, tree->t.tr2->t.type, tree->t.tr2, TNULL);
+		// TODO: what is needed here?
 		break;
 
 	/*
@@ -341,13 +319,13 @@ register union tree *tree;
 	case ITOL:
 		if (subtre->t.op==CON && subtre->t.type==INT && subtre->c.value<0) {
 			subtre = getblk(sizeof(struct lconst));
-			subtre->t.op = LCON;
-			subtre->t.type = LONG;
+			subtre->l.op = LCON;
+			subtre->l.type = LONG;
+			subtre->l.label = isb++;
 			subtre->l.lvalue = tree->t.tr1->c.value;
 			return(subtre);
 		}
 		break;
-#ifndef __ti990__
 	case FTOI:
 		if (uns(tree)) {
 			tree->t.op = FTOL;
@@ -359,9 +337,9 @@ register union tree *tree;
 	case LTOF:
 		if (subtre->t.op==LCON) {
 			tree = getblk(sizeof(struct ftconst));
-			tree->t.op = FCON;
-			tree->t.type = DOUBLE;
-			tree->c.value = isn++;
+			tree->f.op = FCON;
+			tree->f.type = DOUBLE;
+			tree->f.label = isn++;
 			tree->f.fvalue = subtre->l.lvalue;
 			return(optim(tree));
 		}
@@ -372,9 +350,9 @@ register union tree *tree;
 	case ITOF:
 		if (subtre->t.op==CON) {
 			tree = getblk(sizeof(struct ftconst));
-			tree->t.op = FCON;
-			tree->t.type = DOUBLE;
-			tree->f.value = isn++;
+			tree->f.op = FCON;
+			tree->f.type = DOUBLE;
+			tree->f.label = isn++;
 			if (uns(subtre))
 				tree->f.fvalue = (unsigned)subtre->c.value;
 			else
@@ -387,7 +365,6 @@ register union tree *tree;
 			return(optim(tree));
 		}
 		break;
-#endif
 	case ITOC:
 		/*
 		 * Sign-extend PDP-11 characters
@@ -396,7 +373,7 @@ register union tree *tree;
 			char c;
 			c = subtre->c.value;
 			subtre->c.value = c;
-			subtre->t.type = tree->t.type;
+			subtre->c.type = tree->t.type;
 			return(subtre);
 		} else if (subtre->t.op==NAME && tree->t.type==INT) {
 			subtre->t.type = CHAR;
@@ -489,6 +466,7 @@ register union tree *tree;
 		if (tree->t.type==STRUCT)
 			break;
 		if (subtre->t.op==NAME && subtre->n.class==REG) {
+			// never entered on H200
 			subtre->t.type = tree->t.type;
 			subtre->n.class = OFFS;
 			subtre->n.regno = subtre->n.nloc;
@@ -498,11 +476,13 @@ register union tree *tree;
 		if ((subtre->t.op==INCAFT)
 		 && tree->t.type!=LONG && tree->t.type!=UNLONG
 		 && p->t.op==NAME && p->n.class==REG && p->t.type==subtre->t.type) {
+			// won't be enetered on H200, so no AUTOI
 			p->t.type = tree->t.type;
 			p->t.op   = AUTOI;
 			return(p);
 		}
 		if (subtre->t.op==PLUS && p->t.op==NAME && p->n.class==REG) {
+			// never entered on H200
 			if (subtre->t.tr2->t.op==CON) {
 				p->n.offset += subtre->t.tr2->c.value;
 				p->n.class = OFFS;
@@ -520,6 +500,7 @@ register union tree *tree;
 		}
 		if (subtre->t.op==MINUS && p->t.op==NAME && p->n.class==REG
 		 && subtre->t.tr2->t.op==CON) {
+			// never entered on H200
 			p->n.offset -= subtre->t.tr2->c.value;
 			p->n.class = OFFS;
 			p->t.type = tree->t.type;
@@ -1163,9 +1144,11 @@ int val, type;
 {
 	register union tree *p;
 
+	// TODO: try and share constants...
 	p = getblk(sizeof(struct tconst));
-	p->t.op = CON;
-	p->t.type = type;
+	p->c.op = CON;
+	p->c.type = type;
+	p->c.label = isn++;
 	p->c.value = val;
 	return(p);
 }

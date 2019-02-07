@@ -630,17 +630,15 @@ loop:
 	/* I */
 	case 'M':
 		neg = 0;
-		if ((c = *string)=='\'')
+		if ((c = *string)=='\'') {
 			string++;
-		else if (c=='"') {
+		} else if (c=='"') {
 			string++;
-			if (tree->t.op == MINUS || tree->t.op == ASMINUS)
-				neg = 1;
-			prins(tree->t.op, 0, imm_tab, 0);
+			error("Illegal immediate reference");
 			goto loop;
-		}
-		else
+		} else {
 			c = 0;
+		}
 		prins(tree->t.op, c, instab, 0);
 		goto loop;
 
@@ -1284,7 +1282,6 @@ doinit(type, tree)
 register int type;
 register union tree *tree;
 {
-	float sfval;
 	double fval;
 	long lval;
 
@@ -1299,16 +1296,13 @@ register union tree *tree;
 	switch (type) {
 	case INT:
 	case UNSIGN:
-#ifndef __ti990__
 		if (tree->t.op==FTOI) {
 			if (tree->t.tr1->t.op!=FCON && tree->t.tr1->t.op!=SFCON)
 				goto illinit;
 			tree = tree->t.tr1;
 			tree->c.value = tree->f.fvalue;
 			tree->t.op = CON;
-		} else
-#endif
-			 if (tree->t.op==LTOI) {
+		} else if (tree->t.op==LTOI) {
 			if (tree->t.tr1->t.op!=LCON)
 				goto illinit;
 			tree = tree->t.tr1;
@@ -1317,14 +1311,14 @@ register union tree *tree;
 			tree->c.value = lval;
 		}
 		if (tree->t.op == CON)
-			printf("%d\n", UNS(tree->c.value));
+			printf(".bin 0x%x#4\n", tree->c.value);
 		else if (tree->t.op==AMPER) {
+			printf(".word ");
 			pname(tree, 0, 0);
 			putchar('\n');
 		} else
 			goto illinit;
 		return;
-#ifndef __ti990__
 	case DOUBLE:
 	case FLOAT:
 		if (tree->t.op==ITOF) {
@@ -1340,23 +1334,10 @@ register union tree *tree;
 			fval = tree->t.tr1->l.lvalue;
 		} else
 			goto illinit;
-		if (type==FLOAT) {
-			sfval = fval;
-/* nonportable */
-			printf("%d; %d\n",
-				((unsigned short *)&sfval)[0],
-				((unsigned short *)&sfval)[1] );
-		} else
-			printf("%d; %d; %d; %d\n",
-				((unsigned short *)&fval)[0],
-				((unsigned short *)&fval)[1],
-				((unsigned short *)&fval)[2],
-				((unsigned short *)&fval)[3] );
+		printf(".float %.12e\n", fval);
 		return;
-#endif
 	case UNLONG:
 	case LONG:
-#ifndef __ti990__
 		if (tree->t.op==FTOL) {
 			tree = tree->t.tr1;
 			if (tree->t.op==SFCON)
@@ -1364,9 +1345,7 @@ register union tree *tree;
 			if (tree->t.op!= FCON)
 				goto illinit;
 			lval = tree->f.fvalue;
-		} else
-#endif
-		       if (tree->t.op==ITOL) {
+		} else if (tree->t.op==ITOL) {
 			if (tree->t.tr1->t.op != CON)
 				goto illinit;
 			if (uns(tree->t.tr1))
@@ -1377,8 +1356,7 @@ register union tree *tree;
 			lval = tree->l.lvalue;
 		else
 			goto illinit;
-/* nonportable */
-		printf("%d; %d\n", UNS((lval>>16)), UNS(lval));
+		printf(".bin 0x%lx#8\n", tree->l.value);
 		return;
 	}
 illinit:

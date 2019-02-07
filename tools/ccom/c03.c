@@ -60,10 +60,11 @@ struct nmlist *tptr;
 			continue;
 		}
 		switch (o==KEYW? cval: -1) {
+		case REG:	// ignore register, makes no sense for H200
+			break;
 		case AUTO:
 		case STATIC:
 		case EXTERN:
-		case REG:
 		case TYPEDEF:
 			if (skw && skw!=cval) {
 				if (skw==ARG && cval==REG)
@@ -72,7 +73,6 @@ struct nmlist *tptr;
 					error("Conflict in storage class");
 			}
 			skw = cval;
-			break;
 
 		case UNSIGN:
 			unsignf++;
@@ -493,11 +493,6 @@ struct nmlist *atptr, *absname;
 	if (skw==AUTO) {
 		autolen -= rlength((union tree *)dsym);
 		dsym->hoffset = autolen;
-		/* TI990 is big-endian, so the byte offset is the odd
-		* byte, and not the even byte as on the PDP-11.
-		*/
-		if( dsym->htype==CHAR || dsym->htype==UNCHAR )
-			dsym->hoffset++;
 		if ((int)autolen < (int)maxauto)
 			maxauto = autolen;
 		if (isinit)
@@ -507,8 +502,7 @@ struct nmlist *atptr, *absname;
 		dsym->hoffset = isn;
 		if (isinit) {
 			outcode("BBN", DATA, LABEL, isn++);
-			if (cinit(dsym, 1, STATIC) & ALIGN)
-				outcode("B", EVEN);
+			cinit(dsym, 1, STATIC);
 		} else
 			outcode("BBNBN", BSS, LABEL, isn++, SSPACE,
 			  rlength((union tree *)dsym));
@@ -687,6 +681,7 @@ int type, offset, aflen;
 		a += (NBPC+bitoffs-1) / NBPC;
 		bitoffs = 0;
 	}
+#if 0 // do not align elements.
 	while ((t&XTYPE)==ARRAY)
 		t = decref(t);
 	if (t!=CHAR && t!=UNCHAR) {
@@ -694,6 +689,7 @@ int type, offset, aflen;
 		if (a>offset)
 			bitoffs = 0;
 	}
+#endif
 	if (flen) {
 		if (type==INT || type==UNSIGN) {
 			if (flen > NBPW)

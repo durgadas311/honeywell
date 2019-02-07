@@ -72,8 +72,7 @@ extdef()
 			if (sclass==EXTERN)
 				outcode("BS", SYMDEF, ds->name);
 			outcode("BBS", DATA, NLABEL, ds->name);
-			if (cinit(ds, 1, sclass) & ALIGN)
-				outcode("B", EVEN);
+			cinit(ds, 1, sclass);
 		}
 	} while ((o=symbol())==COMMA);
 	if (o==SEMI)
@@ -265,7 +264,6 @@ int sclass;
 		} else
 			cinit(*mlp++, 0, sclass);
 		if (*mlp ==  &structhole) {
-			outcode("B", EVEN);
 			mlp++;
 		}
 		/* DAG -- union initialization bug fix */
@@ -278,7 +276,6 @@ int sclass;
 	if (sclass!=AUTO && sclass!=REG) {
 		if (*mlp)
 			outcode("BN", SSPACE, np->hstrp->S.ssize - (*mlp)->hoffset);
-		outcode("B", EVEN);
 	}
 	if (o!=RBRACE || brace==0)
 		peeksym = o;
@@ -706,16 +703,12 @@ funchead()
 		if (cs->htype==FLOAT)
 			cs->htype = DOUBLE;
 		cs->hoffset = pl;
-		/* TI990 is big-endian, so the byte offset is the odd
-		* byte, and not the even byte as on the PDP-11.
-		*/
-		if( cs->htype==CHAR || cs->htype==UNCHAR )
-			cs->hoffset++;
 		if ((cs->htype&XTYPE) == ARRAY) {
 			cs->htype -= (ARRAY-PTR);	/* set ptr */
 			cs->hsubsp++;			/* pop dims */
 		}
 		pl += rlength((union tree *)cs);
+		// should never enter this, no "register" class on H200
 		if (cs->hclass==AREG && (hreg.hoffset=goodreg(cs))>=0) {
 			st = starttree();
 			*cp++ = (union tree *)&areg;
