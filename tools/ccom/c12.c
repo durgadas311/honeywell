@@ -321,7 +321,7 @@ register union tree *tree;
 			subtre = getblk(sizeof(struct lconst));
 			subtre->l.op = LCON;
 			subtre->l.type = LONG;
-			subtre->l.label = isb++;
+			subtre->l.label = isn++;
 			subtre->l.lvalue = tree->t.tr1->c.value;
 			return(subtre);
 		}

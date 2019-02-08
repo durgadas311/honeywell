@@ -99,7 +99,7 @@ int isstruct;
 		break;
 
 	case CON:
-		outcode("BNN", tp->c.op, tp->c.type, tp->c.lvalue);
+		outcode("BNN", tp->c.op, tp->c.type, tp->c.value);
 		break;
 
 	case FCON:

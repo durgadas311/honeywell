@@ -29,6 +29,8 @@ register union tree *t;
 	return(t->t.degree);
 }
 
+static char *curfnc = NULL;
+
 void
 pname(p, flag, neg)
 register union tree *p;
@@ -73,9 +75,7 @@ loop:
 
 		case OFFS:
 			if( p->n.regno==BPREG )
-				// TODO: 'bp' not same as 'sp'...
-				// might need x1 and x2...
-				printf("(x1)");
+				printf("(x2)");
 			else
 				error("Illegal use of offset");
 			return;
@@ -87,7 +87,7 @@ loop:
 
 		case REG:
 			if( p->n.nloc==BPREG )
-				printf("x1");
+				printf("x2");
 			else
 				error("Illegal use of reg");
 			return;
@@ -929,15 +929,15 @@ getree()
 
 	case SYMDEF:
 		outname(s);
-		printf(".globl\t%s\n", s);
+		if (*s) printf(".globl\t%s\n", s);
 		sfuncr.nloc = 0;
 		break;
 
 	case RETRN:
-		// TODO: need label for 'fz'...
-		// ba  fz,x1
-		// lcr 0(x1),077
-		printf("b\t@cret\n");
+		printf(	" lca x2,x1\n"
+			" lca -4(x1),x2\n"
+			" lcr 0(x1),077\n"
+			);
 		break;
 
 	case CSPACE:
@@ -951,30 +951,26 @@ getree()
 		break;
 
 	case SAVE:
-		// scr 0(x1),070
-		printf("mov\tr11,r0\nbl\t@csv\n");
+		// nothing to do, as all is abstracted.
 		break;
 
 	case SETSTK:
-		// TODO: need label for 'fz'...
-		// 't' is a negative number(?)
-		//     .data
-		// fz: .word %d		[-t+4]
-		//     .text
-		// lca x1,%d(x1)	[t]
-		// bs  fz,x1
-		t = geti();
-		if (t==2)
-			printf("dect\tsp\n");
-		else if (t != 0)
-			printf("ai\tsp,%d\n", -t);
+		t = geti();	// auto var size
+		op = geti();	// param list size
+
+		printf(	".data\n"
+			"@%s: .word 0x%x#4\n"
+			".globl .%s\n"
+			".%s: .word 0x%x#4\n"
+			".text\n",
+			curfnc, t, curfnc, curfnc, op);
 		break;
 
 	case PROFIL:
 		t = geti();
 		outname(s);
-		printf("li\tr0,L%d\nbl @mcount\n", t);
-		printf(".data\nL%d:%s+1\n.text\n", t, s);
+		printf(	"// profile %s L%d @mcount\n",
+			s, t);
 		break;
 
 	case ASSEM:
@@ -1008,7 +1004,7 @@ getree()
 
 	case C3BRANCH:		/* for fortran [sic] */
 		error("fortran c3branch not supported\n");
-    exit(1);
+		exit(1);
     
 	case CBRANCH:
 		lbl = geti();
@@ -1087,7 +1083,7 @@ getree()
 		tp->f.op = FCON;
 		tp->f.type = t;
 		tp->f.label = isn++;
-		tp->f.fvalue = atod(s);
+		tp->f.fvalue = atof(s);
 		*sp++ = tp;
 		break;
 	case FSEL:
@@ -1124,7 +1120,14 @@ getree()
 
 	case RLABEL:
 		outname(s);
-		printf("%s:\n", s);
+		if (curfnc) free(curfnc);
+		curfnc = strdup(s);
+		printf(	"%s:\n"
+			" scr 0(x1),077\n"
+			" lca x2,-4(x1)\n"
+			" lca x1,x2\n"
+			" bs @%s,x1\n",
+			curfnc, curfnc);
 		break;
 
 	case BRANCH:

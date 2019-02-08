@@ -3,6 +3,8 @@
  */
 #include "c0.h"
 
+static int parlen = 0;
+
 /*
  * Process a single external definition
  */
@@ -95,10 +97,7 @@ void
 cfunc()
 {
 	register char *cb;
-	register int sloc;
 
-	sloc = isn;
-	isn += 2;
 	outcode("BBS", PROG, RLABEL, funcsym->name);
 	regvar = 9;
 	autolen = STAUTO;
@@ -106,22 +105,18 @@ cfunc()
 	blklev = 1;
 	cb = locbase;
 	declist(ARG);
-	outcode("B", SAVE);
 	if (proflg)
 		outcode("BNS", PROFIL, isn++, funcsym->name);
 	funchead();
-	branch(sloc);
-	label(sloc+1);
 	retlab = isn++;
 	blklev = 0;
 	if ((peeksym = symbol()) != LBRACE)
 		error("Compound statement required");
 	statement();
 	outcode("BNB", LABEL, retlab, RETRN);
-	label(sloc);
 /* add STAUTO; overlay bug fix, coupled with section in c11.c */
-	outcode("BN", SETSTK, -maxauto+STAUTO);
-	branch(sloc+1);
+	// TODO: need to do this without jumping back and forth...
+	outcode("BNN", SETSTK, -maxauto+STAUTO, parlen);
 	locbase = cb;
 }
 
@@ -725,12 +720,14 @@ funchead()
 			cs->hclass = AUTO;
 		prste(cs);
 	}
+	parlen = pl;
 	for (pl=0; pl<HSHSIZ; pl++) {
 		for (cs = hshtab[pl]; cs!=NULL; cs = cs->nextnm) {
 			if (cs->hclass == ARG || cs->hclass==AREG)
 				error("Not an argument: %s", cs->name);
 		}
 	}
+	// TODO: still used?
 	outcode("BN", SETREG, regvar);
 }
 

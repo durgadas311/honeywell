@@ -557,26 +557,23 @@ int areg;
 			return(-1);
 	string = opt->tabstring;
 	p1 = tree->t.tr1;
-	if (p1->t.op==FCON && p1->f.value>0) {
-/* nonportable */
-		printf(".data\nL%d:%d;%d;%d;%d\n.text\n", p1->f.value,
-			((unsigned short *)&(p1->f.fvalue))[0],
-			((unsigned short *)&(p1->f.fvalue))[1],
-			((unsigned short *)&(p1->f.fvalue))[2],
-			((unsigned short *)&(p1->f.fvalue))[3] );
-		p1->c.value = -p1->c.value;
+	if (p1->t.op==FCON && p1->f.label>0) {
+		printf(	".data\n"
+			"L%d: .float %12e\n"
+			".text\n", p1->f.label,
+			p1->f.fvalue);
+		p1->f.label = -p1->f.label;
 	}
 	p2 = 0;
 	if (opdope[tree->t.op]&BINARY) {
 		p2 = tree->t.tr2;
-		if (p2->t.op==FCON && p2->f.value>0) {
+		if (p2->t.op==FCON && p2->f.label>0) {
 /* nonportable */
-			printf(".data\nL%d:%d;%d;%d;%d\n.text\n", p2->f.value,
-				((unsigned short *)&(p2->f.fvalue))[0],
-				((unsigned short *)&(p2->f.fvalue))[1],
-				((unsigned short *)&(p2->f.fvalue))[2],
-				((unsigned short *)&(p2->f.fvalue))[3] );
-			p2->f.value = -p2->f.value;
+			printf(	".data\n"
+				"L%d: .float %12e\n"
+				".text\n", p2->f.label,
+				p2->f.fvalue);
+			p2->f.label = -p2->f.label;
 		}
 	}
 
@@ -659,11 +656,7 @@ loop:
 	case 'D':
 		p = p2;
 	pbyte:
-		if (p->t.type==CHAR || p->t.type==UNCHAR)
-			putchar('b');
 	pb1:
-		if (isfloat(p))
-			putchar('f');
 		goto loop;
 
 	/* BE */
@@ -1356,7 +1349,7 @@ register union tree *tree;
 			lval = tree->l.lvalue;
 		else
 			goto illinit;
-		printf(".bin 0x%lx#8\n", tree->l.value);
+		printf(".bin 0x%lx#8\n", tree->l.lvalue);
 		return;
 	}
 illinit:

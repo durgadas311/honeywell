@@ -15,15 +15,9 @@
 #include <sys/dir.h>
 #include <sys/wait.h>
 
-#ifdef __ti990__
-char	*cpp = "cpp";
-char    *as = "as";
-char	*ld = "ld";
-#else
-char	*cpp = "cpp99";
-char    *as = "as99";
-char	*ld = "ld99";
-#endif
+char	*cpp = "cpp200";
+char    *as = "as200";
+char	*ld = "ld200";
 char    *ccom = "../lib/c0";
 char    *ccom1 = "../lib/c1";
 char    *c2 = "../lib/c2";
@@ -48,7 +42,6 @@ int	saveleft;
 char pathbuf[MAXPATHLEN+1];
 unsigned int  pathlen;
 
-#if defined(LINUX) || defined(CYGWIN)
 void basepath()
 {
 	char *p;
@@ -66,38 +59,6 @@ void basepath()
 	printf("could not read base file path\n");
 	exit(1);
 }
-#endif
-
-/* Handle OSX */
-#ifdef __MACH__
-#include <mach-o/dyld.h>
-void basepath()
-{
-	char *p, buf[MAXPATHLEN];
-
-	pathlen = MAXPATHLEN;
-	if (_NSGetExecutablePath(buf, &pathlen) == 0) {
-		if (!(p =  realpath(buf, pathbuf))) goto bp_fail;
-		p = strrchr(pathbuf,'/');
-		if (p++) {
-			*p = '\0';
-			pathlen = p - pathbuf;
-		}
-		return;
-	}
-bp_fail:
-	printf("could not read base file path\n");
-	exit(1);
-}
-#endif
-
-#ifdef __ti990__
-void basepath()
-{
-	strcpy(pathbuf, "/bin/");
-	pathlen = 5;
-}
-#endif
 
 char *
 makepath(cp)
@@ -235,11 +196,7 @@ callsys(f, v)
 			printf(" %s", *cpp);
 		printf("\n");
 	}
-#ifdef __ti990__
-	t = fork();
-#else
 	t = vfork();
-#endif
 	if (t == -1) {
 		printf("No more processes\n");
 		return (100);
@@ -401,7 +358,7 @@ main(argc, argv)
 		av[0] = "cpp";
 		na = 1;
 		/* Ritchie's cc does not support ansi function declarations. */
-		av[na++] = "-D__ti990__=1";
+		av[na++] = "-D__hw200__=1";
 		for (j = 0; j < np; j++)
 			av[na++] = plist[j];
 		if (! Eflag) {

@@ -5,6 +5,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define	LTYPE	long	/* change to int for no long consts */
 #define	TNULL	(union tree *)NULL
@@ -139,8 +140,7 @@ extern struct	table	regtab[];
 extern struct	table	sptab[];
 struct	table	lsptab[1];
 extern struct	instab	instab[];
-extern struct	instab	imm_tab[];
-extern struct	instab	branchtab[];
+extern struct	boptab	branchtab[];
 extern int	opdope[];
 extern char	*opntab[];
 int	nstack;

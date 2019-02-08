@@ -34,11 +34,40 @@
 #define	LNCPW	2	/* chars per word, compiler's machine */
 #define	LNBPW	16	/* bits per word, compiler's machine */
 /* dlf change
-#define	STAUTO	(-6)	 offset of first auto variable */
+#define	STAUTO	(-8)	 offset of first auto variable */
 int	STAUTO;
-#define	STARG	18	/* offset of first argument */
+#define	STARG	8	/* offset of first argument */
+			// forces alloc of return value, even if not used.
 #define	DCLSLOP	512	/* Amount trees lie above declaration stuff */
 
+// Basic call frame layout:
+//         |   ...   |
+//         +---------+
+// 12(x2)  |  param2 |
+//         +---------+
+// 8(x2)   |  param1 |
+//         +---------+
+//         |(ret val)|
+//         +---------+
+// x2 ->   |(ret adr)| a.k.a. "bp"
+//         +---------+
+//         |(prev bp)|
+//         +---------+
+// -8(x2)  | (auto1) |
+//         +---------+
+// -12(x2) | (auto2) |
+//         +---------+
+//         |   ...   |
+//         +---------+
+//         | (autoN) |
+//         +---------+
+// x1 ->   |         | a.k.a. "sp"
+//         +---------+
+//         |   ...   |
+//
+// The above diagram shows the function stack after setup.
+// On entry to function, 'x1' is at location 'x2' above, and
+// 'x2' points to caller's frame.
 
 /*
  * # bytes in primitive types
@@ -337,7 +366,7 @@ int	mossym;
 #define	VOID	10
 #define	UNION	8		/* adjusted later to struct */
 
-#define	ALIGN	01
+#define	ALIGN	03	// generally, align to 4-char "words"
 #define	TYPE	017
 #define	BIGTYPE	060000
 #define	TYLEN	2

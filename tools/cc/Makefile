@@ -1,17 +1,15 @@
-INSTDIR	= ~/cc99
+INSTDIR	= /usr/local
 CFLAGS	= -O ${CC_CFLAGS}
 CC = cc
 
-all: cc99
+all: cc200
 
-install: cc99
-	cp cc99 ${INSTDIR}/bin/cc99
+install: cc200
+	cp cc200 ${INSTDIR}/bin/cc200
 
 clean:
-	rm -f *~ *.o cc99 cc99.exe
+	rm -f *~ *.o cc200
 
-cc99:
-	${CC} ${CFLAGS} -o cc99 cc.c
+cc200:
+	${CC} ${CFLAGS} -o cc200 cc.c
 
-native:
-	${INSTDIR}/bin/cc99 -O -a 0x1000 -o cc99.exe cc.c
