@@ -83,7 +83,7 @@ char	*argv[];
 	/*
 	 * Working without overlays, frame does not have overlay number
 	 */
-	STAUTO = -0;
+	STAUTO = -(2 * NCPW); // space for retadr, savebp.
 	while (argc>4) {
 		switch (argv[4][1]) {
 		case 'P':
@@ -282,8 +282,9 @@ loop:
 		goto unkn;
 
 	case DIVIDE:
-		if (subseq('\\', 0, 1))
-			return(MIN);
+// TODO: fix this
+//		if (subseq('\\', 0, 1))
+//			return(MIN);
 		if (subseq('*',1,0))
 			return(DIVIDE);
 		while ((c = spnextchar()) != EOFC) {
@@ -465,18 +466,18 @@ register int max;
 		outcode("BNB", LABEL, lab, BSTR);
 		max = 10000;
 	} else
-		outcode("B", BDATA);
+		outcode("B", BSTR);
 	while ((c = mapch('"')) >= 0) {
 		if (nchstr < max) {
 			nchstr++;
 			if (nchstr%16 == 0)
 				outcode("0B", BSTR);
-			outcode("1N", c & 0377);
+			outcode("1C", c & 0377);
 		}
 	}
 	if (nchstr < max) {
 		nchstr++;
-		outcode("10");
+		outcode("1C", 0);
 	}
 	outcode("0");
 	strflg = 0;

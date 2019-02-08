@@ -14,6 +14,8 @@ char *lbufp = lbuf;
 void put(), comment();
 int flag();
 
+static int col;
+
 int
 main(argc, argv)
 int argc;
@@ -73,6 +75,7 @@ char **argv;
 	}
 	printf("#include \"c1.h\"");
 	curbuf = obuf;
+	col = 0;
 loop:
 	c = getchar();
 	if (c!='\n' && c!='\t')
@@ -81,6 +84,7 @@ loop:
 		ssmode = 0;
 		curbuf = stdout;
 		fprintf(curbuf, "\nstatic char L%d[]=\"", labno++);
+		col = 0;
 	}
 	switch(c) {
 
@@ -309,6 +313,7 @@ pf:
 		goto loop;
 
 	case '\n':
+		col = 0;
 		lbufp=lbuf;
 		if (!smode)  {
 			put('\n');
@@ -346,6 +351,11 @@ pf:
 		lbufp=lbuf;
 		goto loop;
 
+	default:
+		if (smode && !col) {
+			++tabflg;
+		}
+		break;
 	}
 	*lbufp++=c;
 	put(c);
@@ -422,6 +432,7 @@ int c;
 		if (c=='"') putc('\\',curbuf);
 		putc(c, curbuf);
 	}
+	++col;
 }
 
 void

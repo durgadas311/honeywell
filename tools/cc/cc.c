@@ -161,6 +161,7 @@ inlist(l, os)
 void
 cleanup()
 {
+#if 1
 	if (! Pflag) {
 		if (tmp_c1)
 			unlink(tmp_c1);
@@ -173,6 +174,7 @@ cleanup()
 		if (tmp_opt)
 			unlink(tmp_opt);
 	}
+#endif
 }
 
 void

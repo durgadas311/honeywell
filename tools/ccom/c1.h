@@ -7,10 +7,12 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "cx.h"
+
 #define	LTYPE	long	/* change to int for no long consts */
 #define	TNULL	(union tree *)NULL
 #define	UNS(x)	((unsigned short)(x))
-#define RSTART  (2)
+#define RSTART  (4)
 
 /*
  *  Tree node for unary and binary
@@ -444,6 +446,8 @@ void pbase();
 void pconst();
 void pname();
 void popstk();
+void pushstk();
+void savestk();
 int prins();
 void psoct();
 int rcexpr();

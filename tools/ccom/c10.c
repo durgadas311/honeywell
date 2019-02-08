@@ -38,6 +38,7 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	extern void prcons();
 	if (argc<4) {
 		error("Arg count");
 		exit(1);
@@ -61,7 +62,10 @@ char	*argv[];
 	/*
 	 * tack on the string file.
 	 */
-	printf(".globl\n.data\n");
+	printf("\t.data\n");
+	// first, dump all constants...
+	prcons();
+
 	if (*argv[2] != '-') {
 		if (freopen(argv[2], "r", stdin)==NULL) {
 			error("Missing temp file");
@@ -191,6 +195,7 @@ int reg;
 	int modf, nargs, recurf;
 	register union tree *tree;
 	register struct table *table;
+	char *cp;
 
 	table = atable;
 	recurf = 0;
@@ -288,6 +293,11 @@ again:
 		r = 0;
 		nargs = 0;
 		modf = 0;
+		if (tree->t.tr1->t.op == NAME && tree->t.tr1->n.class == EXTERN) {
+			cp = tree->t.tr1->x.name;
+		} else {
+			cp = NULL;
+		}
 #ifdef notdef
 		/*
 		 * The following code would catch instances of foo(...) where
@@ -308,6 +318,7 @@ again:
 			nstack++;
 		}
 #endif
+		savestk(r, cp);
 		tree = tree->t.tr2;
 		if(tree->t.op) {
 			while (tree->t.op==COMMA) {
@@ -323,9 +334,11 @@ again:
 		if (modf && tree->t.tr1->t.op==NAME
 		   && tree->t.tr1->n.class==EXTERN)
 			tree->t.op = CALL1;
+		union tree *sz = tconst(r, INT);
+		pushstk(sz, cp);
 		if (cexpr(tree, regtab, reg)<0)
 			error("compiler botch: call");
-		popstk(r);
+		popstk(sz, cp);
 		nstack -= nargs;
 		if (table==efftab || table==regtab)
 			return(RSTART);
@@ -375,16 +388,17 @@ again:
 			dbprint(tree->t.op);
 			if (table==sptab || table==lsptab) {
 				if (tree->t.type==LONG || tree->t.type==UNLONG){
-					printf("dect\tsp\nmov\tr%d,(sp)\n",r+1);
+					printf(	"\tbs\tc~4,x1\n"
+						"\tlca\tr%d,0(x1)\n",r+1);
 					nstack++;
 				}
 				if (table==sptab)
-					printf("dect\tsp\n");
-				printf("mov%s	r%d,(sp)\n", modf=='f'?"f":"", r);
+					printf("\tbs\tc~4,x1\n");
+				printf("\tlca\tr%d,0(x1)\n", r);
 				nstack++;
 			}
 			if (table==cctab || table==cregtab)
-				printf("mov%s\tr%d,r0\n", modf=='f'?"f":"", r);
+				printf("\tlca\tr%d,r0\n", r);
 			return(r);
 		}
 	}
@@ -495,14 +509,6 @@ int areg;
 	 */
 	if (tree->t.op==PLUS && !isfloat(tree)) {
 		p1 = tree->t.tr2;
-		if (p1->t.op==CON) switch (p1->c.value) {
-		case -2: case -1:
-			p1->c.value = -p1->c.value;
-			tree->t.op = DECOPS;
-			break;
-		case 1: case 2:
-			tree->t.op = INCOPS;
-		}
 	}
 
 	/*
@@ -558,6 +564,7 @@ int areg;
 	string = opt->tabstring;
 	p1 = tree->t.tr1;
 	if (p1->t.op==FCON && p1->f.label>0) {
+		// TODO: better sharing
 		printf(	".data\n"
 			"L%d: .float %12e\n"
 			".text\n", p1->f.label,
@@ -568,7 +575,7 @@ int areg;
 	if (opdope[tree->t.op]&BINARY) {
 		p2 = tree->t.tr2;
 		if (p2->t.op==FCON && p2->f.label>0) {
-/* nonportable */
+			// TODO: better sharing
 			printf(	".data\n"
 				"L%d: .float %12e\n"
 				".text\n", p2->f.label,
@@ -787,20 +794,22 @@ loop:
 			else
 				longjmp(jmpbuf, 1);
 		}
-		printf("r%d", r);
+		printf("x%d", r);
+		goto loop;
+
+	case '&':
+		printf("%d", -(nstack * SZPTR));
 		goto loop;
 
 	case 'Q':
 		nstack++;
-		if (table!=lsptab)
-			printf("dect\tsp\n");
+		//printf("\tbs\tc~4,x1\n");
 		goto loop;
 
 	case '-':		/* check -(sp) */
 		if (*string=='(') {
 			nstack++;
-			if (table!=lsptab)
-				putchar('-');
+			putchar('-');
 			goto loop;
 		}
 		break;
@@ -864,7 +873,7 @@ loop:
 		case ASPLUS:
 		case INCBEF:
 		case INCAFT:
-			printf("jnc\t1f\ninc");
+			printf("\njnc\t1f\ninc");
 			numlab++;
 			break;
 
@@ -874,7 +883,7 @@ loop:
 		case DECBEF:
 		case DECAFT:
 		case MINSTAT:
-			printf("joc\t1f\ndec");
+			printf("\njoc\t1f\ndec");
 			numlab++;
 			break;
 
@@ -884,7 +893,8 @@ loop:
 				if (uns(p) || uns(tree->t.tr2))
 					printf("clr");
 				else
-					printf("bl\t@sext\nmov\tr0,");
+					printf(	"\tb\t@sext\n"
+						"\tmov\tr0,");
 				goto loop;
 			}
 
@@ -1217,11 +1227,11 @@ int *flagp;
 		size = tree->F.mask;
 		tree = tree->t.tr1;
 		tree = strfunc(tree);
-		if (size <= sizeof(short)) {
+		if (size <= SZPTR) {
 			paint(tree, INT);
 			goto normal;
 		}
-		if (size <= sizeof(long)) {
+		if (size <= SZLONG) {
 			paint(tree, LONG);
 			goto normal;
 		}
@@ -1233,16 +1243,19 @@ int *flagp;
 		tree = tnode(PLUS, STRUCT+PTR, tree, tconst(size, INT));
 		tree = optim(tree);
 		retval = rcexpr(tree, regtab, RSTART);
-		size >>= 1;
+		size /= SZPTR;
 
-		printf("mov\tr%d,r0\n", retval);
-		printf("li\tr1,%d\n", UNS(size));
-		printf("L%d:dect\tr0\ndect\tsp\n", isn);
-		printf("mov\t(r0),(sp)\ndec\tr1\njne\tL%d\n", isn);
+		printf(	"\tmov\tr%d,r0\n", retval);
+		printf(	"\tli\tr1,%d\n", UNS(size));
+		printf(	"L%d:\tbs\tc~4,r0\n"
+			"\tbs\tc~4,x1\n", isn);
+		printf("\tmov\t(r0),(sp)\n"
+			"\tdec\tr1\n"
+			"\tjne\tL%d\n", isn);
 		isn++;
 
 		nstack++;
-		return(size*2);
+		return(size*SZPTR);
 	}
 
 normal:
@@ -1252,7 +1265,7 @@ normal:
 	} else {
 		(*flagp)++;
 		rcexpr(tree, lsptab, RSTART);
-		retval = 0;
+		retval = SZPTR;
 	}
 	return(retval);
 }

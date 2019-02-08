@@ -227,6 +227,7 @@ struct instab *itable;
 			ip = c ? insp->str2: insp->str1;
 			if (!ip)
 				break;
+			putchar('\t');
 			printf(ip, lbl);
 			return(0);
 		}
@@ -294,22 +295,22 @@ arlength(t)
 int t;
 {
 	if (t>=PTR)
-		return(2);
+		return(SZPTR);
 	switch(t) {
 
 	case INT:
 	case CHAR:
 	case UNSIGN:
 	case UNCHAR:
-		return(2);
+		return(SZINT);
 
 	case UNLONG:
 	case LONG:
-		return(4);
+		return(SZLONG);
 
 	case FLOAT:
 	case DOUBLE:
-		return(8);
+		return(SZDOUB);
 	}
 	error("botch: peculiar type %d", t);
 	return(1024);
@@ -325,27 +326,27 @@ int t;
  * This is useful in overlays to reduce the size of data space load.
  * wfj 5/80
  */
-char	dirsw[] = {"\
-ci	r2,%d\n\
-bjh	L%d\n\
-sla	r2,1\n\
-mov	@L%d(r2),r0\n\
-b	(r0)\n\
-\t.data\n\
-L%d:\
-" };
+char	dirsw[] = {
+	"ci	r2,%d\n"
+	"bjh	L%d\n"
+	"sla	r2,1\n"
+	"mov	@L%d(r2),r0\n"
+	"b	(r0)\n"
+	"\t.data\n"
+	"L%d:"
+};
 
-char	hashsw[] = {"\
-mov	r2,r3\n\
-clr	r2\n\
-li	r0,%d\n\
-div	r0,r2\n\
-sla	r3,1\n\
-mov	@L%d(r3),r0\n\
-b	(r0)\n\
-\t.data\n\
-L%d:\
-"};
+char	hashsw[] = {
+	"mov	r2,r3\n"
+	"clr	r2\n"
+	"li	r0,%d\n"
+	"div	r0,r2\n"
+	"sla	r3,1\n"
+	"mov	@L%d(r3),r0\n"
+	"b	(r0)\n"
+	"\t.data\n"
+	"L%d:"
+};
 
 /*
  * If the unsigned casts below won't compile,
@@ -364,7 +365,7 @@ int deflab;
 	fp = afp;
 	lp = alp;
 	if (fp==lp) {
-		printf("bjmp\tL%d\n", deflab);
+		printf("\tb\tL%d\n", deflab);
 		return;
 	}
 	isn++;
@@ -388,14 +389,14 @@ int deflab;
 			} else
 				printf("L%d\n", deflab);
 		}
-		printf(".text\n");
+		printf("\t.text\n");
 		return;
 	}
 	/* simple switch */
 	if (ncase<10) {
 		for (fp = afp; fp<=lp; fp++)
 			breq(fp->swval, fp->swlab);
-		printf("bjmp\tL%d\n", deflab);
+		printf("\tb\tL%d\n", deflab);
 		return;
 	}
 	/* hash switch */
@@ -431,7 +432,7 @@ int deflab;
 				breq((int)((unsigned)swp->swval/tabs), swp->swlab);
 			}
 		}
-		printf("bjmp\tL%d\n", deflab);
+		printf("\tb\tL%d\n", deflab);
 	}
 }
 
@@ -440,10 +441,10 @@ breq(v, l)
 int v, l;
 {
 	if (v==0)
-		printf("mov\tr2,r2\n");
+		printf("\tmov\tr2,r2\n");
 	else
-		printf("ci\tr2,%d\n", UNS(v));
-	printf("bjeq\tL%d\n", l);
+		printf("\tci\tr2,%d\n", UNS(v));
+	printf("\tbjeq\tL%d\n", l);
 }
 
 int
@@ -651,9 +652,9 @@ int lbl, aop, c;
 				break;
 			}
 		}
-		printf("bct\tL%d,0%o\n", lbl, op);
+		printf("\tbct\tL%d,0%o\n", lbl, op);
 	} else {
-		printf("b\tL%d\n", lbl);
+		printf("\tb\tL%d\n", lbl);
 	}
 }
 
@@ -770,23 +771,17 @@ int l;
 }
 
 void
-popstk(a)
-int a;
-{
-	switch(a) {
+popstk(union tree *sz, char *f) {
+	printf("\tba\tL%d,x1\n", -sz->c.label);
+}
 
-	case 0:
-		return;
+void
+pushstk(union tree *sz, char *f) {
+	printf("\tbs\tL%d,x1\n", -sz->c.label);
+}
 
-	case 2:
-		printf("inct\tsp\n");
-		return;
-
-	case 4:
-		printf("c\t(sp)+,(sp)+\n");
-		return;
-	}
-	printf("ai\tsp,%d\n", UNS(a));
+void
+savestk(int a, char *f) {
 }
 
 void
@@ -852,13 +847,14 @@ getree()
 	int lbl, cond = 0;
 	double atof();
 	char *funcbase;
+	char *cp;
 
 	funcbase = (char *)resetblk();
 	sp = expstack;
 	for (;;) {
 		if (sp >= &expstack[STKS])
 			error("Stack overflow botch");
-		op = geti();
+		op = getwd();
 		if ((op&0177400) != 0177000) {
 			error("Intermediate file error");
 			exit(1);
@@ -874,11 +870,11 @@ getree()
 		return;
 
 	case BDATA:
-		if (geti() == 1) {
-			printf(".byte ");
+		if (getwd() == 1) {
+			printf("\t.byte\t");
 			for (;;)  {
 				printf("%d", UNS(geti()));
-				if (geti() != 1)
+				if (getwd() != 1)
 					break;
 				printf(",");
 			}
@@ -887,18 +883,18 @@ getree()
 		break;
 
 	case BSTR:
-		if (geti() == 1) {
+		if (getwd() == 1) {
 			int c;
 			int n = 0;
 			// TODO: need to ensure any label is "left aligned"
 			// forcing newline is a crude solution.
-			printf("\n.string n:\"");
+			printf("\n\t.string\tn:\"");
 			for (;;)  {
-				int c = geti();
+				int c = getwd();
 				if (!c) { // end of string...
 					if (n) printf("\"\n");
-					printf(".string c:\"_\"");
-					geti(); // gobble '0'
+					printf("\t.string\tc:\"_\"");
+					getwd(); // gobble '0'
 					break;
 				}
 				// 'as' does not support \000.
@@ -906,7 +902,7 @@ getree()
 				if (c < ' ' || c > '~') c = '_';
 				printf("%c", c);
 				++n;
-				if (geti() != 1) {
+				if (getwd() != 1) {
 					printf("\"");
 					break;
 				}
@@ -916,33 +912,33 @@ getree()
 		break;
 
 	case PROG:
-		printf(".text\n");
+		printf("\t.text\n");
 		break;
 
 	case DATA:
-		printf(".data\n");
+		printf("\t.data\n");
 		break;
 
 	case BSS:
-		printf(".bss\n");
+		printf("\t.bss\n");
 		break;
 
 	case SYMDEF:
 		outname(s);
-		if (*s) printf(".globl\t%s\n", s);
+		if (*s) printf("\t.globl\t%s\n", s);
 		sfuncr.nloc = 0;
 		break;
 
 	case RETRN:
-		printf(	" lca x2,x1\n"
-			" lca -4(x1),x2\n"
-			" lcr 0(x1),077\n"
+		printf(	"\tlca\tx2,x1\n"
+			"\tlca\t-4(x1),x2\n"
+			"\tlcr\t0(x1),077\n"
 			);
 		break;
 
 	case CSPACE:
 		outname(s);
-		printf(".comm\t%s,%d\n", s, UNS(geti()));
+		printf("\t.comm\t%s,%d\n", s, UNS(geti()));
 		break;
 
 	case SSPACE:
@@ -956,14 +952,12 @@ getree()
 
 	case SETSTK:
 		t = geti();	// auto var size
-		op = geti();	// param list size
-
-		printf(	".data\n"
-			"@%s: .word 0x%x#4\n"
-			".globl .%s\n"
-			".%s: .word 0x%x#4\n"
-			".text\n",
-			curfnc, t, curfnc, curfnc, op);
+		cp = curfnc;
+		if (*cp == '_') ++cp;
+		printf(	"\t.data\n"
+			"@%s:\t.word\t0x%x#4\n"
+			"\t.text\n",
+			cp, t);
 		break;
 
 	case PROFIL:
@@ -1122,12 +1116,14 @@ getree()
 		outname(s);
 		if (curfnc) free(curfnc);
 		curfnc = strdup(s);
+		cp = curfnc;
+		if (*cp == '_') ++cp;
 		printf(	"%s:\n"
-			" scr 0(x1),077\n"
-			" lca x2,-4(x1)\n"
-			" lca x1,x2\n"
-			" bs @%s,x1\n",
-			curfnc, curfnc);
+			"\tscr\t0(x1),077\n"
+			"\tlca\tx2,-4(x1)\n"
+			"\tlca\tx1,x2\n"
+			"\tbs\t@%s,x1\n",
+			curfnc, cp);
 		break;
 
 	case BRANCH:
@@ -1151,6 +1147,17 @@ getree()
 		break;
 	}
 	}
+}
+
+/* Read a little-endian 16 bit word from the input stream */
+int
+getwd()
+{
+	register int i;
+
+	i = getchar() & 0xff;
+	i |= (getchar() & 0xff) << 8;
+	return(i);
 }
 
 /* Read a little-endian 32 bit word from the input stream */

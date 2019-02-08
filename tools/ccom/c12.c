@@ -1138,19 +1138,62 @@ union tree *tr1, *tr2;
 	return(p);
 }
 
+#define NSHARED	500
+static struct consts {
+	int	type;
+	int	value;
+	int	label;
+} shared[NSHARED];
+static int nconsts = 0;
+
 union tree *
 tconst(val, type)
 int val, type;
 {
 	register union tree *p;
 
+	int x;
+	int lab = -1;
+	for (x = 0; x < nconsts; ++x) {
+		if (shared[x].type == type && shared[x].value == val) {
+			lab = shared[x].label;
+			break;
+		}
+	}
+
 	// TODO: try and share constants...
 	p = getblk(sizeof(struct tconst));
 	p->c.op = CON;
 	p->c.type = type;
-	p->c.label = isn++;
 	p->c.value = val;
+	if (lab < 0) {
+		lab = isn++;
+		if (nconsts < NSHARED) {
+			shared[nconsts].type = type;
+			shared[nconsts].value = val;
+			shared[nconsts].label = lab;
+			++nconsts;
+		}
+	}
+	p->c.label = -lab;
 	return(p);
+}
+
+static int sizes[VOID+1] = {
+[CHAR] = SZCHAR,
+[UNCHAR] = SZCHAR,
+[INT] = SZINT,
+[UNSIGN] = SZINT,
+};
+void prcons() {
+	int x;
+	// assume .data already...
+	for (x = 0; x < nconsts; ++x) {
+		printf(	"L%d:\t.bin\t0x%x#%d\n",
+			shared[x].label, shared[x].value,
+			sizes[shared[x].type]);
+	}
+	nconsts = 0;
 }
 
 static char *Tblock_base = NULL;

@@ -3,8 +3,6 @@
  */
 #include "c0.h"
 
-static int parlen = 0;
-
 /*
  * Process a single external definition
  */
@@ -116,7 +114,7 @@ cfunc()
 	outcode("BNB", LABEL, retlab, RETRN);
 /* add STAUTO; overlay bug fix, coupled with section in c11.c */
 	// TODO: need to do this without jumping back and forth...
-	outcode("BNN", SETSTK, -maxauto+STAUTO, parlen);
+	outcode("BN", SETSTK, -maxauto);
 	locbase = cb;
 }
 
@@ -720,7 +718,6 @@ funchead()
 			cs->hclass = AUTO;
 		prste(cs);
 	}
-	parlen = pl;
 	for (pl=0; pl<HSHSIZ; pl++) {
 		for (cs = hshtab[pl]; cs!=NULL; cs = cs->nextnm) {
 			if (cs->hclass == ARG || cs->hclass==AREG)

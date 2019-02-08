@@ -398,6 +398,12 @@ outcode(char *s, ...)
 		fputc(0376, bufp);
 		continue;
 
+	case 'C':
+		n = va_arg(ap, int);
+		fputc(n, bufp);
+		fputc(n>>8, bufp);
+		continue;
+
 	case 'N':
 		n = va_arg(ap, int);
 		fputc(n, bufp);

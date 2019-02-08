@@ -491,8 +491,8 @@ struct nmlist *atptr, *absname;
 	else
 		peeksym = a;
 	if (skw==AUTO) {
-		autolen -= rlength((union tree *)dsym);
 		dsym->hoffset = autolen;
+		autolen -= rlength((union tree *)dsym);
 		if ((int)autolen < (int)maxauto)
 			maxauto = autolen;
 		if (isinit)

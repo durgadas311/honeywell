@@ -184,7 +184,6 @@ extern 	int	yyparse();
 char pathbuf[MAXPATHLEN+1];
 unsigned int  pathlen;
 
-#if defined(LINUX) || defined(CYGWIN)
 void basepath()
 {
 	char *p;
@@ -202,38 +201,6 @@ void basepath()
 	printf("could not read base file path\n");
 	exit(1);
 }
-#endif
-
-/* Handle OSX */
-#ifdef __MACH__
-#include <mach-o/dyld.h>
-void basepath()
-{
-	char *p, buf[MAXPATHLEN];
-
-	pathlen = MAXPATHLEN;
-	if (_NSGetExecutablePath(buf, &pathlen) == 0) {
-		if (!(p =  realpath(buf, pathbuf))) goto bp_fail;
-		p = strrchr(pathbuf,'/');
-		if (p++) {
-			*p = '\0';
-			pathlen = p - pathbuf;
-		}
-		return;
-	}
-bp_fail:
-	printf("could not read base file path\n");
-	exit(1);
-}
-#endif
-
-#ifdef __ti990__
-void basepath()
-{
-	strcpy(pathbuf, "/bin/");
-	pathlen = 5;
-}
-#endif
 
 char *
 makepath(cp)
@@ -354,8 +321,9 @@ dump()
 	if (p1 == inp || flslvl != 0)
 		return;
 	f = fout;
-	while (p1 < inp)
+	while (p1 < inp) {
 		putc(*p1++, f);
+	}
 	outp = p1;
 }
 

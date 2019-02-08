@@ -10,6 +10,6 @@ install: cc200
 clean:
 	rm -f *~ *.o cc200
 
-cc200:
+cc200: cc.c
 	${CC} ${CFLAGS} -o cc200 cc.c
 

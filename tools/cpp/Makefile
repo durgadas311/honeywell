@@ -1,17 +1,13 @@
-INSTDIR	= ~/cc99
+INSTDIR	= /usr/local
 CFLAGS	= -g -DFLEXNAMES ${CC_CFLAGS} ${DEBUG}
-YACC = ${INSTDIR}/bin/yacc
 
 all: cpp
 
 install: cpp
-	cp cpp ${INSTDIR}/bin/cpp99
-
-native: cpp.c cpy.c yylex.c
-	${INSTDIR}/bin/cc99 -o cpp.exe -O -a 0x1000 cpp.c cpy.c
+	cp cpp ${INSTDIR}/bin/cpp200
 
 clean:
-	rm -f *~ *.s *.o cpp cpp.exe
+	rm -f *~ *.s *.o cpp
 
 cpp: cpp.c cpy.c yylex.c
 	$(CC) $(CFLAGS) -o cpp cpp.c cpy.c
