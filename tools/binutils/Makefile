@@ -1,6 +1,7 @@
 CFLAGS = -O ${DEBUG}
+INSTDIR = /usr/local/bin
 
-EXES = ld200 nm200 ar200 strip200 size200 objdump200 # out2lmc out2cas
+EXES = ld200 nm200 ar200 strip200 size200 objdump200 out2brt # out2lmc out2cas
 
 all: ${EXES}
 
@@ -32,6 +33,8 @@ size200: size.c
 	${CC} ${CFLAGS} -o $@ $<
 objdump200: objdump.c
 	${CC} ${CFLAGS} -o $@ $<
+out2brt: out2brt.o ../as/hw200.o
+	$(CC) -o $@ out2brt.o ../as/hw200.o
 
-out2lmc: out2lmc.c
-out2cas: out2cas.c
+../as/hw200.o:
+	$(MAKE) -C ../as hw200.o

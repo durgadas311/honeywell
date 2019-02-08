@@ -104,6 +104,17 @@ The calling routine code would be:
 	lca	-8(x1),retval
 	...
 
+The above code could be optimized using instruction chaining:
+	...
+	lca	zero,-8(x1)	// not required
+	lca	param1
+	lca	param2
+	bs	_cz,x1
+	b	function
+	ba	_cz,x1
+	lca	-8(x1),retval
+	...
+
 "_cz" is the call frame (argument) size. This and "_fz" constants should
 be setup for each function, using a naming convention such that the
 compiler always knows how to access them. For internal functions, a label

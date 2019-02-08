@@ -1,8 +1,8 @@
 CC = cc
 CFLAGS = -I../binutils -O ${DEBUG}
 
-OBJS = assem.o lexer.o machine.o output.o tables.o expr.o list.o main.o symbol.o
-SRCS = assem.c lexer.c machine.c output.c tables.c expr.c list.c main.c symbol.c
+OBJS = assem.o lexer.o machine.o output.o tables.o expr.o list.o main.o symbol.o hw200.o
+SRCS = assem.c lexer.c machine.c output.c tables.c expr.c list.c main.c symbol.c hw200.c
 
 all: as200
 
@@ -24,3 +24,4 @@ expr.o: expr.c as.h
 list.o: list.c as.h
 main.o: main.c as.h
 symbol.o: symbol.c as.h
+hw200.o: hw200.c
