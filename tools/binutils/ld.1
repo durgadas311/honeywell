@@ -61,8 +61,8 @@ usefulness of the debugger).
 This information can also be removed by
 .BR strip .
 .TP
-\fB\-u\fR
-take the following argument as a symbol and enter
+\fB\-u\fR\ \fIname\fR
+Take \fIname\fR as a symbol and enter
 it as undefined in the symbol table.  This is useful
 for loading wholly from a library, since initially the symbol
 table is empty and an unresolved reference is needed
@@ -75,10 +75,15 @@ alone stands for `/lib/liba.a', which
 is the standard system library for assembly language
 programs.
 \fB\-l\fIx\fR
-stands for `/lib/lib\fIx\fR.a' where \fIx\fR is any character.
+stands for `/lib/lib\fIx\fR.a' where \fIx\fR is any string.
 A library is searched when its name is encountered,
 so the placement of a \fB\-l\fR
-is significant.
+is significant. This option does not allow a space between
+\fB\-l\fR and \fIx\fR.
+.TP
+\fB\-L\fIpath\fR
+Add \fIpath\fR to the list of directories searched for libraries.
+No space is allowed between \fB\-L\fR and \fIpath\fR.
 .TP
 \fB\-x\fR
 do not preserve local
@@ -125,6 +130,18 @@ The only difference between this option
 and
 .B \-n
 is that here the data starts at location 0.
+.TP
+\fB\-a\fR\ \fIadr\fR
+Use \fIadr\fR as the "entry" address, which is also the load address.
+Default for H200 is 1340 (decimal), which is adequate for MOD1 applications.
+.TP
+\fB\-t\fR\ \fIlen\fR
+Use \fIlen\fR as the stack size, or simply additional space added to \fB.bss\fR.
+Default is zero (no additional space). since this number is not communicated
+to the program when it runs, there is no automatic method to setup a stack.
+.TP
+\fB\-o\fR\ \fIname\fR
+Use \fIname\fR as the output file name, instead of \fBa.out\fR.
 .PP
 .SH FILES
 /lib/lib?.a   libraries

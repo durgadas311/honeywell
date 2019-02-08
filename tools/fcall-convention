@@ -23,29 +23,27 @@ The "--unused--" slot is available to store the return address,
 so the first instruction in the function must be:
 
 	scr	0(x1),070	// save BAR to stack
+	lca	x2,-4(x1)	// save caller's "bp"
+	lca	x1,x2		// setup new "bp"
+	bs	_fz,x1		// reserve local space
 
-Then the stack (x1) must be manipulated to protect from any calls made
-by this function.  This includes reserving space for local variables,
-and parameters passed to called functions. Typically, this "frame size"
-is subtraced from 'x1':
-
-	bs	_fz,x1	// requires WM at end of x1
-
-TODO: reserve parameter space based on max required, or dynamically
-for each function called?
+"_fz" must reflect local variable storage as well as space
+for the return address and caller's "bp".
 
 Now the stack looks like this (example for two local vars):
 
        +-------------+
- (+20) |  param2...  |
+ (+24) |  param2...  | +8(x2)
        +-------------+
- (+16) |   param1    |
+ (+20) |   param1    | +4(x2)
        +-------------+
- (+12) | * return *  | (orig x1)
+ (+16) | * return *  | <- x2
        +-------------+
- (+8)  | * local1 *  |
+ (+12) | *   bp   *  |
        +-------------+
- (+4)  | * local2 *  |
+ (+8)  | * local1 *  | -8(x2)
+       +-------------+
+ (+4)  | * local2 *  | -12(x2)
        +-------------+
  x1 -> | --unused--  |
        +-------------+
@@ -55,16 +53,9 @@ at the new offsets.
 
 When the function is ready to return, it must reverse the procedure.
 
-	ba	_fz,x1		// restore stack
+	lca	x2,x1		// restore stack
+	lca	-4(x1),x2	// restore callr's "bp"
 	lcr	0(x1),077	// return addr direct to SR
-
-If the original pointer was saved at the start, then the return is:
-
-	lca	4(x1),x1
-	lcr	0(x1),077
-
-However, in either case the stack must be valid before these
-instructions can be executed.
 
 For functions that return a value, the caller must arrange for
 space, as needed, on the call stack for the return value.
@@ -72,52 +63,54 @@ The return value will overwrite the 'param1' location otherwise.
 
 An example for a function the returns a value:
 
-       +-------------+
- (+12) | param2...   |
-       +-------------+
- (+8)  | param1      |
-       +-------------+
- (+4)  |    ---      |
-       +-------------+
- x1 -> | --unused--  |
-       +-------------+
-
-Which, after frame adjust, would be:
-
-       +-------------+
- (+24) |  param2...  |
-       +-------------+
- (+20) |   param1    |
-       +-------------+
- (+16) |     ---     |
-       +-------------+
- (+12) | * return *  | (orig x1)
-       +-------------+
- (+8)  | * local1 *  |
-       +-------------+
- (+4)  | * local2 *  |
-       +-------------+
- x1 -> | --unused--  |
-       +-------------+
+        +-------------+
+12(x1)  |  param2...  |
+        +-------------+
+ 8(x1)  |   param1    |
+        +-------------+
+ 4(x1)  |  (retval)   |
+        +-------------+
+ x1 ->  | --unused--  |
+        +-------------+
 
 So, prior to restoring the stack frame, the function would return
 a value by:
 
-	mcw	rc,16(x1)
+	lca	rc,4(x2)
 
 The caller and function must agree on whether the return value overwrites
 'param1' or uses additional space on the stack, otherwise the function does
 not know the locations for 'param1', 'param2', ...
 
+        +-------------+
+ x1 ->  | * param2 *  |
+        +-------------+
+-4(x1)  | * param1 *  |
+        +-------------+
+-8(x1)  | --retval--  |
+        +-------------+
+-12(x1) | --unused--  |
+        +-------------+
+
 The calling routine code would be:
 
 	...
-	lca	param2,12(x1)
-	lca	param1,8(x1)
-	lca	zero,4(x1)	// not required
+	lca	param2,0(x1)
+	lca	param1,-4(x1)
+	lca	zero,-8(x1)	// not required
+	bs	_cz,x1
 	b	function
-	lca	4(x1),retval
+	ba	_cz,x1
+	lca	-8(x1),retval
 	...
+
+"_cz" is the call frame (argument) size. This and "_fz" constants should
+be setup for each function, using a naming convention such that the
+compiler always knows how to access them. For internal functions, a label
+"Lnnn" is generated. In that case there would also be constants setup
+"Fnnn" for frame size and "Cnnn" for call size.  For external/global
+functions, their name would be like "_func" and so there would also be
+"@func" for the frame size and ".func" for the call size.
 
 Note that LCA is used to fill stack parameters in order
 to ensure proper punctuation, and to ensure any "ghost"
