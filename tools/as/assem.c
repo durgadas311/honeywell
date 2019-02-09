@@ -25,7 +25,9 @@ void do_pseudo(int op) {
 
 	case PIF:
 		t = expr();
-		if (t != RABS) cerror(errv);
+		if (t != RABS) {
+			cerror(errv);
+		}
 		if (res.val!=0) {
 			ifcount++;
 			break;

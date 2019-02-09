@@ -199,8 +199,9 @@ int expr()
 	nexttoken = op;
 	res.val   = val;
 
-	if (rel == RUNDEF && pass > 0)
+	if (rel == RUNDEF && pass > 0) {
 		cerror(erru);
+	}
 
 	return(res.rel = rel);
 }

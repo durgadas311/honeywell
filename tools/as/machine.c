@@ -119,13 +119,18 @@ int parse_addr(int t, EXPR *reg) {
 }
 
 static int parse_var(int t) {
-	if (t != CON) {
+	int v;
+	if (t == CON) {
+		v = conbuf;
+	} else if (t == IDENT && cursym->type == SABS) {
+		v = cursym->value;
+	} else {
 		cerror(errv); // TODO: pick better error
 	}
-	if (conbuf < 0 || conbuf > 077) {
+	if (v < 0 || v > 077) {
 		cerror(errv); // TODO: pick better error
 	}
-	putb(conbuf, 1);
+	putb(v, 1);
 	t = nextparm(); // see what's next
 	return t;
 }

@@ -199,11 +199,12 @@ int reg;
 
 	table = atable;
 	recurf = 0;
-	if (reg<0) {
+	if (reg < 0) {
 		recurf++;
 		reg = ~reg;
-		if (reg>=020) {
-			reg -= 020;
+		// TODO: this looked wrong... still does
+		if (reg > REND) {
+			reg = RSTART;
 			recurf++;
 		}
 	}
@@ -388,13 +389,12 @@ again:
 			dbprint(tree->t.op);
 			if (table==sptab || table==lsptab) {
 				if (tree->t.type==LONG || tree->t.type==UNLONG){
-					printf(	"\tbs\tc~4,x1\n"
-						"\tlca\tr%d,0(x1)\n",r+1);
+					// TODO: how to handle this...
+					printf( "\tlca\tx%d,0(x1)\n",r+1);
 					nstack++;
 				}
-				if (table==sptab)
-					printf("\tbs\tc~4,x1\n");
-				printf("\tlca\tr%d,0(x1)\n", r);
+				printf("\tlca\tx%d,%d(x1)\n",
+					r, -(nstack * SZPTR));
 				nstack++;
 			}
 			if (table==cctab || table==cregtab)

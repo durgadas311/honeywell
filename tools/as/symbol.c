@@ -126,7 +126,7 @@ struct nlabel nlabtab[512];
 void defnlab(uint32_t num, char seg, int loc) {
 	struct nlabel *p;
 
-	if (nlabidx++==NLABMAX)
+	if (nlabidx++>=NLABMAX)
 		cerror(errt);
 	if (nlabmax<=nlabidx)
 		nlabmax = nlabidx + 1;
@@ -139,20 +139,21 @@ void defnlab(uint32_t num, char seg, int loc) {
 struct nlabel *getnlab(uint32_t num) {
 	struct nlabel *p;
 	int i;
+	int n = num;
 
 	i = nlabidx;
-	if (num<0) {
-		num = -num;
+	if (n<0) {
+		n = -n;
 		for(; i>=0; i--) {
 			p = &nlabtab[i];
-			if (p->num==num && p->seg==currel)
+			if (p->num==n && p->seg==currel)
 				break;
 		}		
 	}
 	else {
 		for(i++; i<nlabmax; i++) {
 			p = &nlabtab[i];
-			if (p->num==num && p->seg==currel)
+			if (p->num==n && p->seg==currel)
 				break;
 		}
 	}

@@ -12,7 +12,8 @@
 #define	LTYPE	long	/* change to int for no long consts */
 #define	TNULL	(union tree *)NULL
 #define	UNS(x)	((unsigned short)(x))
-#define RSTART  (4)
+#define RSTART  (5)	// x1=sp, x2=fp, x3/x4=CSM args
+#define REND	(15)
 
 /*
  *  Tree node for unary and binary

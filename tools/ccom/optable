@@ -357,10 +357,8 @@ cr45:
 %nub,a
 %n,a
 	F
-	mov	A2,r0
-	>2	r0,8
-	jeq	.+4
-	I	R,0
+	lcr	I,064
+	csm	A2,R
 
 %nub,e
 %n,e
