@@ -73,6 +73,8 @@ struct nmlist *tptr;
 					error("Conflict in storage class");
 			}
 			skw = cval;
+			// TODO: is this correct?
+			if (cval == EXTERN) break;
 
 		case UNSIGN:
 			unsignf++;

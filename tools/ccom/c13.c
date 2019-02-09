@@ -286,18 +286,18 @@ char	*opntab[] = {
  * Strings for instruction tables.
  */
 char	mov[]	= "mov";
-char	clr[]	= "clr";
+char	clr[]	= "bs";
 char	cmp[]	= "c";
 char	tst[]	= "tst";
-char	add[]	= "a";
-char	sub[]	= "s";
+char	add[]	= "ba";
+char	sub[]	= "bs";
 char	inc[]	= "inc";
-char	dec[]	= "dec";
-char	mpy[]	= "mpy";
+char	dec[]	= "@dec";
+char	mpy[]	= "@mpy";
 char	divu[]	= "div";
-char	sra[]	= "sra";
-char	srl[]	= "srl";
-char	sla[]	= "sla";
+char	sra[]	= "@sra";
+char	srl[]	= "@srl";
+char	sla[]	= "@sla";
 char	szc[]	= "szc";
 char	coc[]	= "coc";
 char	soc[]	= "soc";
@@ -345,16 +345,16 @@ struct instab instab[] = {
 {	LESSP,	cmp,	tst },
 {	GREATQP,cmp,	tst },
 {	GREATP,	cmp,	tst },
-{	INCOPS,	inc,	inc },
-{	DECOPS,	dec,	dec },
+{	INCOPS,	add,	add },	// requires both operands
+{	DECOPS,	sub,	sub },	// requires both operands
 {	PLUS,	add,	inc },
 {	ASPLUS,	add,	inc },
 {	MINUS,	sub,	dec },
 {	ASMINUS,sub,	dec },
-{	INCBEF,	add,	inc },
-{	DECBEF,	sub,	dec },
-{	INCAFT,	add,	inc },
-{	DECAFT,	sub,	dec },
+{	INCBEF,	add,	add },
+{	DECBEF,	sub,	sub },
+{	INCAFT,	add,	add },
+{	DECAFT,	sub,	sub },
 {	TIMES,	mpy,	mpy },
 {	ASTIMES,mpy,	mpy },
 {	DIVIDE,	idiv,	idiv },

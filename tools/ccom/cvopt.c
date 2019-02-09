@@ -117,11 +117,11 @@ loop:
 		case '2':
 			put('D');
 			goto loop;
-
+#if 0
 		case 'E':
 			put('L');
 			goto loop;
-
+#endif
 		case 'F':
 			put('P');
 			goto loop;

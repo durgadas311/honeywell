@@ -393,6 +393,7 @@ int	mossym;
 #define	SETSTK	219
 #define	SINIT	220
 #define	ASSEM	223
+#define	BREF	224	// pointer indirection required
 
 /*
   Flag bits

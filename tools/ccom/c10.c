@@ -446,7 +446,7 @@ register union tree *tree;
 struct table *table;
 int areg;
 {
-	int c, r;
+	int c, r, tab;
 	register union tree *p, *p1;
 	struct table *ctable;
 	union tree *p2;
@@ -455,6 +455,7 @@ int areg;
 	int neg;
 	struct optab *opt;
 
+	tab = 0;
 	neg = 0;
 	reg = areg;
 	p1 = tree->t.tr2;
@@ -592,6 +593,7 @@ loop:
 	if ((c = *string++) & 0200) {
 		c &= 0177;
 		putchar('\t');
+		tab = 1;
 	}
 	switch (c) {
 
@@ -629,6 +631,7 @@ loop:
 			string++;
 		}
 		pname(p, c, neg);
+		tab = 0;
 		goto loop;
 
 	/* I */
@@ -643,7 +646,8 @@ loop:
 		} else {
 			c = 0;
 		}
-		prins(tree->t.op, c, instab, 0);
+		prins(tree->t.op, c, instab, tab);
+		tab = 0;
 		goto loop;
 
 	/* B1 */
@@ -665,7 +669,7 @@ loop:
 	pbyte:
 	pb1:
 		goto loop;
-
+#if 0
 	/* BE */
 	case 'L':
 		if (p1->t.type==CHAR || p2->t.type==CHAR
@@ -673,26 +677,31 @@ loop:
 			putchar('b');
 		p = tree;
 		goto pb1;
-
+#endif
 	case '<':
 		c = *string++;
 		if ( (c=='1' && (p1->t.type==CHAR || p1->t.type==UNCHAR)) ||
-		     (c=='2' && (p2->t.type==CHAR || p2->t.type==UNCHAR)) )
+		     (c=='2' && (p2->t.type==CHAR || p2->t.type==UNCHAR)) ) {
 			printf("sla");
-		else
+			tab = 0;
+		} else {
 			while( *string++!='\n' );
+		}
 		goto loop;
 
 	case '>':
 		c = *string++;
 		if ((c=='1' && p1->t.type==CHAR) ||
-		    (c=='2' && p2->t.type==CHAR))
+		    (c=='2' && p2->t.type==CHAR)) {
 			printf("sra");
-		else if ((c=='1' && p1->t.type==UNCHAR) ||
-			 (c=='2' && p2->t.type==UNCHAR))
+			tab = 0;
+		} else if ((c=='1' && p1->t.type==UNCHAR) ||
+			 (c=='2' && p2->t.type==UNCHAR)) {
 			printf("srl");
-		else
+			tab = 0;
+		} else {
 			while( *string++!='\n' );
+		}
 		goto loop;
 
 	/* F */
@@ -767,6 +776,7 @@ loop:
 			} else
 				movreg(rreg, reg, p);
 		}
+		tab = 0;
 		goto loop;
 
 	/* R, R-, R= */
@@ -795,10 +805,12 @@ loop:
 				longjmp(jmpbuf, 1);
 		}
 		printf("x%d", r);
+		tab = 0;
 		goto loop;
 
 	case '&':
 		printf("%d", -(nstack * SZPTR));
+		tab = 0;
 		goto loop;
 
 	case 'Q':
@@ -810,6 +822,7 @@ loop:
 		if (*string=='(') {
 			nstack++;
 			putchar('-');
+			tab = 0;
 			goto loop;
 		}
 		break;
@@ -818,6 +831,7 @@ loop:
 		putchar(')');
 		if (*string=='+')
 			nstack--;
+		tab = 0;
 		goto loop;
 
 	/* #1 */
@@ -843,6 +857,7 @@ loop:
 			printf("@");
 			string++;
 		}
+		tab = 0;
 		goto loop;
 
 	/*
@@ -856,6 +871,7 @@ loop:
 		}
 		printf("mov\tr%d,r%d\n", reg, c);
 		printf("sra\tr%d,15\n", c);
+		tab = 0;
 		goto loop;
 
 	case '\n':
@@ -865,9 +881,11 @@ loop:
 			printf("1:");
 			numlab = 0;
 		}
+		tab = 0;
 		goto loop;
 
 	case 'V':	/* adc sbc, clr, or sxt as required for longs */
+#if 0
 		switch(tree->t.op) {
 		case PLUS:
 		case ASPLUS:
@@ -902,6 +920,9 @@ loop:
 			while ((c = *string++)!='\n' && c!='\0');
 			break;
 		}
+#else
+		fprintf(stderr, "%s %d: cexpr 'V' warning\n", __FILE__, __LINE__);
+#endif
 		goto loop;
 
 	/*
@@ -921,6 +942,7 @@ loop:
 			return(reg);
 		goto loop;
 	}
+	tab = (c == '\t');
 	putchar(c);
 	goto loop;
 }

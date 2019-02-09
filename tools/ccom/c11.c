@@ -3,6 +3,8 @@
  */
 #include "c1.h"
 
+int getwd();
+
 int
 degree(t)
 register union tree *t;
@@ -107,6 +109,7 @@ loop:
 		return;
 
 	}
+fprintf(stderr, "p->t.op = %d line %d\n", p->t.op, line);
 	error("compiler error: bad pname");
 }
 
@@ -215,8 +218,8 @@ int ast, deg, op;
 }
 
 int
-prins(op, c, itable, lbl)
-int op, c, lbl;
+prins(op, c, itable, tab)
+int op, c, tab;
 struct instab *itable;
 {
 	register struct instab	*insp;
@@ -227,8 +230,8 @@ struct instab *itable;
 			ip = c ? insp->str2: insp->str1;
 			if (!ip)
 				break;
-			putchar('\t');
-			printf(ip, lbl);
+			if (!tab) putchar('\t');
+			fputs(ip, stdout);
 			return(0);
 		}
 	}
@@ -955,7 +958,7 @@ getree()
 		cp = curfnc;
 		if (*cp == '_') ++cp;
 		printf(	"\t.data\n"
-			"@%s:\t.word\t0x%x#4\n"
+			"@%s:\t.bin\t0x%x#4\n"
 			"\t.text\n",
 			cp, t);
 		break;
@@ -1105,6 +1108,12 @@ getree()
 
 	case LABEL:
 		label(geti());
+		break;
+
+	case BREF:	// indirect reference, two labels...
+		t = geti();
+		printf(	"L%d:\t.word\tP%d\n"
+			"P%d:", t, t, t);
 		break;
 
 	case NLABEL:

@@ -1,11 +1,11 @@
 CFLAGS = -O ${DEBUG}
-INSTDIR = /usr/local/bin
+INSTDIR = /usr/local
 
 EXES = ld200 nm200 ar200 strip200 size200 objdump200 out2brt # out2lmc out2cas
 
 all: ${EXES}
 
-install: 
+install:  all
 	cp ld200 ${INSTDIR}/bin/ld200
 	cp nm200 ${INSTDIR}/bin/nm200
 	cp ar200 ${INSTDIR}/bin/ar200

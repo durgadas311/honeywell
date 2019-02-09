@@ -233,8 +233,10 @@ testnlab:
 
 		/* special characters */
 		scanp = ++p;
-		if (!ctype)
+		if (!ctype) {
+fprintf(stderr, "garbage: %02x\n", c);
 			xerror(errg);
+		}
 
 		switch (c) {
 
@@ -286,7 +288,7 @@ static int cvxdigit(int c) {
 	if (c <= '9') {
 		return (c - '0');
 	} else {
-		return (c - '7');
+		return ((c & 0x5f) - '7');
 	}
 }
 static int cvodigit(int c) {

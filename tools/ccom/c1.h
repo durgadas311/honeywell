@@ -342,6 +342,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	GLOBAL	221
 #define	C3BRANCH	222
 #define	ASSEM	223
+#define	BREF	224	// reference, pointer indirection required
 
 /*
  *	types

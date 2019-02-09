@@ -463,7 +463,7 @@ register int max;
 	nchstr = 0;
 	if (lab) {
 		strflg++;
-		outcode("BNB", LABEL, lab, BSTR);
+		outcode("BNB", BREF, lab, BSTR);
 		max = 10000;
 	} else
 		outcode("B", BSTR);

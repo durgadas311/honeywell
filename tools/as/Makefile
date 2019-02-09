@@ -1,5 +1,6 @@
 CC = cc
 CFLAGS = -I../binutils -O ${DEBUG}
+INSTDIR = /usr/local
 
 OBJS = assem.o lexer.o machine.o output.o tables.o expr.o list.o main.o symbol.o hw200.o
 SRCS = assem.c lexer.c machine.c output.c tables.c expr.c list.c main.c symbol.c hw200.c

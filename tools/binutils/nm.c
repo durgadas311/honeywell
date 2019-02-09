@@ -124,7 +124,7 @@ badsym:		printf("%s: cannot read symbol table\n", filename);
 			if (j == 0) {
 				printf("        ");
 			} else {
-				printf("%07o ", nlp->n_value);
+				printf("%07o ", nlp->n_value & 01777777);
 			}
 			if (j == N_FN) {
 			} else {
