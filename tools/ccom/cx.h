@@ -15,11 +15,8 @@
 #define	NCPW	4	/* chars per word, object machine */
 #define	LNCPW	2	/* chars per word, compiler's machine */
 #define	LNBPW	16	/* bits per word, compiler's machine */
-/* dlf change
-#define	STAUTO	(-8)	 offset of first auto variable */
 int	STAUTO;
-#define	STARG	8	/* offset of first argument */
-			// forces alloc of return value, even if not used.
+#define	STARG	4	/* offset of first argument */
 #define	DCLSLOP	512	/* Amount trees lie above declaration stuff */
 
 // Basic call frame layout:

@@ -285,8 +285,8 @@ char	*opntab[] = {
 /*
  * Strings for instruction tables.
  */
-char	mov[]	= "mov";
-char	clr[]	= "bs";
+char	mov[]	= "lca";
+char	clr[]	= "bs";	// dangerous: punctuation issues
 char	cmp[]	= "c";
 char	tst[]	= "tst";
 char	add[]	= "ba";

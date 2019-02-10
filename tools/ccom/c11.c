@@ -935,9 +935,8 @@ getree()
 	case RETRN:
 		// return value is in x5...
 		printf(	"\tlca\tx2,x1\n"
-			"\tlca\tx%d,4(x1)\n"
 			"\tlca\t-4(x1),x2\n"
-			"\tlcr\t0(x1),077\n", RSTART);
+			"\tlcr\t0(x1),077\n");
 		break;
 
 	case CSPACE:

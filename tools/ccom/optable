@@ -91,7 +91,7 @@ cr100:
 
 %n,n
 	F
-	b	(R)
+	b	0(R)
 
 /* load */
 cr106:
@@ -1263,18 +1263,16 @@ ci80:
 %ab,n
 %aub,n
 	S
-	<1	R,8
 	IB1	R,A1
 
 %aw,z
 %ad,zf
-	I'B1	A1
+	IB1	A2,A1
 
 %nb*,z
 %nub*,z
 	F*
-	bs	r0
-	IB1	r0,#10(R)
+	IB1	A2,#10(R)
 
 %[move2:]
 %n*,z
@@ -1882,17 +1880,17 @@ cc60:
 %ad,zf
 %aub,z
 %af,z
-	bs	A1
+	c	A2,A1
 
 %n*,z
 %nd*,zf
 %nub*,z
 	F*
-	bs	#10(R)
+	c	A2,#10(R)
 
 %nf*,z
 	F*
-	bs	#10(R)
+	c	A2,#10(R)
 
 %n,z
 %nf,zf
@@ -1964,8 +1962,7 @@ cc60:
 
 %al,cl
 %aul,cl
-	mov	A1,r0
-	ci	r0,A2
+	c	A1,A2
 	X0
 
 
@@ -2156,7 +2153,7 @@ struct table sptab[] = {
 cs106:
 %z,n
 %zf,n
-	bs	&(x1)
+	lca	A1,&(x1)
 	Q
 
 %c,n
@@ -2233,7 +2230,7 @@ cs58:
 
 %nu,n
 	FS
-	bs	&(x1)
+	lca	A1,&(x1)
 	QQ
 
 %aw,n
