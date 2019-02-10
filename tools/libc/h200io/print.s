@@ -11,20 +11,24 @@ PR_SPA=004
 	.text
 _print:
 	scr	0(x1),070
-	lca	4(x1),in
+	lca	4(x1),x5
 	bbe	4f,8(x1),PR_SPB	// test space before flag
-1:	bbe	3f,8(x1),PR_NL	// test NL flags
-	pdt	(ptr),012,07,0
+1:	bbe	5f,8(x1),PR_SPA	// test space after flags
+	bbe	3f,8(x1),PR_NL	// test NL flags
+5:	pdt	0(x5),012,07,0
 	b	2f
-3:	pdt	(ptr),012,07,1
+3:	pdt	0(x5),012,07,1
 2:	pcb	.,012,07,010
-	lcr	0(x1),077
+	bbe	6f,8(x1),PR_SPA	// test space after flags
+5:	lcr	0(x1),077
 
 4:	pdt	sp,012,07,0
 	pcb	.,012,07,010
 	b	1b
 
+6:	pdt	sp,012,07,1
+	pcb	.,012,07,010
+	b	5b
+
 	.data
 sp::	.string	f:"  "
-ptr:
-in:	.word	0

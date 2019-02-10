@@ -28,4 +28,4 @@ crt: $(OBJS)
 #crt0: crt0.o crtx0.o mcrt0.o
 		
 .s.o:
-	$(AS) -u -o $@ $<
+	$(AS) -o $@ $<

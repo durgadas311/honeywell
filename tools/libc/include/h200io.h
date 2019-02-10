@@ -6,6 +6,14 @@
 #define PR_SPB	002	/* space before string */
 #define PR_SPA	004	/* space after string */
 
-void print(); /* char *str, int flag - PR_* flags above */
+/* flag bits to control setpnc() */
+#define SP_WM	001	/* set word mark */
+#define SP_IM	002	/* set item mark */
+#define SP_CLR	004	/* clear all first */
+
+void print();	/* (char *str, int flag) - PR_* flags above */
+void putc();	/* (int ch) */
+void putnl();	/* (void) */
+void setpnc();	/* (void *ptr, int flag) */
 
 #endif /* _H200IO_H_ */

@@ -18,12 +18,12 @@ install: $(OBJS)
 	$(AR) cr $(INSTLIB) $(OBJS)
 
 clean:
-	rm -f *.o
+	rm -f *.o a.out
 
 libhw: $(OBJS)
 
 .s.o:
-	$(AS) -u -o $@ $<
+	$(AS) -o $@ $<
 
 .c.o:
 	$(CC) -c -o $@ $<
