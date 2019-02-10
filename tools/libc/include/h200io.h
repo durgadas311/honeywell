@@ -6,6 +6,6 @@
 #define PR_SPB	002	/* space before string */
 #define PR_SPA	004	/* space after string */
 
-void print(char *, int);
+void print(); /* char *str, int flag - PR_* flags above */
 
 #endif /* _H200IO_H_ */
