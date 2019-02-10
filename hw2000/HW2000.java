@@ -288,6 +288,14 @@ public class HW2000 implements CoreMemory
 		return mem[adr];
 	}
 
+	private int getAddr(int adr) {
+		int v = (mem[adr--] & 077);
+		v |= (mem[adr--] & 077) << 6;
+		v |= (mem[adr--] & 077) << 12;
+		v |= (mem[adr--] & 077) << 18;
+		return v;
+	}
+
 	public void rawWriteMem(int adr, byte val) {
 		mem[adr] = val;
 	}
@@ -662,8 +670,9 @@ public class HW2000 implements CoreMemory
 		} else {
 			op = op_exec.getClass().getName();
 		}
-		String s = String.format("%07o: %s %07o %07o [%07o %07o] ",
-				oSR, op, oAAR, oBAR, AAR, BAR);
+		String s = String.format("%07o: %s %07o %07o [%07o %07o] {%07o %07o}",
+				oSR, op, oAAR, oBAR, AAR, BAR,
+				getAddr(4), getAddr(8));
 		for (int x = 0; x < op_xtra_num; ++x) {
 			s += String.format(" %02o", op_xtra[x]);
 		}
