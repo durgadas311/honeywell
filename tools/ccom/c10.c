@@ -23,8 +23,8 @@ char notrel[] = { NEQUAL, EQUAL, GREAT, GREATEQ, LESS,
 		  LESSEQ, GREATP, GREATQP, LESSP, LESSEQP
 };
 
-struct tconst czero = { CON, INT, 0};
-struct tconst cone  = { CON, INT, 1};
+union tree *czero;
+union tree *cone;
 
 struct tname sfuncr = { NAME, STRUCT, STATIC, 0, 0, 0 };
 
@@ -51,6 +51,8 @@ char	*argv[];
 		error("Can't create %s", argv[3]);
 		exit(1);
 	}
+	czero = tconst(0, INT, 1);
+	cone = tconst(1, INT, 1);
 	getree();
 	/*
 	 * If any floating-point instructions
@@ -335,7 +337,7 @@ again:
 		if (modf && tree->t.tr1->t.op==NAME
 		   && tree->t.tr1->n.class==EXTERN)
 			tree->t.op = CALL1;
-		union tree *sz = tconst(r, INT);
+		union tree *sz = tconst(r, INT, 0);
 		pushstk(sz, cp);
 		if (cexpr(tree, regtab, reg)<0)
 			error("compiler botch: call");
@@ -378,8 +380,9 @@ again:
 		return(reg);
 	if ((r=cexpr(tree, table, reg))>=0) {
 		if (table==cregtab && (tree->t.op==INCAFT
-		    || tree->t.op==DECAFT || tree->t.op==TIMES))
+		    || tree->t.op==DECAFT || tree->t.op==TIMES)) {
 			goto fixup;
+		}
 		return(r);
 	}
 	if (table!=regtab && (table!=cctab||(opdope[tree->t.op]&RELAT)==0)) {
@@ -390,15 +393,18 @@ again:
 			if (table==sptab || table==lsptab) {
 				if (tree->t.type==LONG || tree->t.type==UNLONG){
 					// TODO: how to handle this...
-					printf( "\tlca\tx%d,0(x1)\n",r+1);
+					printf( "\tlca\tx%d,0(x1),foo\n",r+1);
 					nstack++;
 				}
 				printf("\tlca\tx%d,%d(x1)\n",
 					r, -(nstack * SZPTR));
 				nstack++;
 			}
-			if (table==cctab || table==cregtab)
-				printf("\tlca\tr%d,r0\n", r);
+			if (table==cctab || table==cregtab) {
+				// need to test non-zero?
+				printf("\tc\tL%d,x%d\n", -czero->c.label, r);
+				//printf("\tlca\tr%d,r0,foo\n", r);
+			}
 			return(r);
 		}
 	}
@@ -467,10 +473,10 @@ int areg;
 	 */
 	if ((opd&RELAT||c==LOGAND||c==LOGOR||c==EXCLA) && table!=cctab) {
 		cbranch(tree, c=isn++, 1, reg);
-		rcexpr((union tree *)&czero, table, reg);
+		rcexpr(czero, table, reg);
 		branch(isn, 0, 0);
 		label(c);
-		rcexpr((union tree *)&cone, table, reg);
+		rcexpr(cone, table, reg);
 		label(isn++);
 		return(reg);
 	}
@@ -1262,7 +1268,7 @@ int *flagp;
 			return(0);
 		}
 		tree = tnode(AMPER, STRUCT+PTR, tree, TNULL);
-		tree = tnode(PLUS, STRUCT+PTR, tree, tconst(size, INT));
+		tree = tnode(PLUS, STRUCT+PTR, tree, tconst(size, INT, 0));
 		tree = optim(tree);
 		retval = rcexpr(tree, regtab, RSTART);
 		size /= SZPTR;
@@ -1341,8 +1347,8 @@ register union tree *tree;
 		if (tree->t.op == CON)
 			printf(".bin 0x%x#4\n", tree->c.value);
 		else if (tree->t.op==AMPER) {
-			printf(".word ");
-			pname(tree, 0, 0);
+			printf("\t.word\t");
+			pname(tree, 0, 1);
 			putchar('\n');
 		} else
 			goto illinit;

@@ -383,7 +383,7 @@ int	mossym;
 #define	SAVE	208
 #define	RETRN	209
 #define	EVEN	210
-#define	BSTR	211
+#define	BSTR	211	// pointer indirection required
 #define	PROFIL	212
 #define	SWIT	213
 #define	EXPR	214
@@ -393,7 +393,7 @@ int	mossym;
 #define	SETSTK	219
 #define	SINIT	220
 #define	ASSEM	223
-#define	BREF	224	// pointer indirection required
+#define	BSTR2	224	// pointer indirection required
 
 /*
   Flag bits

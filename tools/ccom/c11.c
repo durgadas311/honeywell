@@ -73,7 +73,7 @@ loop:
 
 		case SOFFS:
 		case XOFFS:
-			pbase(p);
+			pbase(p, neg);
 
 		case OFFS:
 			if( p->n.regno==BPREG )
@@ -84,7 +84,7 @@ loop:
 
 		case EXTERN:
 		case STATIC:
-			pbase(p);
+			pbase(p, neg);
 			return;
 
 		case REG:
@@ -109,19 +109,20 @@ loop:
 		return;
 
 	}
-fprintf(stderr, "p->t.op = %d line %d\n", p->t.op, line);
 	error("compiler error: bad pname");
 }
 
 void
-pbase(p)
+pbase(p, f)
 register union tree *p;
+int f;
 {
 
-	if (p->n.class==SOFFS || p->n.class==STATIC)
-		printf("L%d", p->n.nloc);
-	else
+	if (p->n.class==SOFFS || p->n.class==STATIC) {
+		printf("%c%d", f ? 'P' : 'L', p->n.nloc);
+	} else {
 		printf("%s", p->x.name);
+	}
 }
 
 int
@@ -889,7 +890,21 @@ getree()
 		}
 		break;
 
-	case BSTR:
+	case BSTR2:	// string initor. indir ref, two labels...
+		// primary label already emitted!
+		// get string - label name
+		outname(s); // will have '_' prepended...
+		t = 0;
+		if (s[t] == '_') ++t;
+		printf(	"\t.word\t.%s\n"
+			".%s:", s + t, s + t);
+		goto getstring;
+
+	case BSTR:	// string constant. indir ref, two labels...
+		t = geti();	// label number
+		printf(	"L%d:\t.word\tP%d\n"
+			"P%d:", t, t, t);
+getstring:
 		if (getwd() == 1) {
 			int c;
 			int n = 0;
@@ -899,8 +914,7 @@ getree()
 			for (;;)  {
 				int c = getwd();
 				if (!c) { // end of string...
-					if (n) printf("\"\n");
-					printf("\t.string\tc:\"_\"");
+					printf("\"");
 					getwd(); // gobble '0'
 					break;
 				}
@@ -916,6 +930,7 @@ getree()
 			}
 			printf("\n");
 		}
+		printf("\t.string\tc:\"_\"\n");
 		break;
 
 	case PROG:
@@ -1058,7 +1073,7 @@ getree()
 
 	case CON:
 		t = geti();
-		*sp++ = tconst(geti(), t);
+		*sp++ = tconst(geti(), t, 0);
 		break;
 
 	case LCON:
@@ -1066,7 +1081,7 @@ getree()
 		op = geti();	// lo bit
 		t = geti();	// hi bit
 		if ((t==0 && op>=0) || (t == -1 && op<0)) {
-			*sp++ = tnode(ITOL, LONG, tconst(op, INT), TNULL);
+			*sp++ = tnode(ITOL, LONG, tconst(op, INT, 0), TNULL);
 			break;
 		}
 		// TODO: try and share constants...
@@ -1090,7 +1105,7 @@ getree()
 	case FSEL:
 		tp = tnode(FSEL, geti(), *--sp, TNULL);
 		t = geti();
-		tp->t.tr2 = tnode(COMMA, INT, tconst(geti(), INT), tconst(t, INT));
+		tp->t.tr2 = tnode(COMMA, INT, tconst(geti(), INT, 0), tconst(t, INT, 0));
 		if (tp->t.tr2->t.tr1->c.value==16)
 			tp = paint(tp->t.tr1, tp->t.type);
 		*sp++ = tp;
@@ -1114,15 +1129,9 @@ getree()
 		label(geti());
 		break;
 
-	case BREF:	// indirect reference, two labels...
-		t = geti();
-		printf(	"L%d:\t.word\tP%d\n"
-			"P%d:", t, t, t);
-		break;
-
 	case NLABEL:
 		outname(s);
-		printf("%s:\n", s);
+		printf("%s:", s); // needs to be on same line for punc control
 		break;
 
 	case RLABEL:

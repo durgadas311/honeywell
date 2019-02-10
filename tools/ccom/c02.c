@@ -171,7 +171,7 @@ int flex, sclass;
 			if (sclass==AUTO)
 				error("No strings in automatic");
 			peeksym = -1;
-			putstr(0, flex?10000:nel);
+			putstr(0, flex?10000:nel, anp->name);
 			ninit += nchstr;
 			o = symbol();
 			break;
@@ -825,7 +825,7 @@ int ao;
 	o = ao;
 	while(o>RBRACE) {	/* ; { } */
 		if (o==STRING)
-			putstr(0, 0);
+			putstr(0, 0, NULL);
 		o = symbol();
 	}
 	peeksym  = o;

@@ -107,6 +107,9 @@ cr106:
 
 %nub*,n
 %nb*,n
+	F*
+	exm	#10(R),R,01
+
 %n*,n
 %nd*,n
 	F*
@@ -1898,7 +1901,7 @@ cc60:
 	FC
 
 %r,c
-	c	A2,A1,foo
+	c	A2,A1
 
 %n,c
 	F

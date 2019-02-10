@@ -15,7 +15,8 @@ _puto:
 	ba	ins	// << 1
 	ba	ins	// << 1
 	ba	ins	// << 1
-	bct	2f,060	// if 0, we're done
+	c	zero,in
+	bct	2f,042	// if 0, we're done
 	bs	one,op
 	b	1b
 
@@ -36,3 +37,4 @@ opi:	// for indirect ref to "op"
 op:	.word	0
 oop:	.word	ocx
 one:	.bin	1#1
+zero:	.bin	0#1

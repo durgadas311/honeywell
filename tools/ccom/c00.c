@@ -454,19 +454,26 @@ subseq(c,a,b)
  * lab.
  */
 void
-putstr(lab, max)
+putstr(lab, max, nm)
 int lab;
 register int max;
+char *nm;
 {
 	register int c;
 
 	nchstr = 0;
+	if (!lab && !nm) {
+		// can't cope...
+		outcode("0");
+		return;
+	}
 	if (lab) {
 		strflg++;
-		outcode("BNB", BREF, lab, BSTR);
+		outcode("BN", BSTR, lab);
 		max = 10000;
-	} else
-		outcode("B", BSTR);
+	} else {
+		outcode("BS", BSTR2, nm);
+	}
 	while ((c = mapch('"')) >= 0) {
 		if (nchstr < max) {
 			nchstr++;
@@ -681,16 +688,16 @@ advanc:
  * generate any data to the object file.
 */
 		xop = op;
-		while	(xop > opst)
-			{
+		while (xop > opst) {
 			xo = *xop--;
-			if	(xo != LPARN)
+			if (xo != LPARN)
 				break;
-			}
-		if	(xo == SIZEOF)
+		}
+		if (xo == SIZEOF) {
 			cntstr();
-		else
-			putstr(cval, 0);
+		} else {
+			putstr(cval, 0, NULL);
+		}
 		cs = (struct nmlist *)Tblock(sizeof(struct nmlist));
 		cs->hclass = STATIC;
 		cs->hoffset = cval;

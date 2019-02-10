@@ -150,7 +150,7 @@ extern char	*opntab[];
 int	nstack;
 int	nfloat;
 struct	tname	sfuncr;
-struct	tconst czero, cone;
+union tree *czero, *cone;
 long	totspace;
 int	regpanic;		/* set when SU register alg. fails */
 int	panicposs;		/* set when there might be need for regpanic */
@@ -332,7 +332,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	SAVE	208
 #define	RETRN	209
 #define	EVEN	210
-#define	BSTR	211
+#define	BSTR	211	// reference, pointer indirection required
 #define	PROFIL	212
 #define	SWIT	213
 #define	EXPR	214
@@ -344,7 +344,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	GLOBAL	221
 #define	C3BRANCH	222
 #define	ASSEM	223
-#define	BREF	224	// reference, pointer indirection required
+#define	BSTR2	224	// reference, pointer indirection required
 
 /*
  *	types

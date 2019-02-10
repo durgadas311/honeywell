@@ -277,9 +277,9 @@ register union tree *tree;
 				tree = tree->t.tr1;
 				switch(op) {
 				case GREATEQ:
-					return((union tree *)&cone);
+					return(cone);
 				case LESS:
-					return((union tree *)&czero);
+					return(czero);
 				case LESSEQ:
 				case EQUAL:
 					tree->t.op = notrel[tree->t.op-EQUAL];
@@ -398,7 +398,7 @@ register union tree *tree;
 		case STAR:
 			subtre->t.type = tree->t.type;
 			subtre->t.tr1->t.type = tree->t.type+PTR;
-			subtre->t.tr1 = tnode(PLUS, tree->t.type, subtre->t.tr1, tconst(2, INT));
+			subtre->t.tr1 = tnode(PLUS, tree->t.type, subtre->t.tr1, tconst(2, INT, 0));
 			return(optim(subtre));
 
 		case ITOL:
@@ -635,8 +635,8 @@ register union tree *t;
 		t1->t.tr1 = t->t.tr2;
 		t->t.tr2 = t1;
 		t1 = t1->t.tr2;
-		t1 = tnode(COMMA, INT, tconst(t1->t.tr1->c.value, INT),
-			tconst(t1->t.tr2->c.value, INT));
+		t1 = tnode(COMMA, INT, tconst(t1->t.tr1->c.value, INT, 0),
+			tconst(t1->t.tr2->c.value, INT, 0));
 		return(optim(tnode(FSELT, UNSIGN, t, t1)));
 
 	}
@@ -1147,8 +1147,8 @@ static struct consts {
 static int nconsts = 0;
 
 union tree *
-tconst(val, type)
-int val, type;
+tconst(val, type, stc)
+int val, type, stc;
 {
 	register union tree *p;
 
@@ -1160,9 +1160,11 @@ int val, type;
 			break;
 		}
 	}
-
-	// TODO: try and share constants...
-	p = getblk(sizeof(struct tconst));
+	if (stc) {
+		p = malloc(sizeof(struct tconst));
+	} else {
+		p = getblk(sizeof(struct tconst));
+	}
 	p->c.op = CON;
 	p->c.type = type;
 	p->c.value = val;
