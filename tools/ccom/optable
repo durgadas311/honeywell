@@ -96,20 +96,12 @@ cr100:
 /* load */
 cr106:
 %z,n
-	bs	R
-
 %zf,n
-	bs	R
-
 %c,n
-	lca	A1,R
-
 %aub,n
 %ab,n
 %a,n
 %ad,n
-	lca	A1,R
-
 %af,n
 	lca	A1,R
 
