@@ -11,12 +11,10 @@ public class I_BS implements Instruction {
 		a &= 077;
 		b &= 077;
 		byte cy = 1;
-		byte z = 0;
 		while (true) {
 			c = (byte)((a ^ 077) + b + cy);
 			cy = (byte)(c >> 6);
 			c &= 077;
-			z |= c;
 			sys.writeChar(sys.BAR, c);
 			sys.incrBAR(-1);
 			if (bw != 0) {
@@ -33,10 +31,6 @@ public class I_BS implements Instruction {
 			b = sys.readMem(sys.BAR);
 			bw = (byte)(b & 0100);
 			b &= 077;
-		}
-		sys.CTL.setZB(z == 0);
-		if (cy != 0) {
-			sys.CTL.setOVR(true);
 		}
 	}
 }

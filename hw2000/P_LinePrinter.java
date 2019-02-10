@@ -145,6 +145,16 @@ public class P_LinePrinter extends JFrame
 		busy = true;
 	}
 
+	private void printBuf(String s) throws Exception {
+		if (dev != null) {
+			dev.write(s.getBytes());
+		}
+		text.append(s);
+		carr += s.length();
+		text.setCaretPosition(carr);
+		autoVisible(true);
+	}
+
 	// Must protect against exceptions, and eventually throw them to main thread...
 	public void run(RWChannel rwc) {
 		if (!busy) {
@@ -164,6 +174,8 @@ public class P_LinePrinter extends JFrame
 					s += "\n";
 					col = 0;
 					if (++ln >= ftape.length) ln = 0;
+					printBuf(s);
+					s = "";
 				}
 				s += rwc.sys.pdc.cvt.hwToLP(a);
 				++col;
@@ -207,13 +219,7 @@ public class P_LinePrinter extends JFrame
 					if (++ln >= ftape.length) ln = 0;
 				}
 			}
-			if (dev != null) {
-				dev.write(s.getBytes());
-			}
-			text.append(s);
-			carr += s.length();
-			text.setCaretPosition(carr);
-			autoVisible(true);
+			printBuf(s);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? How to pass along EI/II exceptions to CPU?
 		}

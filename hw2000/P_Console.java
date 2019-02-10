@@ -246,6 +246,14 @@ public class P_Console extends JFrame
 		}
 	}
 
+	private void printBuf(String s) throws Exception {
+		putChar(s);
+		if (odev != null) {
+			odev.write(s.getBytes());
+		}
+		autoVisible(true);
+	}
+
 	public void doOut(RWChannel rwc, ConsoleStatus unit) {
 		rwc.startCLC();
 		String s = "";
@@ -258,7 +266,14 @@ public class P_Console extends JFrame
 					break;
 				}
 				a &= 077;
+				if (col >= 64) {
+					s += "\n";
+					col = 0;
+					printBuf(s);
+					s = "";
+				}
 				s += rwc.sys.pdc.cvt.hwToLP(a);
+				++col;
 				if (rwc.incrCLC()) {
 					break;
 				}
@@ -267,11 +282,7 @@ public class P_Console extends JFrame
 				s += "\n";
 				col = 0;
 			}
-			putChar(s);
-			if (odev != null) {
-				odev.write(s.getBytes());
-			}
-			autoVisible(true);
+			printBuf(s);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
@@ -281,21 +292,8 @@ public class P_Console extends JFrame
 	// Can only have '\n' at end...
 	private void putChar(String s) {
 		int n = s.length();
-		if (col + n > 64) {
-			putChar(s.substring(0, 64 - col));
-			s = s.substring(64 - col);
-			n = s.length();
-		}
 		text.insert(s, carr);
 		carr += n;
-		col += n;
-		if (s.endsWith("\n")) {
-			col = 0;
-		} else if (col >= 64) {
-			// should only ever be "col == 64"...
-			text.insert("\n", carr++);
-			col = 0;
-		}
 		text.setCaretPosition(carr);
 	}
 
