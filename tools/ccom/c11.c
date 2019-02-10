@@ -651,7 +651,11 @@ int lbl, aop, c;
 		op = 040; // do not branch
 		for (bt = branchtab; bt->iop != 0; ++bt) {
 			if (bt->iop == aop) {
-				op = bt->opc;
+				if (c) {
+					op = bt->ropc;
+				} else {
+					op = bt->opc;
+				}
 				break;
 			}
 		}

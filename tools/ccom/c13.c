@@ -405,17 +405,17 @@ struct instab instab[] = {
  * test, the second for the inverted one.
  */
 struct boptab branchtab[] = {
-{	EQUAL,	042 },
-{	NEQUAL,	045 },
+{	EQUAL,	042, 045 },
+{	NEQUAL,	045, 042 },
 
-{	LESSEQ,	043 },	// B <= A
-{	LESS,	041 },	// B < A
-{	GREATEQ,046 },	// B >= A
-{	GREAT,	044 },	// B > A
+{	LESSEQ,	043, 044 },	// B <= A
+{	LESS,	041, 046 },	// B < A
+{	GREATEQ,046, 041 },	// B >= A
+{	GREAT,	044, 043 },	// B > A
 
-{	LESSEQP,043 },	// B <= A ?
-{	LESSP,	041 },	// B < A ?
-{	GREATQP,046 },	// B >= A ?
-{	GREATP,	044 },	// B > A ?
+{	LESSEQP,043, 044 },	// B <= A ?
+{	LESSP,	041, 046 },	// B < A ?
+{	GREATQP,046, 041 },	// B >= A ?
+{	GREATP,	044, 043 },	// B > A ?
 
 {	0,	0 } };

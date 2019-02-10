@@ -406,7 +406,8 @@ cr40:
 %c,c
 %aub,c
 %a,c
-	I	A2,A1
+	lca	A1,R
+	I	A2,R
 
 %n,c
 	F
@@ -1897,16 +1898,16 @@ cc60:
 	FC
 
 %r,c
-	c	A1,A2
+	c	A2,A1,foo
 
 %n,c
 	F
-	c	A1,A2
+	c	A2,A1
 
 %aw,aw
 %ab,ab
 %aub,aub
-	IBF	A1,A2
+	IBF	A2,A1
 
 %nw*,aw
 %nb*,ab
@@ -1968,8 +1969,7 @@ cc60:
 
 %cl,al
 %cl,aul
-	li	r0,A1
-	I	r0,A2
+	I	A2,A1
 	X0
 
 %al,au

@@ -124,6 +124,7 @@ struct	instab {
 struct	boptab {
 	int	iop;
 	int	opc;
+	int	ropc;
 };
 
 struct	swtab {
