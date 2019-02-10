@@ -8,14 +8,8 @@
 	.text
 _strcpy:
 	scr	0(x1),070
-	lca	4(x1),i1
-	lca	8(x1),i2
-	mos	(p2),(p1),017	// stops at WM, not RM...
-	lca	i1,x5
+	lca	4(x1),x5
+	lca	8(x1),x6
+	mos	0(x6),0(x5),017	// stops at WM, not RM...
+	lca	4(x1),x5
 	lcr	0(x1),077
-
-	.data
-p1:
-i1:	.word	0
-p2:
-i2:	.word	0
