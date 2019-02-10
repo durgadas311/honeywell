@@ -72,6 +72,7 @@ void oflush(sp)
 	d = write(ofile, sp->rbuf, n);
 	sp->tseek += n;
 	sp->rseek += n;
+	sp->nchar = 0;
 }
 
 /*
