@@ -1,4 +1,4 @@
-TOOLS	= as binutils
+TOOLS	= as binutils cc ccom crt libc
 
 TARGETS = tools # tools-inst
 
@@ -8,6 +8,9 @@ all: $(TARGETS)
 
 tools:
 	for i in ${TOOLS}; do $(MAKE) -C $$i; done
+
+install: tools
+	for i in ${TOOLS}; do $(MAKE) -C $$i install; done
 
 distclean:
 	for i in ${TOOLS}; do $(MAKE) -C $$i clean; done

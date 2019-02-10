@@ -8,6 +8,7 @@ all:
 	done
 
 install:
+	@rm -f libc.a
 	$(MAKE) -C include install
 	for d in $(SUBDIRS); do \
 		$(MAKE) -C $$d INSTLIB=$(CURDIR)/libc.a install; \
