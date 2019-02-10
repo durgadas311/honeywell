@@ -2,10 +2,11 @@
 # Make h200io part of std C library.
 #
 INSTDIR	= /usr/local
+INSTLIB = libhw.a
 
-CC = ${INSTDIR}/bin/cc200
-AS = ${INSTDIR}/bin/as200
-AR = ${INSTDIR}/bin/ar200
+CC = cc200
+AS = as200
+AR = ar200
 
 SRCS = $(wildcard *.c)
 ASMS = $(wildcard *.s)
@@ -14,15 +15,15 @@ OBJS = $(subst .s,.o,$(ASMS)) # also $(subst .c,.o,$(SRCS))
 all: libhw
 
 install: $(OBJS)
-	${AR} r ${INSTDIR}/lib/libhw.a ${OBJS}
+	$(AR) cr $(INSTLIB) $(OBJS)
 
 clean:
 	rm -f *.o
 
-libhw: ${OBJS}
+libhw: $(OBJS)
 
 .s.o:
 	$(AS) -u -o $@ $<
 
 .c.o:
-	${CC} -c -o $@ $<
+	$(CC) -c -o $@ $<

@@ -87,22 +87,8 @@ char *ptrtab;
 
 char buffer[NCPS+BUFSIZ+BUFSIZ+NCPS];
 
-#ifdef pdp11
-
-#define SBSIZE ((unsigned)0114130)	/* PDP compiler doesn't like 39024 */
-short	sbff[SBSIZE/2];
-#define sbf ((char *)sbff)
-
-#else /* !pdp11 */
-
-#ifdef LINUX
 #define SBSIZE 60000		/* std = 12000, wnj aug 1979 */
-#else
-#define SBSIZE 12000		/* std = 12000, wnj aug 1979 */
-#endif
 char	sbf[SBSIZE];
-
-#endif /* pdp11 */
 
 char	*savch	= sbf;
 

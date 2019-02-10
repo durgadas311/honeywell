@@ -545,7 +545,7 @@ load1arg(filename)
 		return;
 	}
 again:
-	loff = 2;
+	loff = sizeof(struct ar_file);
 	nlinked = 0;
 	for (;;) {
 /*printf("load1arg: seek %ld\n", loff);*/

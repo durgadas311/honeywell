@@ -933,10 +933,11 @@ getree()
 		break;
 
 	case RETRN:
+		// return value is in x5...
 		printf(	"\tlca\tx2,x1\n"
+			"\tlca\tx%d,4(x1)\n"
 			"\tlca\t-4(x1),x2\n"
-			"\tlcr\t0(x1),077\n"
-			);
+			"\tlcr\t0(x1),077\n", RSTART);
 		break;
 
 	case CSPACE:
@@ -1128,7 +1129,7 @@ getree()
 		cp = curfnc;
 		if (*cp == '_') ++cp;
 		printf(	"%s:\n"
-			"\tscr\t0(x1),077\n"
+			"\tscr\t0(x1),070\n"
 			"\tlca\tx2,-4(x1)\n"
 			"\tlca\tx1,x2\n"
 			"\tbs\t@%s,x1\n",

@@ -21,17 +21,17 @@ clean:
 % : %.c
 	${CC} ${CFLAGS} -o $@ $<
 
-ld200: ld.c
+ld200: ld.c ar.h a.out.h
 	${CC} ${CFLAGS} -o $@ $<
-nm200: nm.c
+nm200: nm.c a.out.h
 	${CC} ${CFLAGS} -o $@ $<
-ar200: ar.c
+ar200: ar.c ar.h a.out.h
 	${CC} ${CFLAGS} -o $@ $<
-strip200: strip.c
+strip200: strip.c a.out.h
 	${CC} ${CFLAGS} -o $@ $<
-size200: size.c
+size200: size.c a.out.h
 	${CC} ${CFLAGS} -o $@ $<
-objdump200: objdump.c
+objdump200: objdump.c a.out.h
 	${CC} ${CFLAGS} -o $@ $<
 out2brt: out2brt.o ../as/hw200.o
 	$(CC) -o $@ out2brt.o ../as/hw200.o
