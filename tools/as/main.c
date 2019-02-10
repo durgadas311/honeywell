@@ -38,7 +38,7 @@ int main(argc, argv)
 			break;
 		case 'o':
 			if (--argc == 0 || **++argv == '-') {
-				printf("No object filename\n");
+				fprintf(stderr, "No object filename\n");
 				exit(1);
 			}
 			ofname = *argv;
@@ -46,7 +46,7 @@ int main(argc, argv)
 		}
 	}
 	if ((nifiles = argc) < 1) {
-		printf("%s", usage);
+		fprintf(stderr, "%s", usage);
 		exit(1);
 	}
 	ifiles = argv;
@@ -54,7 +54,7 @@ int main(argc, argv)
 	/* symbol table generation pass */
 	assemble();
 	if (errcnt)
-		exit(errcnt);
+		exit(errcnt > 0);
 
 	/*
 	 * Code generation pass(es)
@@ -70,11 +70,11 @@ int main(argc, argv)
 		cfile   = -1;
 		assemble();
 		if (errcnt)
-			exit(errcnt);
+			exit(errcnt > 0);
 	} while ( textlen!=text.loc);
 
 	if ((ofile = open(ofname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0) {
-		printf("%s: can't create\n", ofname);
+		fprintf(stderr, "%s: can't create\n", ofname);
 		exit(1);
 	}
 	outhdr();
@@ -111,7 +111,7 @@ int nextfile()
 
 	fd_in = open(ifiles[cfile], O_RDONLY);
 	if (fd_in < 0) {
-		printf("%s: can't open\n", ifiles[cfile]);
+		fprintf(stderr, "%s: can't open\n", ifiles[cfile]);
 		exit(1);
 	}
 	line = 0;
@@ -154,8 +154,8 @@ void cerror(type)
 int type;
 {
 	if (nifiles > 1)
-		printf("%s: ", ifiles[cfile]);
-	printf("%d: %s\n", line, errtab[type]);
+		fprintf(stderr, "%s: ", ifiles[cfile]);
+	fprintf(stderr, "%d: %s\n", line, errtab[type]);
 	errcnt++;
 }
 
