@@ -897,20 +897,22 @@ getree()
 		t = 0;
 		if (s[t] == '_') ++t;
 		printf(	"\t.word\t.%s\n"
-			".%s:", s + t, s + t);
+			".%s::", s + t, s + t);
 		goto getstring;
 
 	case BSTR:	// string constant. indir ref, two labels...
 		t = geti();	// label number
 		printf(	"L%d:\t.word\tP%d\n"
-			"P%d:", t, t, t);
+			"P%d::", t, t, t);
+		// FALLTHROUGH
+	case BSTR0:
 getstring:
-		if (getwd() == 1) {
+		if ((t = getwd()) == 1) {
 			int c;
 			int n = 0;
 			// TODO: need to ensure any label is "left aligned"
 			// forcing newline is a crude solution.
-			printf("\n\t.string\tn:\"");
+			printf("\t.string\tn:\"");
 			for (;;)  {
 				int c = getwd();
 				if (!c) { // end of string...
@@ -923,14 +925,14 @@ getstring:
 				if (c < ' ' || c > '~') c = '_';
 				printf("%c", c);
 				++n;
-				if (getwd() != 1) {
+				if ((t = getwd()) != 1) {
 					printf("\"");
 					break;
 				}
 			}
 			printf("\n");
 		}
-		printf("\t.string\tc:\"_\"\n");
+		if (t != 2) printf("\t.string\tc:\"_\"\n");
 		break;
 
 	case PROG:
@@ -964,7 +966,7 @@ getstring:
 		break;
 
 	case SSPACE:
-		printf(".=.+%d\n", UNS(t=geti()));
+		printf("\t.space\t%d\n", UNS(t=geti()));
 		totspace += (unsigned)t;
 		break;
 
@@ -977,8 +979,7 @@ getstring:
 		cp = curfnc;
 		if (*cp == '_') ++cp;
 		printf(	"\t.data\n"
-			"@%s:\t.bin\t0x%x#4\n"
-			"\t.text\n",
+			"@%s:\t.bin\t0x%x#4\n",
 			cp, t);
 		break;
 
@@ -1132,6 +1133,16 @@ getstring:
 	case NLABEL:
 		outname(s);
 		printf("%s:", s); // needs to be on same line for punc control
+		break;
+
+	case ALABEL:
+		outname(s);
+		t = 0;
+		if (s[t] == '_') ++t;
+		printf(	"\t.data\n"
+			"%s:\t.word\t.%s\n"
+			"\t.bss\n"
+			".%s::", s, s + t, s + t);
 		break;
 
 	case RLABEL:

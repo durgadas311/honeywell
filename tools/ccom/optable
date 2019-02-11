@@ -1679,8 +1679,7 @@ ci70:
 	Ib	r0,A1
 
 %a,c
-	li	r0,A2
-	I	r0,A1
+	I	A2,A1
 
 %aw,aw
 %	[move3]

@@ -290,6 +290,7 @@ int	mossym;
 #define	NLABEL	113
 #define	RLABEL	114
 #define	STRASG	115
+#define	ALABEL	128	// special case for ARRAYS, only to outcode()
 #define	ITOC	109
 #define	SEOF	200	/* stack EOF marker in expr compilation */
 
@@ -394,6 +395,7 @@ int	mossym;
 #define	SINIT	220
 #define	ASSEM	223
 #define	BSTR2	224	// pointer indirection required
+#define	BSTR0	225
 
 /*
   Flag bits

@@ -514,7 +514,7 @@ static char L276[]="M'\302,A\n";
 static char L277[]="M'\302,A\n";
 static char L278[]="M\"\302,A\n";
 static char L279[]="\354i\3620,B*256\nMb\3620,A\n";
-static char L280[]="\354i\3620,B\nM\3620,A\n";
+static char L280[]="M\302,A\n";
 #define L281 move3
 
 #define L282 move4

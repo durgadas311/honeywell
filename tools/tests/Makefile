@@ -1,10 +1,13 @@
+SRCS = $(wildcard *.c)
+OHWS = $(subst .c,.ohw,$(SRCS))
+
 CC = cc200
 AS = as200
 LD = ld200
 
-all: hello.ohw
+all: $(OHWS)
 
-%.ohw: %.c
+%.ohw: %.c /usr/local/lib/libc.a /usr/local/lib/libcrt.a
 	$(CC) -o $@ $<
 
 %.o: %.s

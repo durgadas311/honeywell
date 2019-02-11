@@ -13,4 +13,8 @@ _strlen:
 	mos	0(x5),0(x5),010	// stops at WM, not RM...
 	scr	x5,067
 	bs	4(x1),x5
+	bs	one,x5
 	lcr	0(x1),077
+
+	.data
+one:	.bin	1#1

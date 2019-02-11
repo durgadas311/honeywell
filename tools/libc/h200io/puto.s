@@ -17,11 +17,12 @@ _puto:
 	ba	ins	// << 1
 	c	zero,in
 	bct	2f,042	// if 0, we're done
+	bcc	2f,(opi),010
 	bs	one,op
 	b	1b
 
 2:
-	ba	one,op	// 'op' points to first non-zero digit
+	//ba	one,op	// 'op' points to first non-zero digit
 	pdt	(opi),012,07,0
 	pcb	.,012,07,010
 	lcr	0(x1),077

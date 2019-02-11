@@ -429,6 +429,11 @@ outcode(char *s, ...)
 		fputc(0, bufp);
 		continue;
 
+	case '2':
+		fputc(2, bufp);
+		fputc(0, bufp);
+		continue;
+
 	case '1':
 		fputc(1, bufp);
 		fputc(0, bufp);

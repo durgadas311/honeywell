@@ -476,9 +476,10 @@ char *nm;
 	}
 	while ((c = mapch('"')) >= 0) {
 		if (nchstr < max) {
+			if (nchstr%16 == 0) {
+				outcode("2B", BSTR0);
+			}
 			nchstr++;
-			if (nchstr%16 == 0)
-				outcode("0B", BSTR);
 			outcode("1C", c & 0377);
 		}
 	}

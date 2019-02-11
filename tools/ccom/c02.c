@@ -60,7 +60,14 @@ extdef()
 			o = (length((union tree *)ds)+ALIGN) & ~ALIGN;
 			if (sclass==STATIC) {
 				setinit(ds);
-				outcode("BSBBSBN", SYMDEF, "", BSS, NLABEL, ds->name, SSPACE, o);
+				if ((ds->htype&XTYPE)==ARRAY) {
+					// .bss is implied
+					outcode("BSBSBN", SYMDEF, "",
+						ALABEL, ds->name, SSPACE, o);
+				} else {
+					outcode("BSBBSBN", SYMDEF, "", BSS,
+						NLABEL, ds->name, SSPACE, o);
+				}
 			} else if (scflag)
 				outcode("BSN", CSPACE, ds->name, o);
 		} else {

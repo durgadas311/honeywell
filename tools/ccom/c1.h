@@ -320,6 +320,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	ULASDIV	125
 #define	ULASMOD	126
 #define	ULTOF	127
+#define	ALABEL	128	// special case for ARRAYS, only to outcode()
 #define	MINSTAT	130	/* special for x - &name */
 
 #define	BDATA	200
@@ -345,6 +346,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	C3BRANCH	222
 #define	ASSEM	223
 #define	BSTR2	224	// reference, pointer indirection required
+#define	BSTR0	225
 
 /*
  *	types
