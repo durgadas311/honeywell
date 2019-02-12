@@ -1,22 +1,18 @@
-// implement << (shift left)
+// implement << (shift left) on 'int', result in x5
 
 // this is a CSM call, but stack (x1) should still be usable.
-// Arguments must not be actual constants!
-// We don't know the lengths of either arg...
-// This routine only works for INT (or smaller).
+	.globl	@one,@zero
+	.globl	@sla
 	.text
-@sla:
-	scr	x3,067	// save AAR (ptr to num shifts)
+9:	csm	// return, but keep CSR pointing here
+?sla:	scr	x3,067	// save AAR (ptr to num shifts)
 	scr	x4,070	// save BAR (ptr to value)
-	bs	sh
-	ba	0(x3),sh // set zero-balance
-2:	bct	1f,060
-	ba	0(x4)
-	bs	c1,sh
+	lca	0(x4),x5
+	lca	0(x3),x3
+2:	c	@zero,x3
+	bct	9b,042
+	ba	x5
+	bs	@one,x3
 	b	2b
-1:	// result was shifted in-place
-	csm
 	.data
-c1:	.bin	1#1
-sh:	.bin	0#1	// value must be reasonable...
-vv:	.bin	0#4	// never more than a int
+@sla:	.word	?sla

@@ -1,4 +1,5 @@
-TOOLS	= as binutils cc ccom crt libc
+CRT	= crt libc
+TOOLS	= as binutils cc ccom $(CRT)
 
 TARGETS = tools # tools-inst
 
@@ -15,6 +16,12 @@ install: tools
 distclean:
 	for i in ${TOOLS}; do $(MAKE) -C $$i clean; done
 
+libc: __FRC__
+	$(MAKE) -C libc install
+
+crt: __FRC__
+	for i in ${CRT}; do $(MAKE) -C $$i install; done
+
 %.o: %.s
 	./as/as200 -l -o $@ $? >$*.l
 
@@ -28,3 +35,5 @@ man:
 	@for i in a.out; do \
 		cp -uv binutils/$${i}.5 /usr/local/man/man5/$${i}.200.5; \
 	done
+
+__FRC__:

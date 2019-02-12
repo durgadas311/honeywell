@@ -12,4 +12,4 @@ _putnl:
 	lcr	0(x1),077
 
 	.data
-nn::	.string	f:"  "
+nn::	.string	c:" "

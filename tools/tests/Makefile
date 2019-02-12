@@ -17,4 +17,4 @@ all: $(OHWS)
 	$(CC) -c $<
 
 clean:
-	rm -f *.ohw *.o
+	rm -f *.ohw *.o a.out

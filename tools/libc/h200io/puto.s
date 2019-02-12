@@ -2,6 +2,7 @@
 
 // args: int
 
+	.globl	@zero,@one
 	.globl	_puto
 	.text
 _puto:
@@ -15,10 +16,10 @@ _puto:
 	ba	ins	// << 1
 	ba	ins	// << 1
 	ba	ins	// << 1
-	c	zero,in
+	c	@zero,in
 	bct	2f,042	// if 0, we're done
 	bcc	2f,(opi),010
-	bs	one,op
+	bs	@one,op
 	b	1b
 
 2:
@@ -37,5 +38,3 @@ ocx:	.string "12345678"
 opi:	// for indirect ref to "op"
 op:	.word	0
 oop:	.word	ocx
-one:	.bin	1#1
-zero:	.bin	0#1

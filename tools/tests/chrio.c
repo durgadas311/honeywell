@@ -2,8 +2,6 @@
 
 char str[] = { "Hello, world!" };
 
-char *str2 = "Goodbye!";
-
 int main(argc, argv)
 int argc;
 char **argv;
