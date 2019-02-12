@@ -2480,6 +2480,9 @@ public class HW2000FrontPanel extends JFrame
 		int txt = ldInt(hdr, 1);	// a_text
 		int dat = ldInt(hdr, 2);	// a_data
 		int bss = ldInt(hdr, 3);	// a_bss
+		// TODO: leave bss as-is, or pad with stack space?
+		// TODO: what about heap?
+		bss += 256; // user can add more, via -t
 		try {
 			obj.read(sys.mem, adr, txt + dat);
 		} catch (Exception ee) {
@@ -2489,6 +2492,10 @@ public class HW2000FrontPanel extends JFrame
 		try { obj.close(); } catch (Exception ee) {}
 		currLow = adr;
 		currHi = adr + txt + dat + bss;
+		// Put top of memory in X1...
+		sys.putAddr(4, currHi, sys.M_WM);
+		// Put program name in MOD1 location...
+		sys.putStr(68, src.getName().split("\\.")[0], 8);
 		sys.SR = adr;
 		_last = src;
 	}

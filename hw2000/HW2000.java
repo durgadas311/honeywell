@@ -288,12 +288,35 @@ public class HW2000 implements CoreMemory
 		return mem[adr];
 	}
 
-	private int getAddr(int adr) {
+	public int getAddr(int adr) {
 		int v = (mem[adr--] & 077);
 		v |= (mem[adr--] & 077) << 6;
 		v |= (mem[adr--] & 077) << 12;
 		v |= (mem[adr--] & 077) << 18;
 		return v;
+	}
+
+	public void putStr(int adr, String val, int max) {
+		int n = 0;
+		while (n < max && n < val.length()) {
+			mem[adr++] = pdc.cvt.asciiToHw((byte)
+				Character.toUpperCase(val.charAt(n)));
+			++n;
+		}
+		while (n < max) {
+			mem[adr++] = (byte)015; // blanks
+			++n;
+		}
+	}
+
+	public void putAddr(int adr, int val, int pnc) {
+		mem[adr--] = (byte)(val & 077);
+		val >>= 6;
+		mem[adr--] = (byte)(val & 077);
+		val >>= 6;
+		mem[adr--] = (byte)(val & 077);
+		val >>= 6;
+		mem[adr--] = (byte)((val & 077) | pnc);
 	}
 
 	public void rawWriteMem(int adr, byte val) {
