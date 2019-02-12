@@ -519,7 +519,8 @@ cr42:
 	I	A2,A1
 
 %a,c
-	I	A2,A1
+	lca	A1,R
+	I	A2,R
 
 %n,c
 	F
@@ -1287,7 +1288,6 @@ ci80:
 %a,n
 %aub,n
 	S
-	<1	R,8
 	IB1	R,A1
 
 %nb*,c

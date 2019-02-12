@@ -280,6 +280,7 @@ register union tree *t;
 register int reg;
 {
 
+#if 0
 	if (!isfloat(t)) {
 		if (opdope[t->t.op]&RELAT) {
 			if (t->t.tr1->t.type==LONG || t->t.tr1->t.type==UNLONG)
@@ -293,8 +294,10 @@ register int reg;
 		case ASUDIV:
 		case ASUMOD:
 			reg++;
+			break;
 		}
 	}
+#endif
 	return(reg);
 }
 

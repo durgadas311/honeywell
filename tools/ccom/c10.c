@@ -608,12 +608,14 @@ loop:
 	 * balances with the adjustment made in 'oddreg()'.
 	 */
 	case '\0':
+#if 0
 		if (!isfloat(tree)) {
 			if (tree->t.op==UDIV||tree->t.op==ASUDIV)
 				reg--;
 			if (tree->t.op==TIMES||tree->t.op==ASTIMES)
 				reg++;				
 		}
+#endif
 		return(reg);
 
 	/* A1 */
