@@ -313,12 +313,18 @@ static int get_file_addr(FILE *fp) {
 	int a = 0;
 	int x;
 	get_symtab(fp);
+	// Don't need to do all this... just get entry addr from header...
+	// But we're still expected to load symtab.
+#if 0
 	for (x = 0; x < nsyms; ++x) {
 		if ((symtab[x].n_type & N_TYPE) == N_FN) {
 			a = symtab[x].n_value;
 			break;
 		}
 	}
+#else
+	a = hdr.a_entry;
+#endif
 	return a;
 }
 

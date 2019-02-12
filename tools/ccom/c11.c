@@ -232,7 +232,11 @@ struct instab *itable;
 			if (!ip)
 				break;
 			if (!tab) putchar('\t');
-			fputs(ip, stdout);
+			if (*ip == '@') {
+				printf("lcr\t%s,064\n\tcsm", ip);
+			} else {
+				fputs(ip, stdout);
+			}
 			return(0);
 		}
 	}

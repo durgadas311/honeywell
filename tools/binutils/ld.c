@@ -85,6 +85,10 @@ FILE	*troutb;
 FILE	*droutb;
 FILE	*soutb;
 
+// TODO: just look for '_'? or...?
+// Need to eliminate others, "Pxxxx", "@ssss", ".xxxx", ???
+#define local_sym(s)    (s.n_name[0] != 'L')
+
 void
 cleanup() {
 	unlink(tdname);
@@ -135,8 +139,9 @@ lookup(name)
 	hash &= 077777;
 	hp = &hshtab[hash % NSYM + 2];
 	while (*hp != 0) {
-		if (strncmp ((*hp)->n_name, name, sizeof(cursym.n_name)) == 0)
+		if (strncmp ((*hp)->n_name, name, sizeof(cursym.n_name)) == 0) {
 			break;
+		}
 		++hp;
 		if (hp >= &hshtab[NSYM+2])
 			hp = hshtab;
@@ -481,8 +486,9 @@ load1(libflg, loff)
 	for (n=0; n<filhdr.a_syms; n+=sizeof cursym) {
 		getsym(text, &cursym);
 		if ((cursym.n_type & N_EXT) == 0) {
-			if (Xflag==0 || cursym.n_name[0]!='L')
+			if (Xflag==0 || !local_sym(cursym)) {
 				nloc += sizeof cursym;
+			}
 			continue;
 		}
 		symreloc();
@@ -801,8 +807,9 @@ load2(loff)
 		symreloc();
 		if ((cursym.n_type & N_EXT) == 0) {
 			if (! sflag && ! xflag && (! Xflag ||
-			    cursym.n_name[0] != 'L'))
+					!local_sym(cursym))) {
 				putsym(soutb, &cursym);
+			}
 			continue;
 		}
 		sp = *lookup(cursym.n_name);
@@ -822,12 +829,12 @@ load2(loff)
 			error(0, "Multiply defined");
 		}
 	}
-	if (filhdr.a_text > 1) {
+	if (filhdr.a_text > 0) {
 		fseek(text, loff, 0);
 		fseek(reloc, loff + filhdr.a_text + filhdr.a_data, 0);
 		load2td(filhdr.a_text, lp, ctrel, toutb, troutb);
 	}
-	if (filhdr.a_data > 1) {
+	if (filhdr.a_data > 0) {
 		fseek(text, loff + filhdr.a_text, 0);
 		fseek(reloc, loff + filhdr.a_text + filhdr.a_text + filhdr.a_data, 0);
 		load2td(filhdr.a_data, lp, cdrel, doutb, droutb);

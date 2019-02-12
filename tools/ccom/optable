@@ -346,14 +346,12 @@ cr45:
 %nub,c
 %n,c
 	F
-	lcr	I,064
-	csm	A2,R
+	I	A2,R
 
 %nub,a
 %n,a
 	F
-	lcr	I,064
-	csm	A2,R
+	I	A2,R
 
 %nub,e
 %n,e
@@ -555,14 +553,12 @@ cr43:
 %n,e
 	F!
 	S1!
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %n,n
 	SS
 	F!
-	lcr	I,064
-	csm	0(x1),A1
+	I	0(x1),A1
 
 %nf,ad
 %	[add1]
@@ -794,21 +790,18 @@ cr73:
 %a,e
 %aub,e
 	S1!
-	lcr	I,064
-	csm	0(x1),A1
+	I	0(x1),A1
 
 %a,n
 %aub,n
 	SS
-	lcr	I,064
-	csm	0(x1),A1
+	I	0(x1),A1
 
 %n*,n
 %nub*,n
 	FS*
 	S!
-	lcr	I,064
-	csm	R1,#10(x3)
+	I	R1,#10(x3)
 
 %ad,ad
 %	[addq1a]
@@ -855,52 +848,44 @@ cr79:
 /* <<=, >>=, unsigned >>= */
 cr75:
 %r,c
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %r,n
 	S
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %aub,c
 %a,c
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %aub,n
 %a,n
 	S
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %aul,c
 %al,c
 	F!
-	lcr	I,064
-	csm	0(x1),A1
+	I	0(x1),A1
 
 %aul,e
 %al,e
 	F!
 	S1
-	lcr	I,064
-	csm	R1,A1
+	I	R1,A1
 
 %aul,n
 %al,n
 	SS
 	F!
-	lcr	I,064
-	csm	r0,A1
+	I	r0,A1
 
 /* with a long shift ignore the high word */
 %aul,nl
 %al,nl
 	SS
 	F!
-	lcr	I,064
-	csm	r0,A1
+	I	r0,A1
 
 /* =|, =&~ */
 cr78:
@@ -1083,8 +1068,7 @@ cr82:
 %nul,nul
 	SS
 	FS
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 /* *, /, % for unsigned long */
 cr121:
@@ -1109,8 +1093,7 @@ cr86:
 %n,nul
 	SS
 	FS
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 /* convert integer to character (sign extend) */
 cr109:
@@ -1123,35 +1106,30 @@ cr117:
 %n,c
 	F
 	T
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %n,aw
 	F
 	T
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %n,ew*
 	F
 	T
 	S1*
-	lcr	I,064
-	csm	#20(R1),R-
+	I	#20(R1),R-
 
 %n,e
 	F
 	T
 	S1
-	lcr	I,064
-	csm	R1,R-
+	I	R1,R-
 
 %n,n
 	SS
 	F
 	T
-	lcr	I,064
-	csm	0(x1),R-
+	I	0(x1),R-
 
 
 /* /= and %= where divisor is unsigned or known to be positive */
@@ -1159,36 +1137,31 @@ cr119:
 %aub,c
 %a,c
 	T
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %aub,aw
 %a,aw
 	T
-	lcr	I,064
-	csm	A2,A1
+	I	A2,A1
 
 %aub,n
 %a,n
 	SS
 	T
-	lcr	I,064
-	csm	0(x1),A1
+	I	0(x1),A1
 
 %eub*,n
 %e*,n
 	SS
 	F1*
 	T
-	lcr	I,064
-	csm	0(x1),#10(R1)
+	I	0(x1),#10(R1)
 
 %nub*,n
 %n*,n
 	FS*
 	SS
-	lcr	I,064
-	csm	0(x1),#10(R1)
+	I	0(x1),#10(R1)
 
 /* (int *) - (int *) */
 cr107:

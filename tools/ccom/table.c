@@ -61,8 +61,8 @@ static char L43[]="KA\354i\3620,Z\n\363zcC\3620,A'\n\363ocC\311,A''\n";
 static char L45[]="KCGB\354i\3620,Z\n\363zcC\3620,#0(I)\n\363ocC\260(x1),#0(I)\n\355ov\260(x1)+,I\n\342s\343~4,x1\n";
 #define cr45 &optab[94]
 
-static char L46[]="GA\354cr\315,064\n\343sm\302,I\n";
-static char L47[]="GA\354cr\315,064\n\343sm\302,I\n";
+static char L46[]="GAM\302,I\n";
+static char L47[]="GAM\302,I\n";
 static char L48[]="GAKI\355ov\312,r0\n\352eq\256+4\nM\311,0\n";
 static char L49[]="KCGA\355ov\260(x1),r0\n\342s\343~4,x1\n\352eq\256+4\nM\311,0\n";
 static char L50[]="GA!M\302,r0\n";
@@ -119,8 +119,8 @@ static char L78[]="GAKIMP\311,J\n";
 static char L79[]="KCGAMP\311,0(x1)\n";
 #define cr43 &optab[171]
 
-static char L80[]="GA!KI!\354cr\315,064\n\343sm\302,A\n";
-static char L81[]="KCGA!\354cr\315,064\n\343sm\260(x1),A\n";
+static char L80[]="GA!KI!M\302,A\n";
+static char L81[]="KCGA!M\260(x1),A\n";
 #define L82 add1
 
 #define L83 add2
@@ -228,9 +228,9 @@ static char L119[]="GDKA\354ca\260(x1),x3\nM\311,#0(x3)\n";
 
 #define cr73 &optab[250]
 
-static char L126[]="KI!\354cr\315,064\n\343sm\260(x1),A\n";
-static char L127[]="KC\354cr\315,064\n\343sm\260(x1),A\n";
-static char L128[]="GDKA!\354cr\315,064\n\343sm\312,#0(x3)\n";
+static char L126[]="KI!M\260(x1),A\n";
+static char L127[]="KCM\260(x1),A\n";
+static char L128[]="GDKA!M\312,#0(x3)\n";
 #define L129 addq1a
 
 #define L130 addq4a
@@ -251,14 +251,14 @@ static char L137[]="GDKA\354ca\260(x1),x3\nM\302,#0(x3)\n";
 static char L138[]="GDKA\354ca\260(x1),x3\nM\302,0(x3)\n";
 #define cr75 &optab[270]
 
-static char L139[]="\354cr\315,064\n\343sm\302,A\n";
-static char L140[]="KA\354cr\315,064\n\343sm\302,A\n";
-static char L141[]="\354cr\315,064\n\343sm\302,A\n";
-static char L142[]="KA\354cr\315,064\n\343sm\302,A\n";
-static char L143[]="GA!\354cr\315,064\n\343sm\260(x1),A\n";
-static char L144[]="GA!KI\354cr\315,064\n\343sm\312,A\n";
-static char L145[]="KCGA!\354cr\315,064\n\343sm\3620,A\n";
-static char L146[]="KCGA!\354cr\315,064\n\343sm\3620,A\n";
+static char L139[]="M\302,A\n";
+static char L140[]="KAM\302,A\n";
+static char L141[]="M\302,A\n";
+static char L142[]="KAM\302,A\n";
+static char L143[]="GA!M\260(x1),A\n";
+static char L144[]="GA!KIM\312,A\n";
+static char L145[]="KCGA!M\3620,A\n";
+static char L146[]="KCGA!M\3620,A\n";
 #define cr78 &optab[285]
 
 #define L147 addq1
@@ -337,7 +337,7 @@ static char L185[]="GB\355cw\311,A\n";
 
 #define l82 L186
 
-static char L186[]="KCGC\354cr\315,064\n\343sm\302,A\n";
+static char L186[]="KCGCM\302,A\n";
 #define cr121 &optab[355]
 
 #define L187 l82
@@ -350,24 +350,24 @@ static char L186[]="KCGC\354cr\315,064\n\343sm\302,A\n";
 
 #define l86 L189
 
-static char L189[]="KCGC\354cr\315,064\n\343sm\302,A\n";
+static char L189[]="KCGCM\302,A\n";
 #define cr109 &optab[367]
 
 static char L190[]="GA\342s\311-1 safe?\n";
 #define cr117 &optab[369]
 
-static char L191[]="GAT\354cr\315,064\n\343sm\302,A\n";
-static char L192[]="GAT\354cr\315,064\n\343sm\302,A\n";
-static char L193[]="GATKJ\354cr\315,064\n\343sm\2420(J),I-\n";
-static char L194[]="GATKI\354cr\315,064\n\343sm\312,I-\n";
-static char L195[]="KCGAT\354cr\315,064\n\343sm\260(x1),I-\n";
+static char L191[]="GATM\302,A\n";
+static char L192[]="GATM\302,A\n";
+static char L193[]="GATKJM\2420(J),I-\n";
+static char L194[]="GATKIM\312,I-\n";
+static char L195[]="KCGATM\260(x1),I-\n";
 #define cr119 &optab[375]
 
-static char L196[]="T\354cr\315,064\n\343sm\302,A\n";
-static char L197[]="T\354cr\315,064\n\343sm\302,A\n";
-static char L198[]="KCT\354cr\315,064\n\343sm\260(x1),A\n";
-static char L199[]="KCGJT\354cr\315,064\n\343sm\260(x1),#0(J)\n";
-static char L200[]="GDKC\354cr\315,064\n\343sm\260(x1),#0(J)\n";
+static char L196[]="TM\302,A\n";
+static char L197[]="TM\302,A\n";
+static char L198[]="KCTM\260(x1),A\n";
+static char L199[]="KCGJTM\260(x1),#0(J)\n";
+static char L200[]="GDKCM\260(x1),#0(J)\n";
 #define cr107 &optab[386]
 
 static char L201[]="GA?\363ra\311,1\n";
