@@ -1140,11 +1140,28 @@ union tree *tr1, *tr2;
 
 #define NSHARED	500
 static struct consts {
+	int	op;
 	int	type;
 	int	value;
 	int	label;
 } shared[NSHARED];
 static int nconsts = 0;
+
+static struct globcons {
+	char *name;
+	int type;
+	int value;
+	int flag;
+} globals[] = {
+	// crt0.s must define these:
+	{ "@zero", INT, 0 },
+	{ "@one", INT, 1 },
+	{ "@two", INT, 2 },
+	{ "@four", INT, 4 },
+	{ "@eight", INT, 8 },
+	{ "@twlv", INT, 12 },
+	{ NULL }
+};
 
 union tree *
 tconst(val, type, stc)
@@ -1153,9 +1170,42 @@ int val, type, stc;
 	register union tree *p;
 
 	int x;
+	// first, check known global constants...
+	for (x = 0; globals[x].name; ++x) {
+		if (globals[x].type == type && globals[x].value == val) {
+			break;
+		}
+	}
+	if (globals[x].name) {
+		if (stc) {
+			p = malloc(sizeof(struct xtname));
+		} else {
+			p = getblk(sizeof(struct xtname));
+		}
+		p->x.op = NAME;
+		p->x.type = globals[x].type;
+		p->x.name = globals[x].name;
+		p->x.class = EXTERN;
+		p->x.regno = 0;
+		p->x.offset = 0;
+		++globals[x].flag;
+		return(p);
+	}
+	return tconst0(CON, val, type, stc);
+}
+
+union tree *
+tconst0(op, val, type, stc)
+int op, val, type, stc;
+{
+	register union tree *p;
+
+	int x;
 	int lab = -1;
 	for (x = 0; x < nconsts; ++x) {
-		if (shared[x].type == type && shared[x].value == val) {
+		if (shared[x].op == op &&
+				shared[x].type == type &&
+				shared[x].value == val) {
 			lab = shared[x].label;
 			break;
 		}
@@ -1165,12 +1215,13 @@ int val, type, stc;
 	} else {
 		p = getblk(sizeof(struct tconst));
 	}
-	p->c.op = CON;
+	p->c.op = op;
 	p->c.type = type;
 	p->c.value = val;
 	if (lab < 0) {
 		lab = isn++;
 		if (nconsts < NSHARED) {
+			shared[nconsts].op = op;
 			shared[nconsts].type = type;
 			shared[nconsts].value = val;
 			shared[nconsts].label = lab;
@@ -1189,11 +1240,24 @@ static int sizes[VOID+1] = {
 };
 void prcons() {
 	int x;
+	for (x = 0; globals[x].name; ++x) {
+		if (globals[x].flag) {
+			printf("\t.globl\t%s\n", globals[x].name);
+		}
+	}
 	// assume .data already...
 	for (x = 0; x < nconsts; ++x) {
-		printf(	"L%d:\t.bin\t0x%x#%d\n",
-			shared[x].label, shared[x].value,
-			sizes[shared[x].type]);
+		if (shared[x].op == CCON &&
+				shared[x].value >= ' ' &&
+				shared[x].value <= '~') {
+			printf(	"L%d:\t.bin\t'%c'#%d\n",
+				shared[x].label, shared[x].value,
+				sizes[shared[x].type]);
+		} else {
+			printf(	"L%d:\t.bin\t0x%x#%d\n",
+				shared[x].label, shared[x].value,
+				sizes[shared[x].type]);
+		}
 	}
 	nconsts = 0;
 }

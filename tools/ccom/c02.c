@@ -61,12 +61,12 @@ extdef()
 			if (sclass==STATIC) {
 				setinit(ds);
 				if ((ds->htype&XTYPE)==ARRAY) {
-					// .bss is implied
-					outcode("BSBSBN", SYMDEF, "",
-						ALABEL, ds->name, SSPACE, o);
+					// .bss is implied, uninitialized array space
+					outcode("BSBSCN", SYMDEF, "",
+						ALABEL, ds->name, ds->htype & TYPE, o);
 				} else {
-					outcode("BSBBSBN", SYMDEF, "", BSS,
-						NLABEL, ds->name, SSPACE, o);
+					outcode("BSBSN", SYMDEF, "",
+						SLABEL, ds->name, o);
 				}
 			} else if (scflag)
 				outcode("BSN", CSPACE, ds->name, o);
@@ -76,9 +76,7 @@ extdef()
 				peeksym = o;
 			}
 			setinit(ds);
-			if (sclass==EXTERN)
-				outcode("BS", SYMDEF, ds->name);
-			outcode("BBS", DATA, NLABEL, ds->name);
+			outcode("BBSCC", DATA, NLABEL, ds->name, sclass, ds->htype);
 			cinit(ds, 1, sclass);
 		}
 	} while ((o=symbol())==COMMA);
@@ -274,8 +272,9 @@ int sclass;
 		}
 	} while ((o=symbol())==COMMA && (*mlp || brace));
 	if (sclass!=AUTO && sclass!=REG) {
-		if (*mlp)
+		if (*mlp) {
 			outcode("BN", SSPACE, np->hstrp->S.ssize - (*mlp)->hoffset);
+		}
 	}
 	if (o!=RBRACE || brace==0)
 		peeksym = o;

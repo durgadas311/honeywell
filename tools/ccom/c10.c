@@ -843,27 +843,28 @@ loop:
 		goto loop;
 
 	/* #1 */
-	case '#':
+	case '#':	// index(R) notation
 		p = p1->t.tr1;
 		goto nmbr;
 
 	/* #2 */
-	case '"':
+	case '"':	// index(R) notation
 		p = p2->t.tr1;
 
-	nmbr:
+	nmbr:	// This requires the true address of the variable
 		if (collcon(p)) {
 			if ((p = p->t.tr2)->t.op == CON) {
-				if (p->c.value) {
-					printf("@");
-					psoct(p->c.value);
-				}
+				psoct(p->c.value);
 			} else if (p->t.op==AMPER) {
-				pname(p->t.tr1, 0, 0);
+				// "1" means true address...
+				pname(p->t.tr1, 0, 1);
 			}
 		} else if (*string=='+') {
+			// should never get here
 			printf("@");
 			string++;
+		} else {
+			printf("0"); // index must be non-blank
 		}
 		tab = 0;
 		goto loop;

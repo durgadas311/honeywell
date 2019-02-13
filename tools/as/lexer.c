@@ -234,7 +234,6 @@ testnlab:
 		/* special characters */
 		scanp = ++p;
 		if (!ctype) {
-fprintf(stderr, "garbage: %02x\n", c);
 			xerror(errg);
 		}
 
@@ -468,8 +467,46 @@ int scandec(int pnc) {
 	return token();
 }
 
+int scanchr(int pnc) {
+	int c, n = 0;
+	int w = 1, vv;
+	char *p = scanp, *e;
+	++p;
+	while (*p && *p != '\'') {
+		if (*p == '\\') {
+			++p;
+			if (!*p) break;
+		}
+		c = hw200[*p & 0x7f];
+		++n;
+		++p;
+	}
+	if (*p != '\'' || n != 1) {
+		xerror(errv);
+	}
+	++p;
+	e = field_width(p, &w);
+	n = w;
+	while (n > 0) {
+		vv = 0;
+		if (n == w) {
+			vv |= (pnc >> 8);
+		}
+		--n;
+		if (n == 0) {
+			vv = c;
+			vv |= (pnc & 0377);
+		}
+		putb(vv, 1);
+	}
+	scanp = e;
+	return token();
+}
+
 int scan_bin(int pnc) {
-	if (*scanp == '0') {
+	if (*scanp == '\'') {
+		return scanchr(pnc);
+	} else if (*scanp == '0') {
 		if (scanp[1] == 'x') {
 			scanp += 2;
 			return scanhex(pnc);
@@ -479,8 +516,10 @@ int scan_bin(int pnc) {
 		} else {
 			return scanoct(pnc);
 		}
-	} else {
+	} else if (isdigit(*scanp)) {
 		return scandec(pnc);
+	} else {
+		xerror(errv);
 	}
 }
 

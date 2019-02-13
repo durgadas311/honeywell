@@ -77,14 +77,12 @@ will be 8 characters long.
 .TP
 .BI \.dec\  bcd
 Create an arbitrary length BCD data item.
-Add a \fB#\fIlen\fR to specify length if different from
-digit string implied length.
+The default width is the number of digits in 'bcd',
+including leading zeroes.
 .TP
 .BI \.bin\  binary
 Create an arbitrary length binary data item. Uses
-standard C notation for octal, hex, dec, and binary.
-Add a \fB#\fIlen\fR to specify length if different from
-digit string implied length.
+standard C notation for octal, hex, dec, binary, and char.
 .PP
 A label may be assigned the address of a the start of a field
 or the end. For \fB.text\fR the default is the start.
@@ -95,6 +93,10 @@ The default punctuation is a word mark on the first character.
 For instructions, this cannot be altered.
 For data, a field may be prefixed with a letter and colon,
 where the letter is a valid "Type II Punctuation Indicator".
+
+A field width is guessed based on notation. This may be
+overridden with an appended \fB#\fIlen\fR to specify the length
+in characters.
 
 Honeywell 200/2000 index registers may be referenced by their
 conventional names. Use \fIexpr\fB(\fRx1\fB)\fR to denote

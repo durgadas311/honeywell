@@ -99,6 +99,7 @@ int isstruct;
 		break;
 
 	case CON:
+	case CCON:
 		outcode("BNN", tp->c.op, tp->c.type, tp->c.value);
 		break;
 
@@ -209,7 +210,7 @@ union tree *cs;
 
 	case VOID:
 		error("Illegal use of void object");
-		return(2);
+		return(SZPTR);
 
 	case INT:
 	case UNSIGN:
@@ -218,7 +219,7 @@ union tree *cs;
 
 	case CHAR:
 	case UNCHAR:
-		elsz = 1;
+		elsz = SZCHAR;
 		break;
 
 	case FLOAT:

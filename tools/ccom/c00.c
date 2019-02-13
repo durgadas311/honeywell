@@ -311,6 +311,8 @@ loop:
 		return(STRING);
 
 	case SQUOTE:
+		// must preserve the fact that this is a literal char,
+		// so we can tell 'as' to convert to HW characters.
 		return(getcc());
 
 	case LETTER:
@@ -531,7 +533,7 @@ getcc()
 		cval = realc;
 #endif
 	}
-	return(CON);
+	return(CCON);
 }
 
 /*
@@ -670,6 +672,12 @@ advanc:
 		*cp++ = cblock(cval);
 		goto tand;
 
+	case CCON:
+		*cp = cblock(cval);
+		(*cp)->c.op = CCON;
+		++cp;
+		goto tand;
+
 	/* fake a static char array */
 	case STRING:
 /*
@@ -777,8 +785,9 @@ advanc:
 
 	case RBRACK:
 	case RPARN:
-		if (!andflg)
+		if (!andflg) {
 			goto syntax;
+		}
 		goto oponst;
 
 	case DOT:
@@ -796,8 +805,9 @@ advanc:
 
 	}
 	/* binaries */
-	if (andflg==0)
+	if (andflg==0) {
 		goto syntax;
+	}
 	andflg = 0;
 
 oponst:
@@ -840,8 +850,9 @@ opon1:
 	os = *op--;
 	if (andflg==0 && p>5 &&
 	    ((opdope[o]&BINARY)==0 || (o>=INCBEF&&o<=DECAFT)) &&
-	    opdope[os]&BINARY)
+	    opdope[os]&BINARY) {
 		goto syntax;
+	}
 	switch (os) {
 
 	case SEOF:
@@ -857,8 +868,9 @@ opon1:
 		break;
 
 	case CALL:
-		if (o!=RPARN)
+		if (o!=RPARN) {
 			goto syntax;
+		}
 		build(os);
 		goto advanc;
 
@@ -876,8 +888,9 @@ opon1:
 		break;
 
 	case LPARN:
-		if (o!=RPARN)
+		if (o!=RPARN) {
 			goto syntax;
+		}
 		goto advanc;
 
 	case LBRACK:

@@ -210,7 +210,7 @@ int	mossym;
 #define	FCON	23
 #define	SFCON	24
 #define	LCON	25
-#define	SLCON	26
+#define	CCON	26
 #define	NULLOP	29
 #define	XNULLOP	218	/* interface version */
 
@@ -290,7 +290,8 @@ int	mossym;
 #define	NLABEL	113
 #define	RLABEL	114
 #define	STRASG	115
-#define	ALABEL	128	// special case for ARRAYS, only to outcode()
+#define	ALABEL	128	// special case for .bss ARRAYS, only to outcode()
+#define	SLABEL	131	// special case for .bss non-ARRAYS
 #define	ITOC	109
 #define	SEOF	200	/* stack EOF marker in expr compilation */
 

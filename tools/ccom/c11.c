@@ -50,6 +50,7 @@ loop:
 
 	case SFCON:
 	case CON:
+	case CCON:
 		//psoct(p->c.value);
 		printf("L%d", (p->c.label>0? p->c.label: -p->c.label));
 		return;
@@ -117,11 +118,17 @@ pbase(p, f)
 register union tree *p;
 int f;
 {
-
+	char *s;
 	if (p->n.class==SOFFS || p->n.class==STATIC) {
 		printf("%c%d", f ? 'P' : 'L', p->n.nloc);
 	} else {
-		printf("%s", p->x.name);
+		s = p->x.name;
+		if (f) {
+			if (*s == '_') ++s;
+			printf(".%s", s);
+		} else {
+			printf("%s", s);
+		}
 	}
 }
 
@@ -176,6 +183,8 @@ int nrleft;
 			return(DONE);
 		if (p->c.value==2)
 			return(DTWO);
+		return(DCON);
+	case CCON:
 		return(DCON);
 
 	}
@@ -512,7 +521,9 @@ register union tree *tree;
 
 	if ( (d = ispow2(tree)) ) {
 		for (i=0; (d>>=1)!=0; i++);
-		tree->t.tr2->c.value = i;
+		// need to reference a different constant!
+		// can't just change value...
+		tree->t.tr2 = tconst(i, tree->t.tr2->t.type, 0);
 		switch (tree->t.op) {
 
 		case TIMES:
@@ -785,14 +796,29 @@ int l;
 	printf("L%d:", l);
 }
 
+static void adjstk(char *op, union tree *sz, char *f) {
+	if (sz->t.op == LABEL) {
+		printf("\t%s\tL%d,x1\n", op, -sz->c.label);
+	} else if (sz->t.op == NAME) {
+		if (sz->n.class == EXTERN) {
+			printf("\t%s\t%s,x1\n", op, sz->x.name);
+		} else {
+			// similar to LABEL?
+			printf("\t%s\tL%d,x1\n", op, sz->n.nloc);
+		}
+	} else {
+		error("Stack adjust reference botch");
+	}
+}
+
 void
 popstk(union tree *sz, char *f) {
-	printf("\tba\tL%d,x1\n", -sz->c.label);
+	adjstk("ba", sz, f);
 }
 
 void
 pushstk(union tree *sz, char *f) {
-	printf("\tbs\tL%d,x1\n", -sz->c.label);
+	adjstk("bs", sz, f);
 }
 
 void
@@ -824,15 +850,8 @@ void
 psoct(an)
 int an;
 {
-	register short n;
-	register char *sign;
-
-	sign = "";
-	if ((n = an) < 0) {
-		n = -n;
-		sign = "-";
-	}
-	printf("%s%d", sign, n);
+	// TODO: need to sign-extend? from 24 to 32 bits?
+	printf("%d", an);
 }
 
 static void
@@ -856,7 +875,7 @@ getree()
 	union tree *expstack[STKS], **sp;
 	register union tree *tp;
 	register int t, op;
-	char s[80];		/* big for asm() stuff & long variable names */
+	char s[80], *ss;	/* big for asm() stuff & long variable names */
 	struct swtab *swp;
 	long outloc = 0;
 	int lbl, cond = 0;
@@ -878,7 +897,7 @@ getree()
 		switch(op &= 0377) {
 
 	case SINIT:
-		printf("%d\n", UNS(geti()));
+		printf("\t.word\t%d\n", UNS(geti()));
 		break;
 
 	case EOFC:
@@ -888,7 +907,13 @@ getree()
 		if (getwd() == 1) {
 			printf("\t.byte\t");
 			for (;;)  {
-				printf("%d", UNS(geti()));
+				t = UNS(geti());
+				// We don't really know the user's intent
+				if (t < ' ' || t > '~') {
+					printf("%d", t);
+				} else {
+					printf("'%c'", t);
+				}
 				if (getwd() != 1)
 					break;
 				printf(",");
@@ -901,10 +926,14 @@ getree()
 		// primary label already emitted!
 		// get string - label name
 		outname(s); // will have '_' prepended...
-		t = 0;
-		if (s[t] == '_') ++t;
+#if 0	// label was already setup, just add ':'
+		ss = s;
+		if (*ss == '_') ++ss;
 		printf(	"\t.word\t.%s\n"
-			".%s::", s + t, s + t);
+			".%s::", ss, ss);
+#else
+		putchar(':');	// point to start of space (left side)
+#endif
 		goto getstring;
 
 	case BSTR:	// string constant. indir ref, two labels...
@@ -1084,6 +1113,11 @@ getstring:
 		*sp++ = tconst(geti(), t, 0);
 		break;
 
+	case CCON:
+		t = geti();
+		*sp++ = tconst0(CCON, geti(), t, 0);
+		break;
+
 	case LCON:
 		geti();	/* ignore type, assume long */
 		op = geti();	// lo bit
@@ -1137,19 +1171,47 @@ getstring:
 		label(geti());
 		break;
 
-	case NLABEL:
+	case NLABEL:	// only one case, public .data variable definition
 		outname(s);
-		printf("%s:", s); // needs to be on same line for punc control
+		op = getwd();
+		t = getwd();
+		if ((t & XTYPE) == PTR) {
+			if (op == EXTERN) printf("\t.globl\t%s\n", s);
+			printf("%s:", s); // needs to be on same line for punc control
+			break;
+		}
+		ss = s;
+		if (*ss == '_') ++ss;
+		if (op == EXTERN) printf("\t.globl\t%s,.%s\n", s, ss);
+		printf( "%s:\t.word\t.%s\n"
+			".%s:", s, ss, ss); // needs to be on same line for punc control
 		break;
 
-	case ALABEL:
+	case SLABEL:	// non-array, in .bss, with simple size
 		outname(s);
-		t = 0;
-		if (s[t] == '_') ++t;
+		op = geti();	// total size
+		t = 1;
+		goto bss_label;
+
+	case ALABEL:	// array, in .bss, with element and num-elements
+		outname(s);
+		t = getwd();	// elem type
+		op = geti();	// total size
+		// TODO: more interpretation of type?
+		t = arlength(t);
+bss_label:
+		ss = s;
+		if (*ss == '_') ++ss;
 		printf(	"\t.data\n"
 			"%s:\t.word\t.%s\n"
 			"\t.bss\n"
-			".%s::", s, s + t, s + t);
+			".%s:", s, ss, ss);
+		if (t == 1) {
+			printf(	":\t.space\t%d\n", op);
+		} else {
+			printf(	"\t.space\t%d\n"
+				"\t.space\t%d\n", t, op - t);
+		}
 		break;
 
 	case RLABEL:

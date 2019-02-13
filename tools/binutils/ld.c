@@ -1095,6 +1095,5 @@ main(argc, argv)
 		unlink(outname);
 		exit(errlev);
 	}
-	chmod(outname, 0700);
 	return 0;
 }

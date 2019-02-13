@@ -169,6 +169,7 @@ union	tree *resetblk();
 union	tree *strfunc();
 union	tree *isconstant();
 union	tree *tconst();
+union	tree *tconst0();
 union	tree *hardlongs();
 union	tree *lconst();
 union	tree *acommute();
@@ -208,7 +209,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	FCON	23
 #define	SFCON	24
 #define	LCON	25
-#define	SLCON	26
+#define	CCON	26
 
 #define	AUTOI	27
 #define	AUTOD	28
@@ -320,8 +321,9 @@ int	xlab1, xlab2, xop, xzero;
 #define	ULASDIV	125
 #define	ULASMOD	126
 #define	ULTOF	127
-#define	ALABEL	128	// special case for ARRAYS, only to outcode()
+#define	ALABEL	128	// special case for .bss ARRAYS, only to outcode()
 #define	MINSTAT	130	/* special for x - &name */
+#define	SLABEL	131	// special case for .bss non-array space
 
 #define	BDATA	200
 #define	PROG	202
