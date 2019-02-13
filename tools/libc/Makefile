@@ -1,6 +1,6 @@
 INSTDIR = /usr/local
 
-SUBDIRS = h200io std
+SUBDIRS = h200io std math
 
 all:
 	for d in $(SUBDIRS); do \
