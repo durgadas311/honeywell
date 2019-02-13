@@ -4,9 +4,11 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-	int x, y;
+	int x, y, z;
 	for (x = 0; x < 8; ++x) {
 		y = x * 5 / 3;
+		z = y % 13;
+		y = x * 12;
 /*
 		puto(y);
 		putnl();

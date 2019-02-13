@@ -289,24 +289,29 @@ register union tree *t;
 register int reg;
 {
 
-#if 0
+	// Unclear when this undo is needed. If we adjust here
+	// for *MOD, we still use the wrong reg (X5).
+	// It seems the next expression will revert to X5 anyway.
 	if (!isfloat(t)) {
+#if 0
 		if (opdope[t->t.op]&RELAT) {
 			if (t->t.tr1->t.type==LONG || t->t.tr1->t.type==UNLONG)
 				return((reg+1) & ~01);
 			return(reg);
 		}
+#endif
+#if 0
 		switch(t->t.op) {
 
-		case UDIV:
+		case MOD:
+		case ASMOD:
 		case UMOD:
-		case ASUDIV:
 		case ASUMOD:
-			reg++;
+			reg--;
 			break;
 		}
-	}
 #endif
+	}
 	return(reg);
 }
 

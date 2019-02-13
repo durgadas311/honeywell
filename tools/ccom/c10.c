@@ -608,14 +608,21 @@ loop:
 	 * balances with the adjustment made in 'oddreg()'.
 	 */
 	case '\0':
-#if 0
+		// @div returns quotient in X5, remainder in X6.
+		// for *MOD, we need to ensure X6 gets used.
+		// previous versions used oddreg() to undo,
+		// but that's not working right.
+		// TODO: when, if ever, does this need undoing?
 		if (!isfloat(tree)) {
-			if (tree->t.op==UDIV||tree->t.op==ASUDIV)
-				reg--;
-			if (tree->t.op==TIMES||tree->t.op==ASTIMES)
-				reg++;				
+			switch (tree->t.op) {
+			case MOD:
+			case UMOD:
+			case ASMOD:
+			case ASUMOD:
+				reg++;
+				break;
+			}
 		}
-#endif
 		return(reg);
 
 	/* A1 */
