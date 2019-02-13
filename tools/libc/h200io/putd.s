@@ -1,19 +1,19 @@
-// puto - print int as octal string to console (leading 0 supression)
-// lputo - print int as octal string to line printer
+// putd - print int as decimal string to console (leading 0 supression)
+// lputd - print int as decimal string to line printer
 
 // args: int
 
-	.globl	@zero,@one
-	.globl	_puto,_lputo
+	.globl	@zero,@one,@div
+	.globl	_putd,_lputd
 	.text
-_lputo:
+_lputd:
 	scr	0(x1),070
 	b	itoa
 	// 'op' points to first non-zero digit
 	pdt	(opi),011,02,0
 	pcb	.,011,02,010
 	lcr	0(x1),077
-_puto:
+_putd:
 	scr	0(x1),070
 	b	itoa
 	// 'op' points to first non-zero digit
@@ -23,14 +23,12 @@ _puto:
 
 itoa:	scr	itoax,070
 	lca	4(x1),in
+	lcr	@div,064
 	bs	ocx
 	lca	oop,op
-1:	sst	in,(opi),07
-	// ugly "x >> 3" by doing ((x >> 6) << 3)
-	mcw	in,ins	// >> 6 (1 char)
-	ba	ins	// << 1
-	ba	ins	// << 1
-	ba	ins	// << 1
+1:	csm	ten,in		// in / 10
+	exm	x6,(opi),001	// *opi = in % 10
+	lca	x5,in		// in /= 10;
 	c	@zero,in
 	bct	2f,042		// if 0, we're done
 	bcc	2f,(opi),010	// or WM - end of field
@@ -42,7 +40,6 @@ itoax::	b	0	// return
 
 	.data
 in:	.bin	0#4
-ins:	.bin	n:0#1	// space to over-shift
 
 oc:
 ocx:	.string "12345678"
@@ -50,3 +47,4 @@ ocx:	.string "12345678"
 opi:	// for indirect ref to "op"
 op:	.word	0
 oop:	.word	ocx
+ten:	.bin	012#4	// 10, as int
