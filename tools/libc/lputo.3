@@ -1,0 +1,30 @@
+.TH LPUTO 3 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+lputo, lputx, lputd  \-  line printer output of numbers
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void lputo(int " n ");"
+.PP
+.BI "void lputx(int " n ");"
+.PP
+.BI "void lputd(int " n ");"
+.PP
+
+.SH DESCRIPTION
+.B Lputo
+prints the integer on the line printer as an octal string.
+
+.B Lputx
+prints the integer on the line printer as a hexidecimal string.
+
+.B Lputd
+prints the integer on the line printer as an decimal string.
+
+In all cases, leading zeroes are supressed.
+
+
+.SH "SEE ALSO"
+lputc (3), puto (3)
+.SH DIAGNOSTICS
+.SH BUGS

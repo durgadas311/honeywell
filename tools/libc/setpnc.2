@@ -1,0 +1,41 @@
+.TH SETPNC 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+setpnc, isrm, isim, iswm  \-  H200 memory punctuation control
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void setpnc(void *" p ", " flags ");"
+.PP
+.BI "int isrm(void *" p ");"
+.PP
+.BI "int isim(void *" p ");"
+.PP
+.BI "int iswm(void *" p ");"
+.PP
+
+.SH DESCRIPTION
+.B Setpnc
+sets the punctuation bits of the character at address \fIp\fR
+according to \fIflags\fR.
+The flag \fBSP_WM\fR causes the WM bit to be set.
+The flag \fBSP_IM\fR causes the IM bit to be set.
+Not that RM is both WM and IM being set.
+The flag \fBSP_CLR\fR causes both punctuation bits to be cleared
+before setting any.
+
+.B Isrm
+returns a non-zero value if there exists both IM and WM
+on the character at address \fIp\fR.
+
+.B Isim
+returns a non-zero value if there exists an IM
+on the character at address \fIp\fR. WM is not checked.
+
+.B Iswm
+returns a non-zero value if there exists a WM
+on the character at address \fIp\fR. IM is not checked.
+
+
+.SH "SEE ALSO"
+.SH DIAGNOSTICS
+.SH BUGS

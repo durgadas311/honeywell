@@ -1,0 +1,33 @@
+.TH LPUTC 3 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+lputc, lputnl, lprint  \-  line printer output
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void lputc(int " c ");"
+.PP
+.BI "void lputnl();"
+.PP
+.BI "void lprint(char *" s ", " flags ");"
+.PP
+
+.SH DESCRIPTION
+.B Lputc
+prints the character on the line printer.
+
+.B Lputnl
+causes a newline to be advanced on the line printer.
+
+.B Lprint
+prints the string on the line printer, with optional
+carriage movement specified by \fIflags\fR.
+The flag \fBPR_NL\fR causes a newline at the end.
+\fBPR_SPB\fR prints a blank space before the string.
+\fBPR_SPA\fR prints a blank space after the string.
+Multiple flags may be ORed together.
+The string \fImust\fR be terminated by a RM.
+
+.SH "SEE ALSO"
+putc (3), lputo (3), setpnc (2)
+.SH DIAGNOSTICS
+.SH BUGS

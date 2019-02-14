@@ -1,0 +1,33 @@
+.TH PUTC 3 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+putc, putnl, print  \-  console output
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void putc(int " c ");"
+.PP
+.BI "void putnl();"
+.PP
+.BI "void print(char *" s ", " flags ");"
+.PP
+
+.SH DESCRIPTION
+.B Putc
+prints the character on the console.
+
+.B Putnl
+causes a newline to be advanced on the console.
+
+.B Print
+prints the string on the console, with optional
+carriage movement specified by \fIflags\fR.
+The flag \fBPR_NL\fR causes a newline at the end.
+\fBPR_SPB\fR prints a blank space before the string.
+\fBPR_SPA\fR prints a blank space after the string.
+Multiple flags may be ORed together.
+The string \fImust\fR be terminated by a RM.
+
+.SH "SEE ALSO"
+lputc (3), puto (3), gets (3), setpnc (2)
+.SH DIAGNOSTICS
+.SH BUGS

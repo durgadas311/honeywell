@@ -1,6 +1,11 @@
 CRT	= crt libc
 TOOLS	= as binutils cc ccom $(CRT)
 
+MAN1 = $(wildcard */*.1)
+MAN2 = $(wildcard */*.2)
+MAN3 = $(wildcard */*.3)
+MAN5 = $(wildcard */*.5)
+
 TARGETS = tools # tools-inst
 
 CC_CFLAGS = -DUNIX -DLINUX $(DEBUG)
@@ -26,14 +31,9 @@ crt: __FRC__
 	./as/as200 -l -o $@ $? >$*.l
 
 man:
-	@for i in nm ld ar objdump size strip; do \
-		cp -uv binutils/$${i}.1 /usr/local/man/man1/$${i}200.1; \
-	done
-	@for i in as; do \
-		cp -uv as/$${i}.1 /usr/local/man/man1/$${i}200.1; \
-	done
-	@for i in a.out; do \
-		cp -uv binutils/$${i}.5 /usr/local/man/man5/$${i}.200.5; \
-	done
+	cp -uv $(MAN1) /usr/local/man/man1
+	cp -uv $(MAN2) /usr/local/man/man2
+	cp -uv $(MAN3) /usr/local/man/man3
+	cp -uv $(MAN5) /usr/local/man/man5
 
 __FRC__:

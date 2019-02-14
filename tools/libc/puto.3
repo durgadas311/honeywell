@@ -1,0 +1,30 @@
+.TH PUTO 3 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+puto, putx, putd  \-  console output of numbers
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void puto(int " n ");"
+.PP
+.BI "void putx(int " n ");"
+.PP
+.BI "void putd(int " n ");"
+.PP
+
+.SH DESCRIPTION
+.B Puto
+prints the integer on the console as an octal string.
+
+.B Putx
+prints the integer on the console as a hexidecimal string.
+
+.B Putd
+prints the integer on the console as an decimal string.
+
+In all cases, leading zeroes are supressed.
+
+
+.SH "SEE ALSO"
+putc (3), lputo (3)
+.SH DIAGNOSTICS
+.SH BUGS

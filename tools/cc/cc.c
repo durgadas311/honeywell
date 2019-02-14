@@ -30,7 +30,7 @@ char	*tmp_c1, *tmp_c2, *tmp_asm, *tmp_pre, *tmp_opt;
 char	*outfile, *aflag;
 char	**av, **clist, **llist, **plist;
 int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, wflag, Lminusflag;
-int	errflag, zflag;
+int	errflag;
 int	exfail;
 
 int	nc, nl, np, nxo, na;
@@ -279,9 +279,11 @@ main(argc, argv)
 				continue;
 			case 'E':
 				Eflag++;
+				continue;
 			case 'P':
 				Pflag++;
 				plist[np++] = argv[i];
+				continue;
 			case 'c':
 				cflag++;
 				continue;
@@ -302,10 +304,6 @@ main(argc, argv)
 					aflag = &argv[i][2];
 				else if (++i < argc)
 					aflag = argv[i];
-				continue;
-			case 'z':
-				zflag++;
-				aflag = "0x7000";
 				continue;
 			}
 		}
@@ -471,7 +469,7 @@ nocom:
 			av[na++] = "-o";
 			av[na++] = outfile;
 		}
-		strcpy(buf1, makepath(zflag ? crtx0 : crt0));
+		strcpy(buf1, makepath(crt0));
 		av[na++] = buf1;
 		while (i < nl)
 			av[na++] = llist[i++];
@@ -485,15 +483,6 @@ nocom:
 		errflag |= callsys(ld, av);
 		if (nc==1 && nxo==1 && errflag==0)
 			unlink(setsuf(clist[0], 'o'));
-	}
-	if (zflag) {
-		/* Cas file generation */
-		av[0] = "out2cas";
-		av[1] = "-o";
-		av[2] = "a.cas";
-		av[3] = outfile ? outfile : "a.out";
-		av[4] = 0;
-		errflag |= callsys(o2c, av);
 	}
 	cleanup();
 	return (errflag);
