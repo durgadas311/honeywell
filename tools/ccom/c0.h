@@ -402,15 +402,15 @@ int	mossym;
   Flag bits
 */
 
-#define	BINARY	01
-#define	LVALUE	02
-#define	RELAT	04
-#define	ASSGOP	010
-#define	LWORD	020
-#define	RWORD	040
-#define	COMMUTE	0100
-#define	RASSOC	0200
-#define	LEAF	0400
+#define	BINARY	000001
+#define	LVALUE	000002
+#define	RELAT	000004
+#define	ASSGOP	000010
+#define	LWORD	000020
+#define	RWORD	000040
+#define	COMMUTE	000100
+#define	RASSOC	000200
+#define	LEAF	000400
 #define	PCVOK	040000
 
 /*

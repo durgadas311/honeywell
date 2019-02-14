@@ -13,8 +13,8 @@ clean:
 c0: c00.c c01.c c02.c c03.c c04.c c05.c c0.h
 	${CC} ${CFLAGS} -o c0 c00.c c01.c c02.c c03.c c04.c c05.c
 
-c1: c10.c c11.c c12.c c13.c table.c c0.h
-	${CC} $(CFLAGS) -o c1 c10.c c11.c c12.c c13.c table.c
+c1: c10.c c11.c c12.c c13.c table.c cdb.c c1.h
+	${CC} $(CFLAGS) -o c1 c10.c c11.c c12.c c13.c table.c cdb.c
 
 table.c: optable cvopt
 	./cvopt < optable > table.c

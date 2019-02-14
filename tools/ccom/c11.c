@@ -32,6 +32,7 @@ register union tree *t;
 }
 
 static char *curfnc = NULL;
+extern void prconlab(int lab, int flag);
 
 void
 pname(p, flag, neg)
@@ -45,30 +46,29 @@ loop:
 	switch(p->t.op) {
 
 	case LCON:
-		printf("L%d", (p->l.label>0? p->l.label: -p->l.label));
+		prconlab(p->l.label, neg);
 		return;
 
 	case SFCON:
 	case CON:
 	case CCON:
-		//psoct(p->c.value);
-		printf("L%d", (p->c.label>0? p->c.label: -p->c.label));
+		prconlab(p->c.label, 0);
 		return;
 
 	case FCON:
-		printf("L%d", (p->f.label>0? p->f.label: -p->f.label));
+		prconlab(p->f.label, neg);
 		return;
 
 	case NAME:
 		i = p->n.offset;
 		if (flag>10)
-			i += 2;
+			i += SZPTR;
 		if (i) {
 			psoct(i);
 			if (p->n.class!=OFFS)
 				putchar('+');
 			if (p->n.class==REG)
-				error("Illegal use of register");
+				error("Illegal use of register (i) NAME.REG");
 		}
 		switch(p->n.class) {
 
@@ -89,10 +89,11 @@ loop:
 			return;
 
 		case REG:
-			if( p->n.nloc==BPREG )
+			if( p->n.nloc==BPREG ) {
 				printf("x2");
-			else
-				error("Illegal use of reg");
+			} else {
+				error("Illegal use of reg NAME.REG");
+			}
 			return;
 
 		}
@@ -101,8 +102,12 @@ loop:
 
 	case AMPER:
 		p = p->t.tr1;
-		if (p->t.op==NAME && p->n.class==REG)
-			error("Illegal use of register");
+#if 0	// is this still relevant?
+		if (p->t.op==NAME && p->n.class==REG) {
+			error("Illegal use of register AMPER.NAME.REG");
+		}
+#endif
+		neg = 0;	// need addr-of variable
 		goto loop;
 
 	case AUTOI:
@@ -120,7 +125,7 @@ int f;
 {
 	char *s;
 	if (p->n.class==SOFFS || p->n.class==STATIC) {
-		printf("%c%d", f ? 'P' : 'L', p->n.nloc);
+		prconlab(p->n.nloc, f);
 	} else {
 		s = p->x.name;
 		if (f) {
@@ -206,7 +211,7 @@ int ast, deg, op;
 	 * an e or n UNCHAR is to be considered an UNSIGNED,
 	 * as long as it is not pointed to.
 	 */
-	if (at==UNCHAR && deg<0100 && deg>=20)
+	if (at==UNCHAR && deg<DPTR && deg>=DREG)
 		at = UNSIGN;
 	st = ast;
 	if (st==0)		/* word, byte */
@@ -798,22 +803,27 @@ void
 label(l)
 int l;
 {
-	printf("L%d:", l);
+	prconlab(l, 0);
+	putchar(':');
 }
 
 static void adjstk(char *op, union tree *sz, char *f) {
+	printf("\t%s\t", op);
 	if (sz->t.op == LABEL) {
-		printf("\t%s\tL%d,x1\n", op, -sz->c.label);
+		prconlab(-sz->c.label, 0);
 	} else if (sz->t.op == NAME) {
 		if (sz->n.class == EXTERN) {
-			printf("\t%s\t%s,x1\n", op, sz->x.name);
+			printf("%s", sz->x.name);
 		} else {
-			// similar to LABEL?
-			printf("\t%s\tL%d,x1\n", op, sz->n.nloc);
+			prconlab(sz->n.nloc, 0);
 		}
+	} else if (sz->t.op == CON) {
+		prconlab(sz->c.label, 0);
 	} else {
+		printf("0");
 		error("Stack adjust reference botch");
 	}
+	printf(",x1\n");
 }
 
 void

@@ -25,8 +25,10 @@ register union tree *tree;
 	if ((dope&LEAF) != 0) {
 		return(tree);
 	}
-	if ((dope&BINARY) == 0)
-		return(unoptim(tree));
+	if ((dope&BINARY) == 0) {
+		union tree *u = unoptim(tree);
+		return(u);
+	}
 
 	/* is known to be binary */
 	if (tree->t.type==CHAR)
@@ -385,6 +387,7 @@ register union tree *tree;
 		switch (subtre->t.op) {
 
 		case LCON:
+			// TODO: plug in to shared constants
 			subtre->t.op = CON;
 			subtre->t.type = tree->t.type;
 			subtre->c.value = subtre->l.lvalue;
@@ -441,12 +444,16 @@ register union tree *tree;
 		if (subtre->t.op==STAR)
 			return(subtre->t.tr1);
 		if (subtre->t.op==NAME && subtre->n.class == OFFS) {
-			p = tnode(PLUS, tree->t.type, subtre, tree);
-			subtre->t.type = tree->t.type;
+			int t = tree->t.type;
+			tree->t.degree = 0;
+			tree = tconst(subtre->n.offset, INT, 0);
+			p = tnode(PLUS, t, subtre, tree);
+			subtre->t.type = t;
+#if 0
 			tree->t.op = CON;
 			tree->t.type = INT;
-			tree->t.degree = 0;
 			tree->c.value = subtre->n.offset;
+#endif
 			subtre->n.class = REG;
 			subtre->n.nloc = subtre->n.regno;
 			subtre->n.offset = 0;
@@ -1176,22 +1183,20 @@ int val, type, stc;
 			break;
 		}
 	}
-	if (globals[x].name) {
-		if (stc) {
-			p = malloc(sizeof(struct xtname));
-		} else {
-			p = getblk(sizeof(struct xtname));
-		}
-		p->x.op = NAME;
-		p->x.type = globals[x].type;
-		p->x.name = globals[x].name;
-		p->x.class = EXTERN;
-		p->x.regno = 0;
-		p->x.offset = 0;
-		++globals[x].flag;
-		return(p);
+	if (!globals[x].name) {
+		return tconst0(CON, val, type, stc);
 	}
-	return tconst0(CON, val, type, stc);
+	if (stc) {
+		p = malloc(sizeof(struct tconst));
+	} else {
+		p = getblk(sizeof(struct tconst));
+	}
+	++globals[x].flag;
+	p->c.op = CON;
+	p->c.type = type;
+	p->c.value = val;
+	p->c.label = -(x + 1);
+	return(p);
 }
 
 union tree *
@@ -1228,8 +1233,17 @@ int op, val, type, stc;
 			++nconsts;
 		}
 	}
-	p->c.label = -lab;
+	p->c.label = lab;
 	return(p);
+}
+
+void prconlab(int lab, int flag) {
+	if (lab < 0) {
+		// TODO: any way to indirect?
+		printf("%s", globals[(-lab) - 1].name);
+	} else {
+		printf("%c%d", flag ? 'P' : 'L', lab);
+	}
 }
 
 static int sizes[VOID+1] = {

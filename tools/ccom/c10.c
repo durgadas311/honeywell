@@ -51,8 +51,8 @@ char	*argv[];
 		error("Can't create %s", argv[3]);
 		exit(1);
 	}
-	czero = tconst(0, INT, 1);
-	cone = tconst(1, INT, 1);
+	czero = tconst(0, INT, 1);	// these will pick up globals...
+	cone = tconst(1, INT, 1);	// these will pick up globals...
 	getree();
 	/*
 	 * If any floating-point instructions
@@ -146,18 +146,18 @@ int nrleft, nocvt;
 /*	fprintf(stderr, "op=%d, index=%d, ", op, i); */
 	i = 0;
 	for (opt = table->tabp; opt->tabdeg1!=0; opt++, i++) {
-		if (d1 > (opt->tabdeg1&077)
-		 || (opt->tabdeg1 >= 0100 && (p1->t.op != STAR)))
+		if (d1 > (opt->tabdeg1&DALL)
+		 || (opt->tabdeg1 >= DPTR && (p1->t.op != STAR)))
 			continue;
 		if (notcompat(p1, opt->tabtyp1, opt->tabdeg1, op))
 			continue;
 		if ((opdope[op]&BINARY)!=0 && p2!=0) {
-			if (d2 > (opt->tabdeg2&077)
-			 || ((opt->tabdeg2 >= 0100) && (p2->t.op != STAR)) )
+			if (d2 > (opt->tabdeg2&DALL)
+			 || ((opt->tabdeg2 >= DPTR) && (p2->t.op != STAR)) )
 				continue;
 			if (notcompat(p2,opt->tabtyp2, opt->tabdeg2, 0))
 				continue;
-			if ((opt->tabdeg2&077)==20 && xdcalc(p2,nrleft)>20)
+			if ((opt->tabdeg2&077)==DREG && xdcalc(p2,nrleft)>DREG)
 				continue;
 		}
 /*		fprintf(stderr, "offset %d\n", i); */
@@ -402,8 +402,9 @@ again:
 			}
 			if (table==cctab || table==cregtab) {
 				// need to test non-zero?
-				printf("\tc\tL%d,x%d\n", -czero->c.label, r);
-				//printf("\tlca\tr%d,r0,foo\n", r);
+				printf("\tc\t");
+				pname(czero, 0, 0);
+				printf(",x%d\n", r);
 			}
 			return(r);
 		}
@@ -462,7 +463,7 @@ int areg;
 	struct optab *opt;
 
 	tab = 0;
-	neg = 0;
+	neg = 1;	// start accessing true variable
 	reg = areg;
 	p1 = tree->t.tr2;
 	c = tree->t.op;
@@ -570,6 +571,7 @@ int areg;
 			return(-1);
 	string = opt->tabstring;
 	p1 = tree->t.tr1;
+#if 0
 	if (p1->t.op==FCON && p1->f.label>0) {
 		// TODO: better sharing
 		printf(	".data\n"
@@ -578,9 +580,11 @@ int areg;
 			p1->f.fvalue);
 		p1->f.label = -p1->f.label;
 	}
+#endif
 	p2 = 0;
 	if (opdope[tree->t.op]&BINARY) {
 		p2 = tree->t.tr2;
+#if 0
 		if (p2->t.op==FCON && p2->f.label>0) {
 			// TODO: better sharing
 			printf(	".data\n"
@@ -589,6 +593,7 @@ int areg;
 				p2->f.fvalue);
 			p2->f.label = -p2->f.label;
 		}
+#endif
 	}
 
 	numlab = 0;
@@ -645,13 +650,16 @@ loop:
 			c = 100;
 			string++;
 		}
-		pname(p, c, neg);
+		if ((p->t.type&XTYPE) == FUNC) {
+			pname(p, c, 0);
+		} else {
+			pname(p, c, neg);
+		}
 		tab = 0;
 		goto loop;
 
 	/* I */
 	case 'M':
-		neg = 0;
 		if ((c = *string)=='\'') {
 			string++;
 		} else if (c=='"') {
@@ -830,7 +838,6 @@ loop:
 
 	case 'Q':
 		nstack++;
-		//printf("\tbs\tc~4,x1\n");
 		goto loop;
 
 	case '-':		/* check -(sp) */
@@ -1015,9 +1022,11 @@ int reg, recurf;
 	p = *treep;
 	if (opdope[p->t.op]&LEAF)
 		return(0);
-	if (p->t.op==PLUS && recurf)
-		if (reorder(&p->t.tr2, table, reg))
+	if (p->t.op==PLUS && recurf) {
+		if (reorder(&p->t.tr2, table, reg)) {
 			*treep = p = optim(p);
+		}
+	}
 	if ((p1 = p->t.tr1)==TNULL)
 		return(0);
 	if (p->t.op==STAR || p->t.op==PLUS) {
@@ -1343,12 +1352,14 @@ register union tree *tree;
 		if (tree->t.op==FTOI) {
 			if (tree->t.tr1->t.op!=FCON && tree->t.tr1->t.op!=SFCON)
 				goto illinit;
+			// TODO: plug in to shared constants
 			tree = tree->t.tr1;
 			tree->c.value = tree->f.fvalue;
 			tree->t.op = CON;
 		} else if (tree->t.op==LTOI) {
 			if (tree->t.tr1->t.op!=LCON)
 				goto illinit;
+			// TODO: plug in to shared constants
 			tree = tree->t.tr1;
 			lval = tree->l.lvalue;
 			tree->t.op = CON;

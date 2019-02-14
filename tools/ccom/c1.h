@@ -409,15 +409,15 @@ int	xlab1, xlab2, xop, xzero;
 	Flag	bits
 */
 
-#define	BINARY	01
-#define	LVALUE	02
-#define	RELAT	04
-#define	ASSGOP	010
-#define	LWORD	020
-#define	RWORD	040
-#define	COMMUTE	0100
-#define	RASSOC	0200
-#define	LEAF	0400
+#define	BINARY	00001
+#define	LVALUE	00002
+#define	RELAT	00004
+#define	ASSGOP	00010
+#define	LWORD	00020
+#define	RWORD	00040
+#define	COMMUTE	00100
+#define	RASSOC	00200
+#define	LEAF	00400
 #define	CNVRT	01000
 
 /* External definitions */
@@ -468,3 +468,5 @@ int uns();
 void werror();
 int xdcalc();
 int xlongrel();
+
+extern void dumptree(union tree *p, int level, char tag);

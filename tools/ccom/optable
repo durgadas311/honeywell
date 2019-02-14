@@ -1,5 +1,49 @@
 %{
 /*
+ * The H200 presents a special problem w.r.t. addr-of operations:
+ *
+ *	ptr = &var; // both explicit and implicit
+ *
+ * Solutions:
+ *
+ * 1)	12*N bytes:
+ *		bct	var,040	// branch never
+ *		scr	ptr,067
+ *
+ * 2)	4+9*N bytes:
+ *	.var:	.word	var
+ *		...
+ *		lca	.var,ptr
+ *
+ * Solution #1 is the only one that works for AUTO vars
+ * and function parameters.
+ *
+ * Spacewise, #1 is optimal for most cases, i.e. where "&var"
+ * is never/rarely used (references < 2).
+ *
+ * Spacewise, #2 scales better for multiple references, i.e. > 1.
+ *
+ * Speedwise, #2 is always faster.
+ *
+ * Space considerations must include that #2 requires every variable
+ * to have the extra pointer storage, even if it is never accessed
+ * using addr-of. In a large program with lots of variables,
+ * this could end up being significant.
+ *
+ * Note that arrays, especially "char *" (i.e. strings), will
+ * often, if not exclusively (and implicitly), require "&var".
+ *
+ * External variables present an additional problem, in that
+ * if ".var" may ever be expected it must always be present.
+ *
+ * It may be possible to implement #1 here. Implementing #2
+ * requires cooperating code throughout ccom. A hybrid approach
+ * will likely be required (#1 is required for auto/params),
+ * adding complexity both places.
+ */
+%}
+%{
+/*
  * c code tables-- compile to register
  */
 
@@ -135,7 +179,6 @@ cr106:
 
 %n,n
 	F
-	foobar
 
 /* ++,-- postfix; the right operand is always a CON */
 cr32:
@@ -1100,7 +1143,7 @@ cr86:
 cr109:
 %n,n
 	F
-	bs	R-1 safe?
+	exm	what?
 
 /* / and % where divisor is unsigned or known to be positive */
 cr117:
@@ -1207,7 +1250,7 @@ ci80:
 	IB1	r0,A1
 
 %r,c
-	li	A1,A2
+	lca	A2,A1
 
 %r,a
 %r,aub
@@ -1250,11 +1293,10 @@ ci80:
 	I'B1	#1(R)
 
 %r,c
-	li	A1,A2
+	lca	A2,A1
 
 %a,c
-	li	R,A2
-	I	R,A1
+	lca	A2,A1
 
 %ab,c
 %aub,c
@@ -2153,40 +2195,43 @@ cs106:
 cs91:
 %n,1
 	FS
-	I	&(x1)
+	I	A2,&(x1)
 
 %n,2
 	FS
-	It	&(x1)
+	I	A2,&(x1)
 
 /* +, -, |, &~ */
 cs40:
 %a,c
 %aub,c
 	lca	A1,&(x1)
-	I"	A2,&(x1)
+	I	A2,&(x1)
 	Q
 
 %n,c
 %nub,c
 	FS
-	mov	0(x1),r0
-	I"	r0,A2
-	mov	r0,&(x1)
+	lca	A1,&(x1)
+	I"	A2,&(x1)
+	Q
 
 %a,aw
 	FS
-	I	A2,&(x1)
+	I	A2,&(x1),bar
+	Q
 
 %a,nw*
 	FS
 	S*
 	I	#2(R),&(x1)
+	Q
 
 %a,n
 	FS
 	S
 	I	R,&(x1)
+	Q
 
 /* integer to long */
 cs58:

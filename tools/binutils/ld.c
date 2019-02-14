@@ -604,13 +604,13 @@ middle()
 	 */
 	csize = 0;
 	if (dflag || rflag==0) {
-		for (sp=symtab; sp<symp; sp++)
+		for (sp=symtab; sp<symp; sp++) {
 			if (sp->n_type==N_EXT+N_UNDF && (t=sp->n_value)!=0) {
-				t = (t+1) & ~01;
 				sp->n_value = csize;
 				sp->n_type = N_EXT+N_COMM;
 				csize += t;
 			}
+		}
 		if (p_etext && p_etext->n_type==N_EXT+N_UNDF) {
 			p_etext->n_type = N_EXT+N_TEXT;
 			p_etext->n_value = tsize;

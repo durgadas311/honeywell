@@ -214,7 +214,7 @@ callsys(f, v)
 	if ((t=(status&0377)) != 0 && t!=14) {
 		cleanup();
 		if (t!=2) {
-			printf("Fatal error in %s\n", f);
+			printf("Fatal error in %s, %d\n", f, t);
 			exit(8);
 		}
 		exit(errflag);
