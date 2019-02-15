@@ -183,33 +183,22 @@ register union tree *p;
 	return(l);
 }
 
-/*
- * return the number of bytes in the object
- * whose tree node is acs.
- */
-int
-length(cs)
-union tree *cs;
-{
-	register int t, elsz;
-	long n;
-	int nd;
-
-	t = cs->t.type;
-	n = 1;
-	nd = 0;
+int realtype(int t) {
 	while ((t&XTYPE) == ARRAY) {
 		t = decref(t);
-		n *= cs->t.subsp[nd++];
 	}
-	if ((t&~TYPE)==FUNC)
-		return(0);
-	if (t>=PTR)
+	return t;
+}
+
+// TODO: emit any errors here?
+int tylength(union tree *cs, int t) {
+	int elsz = 0;
+	if (t>=PTR) {
 		elsz = SZPTR;
-	else switch(t&TYPE) {
+	} else switch(t&TYPE) {
 
 	case VOID:
-		error("Illegal use of void object");
+		//error("Illegal use of void object");
 		return(SZPTR);
 
 	case INT:
@@ -236,13 +225,61 @@ union tree *cs;
 		break;
 
 	case STRUCT:
-		if ((elsz = cs->t.strp->S.ssize) == 0)
-			error("Undefined structure");
+		if ((elsz = cs->t.strp->S.ssize) == 0) {
+			//error("Undefined structure");
+		}
 		break;
 	default:
-		error("Compiler error (length)");
+		//error("Compiler error (length)");
 		return(0);
 	}
+	return elsz;
+}
+
+// returns true if type requires "right side" address on H200
+int isnumb(int t) {
+	if (t>=PTR) {
+		return 1;
+	} else switch(t&TYPE) {
+	case VOID: // illegal...
+		return 0;
+
+	case INT:
+	case UNSIGN:
+	case FLOAT:
+	case UNLONG:
+	case LONG:
+	case DOUBLE:
+		return 1;
+
+	case STRUCT:
+	default:
+		return 0;
+	}
+}
+
+/*
+ * return the number of bytes in the object
+ * whose tree node is acs.
+ */
+int
+length(cs)
+union tree *cs;
+{
+	register int t, elsz;
+	long n;
+	int nd;
+
+	t = cs->t.type;
+	n = 1;
+	nd = 0;
+	while ((t&XTYPE) == ARRAY) {
+		t = decref(t);
+		n *= cs->t.subsp[nd++];
+	}
+	if ((t&~TYPE)==FUNC)
+		return(0);
+	elsz = tylength(cs, t);
 	n *= elsz;
 	if (n >= (unsigned)50000)
 		werror("very large data structure");

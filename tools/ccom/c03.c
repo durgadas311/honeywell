@@ -59,6 +59,8 @@ struct nmlist *tptr;
 			isadecl++;
 			continue;
 		}
+//fprintf(stderr, "getkeywords %d: o=%d cval=%d \"%s\"\n",
+//isadecl, o, cval, o==NAME ? csym->name : "-");
 		switch (o==KEYW? cval: -1) {
 		case REG:	// ignore register, makes no sense for H200
 			break;
@@ -74,8 +76,8 @@ struct nmlist *tptr;
 			}
 			skw = cval;
 			// TODO: is this correct?
-			if (cval == EXTERN) break;
-
+			if (cval == EXTERN || cval == STATIC) break;
+			// FALLTHROUGH?
 		case UNSIGN:
 			unsignf++;
 			break;
@@ -95,6 +97,7 @@ struct nmlist *tptr;
 		case STRUCT:
 			tptr->hstrp = strdec(ismos, cval);
 			cval = STRUCT;
+			// FALLTHROUGH?
 		case INT:
 		case CHAR:
 		case FLOAT:
@@ -124,6 +127,8 @@ struct nmlist *tptr;
 				else if (tkw==LONG)
 					tkw = UNLONG;
 				else
+//fprintf(stderr, "%d: Misplaced 'unsigned' %d: o=%d cval=%d tkw=%d\n",
+//line, isadecl, o, cval, tkw);
 					error("Misplaced 'unsigned'");
 			}
 			if (longf) {
@@ -479,7 +484,17 @@ struct nmlist *atptr, *absname;
 		}
 		if (a)
 			*memlist++ = &structhole;
-		dsym->hoffset = offset;
+		// We either pass the struct def along to 'as',
+		// or we profess a-priori knowledge of H200 layout...
+		int tt = realtype(dsym->htype);
+		int tz;
+		if (isnumb(tt) && (tz = tylength((union tree *)dsym, tt)) > 1) {
+			dsym->hoffset = offset + (tz - 1);
+		} else {
+			dsym->hoffset = offset;
+		}
+//fprintf(stderr, "struct %s %d %d/%d (%d)\n",
+//dsym->name, dsym->htype, offset, dsym->hoffset, elsize);
 		*memlist++ = dsym;
 		dsym->sparent = sparent;
 	}

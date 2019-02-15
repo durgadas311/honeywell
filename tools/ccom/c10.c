@@ -1283,6 +1283,11 @@ int *flagp;
 			paint(tree, LONG);
 			goto normal;
 		}
+#if 1
+		// TODO: silently convert to pointer?
+		error("Unimplemented structure assignment");
+		return(0);
+#else
 		if (tree->t.op!=NAME && tree->t.op!=STAR) {
 			error("Unimplemented structure assignment");
 			return(0);
@@ -1304,6 +1309,7 @@ int *flagp;
 
 		nstack++;
 		return(size*SZPTR);
+#endif
 	}
 
 normal:

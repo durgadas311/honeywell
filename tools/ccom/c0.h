@@ -27,6 +27,8 @@
 struct nmlist {
 	char	hclass;		/* storage class */
 	char	hflag;		/* various flags */
+	// auto-alignment saved us here...
+	// from horrible casting of nmlist to tree.
 	int	htype;		/* type */
 	int	*hsubsp;	/* subscript list */
 	union	str *hstrp;	/* structure description */
@@ -489,6 +491,9 @@ int subseq();
 
 /* Used in c01.c */
 int length();
+int isnumb(int t);
+int tylength(union tree *cs, int t);
+int realtype(int t);
 int fold();
 int decref();
 int incref();

@@ -329,13 +329,11 @@ cr80:
 	FS*
 	S
 	lca	0(x1),r0
-	bs	c~4,x1
 
 %nf*,nf
 	FS*
 	S
 	lca	0(x1),x3
-	bs	c~4,x1
 	lca	R,0(x3)
 
 %al,nl
@@ -360,7 +358,6 @@ cr80:
 	FS*
 	S
 	lca	0(x1),x3
-	bs	c~4,x1
 	lca	0(x3),R
 
 /* field assign, value in reg. */
@@ -381,7 +378,6 @@ cr16:
 	szcB1	r0,#1(R)
 	socB1	0(x1),#1(R)
 	mov	0(x1)+,R
-	bs	c~4,x1
 
 /* <<, >>, unsigned >> */
 cr45:
@@ -408,7 +404,6 @@ cr45:
 	SS
 	F
 	mov	0(x1),r0
-	bs	c~4,x1
 	jeq	.+4
 	I	R,0
 
@@ -1075,7 +1070,7 @@ cr127:
 cr58:
 %eu,n
 	F1!
-	bs	R
+	lca	A1,R
 
 %nu,n
 	F
@@ -1209,12 +1204,12 @@ cr130:
 %n,n
 	F
 	lca	A2,R1
-	bs	R,R1
+	lca	R,R1
 
 %nl,n
 	F
 	lca	A2,R1
-	bs	R,R1
+	lca	R,R1
 
 %{
 /*
@@ -1283,14 +1278,17 @@ ci80:
 %nb*,z
 %nub*,z
 	F*
-	IB1	A2,#1(R)
+	exm	A2,#1(R),001
 
 %[move2:]
 %n*,z
 %nd*,zf
+	F*
+	lca	A2,#1(R)
+
 %nub*,z
 	F*
-	I'B1	#1(R)
+	exm	A2,#1(R),001
 
 %r,c
 	lca	A2,A1
@@ -1391,7 +1389,6 @@ ci80:
 	FS*
 	S*
 	mov	0(x1)+,r1
-	bs	c~4,x1
 	IBF	#2(R),#1(r1)
 
 %[move12:]
@@ -1400,7 +1397,6 @@ ci80:
 	FS*
 	S
 	mov	0(x1)+,r1
-	bs	c~4,x1
 	IB1	R,#1(r1)
 
 %aw,nf
@@ -1414,12 +1410,12 @@ ci80:
 
 %al,z
 %aul,z
-	bs	A1
+	lca	A2,A1
 
 %nl*,z
 %nul*,z
 	F*
-	bs	#1(R)
+	lca	A2,#1(R)
 
 
 %al,cw
@@ -2094,7 +2090,6 @@ cc60:
 	lca	R,4(x1)
 	mov	0(x1),2(x1)
 	Q
-	bs	c~4,x1
 	I	0(x1)+,0(x1)+
 	X0
 	I	R,R+
