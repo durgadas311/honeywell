@@ -10,6 +10,7 @@ public class I_FAA implements Instruction {
 		byte y = (byte)(sys.getXtra(0) & 007);
 		byte op = (byte)(sys.getXtra(1) & 077);
 
+		double a, b;
 		switch(op) {
 		case 000:	// Store Acc
 			sys.AC[y] = sys.AC[x];
@@ -32,51 +33,60 @@ public class I_FAA implements Instruction {
 			sys.addTics(2);
 			break;
 		case 010:	// Add
-			sys.AC[y] += sys.AC[x];
-			sys.AC[HW2000.LOR] = 0.0; // what is this
+			a = I_FMA.binToNative(sys.AC[y], sys.denorm[y]) +
+				I_FMA.binToNative(sys.AC[x], sys.denorm[x]);
+			sys.AC[y] = I_FMA.nativeToBin(a);
+			sys.AC[HW2000.LOR] = 0L; // what is this
 			sys.denorm[y] = false;
 			sys.denorm[HW2000.LOR] = false;
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(6); // + Nn/6
 			break;
 		case 011:	// Subtract
-			sys.AC[y] = sys.AC[x] - sys.AC[y];
-			sys.AC[HW2000.LOR] = 0.0; // what is this
+			a = I_FMA.binToNative(sys.AC[y], sys.denorm[y]) -
+				I_FMA.binToNative(sys.AC[x], sys.denorm[x]);
+			sys.AC[y] = I_FMA.nativeToBin(a);
+			sys.AC[HW2000.LOR] = 0L; // what is this
 			sys.denorm[y] = false;
 			sys.denorm[HW2000.LOR] = false;
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(6); // + Nn/6
 			break;
 		case 013:	// Multiply
-			sys.AC[y] *= sys.AC[x];
-			sys.AC[HW2000.LOR] = 0.0; // what is this
+			a = I_FMA.binToNative(sys.AC[y], sys.denorm[y]) *
+				I_FMA.binToNative(sys.AC[x], sys.denorm[x]);
+			sys.AC[y] = I_FMA.nativeToBin(a);
+			sys.AC[HW2000.LOR] = 0L; // what is this
 			sys.denorm[y] = false;
 			sys.denorm[HW2000.LOR] = false;
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(6); // + N1/6 + Nn/6
 			break;
 		case 012:	// Divide
-			if (sys.AC[x] == 0.0) {
+			if (sys.AC[x] == 0L) {
 				sys.CTL.setDVC(true);
 			}
-			sys.AC[HW2000.LOR] = sys.AC[y] % sys.AC[x]; // remainder
-			sys.AC[y] /= sys.AC[x];
+			a = I_FMA.binToNative(sys.AC[y], sys.denorm[y]);
+			b = I_FMA.binToNative(sys.AC[x], sys.denorm[x]);
+			sys.AC[HW2000.LOR] = I_FMA.nativeToBin(a % b); // remainder
+			a /= b;
+			sys.AC[y] = I_FMA.nativeToBin(a);
 			sys.denorm[y] = false;
 			sys.denorm[HW2000.LOR] = false;
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(12); // + Nn/6
 			break;
 		}
 		// If the operation overwrote AC[7], restore 0.0
-		sys.AC[7] = 0.0;
+		sys.AC[7] = 0L;
 		sys.denorm[7] = false;
 	}
 }

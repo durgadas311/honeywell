@@ -31,7 +31,7 @@ public class HW2000 implements CoreMemory
 	public byte IBR;
 	public byte BRR;
 	public HW2000CCR CTL;
-	public double[] AC;
+	public long[] AC;
 	public boolean[] denorm;
 
 	public int oSR;
@@ -67,7 +67,7 @@ public class HW2000 implements CoreMemory
 		waitLock = new Semaphore(1);
 		fp = null;
 		CTL = new HW2000CCR();
-		AC = new double[9];
+		AC = new long[9];
 		denorm = new boolean[9];
 		Arrays.fill(denorm, false);
 		mem = new byte[524288]; // TODO: mmap file

@@ -4,12 +4,30 @@ import java.math.BigDecimal;
 public class I_FMA implements Instruction {
 	// Floating-point Memory-Accumulator ops
 
-	public static double hwToNative(HW2000 sys, int ptr) {
+	public static long hwToBin(HW2000 sys, int ptr) {
 		long d = 0;
 		ptr -= 7; // TODO: find better way
 		for (int ix = 0; ix < 8; ++ix) {
 			d = (d << 6) | sys.readChar(ptr++);
 		}
+		return d;
+	}
+
+	public static void binToHw(HW2000 sys, int ptr, long d) {
+		for (int ix = 0; ix < 8; ++ix) {
+			byte b = (byte)(d & 077);
+			sys.writeChar(ptr--, b);
+			d >>= 6;
+		}
+	}
+
+	public static double hwToNative(HW2000 sys, int ptr) {
+		long d = hwToBin(sys, ptr);
+		boolean denorm = ((d & 02000000000000000L) == 0);
+		return binToNative(d, denorm);
+	}
+
+	public static double binToNative(long d, boolean denorm) {
 		byte ms = 0;
 		long m = (d >> 12);
 		if ((m & 0x800000000L) != 0) {
@@ -31,42 +49,34 @@ public class I_FMA implements Instruction {
 		return Double.longBitsToDouble(d);
 	}
 
-	public static long nativeToMant(double dd, boolean denorm) {
-		long d = Double.doubleToLongBits(dd);
-		if ((d & 0x7fffffffffffffffL) == 0) {
+	public static long binToMant(long d, boolean denorm) {
+		if (d == 0) {
 			return 0;
 		}
-		byte ms = (byte)((d >> 63) & 1);
-		long m = (d >> 18) & 0x03ffffffffL;
+		d >>= 12;	// eliminate exponent
+		byte ms = (byte)((d >> 35) & 1);
+		d &= 0377777777777L;
 		if (!denorm) {
 			// implied "1"...
-			m |= 0x0400000000L;
+			d |= 0200000000000L;
 		}
 		if (ms != 0) {
-			m = -m;
+			// must sign-extend - not negate!
+			d |= 01777777777400000000000L;
 		}
-		return m;
+		return d;
 	}
 
 	// "zeroes" the exponent.
 	// caller is reponsible for handling "denormalized" flags.
-	public static double mergeMant(double dd, long m) {
-		long d; // don't care about previoud value (dd)
-		if ((m & 0x07ffffffffL) == 0) {
-			// TODO: preserve sign?
-			return 0.0;
-		}
-		byte ms = (byte)(m < 0 ? 1 : 0);
-		if (ms != 0) {
-			m = -m;
-		}
-		m &= 0x03ffffffffL;
-		d = 0x3ff0000000000000L |	// 1023 (3ff) == "0" exponent
-			(ms << 63) | (m << 18);
-		return Double.longBitsToDouble(d);
+	public static long mergeMant(long d, long m) {
+		// don't care about 'd', we zero the exponent - nothing left.
+		// it's already 2's-compliment
+		m &= 0777777777777L;
+		return m << 12;	// "0" exponent
 	}
 
-	public static void nativeToHw(HW2000 sys, double dd, boolean denorm, int ptr) {
+	public static long nativeToBin(double dd) {
 		long d = Double.doubleToLongBits(dd);
 		if ((d & 0x7fffffffffffffffL) == 0) {
 			d = 0; // TODO: does HW allow -0 ?
@@ -75,20 +85,19 @@ public class I_FMA implements Instruction {
 			int x = (int)((d >> 52) & 0x7ff);
 			x -= 1023;
 			long m = (d >> 18) & 0x03ffffffffL;
-			if (!denorm) {
-				// implied "1"...
-				m |= 0x0400000000L;
-			}
+			// implied "1"...
+			m |= 0x0400000000L;
 			if (ms != 0) {
 				m = -m;
 			}
 			d = (m << 12) | (x & 0xfff);
 		}
-		for (int ix = 0; ix < 8; ++ix) {
-			byte b = (byte)(d & 077);
-			sys.writeChar(ptr--, b);
-			d >>= 6;
-		}
+		return d;
+	}
+
+	public static void nativeToHw(HW2000 sys, double dd, boolean denorm, int ptr) {
+		long d = nativeToBin(dd);
+		binToHw(sys, ptr, d);
 	}
 
 	public void execute(HW2000 sys) {
@@ -103,46 +112,50 @@ public class I_FMA implements Instruction {
 		long m;
 		BigDecimal bd;
 
-		double a;
+		double a, b;
 		switch(op) {
 		case 000:	// Store Acc
-			nativeToHw(sys, sys.AC[x], sys.denorm[x], sys.AAR);
+			binToHw(sys, sys.AAR, sys.AC[x]);
 			sys.incrAAR(-8);
 			sys.addTics(2);
 			break;
 		case 002:	// Load Acc
-			sys.AC[y] = hwToNative(sys, sys.AAR);
+			sys.AC[y] = hwToBin(sys, sys.AAR);
 			sys.denorm[y] = false; // right?
 			sys.incrAAR(-8);
 			sys.addTics(2);
 			break;
 		case 001:	// Load Low-Order Result
-			sys.AC[HW2000.LOR] = hwToNative(sys, sys.AAR);
+			sys.AC[HW2000.LOR] = hwToBin(sys, sys.AAR);
 			sys.denorm[HW2000.LOR] = false; // right?
 			sys.incrAAR(-8);
 			sys.addTics(1);
 			break;
 		case 007:	// Store Low-Order Result
-			nativeToHw(sys, sys.AC[HW2000.LOR], sys.denorm[HW2000.LOR], sys.AAR);
+			binToHw(sys, sys.AAR, sys.AC[HW2000.LOR]);
 			sys.incrAAR(-8);
 			sys.addTics(1);
 			break;
 		case 010:	// Add
-			sys.AC[y] = sys.AC[x] + hwToNative(sys, sys.AAR);
+			a = binToNative(sys.AC[x], sys.denorm[x]) +
+					hwToNative(sys, sys.AAR);
+			sys.AC[y] = nativeToBin(a);
 			sys.denorm[y] = false;
-			sys.AC[HW2000.LOR] = 0.0; // what is this
+			sys.AC[HW2000.LOR] = 0L; // what is this
 			sys.incrAAR(-8);
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(12); // + Nn/6
 			break;
 		case 011:	// Subtract
-			sys.AC[y] = sys.AC[x] - hwToNative(sys, sys.AAR);
+			a = binToNative(sys.AC[x], sys.denorm[x]) -
+					hwToNative(sys, sys.AAR);
+			sys.AC[y] = nativeToBin(a);
 			sys.denorm[y] = false;
-			sys.AC[HW2000.LOR] = 0.0; // what is this
+			sys.AC[HW2000.LOR] = 0L; // what is this
 			sys.incrAAR(-8);
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(12); // + Nn/6
@@ -150,11 +163,12 @@ public class I_FMA implements Instruction {
 		case 013:	// Multiply
 			a = hwToNative(sys, sys.AAR);
 			sys.incrAAR(-8);
-			sys.AC[y] = sys.AC[x] * a;
+			a = binToNative(sys.AC[x], sys.denorm[x]) * a;
+			sys.AC[y] = nativeToBin(a);
 			sys.denorm[y] = false;
-			sys.AC[HW2000.LOR] = 0.0; // what is this
+			sys.AC[HW2000.LOR] = 0L; // what is this
 			sys.denorm[HW2000.LOR] = false;
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(9); // + N1/6 + Nn/6
@@ -162,15 +176,17 @@ public class I_FMA implements Instruction {
 		case 012:	// Divide
 			a = hwToNative(sys, sys.AAR);
 			sys.incrAAR(-8);
-			if (sys.AC[x] == 0.0) {
+			if (sys.AC[x] == 0L) {
 				sys.CTL.setDVC(true);
 				break;
 			}
-			sys.AC[HW2000.LOR] = a % sys.AC[x]; // remainder
-			sys.AC[y] = a / sys.AC[x];
+			b = binToNative(sys.AC[x], sys.denorm[x]);
+			sys.AC[HW2000.LOR] = nativeToBin(a % b); // remainder
+			a = a / b;
+			sys.AC[y] = nativeToBin(a);
 			sys.denorm[y] = false;
 			sys.denorm[HW2000.LOR] = false;
-			if (Double.isInfinite(sys.AC[y])) {
+			if (Double.isInfinite(a)) {
 				sys.CTL.setEXO(true);
 			}
 			sys.addTics(16); // + Nn/6
@@ -179,12 +195,12 @@ public class I_FMA implements Instruction {
 			ae = sys.incrAdr(sys.AAR, -11);
 			bd = I_M.hwToNative(sys, sys.AAR, ae);
 			sys.AAR = ae;
-			sys.AC[y] = bd.doubleValue();
+			sys.AC[y] = nativeToBin(bd.doubleValue());
 			// TODO: overflow in LOR...
 			sys.addTics(9);
 			break;
 		case 006:	// Convert FP to Decimal
-			m = nativeToMant(sys.AC[x], sys.denorm[x]);
+			m = binToMant(sys.AC[x], sys.denorm[x]);
 			bd = new BigDecimal(m);
 			ae = sys.incrAdr(sys.AAR, -11);
 			I_M.nativeToHw(sys, bd, sys.AAR, ae);
@@ -192,26 +208,27 @@ public class I_FMA implements Instruction {
 			sys.addTics(10);
 			break;
 		case 004:	// FP Test and Branch
+			a = binToNative(sys.AC[x], sys.denorm[x]);
 			switch(y) {
 			case 000:
 				break;
 			case 001:
-				taken = (sys.AC[x] == 0.0);
+				taken = (a == 0.0);
 				break;
 			case 002:
-				taken = (sys.AC[x] < 0.0);
+				taken = (a < 0.0);
 				break;
 			case 003:
-				taken = (sys.AC[x] <= 0.0);
+				taken = (a <= 0.0);
 				break;
 			case 004:
-				taken = (sys.AC[x] > 0.0);
+				taken = (a > 0.0);
 				break;
 			case 005:
-				taken = (sys.AC[x] >= 0.0);
+				taken = (a >= 0.0);
 				break;
 			case 006:
-				taken = (sys.AC[x] != 0.0);
+				taken = (a != 0.0);
 				break;
 			case 007:
 				taken = true;
@@ -249,7 +266,7 @@ public class I_FMA implements Instruction {
 			break;
 		}
 		// If the operation overwrote AC[7], restore 0.0
-		sys.AC[7] = 0.0;
+		sys.AC[7] = 0L;
 		sys.denorm[7] = false;
 		if (taken) {
 			sys.BAR = sys.SR;

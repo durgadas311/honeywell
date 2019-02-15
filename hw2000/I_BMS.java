@@ -20,13 +20,13 @@ public class I_BMS implements Instruction {
 		boolean sngl = ((m & 02) == 0);
 
 		// NOTE: LOR exponent is *always* set to zero
-		long mant = I_FMA.nativeToMant(sys.AC[x], sys.denorm[x]);
-		long lor = I_FMA.nativeToMant(sys.AC[HW2000.LOR], sys.denorm[HW2000.LOR]);
-		// mant is fully sign-extended!
+		long mant = I_FMA.binToMant(sys.AC[x], sys.denorm[x]);
+		long lor = I_FMA.binToMant(sys.AC[HW2000.LOR], sys.denorm[HW2000.LOR]);
+		// 36-bit mant is fully sign-extended!
 		boolean minus = (mant < 0);
 		boolean lormi = (lor < 0);
 		if (!left) {
-			mant <<= 28;
+			mant <<= 28;	// 28 = 64 - 36...
 			lor <<= 28;
 		}
 		// shift in increments of 20 to avoid fall-off.
@@ -90,7 +90,7 @@ public class I_BMS implements Instruction {
 		sys.denorm[x] = ((mant & 0x400000000L) == 0);
 		sys.denorm[HW2000.LOR] = ((lor & 0x400000000L) == 0);
 		// If the operation overwrote AC[7], restore 0.0
-		sys.AC[7] = 0.0;
+		sys.AC[7] = 0L;
 		sys.denorm[7] = false;
 	}
 }

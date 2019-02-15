@@ -2248,36 +2248,20 @@ public class HW2000FrontPanel extends JFrame
 		case 053:
 		case 057: // high mantissa of FP ACC
 			r = (reg & 014) >> 2;
-			d  = Double.doubleToLongBits(sys.AC[r]);
-			s = (byte)((d >> 63) & 1);
-			if ((d & 0x7fffffffffffffffL) == 0) {
+			d  = sys.AC[r];
+			s = (byte)((d >> 48) & 1);
+			if ((d & 03777777777777777L) == 0) {
 				break;
 			}
 			switch(reg & 003) {
 			case 001: // exponent
-				val = (int)((d >> 52) & 0x7ff);
-				val -= 1023;
-				if ((val & 0x400) != 0) {
-					val |= 0x800;
-				}
-				val &= 0xfff;
+				val = (int)(d & 07777);
 				break;
 			case 002: // low mantissa
-				val = (int)((d >> 18) & 0x3ffff);
-				if (s != 0) {
-					val = (-val & 0x3ffff);
-				}
-				val &= 0x3ffff;
+				val = (int)((d >> 12) & 0777777);
 				break;
 			case 003: // high mantissa
-				val = (int)((d >> 36) & 0x0ffff);
-				if (!sys.denorm[r]) {
-					val |= 0x10000; // implied "1"
-				}
-				if (s != 0) {
-					val = -val;
-				}
-				val &= 0x3ffff;
+				val = (int)((d >> 30) & 0777777);
 				break;
 			}
 			break;
@@ -2335,32 +2319,24 @@ public class HW2000FrontPanel extends JFrame
 		case 053:
 		case 057: // high mantissa of FP ACC
 			r = (reg & 014) >> 2;
-			d  = Double.doubleToLongBits(sys.AC[r]);
-			// Can't really detect zero here, need all parts.
-			// Same with sign. Setting FP regs is not advised.
+			d  = sys.AC[r];
 			switch(reg & 003) {
 			case 001: // exponent
-				val &= 0x7ff;
-				val += 1023;
-				d = (d & ~0x7ff000000003ffffL) | (val << 52);
+				val &= 07777;
+				d = (d & 07777777777770000L) | val;
 				break;
 			case 002: // low mantissa
 				// must know sign to handle properly...
-				val &= 0x3ffff;
-				d = (d & ~0x0000000fffffffffL) | (val << 18);
+				val &= 0777777;
+				d = (d & 07777770000007777L) | (val << 12);
 				break;
 			case 003: // high mantissa
-				s = (byte)((val >> 17) & 1);
-				val &= 0x1ffff;
-				if (s != 0) {
-					val = -val;
-				}
-				sys.denorm[r] = ((val & 0x10000) == 0);
-				val &= 0x0ffff;
-				d = (d & ~0x800ffff00003ffffL) | (val << 36) | (s << 63);
+				val &= 0777777;
+				sys.denorm[r] = ((val & 0200000) == 0);
+				d = (d & 00000007777777777L) | (val << 30);
 				break;
 			}
-			sys.AC[r] = Double.longBitsToDouble(d);
+			sys.AC[r] = d;
 			break;
 		case 054:
 			sys.ATR = val;
