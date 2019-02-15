@@ -321,7 +321,7 @@ again:
 			nstack++;
 		}
 #endif
-		savestk(r, cp);
+		if (r) savestk(r, cp);
 		tree = tree->t.tr2;
 		if(tree->t.op) {
 			while (tree->t.op==COMMA) {
@@ -337,11 +337,12 @@ again:
 		if (modf && tree->t.tr1->t.op==NAME
 		   && tree->t.tr1->n.class==EXTERN)
 			tree->t.op = CALL1;
-		union tree *sz = tconst(r, INT, 0);
-		pushstk(sz, cp);
+		union tree *sz = r ? tconst(r, INT, 1) : NULL;
+		if (sz) pushstk(sz, cp);
 		if (cexpr(tree, regtab, reg)<0)
 			error("compiler botch: call");
-		popstk(sz, cp);
+		if (sz) popstk(sz, cp);
+		if (sz) free(sz);
 		nstack -= nargs;
 		if (table==efftab || table==regtab)
 			return(RSTART);

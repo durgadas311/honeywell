@@ -119,6 +119,7 @@ cfunc()
 	outcode("BNB", LABEL, retlab, RETRN);
 /* add STAUTO; overlay bug fix, coupled with section in c11.c */
 	// TODO: need to do this without jumping back and forth...
+	// 'maxauto' can never be zero (STAUTO > 0).
 	outcode("BN", SETSTK, -maxauto);
 	locbase = cb;
 }
