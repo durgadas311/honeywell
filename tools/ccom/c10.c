@@ -5,6 +5,8 @@
  * allow both long and ulong at line ~341.  1996/6/19
  */
 #include <stdlib.h>
+#include <ctype.h>
+
 #include "c1.h"
 
 #ifdef	DEBUG
@@ -673,6 +675,15 @@ loop:
 		prins(tree->t.op, c, instab, tab);
 		tab = 0;
 		goto loop;
+
+	case 'N':	// Need reference to a constant
+		c = 0;
+		while (isdigit(*string)) {
+			c *= 10;
+			c += (*string++ - '0');
+		}
+		p = tconst(c, INT, 0);
+		goto adr;
 
 	/* B1 */
 	case 'C':

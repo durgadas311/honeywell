@@ -16,7 +16,11 @@
  *		lca	.var,ptr
  *
  * Solution #1 is the only one that works for AUTO vars
- * and function parameters.
+ * and function parameters. Although, AUTO/FUNC access is
+ * usually converted to the 'bp' register plus offset:
+ *
+ *		lca	bp,x5
+ *		ba	off,x5
  *
  * Spacewise, #1 is optimal for most cases, i.e. where "&var"
  * is never/rarely used (references < 2).
@@ -139,11 +143,17 @@ cr100:
 
 /* load */
 cr106:
+
 %z,n
 %zf,n
 %c,n
+	lca	A1,R
+
 %aub,n
 %ab,n
+	lca	N0,R
+	exm	A1,R,001
+
 %a,n
 %ad,n
 %af,n
@@ -1237,12 +1247,11 @@ struct table efftab[] = {
 /* = */
 ci80:
 %r,z
-	I'	A1
+	lca	A2,A1
 
 %ab,z
 %aub,z
-	I'	r0
-	IB1	r0,A1
+	exm	A2,A1,001
 
 %r,c
 	lca	A2,A1
@@ -1257,14 +1266,13 @@ ci80:
 
 %ab,c
 %aub,c
-	li	R,256*A2
-	IB1	R,A1
+	exm	A2,A1,001
 
 %ab,ab
 %ab,aub
 %aub,ab
 %aub,aub
-	IB1	A2,A1
+	exm	A2,A1,007
 
 %ab,n
 %aub,n
@@ -1323,8 +1331,7 @@ ci80:
 %nb*,c
 %nub*,c
 	F*
-	li	r1,A2*256
-	IB1	r1,#1(R)
+	exm	A2,#1(R),001
 
 %n*,c
 	F*
@@ -1336,15 +1343,13 @@ ci80:
 %nb*,aub
 %nub*,aub
 	F*
-	movb	A2,#1(R)
+	exm	A2,#1(R),001
 
 %[move6:]
 %nb*,a
 %nub*,a
 	F*
-	mov	A2,r0
-	<1	r0,8
-	IB1	r0,#1(R)
+	exm	A2,#1(R),001
 
 %n*,a
 	F*

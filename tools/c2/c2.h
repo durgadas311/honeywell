@@ -86,16 +86,10 @@
 
 #define	JEQ	0
 #define	JNE	1
-#define	JLS	2
-#define	JGS	3
-#define	JLT	4
-#define	JGT	5
-#define	JL	6
-#define	JH	7
-#define	JLE	8
-#define	JHE	9
-#define JNC	10
-#define JOC	11
+#define	JLT	2
+#define	JGT	3
+#define	JLE	4
+#define	JGE	5
 
 #define	BYTE	100
 #define	LSIZE	512

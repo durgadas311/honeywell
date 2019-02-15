@@ -57,7 +57,8 @@ extdef()
 				error("Inappropriate parameters");
 		} else if ((o=symbol())==COMMA || o==SEMI) {
 			peeksym = o;
-			o = (length((union tree *)ds)+ALIGN) & ~ALIGN;
+			// No alignment, H200 doesn't use it
+			o = length((union tree *)ds);
 			if (sclass==STATIC) {
 				setinit(ds);
 				if ((ds->htype&XTYPE)==ARRAY) {

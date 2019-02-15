@@ -1238,8 +1238,7 @@ getstring:
 
 	case SLABEL:	// non-array, in .bss, with simple size
 		outname(s);
-		op = geti();	// total size
-		t = 1;
+		t = op = geti();	// total size
 		goto bss_label;
 
 	case ALABEL:	// array, in .bss, with element and num-elements
@@ -1258,8 +1257,10 @@ bss_label:
 		if (t == 1) {
 			printf(	":\t.space\t%d\n", op);
 		} else {
-			printf(	"\t.space\t%d\n"
-				"\t.space\t%d\n", t, op - t);
+			printf(	"\t.space\t%d\n", t);
+			if (op - t) {
+				printf("\t.space\t%d\n", op - t);
+			}
 		}
 		break;
 
