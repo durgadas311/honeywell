@@ -489,7 +489,7 @@ register union tree *tree;
 			return(p);
 		}
 		if (subtre->t.op==PLUS && p->t.op==NAME && p->n.class==REG) {
-			// never entered on H200
+			// never entered on H200?
 			if (subtre->t.tr2->t.op==CON) {
 				p->n.offset += subtre->t.tr2->c.value;
 				p->n.class = OFFS;
@@ -706,11 +706,14 @@ register union tree *tree;
 			return(*t2);
 		}
 		/* subsume constant in "&x+c" */
+#if 0	// can't make this optimization? e.g. "lca 40+.buf,0(x1)"
 		if (op==PLUS && t2[0]->t.op==CON && t2[-1]->t.op==AMPER) {
 			t2--;
+fprintf(stderr, "PLUS CON AMPER offset += %d\n", t2[1]->c.value);
 			t2[0]->t.tr1->n.offset += t2[1]->c.value;
 			acl.nextl--;
 		}
+#endif
 	} else if (op==TIMES || op==AND) {
 		t1 = acl.llist[acl.nextl];
 		if (t1->t.op==CON) {

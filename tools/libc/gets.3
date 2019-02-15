@@ -1,0 +1,29 @@
+.TH GETS 3 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+gets  \-  console input
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "int gets(char *" p ");"
+.PP
+
+.SH DESCRIPTION
+.B Gets
+acquires console (keyboard) input into buffer \fIp\fR.
+The buffer must be terminated by a RM to prevent overflow if
+the user enters too many characters. Input will stop,
+and the function returns, when an RM is reached in the buffer
+or the user presses carriage return (CR).
+
+The return value is the number of characters entered. If this
+number corresponds to the location of the RM, then the user
+input was halted due to running out of buffer space in \fIp\fR.
+
+Beware of setting a new RM in the buffer based on the return value
+from \fBgets()\fR, as that will shorten the buffer for the next
+time \fBgets()\fR is called on it.
+
+.SH "SEE ALSO"
+putc (3), setpnc (2)
+.SH DIAGNOSTICS
+.SH BUGS

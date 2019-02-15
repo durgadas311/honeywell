@@ -65,8 +65,13 @@ loop:
 			i += SZPTR;
 		if (i) {
 			psoct(i);
-			if (p->n.class!=OFFS)
+			if (p->n.class!=OFFS) {
+				// This will never work?
+				// e.g.		lca	40+.buf,0(x1)
+				error("Illegal use of offset (i) NAME.x");
 				putchar('+');
+				neg = 1;
+			}
 			if (p->n.class==REG)
 				error("Illegal use of register (i) NAME.REG");
 		}
@@ -320,6 +325,7 @@ register int reg;
 	return(reg);
 }
 
+// This size of a type in an argument
 int
 arlength(t)
 int t;
@@ -333,6 +339,34 @@ int t;
 	case UNSIGN:
 	case UNCHAR:
 		return(SZINT);
+
+	case UNLONG:
+	case LONG:
+		return(SZLONG);
+
+	case FLOAT:
+	case DOUBLE:
+		return(SZDOUB);
+	}
+	error("botch: peculiar type %d", t);
+	return(1024);
+}
+
+// This absolute size of a type
+int
+ellength(t)
+int t;
+{
+	if (t>=PTR)
+		return(SZPTR);
+	switch(t) {
+
+	case INT:
+	case UNSIGN:
+		return(SZINT);
+	case CHAR:
+	case UNCHAR:
+		return(SZCHAR);
 
 	case UNLONG:
 	case LONG:
@@ -1213,7 +1247,7 @@ getstring:
 		t = getwd();	// elem type
 		op = geti();	// total size
 		// TODO: more interpretation of type?
-		t = arlength(t);
+		t = ellength(t);
 bss_label:
 		ss = s;
 		if (*ss == '_') ++ss;
