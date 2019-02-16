@@ -286,7 +286,6 @@ char	*opntab[] = {
  * Strings for instruction tables.
  */
 char	mov[]	= "lca";
-char	clr[]	= "bs";	// dangerous: punctuation issues
 char	cmp[]	= "@cmp";
 char	tst[]	= "tst";
 char	add[]	= "ba";
@@ -298,12 +297,11 @@ char	divu[]	= "@div";
 char	sra[]	= "@sra";
 char	srl[]	= "@srl";
 char	sla[]	= "@sla";
-char	szc[]	= "szc";
-char	coc[]	= "coc";
-char	soc[]	= "soc";
-char	xor[]	= "xor";
-char	neg[]	= "neg";
-char	inv[]	= "inv";
+char	szc[]	= "ext";
+char	soc[]	= "@or";
+char	xor[]	= "ha";
+char	neg[]	= "@neg";
+char	inv[]	= "@not";
 
 char	li[]	= "li";
 char	ai[]	= "ai";
@@ -334,7 +332,7 @@ char	irem[]	= "@irem";
 
 struct instab instab[] = {
 {	LOAD,	mov,	tst },
-{	ASSIGN,	mov,	clr },
+{	ASSIGN,	mov,	mov },
 {	EQUAL,	cmp,	tst },
 {	NEQUAL,	cmp,	tst },
 {	LESSEQ,	cmp,	tst },
@@ -368,11 +366,11 @@ struct instab instab[] = {
 {	ASURSH,	srl,	lsrl },
 {	LSHIFT,	sla,	lsla },
 {	ASLSH,	sla,	lsla },
-{	AND,	szc,	szc },
+{	AND,	"ext",	"ext" },
 {	ANDN,	szc,	szc },
 {	ASANDN,	szc,	szc },
 {	TAND,	szc,	szc },
-{	OR,	soc,	soc },
+{	OR,	soc,    soc },
 {	ASOR,	soc,	soc },
 {	EXOR,	xor,	xor },
 {	ASXOR,	xor,	xor },

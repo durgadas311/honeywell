@@ -450,13 +450,14 @@ again:
  * Most of the work is the macro-expansion of the
  * code table.
  */
+static int binary = 0;
 int
 cexpr(tree, table, areg)
 register union tree *tree;
 struct table *table;
 int areg;
 {
-	int c, r, tab;
+	int c, n, r, tab;
 	register union tree *p, *p1;
 	struct table *ctable;
 	union tree *p2;
@@ -508,12 +509,19 @@ int areg;
 		(opd&RELAT&&(tree->t.tr1->t.type==LONG||tree->t.tr1->t.type==UNLONG)))
 	   && tree->t.op!=ITOL)
 		reg1++;
+	// everything after this must exit via 'out:'
+	if (opd & BINARY) {
+		++binary;
+	}
 	/*
 	 * Leaves of the expression tree
 	 */
-	if ((r = chkleaf(tree, table, reg)) >= 0)
-		return(r);
+	if ((r = chkleaf(tree, table, reg)) >= 0) {
+		reg = r;
+		goto out;
+	}
 
+#if 0
 	/* Change +2, +1, -1, -2 into special operators for the generation of
 	 * inct, inc, dec and dect. At this point x-1 has been modified to x+(-1),
 	 * and the addition is known not to be subsumed into an addressing mode.
@@ -521,6 +529,7 @@ int areg;
 	if (tree->t.op==PLUS && !isfloat(tree)) {
 		p1 = tree->t.tr2;
 	}
+#endif
 
 	/*
 	 * Because of the way the TI990 instruction set works,
@@ -528,8 +537,9 @@ int areg;
  	 */
 	if (tree->t.tr2 && (tree->t.tr2->t.op==AUTOI)
 	 && (tree->t.tr1->t.type==CHAR || tree->t.tr1->t.type==UNCHAR)
-	 && tree->t.tr2->t.type!=CHAR && tree->t.tr2->t.type!=UNCHAR)
+	 && tree->t.tr2->t.type!=CHAR && tree->t.tr2->t.type!=UNCHAR) {
 		tree->t.tr2 = tnode(LOAD, tree->t.tr2->t.type, tree->t.tr2, TNULL);
+	}
 	/*
 	 * Another peculiarity of the PDP11 table manifested itself when
 	 * amplifying the move3: table.  The same case which optimizes
@@ -546,10 +556,12 @@ int areg;
 	*/
 	if (tree->t.tr2 && tree->t.tr1->t.op == NAME
 	 && tree->t.tr1->n.class == REG && tree->t.op == ASSIGN
-	 && tree->t.tr2->t.type == UNCHAR)
+	 && tree->t.tr2->t.type == UNCHAR) {
 		tree->t.tr2 = tnode(LOAD, UNSIGN, tree->t.tr2, TNULL);
-	if (table==cregtab)
+	}
+	if (table==cregtab) {
 		table = regtab;
+	}
 	/*
 	 * The following peculiar code depends on the fact that
 	 * if you just want the codition codes set, efftab
@@ -569,9 +581,12 @@ int areg;
 	if (table!=cctab || c==INCAFT || c==DECAFT || tree->t.type==LONG || tree->t.type==UNLONG
 /*	 || c==ASRSH || c==ASLSH || c==ASULSH || tree->t.tr1->t.type==UNCHAR */
 	 || c==ASRSH || c==ASLSH
-	 || (opt = match(tree, efftab, r, 0)) == 0)
-		if ((opt=match(tree, table, r, 0))==0)
-			return(-1);
+	 || (opt = match(tree, efftab, r, 0)) == 0) {
+		if ((opt=match(tree, table, r, 0))==0) {
+			reg = -1;
+			goto out;
+		}
+	}
 	string = opt->tabstring;
 	p1 = tree->t.tr1;
 #if 0
@@ -631,7 +646,7 @@ loop:
 				break;
 			}
 		}
-		return(reg);
+		goto out;
 
 	/* A1 */
 	case 'A':
@@ -678,10 +693,16 @@ loop:
 
 	case 'N':	// Need reference to a constant
 		c = 0;
+		n = 0;
+		if (*string == 'N') {
+			++string;
+			n = 1;
+		}
 		while (isdigit(*string)) {
 			c *= 10;
 			c += (*string++ - '0');
 		}
+		if (n) c = -c;
 		p = tconst(c, INT, 0);
 		goto adr;
 
@@ -851,7 +872,7 @@ loop:
 	case 'Q':
 		nstack++;
 		goto loop;
-
+#if 0
 	case '-':		/* check -(sp) */
 		if (*string=='(') {
 			nstack++;
@@ -867,7 +888,7 @@ loop:
 			nstack--;
 		tab = 0;
 		goto loop;
-
+#endif
 	/* #1 */
 	case '#':	// index(R) notation
 		p = p1->t.tr1;
@@ -973,13 +994,19 @@ loop:
 	 * (long<0) can be determined with only 1 test.
 	 */
 	case 'X':
-		if (xlongrel(*string++ - '0'))
-			return(reg);
+		if (xlongrel(*string++ - '0')) {
+			goto out;
+		}
 		goto loop;
 	}
 	tab = (c == '\t');
 	putchar(c);
 	goto loop;
+out:
+	if (opd & BINARY) {
+		--binary;
+	}
+	return(reg);
 }
 
 /*
@@ -1257,8 +1284,12 @@ int reg;
 {
 	struct tnode lbuf;
 
-	if (tree->t.op!=STAR && dcalc(tree, nreg-reg) > 12)
+	if (tree->t.op!=STAR && dcalc(tree, nreg-reg) > 12) {
 		return(-1);
+	}
+	if (binary) {
+		return reg;
+	}
 	lbuf.op = LOAD;
 	lbuf.type = tree->t.type;
 	lbuf.degree = tree->t.degree;

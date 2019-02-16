@@ -91,6 +91,7 @@ register union tree *tree;
 		tree = acommute(tree);
 		if (tree->t.op == op)
 			tree->t.type = d1;
+#if 0
 		/*
 		 * PDP-11 special:
 		 * replace a&b by a ANDN ~ b.
@@ -131,6 +132,9 @@ register union tree *tree;
 		tree->t.op = ANDN;
 		op = ANDN;
 		tree->t.tr2 = tnode(COMPL, tree->t.tr2->t.type, tree->t.tr2, TNULL);
+#else
+		return(tree);
+#endif
 	}
 
 	tree->t.tr1 = optim(tree->t.tr1);
@@ -1170,6 +1174,7 @@ static struct globcons {
 	{ "@four", INT, 4 },
 	{ "@eight", INT, 8 },
 	{ "@twlv", INT, 12 },
+	{ "@none", INT, -1 },
 	{ NULL }
 };
 

@@ -38,6 +38,7 @@ start:
 @four:	.bin	04#4
 @eight:	.bin	010#4
 @twlv:	.bin	014#4
+@none:	.bin	077777777#4
 
 // a fake argv...
 argv:	.word	av

@@ -58,7 +58,7 @@ struct table regtab[] = {
 	{INCAFT,cr32},	/* postfix ++ */
 	{DECAFT,cr32},	/* postfix -- */
 	{NEG,cr37},	/* unary - */
-	{COMPL,cr37},	/* ~ */
+	{COMPL,cr38},	/* ~ */
 	{CALL1,cr100},	/* call */
 	{CALL2,cr100},	/* call */
 	{ASSIGN,cr80},	/* = */
@@ -73,7 +73,7 @@ struct table regtab[] = {
 	{RSHIFT,cr45},	/* >>, signed */
 	{URSH,cr45},	/* >>, unsigned */
 	{LSHIFT,cr45},	/* << */
-	{ANDN,cr40},	/* &~ */
+	{AND,cr40},	/* & */
 	{OR,cr40},	/* | */
 	{EXOR,cr49},	/* ^ */
 	{ASPLUS,cr70},	/* += */
@@ -256,19 +256,19 @@ cr32:
 	lca	R,&(x1)
 	QQ
 
-/* - unary, ~ */
+/* - unary */
 cr37:
 %n,n
-%nf,n
 	F
-	IBF	R
+	ha	NN1,R
+	ba	N1,R
 
-%nl,n
-%nul,n
+/* unary ~ */
+cr38:
+%n,n
 	F
-	I	R
-	I	R+
-	V	R
+	ha	NN1,R
+
 
 /* = */
 cr80:
@@ -2153,14 +2153,12 @@ rest:
 
 struct table sptab[] = {
 	{LOAD,cs106},		/* load */
-	{INCOPS,cs91},		/* +1, +2 */
-	{DECOPS,cs91},		/* -1, -2 */
 	{PLUS,cs40},		/* + */
 	{MINUS,cs40},		/* - */
-	{ANDN,cs40},		/* &~ */
-	{OR,cs40},		/* | */
-	{ITOL,cs58},		/* cvt int->long */
-	{FTOL,cs56},		/* cvt float->long */
+	{AND,cs40},		/* & */
+	{OR,cs43},		/* | */
+	{NEG,cs41},		/* unary - */
+	{COMPL,cs42},		/* unary ~ */
 	{0}
 };
 %}
@@ -2181,34 +2179,63 @@ cs106:
 	lca	#1(R),&(x1)
 	Q
 
-/* +1, +2, -1, -2 */
-cs91:
-%n,1
-	FS
-	I	A2,&(x1)
+/* unary - */
+cs41:
+%n,n
+	lca	N0,&(x1)
+	bs	A1,&(x1)
+	Q
 
-%n,2
-	FS
-	I	A2,&(x1)
-
-/* +, -, |, &~ */
-cs40:
-%a,c
-%aub,c
+/* unary ~ */
+cs42:
+%n,n
 	lca	A1,&(x1)
+	ha	NN1,&(x1)
+	Q
+
+/* | */
+cs43:
+%n,n
+	lca	A1,&(x1)
+	lca	A2,R
+	ha	NN1,&(x1)
+	ha	NN1,R
+	ext	R,&(x1)
+	ha	NN1,&(x1)
+	Q
+
+/* +, -, & */
+cs40:
+%ab,c
+%aub,c
+	lca	N0,&(x1)
+	exm	A1,&(x1),001
+	I	A2,&(x1)
+	Q
+
+%a,c
+	lca	A1,&(x1)
+	I	A2,&(x1)
+	Q
+
+%nb,c
+%nub,c
+	FS
+	lca	N0,&(x1)
+	exm	A1,&(x1),001
 	I	A2,&(x1)
 	Q
 
 %n,c
-%nub,c
+%n,n
 	FS
 	lca	A1,&(x1)
-	I"	A2,&(x1)
+	I	A2,&(x1)
 	Q
 
 %a,aw
 	FS
-	I	A2,&(x1),bar
+	I	A2,&(x1)
 	Q
 
 %a,nw*
@@ -2222,28 +2249,6 @@ cs40:
 	S
 	I	R,&(x1)
 	Q
-
-/* integer to long */
-cs58:
-%c,n
-	lca	A1,&(x1)
-	QQ
-
-%nu,n
-	FS
-	lca	A1,&(x1)
-	QQ
-
-%aw,n
-	lca	A1,&(x1)
-	QQ
-
-/* float to long */
-cs56:
-%nf,n
-	F
-	lca	R,&(x1)
-	QQ
 
 /* setup for structure assign */
 ci116:

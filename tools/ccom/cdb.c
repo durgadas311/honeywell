@@ -220,12 +220,17 @@ static char *classes[] = {
 static char buf[32];
 
 void dumptree(union tree *p, int level, char tag) {
+	static char *blanks = "                                ";
 	int op = p->t.op;
 	int type = p->t.type;
 	int xtyp = (type & XTYPE) >> 4;
 	type &= TYPE;
 	int class;
-	fprintf(stderr, "%.*s%c ", level * 2, "                                ", tag);
+	if (!level) {
+		fprintf(stderr, "%.*s%d: %c ", level * 2, blanks, line, tag);
+	} else {
+		fprintf(stderr, "%.*s%c ", level * 2, blanks, tag);
+	}
 	
         fprintf(stderr, "%6s: %6s", ops[op], types[type]);
 	if (xtyp) {
@@ -253,7 +258,8 @@ void dumptree(union tree *p, int level, char tag) {
 		break;
 	}
 	fprintf(stderr, "\n");
-	if (!(opdope[op] & (BINARY|LVALUE))) {
+	// opdope for LOAD not correct?
+	if (op != LOAD && !(opdope[op] & (BINARY|LVALUE))) {
 		return;
 	}
 	if (p->t.tr1) {
