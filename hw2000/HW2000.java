@@ -296,6 +296,7 @@ public class HW2000 implements CoreMemory
 		return v;
 	}
 
+	// No punc set, a la EXM...011
 	public void putStr(int adr, String val, int max) {
 		int n = 0;
 		while (n < max && n < val.length()) {
@@ -309,6 +310,15 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	public void putRaw(int adr, long val, int len) {
+		// TODO: preserve punct?
+		while (len-- > 0) {
+			mem[adr--] = (byte)(val & 077);
+			val >>= 6;
+		}
+	}
+
+	// Overwrites punc, like LCA
 	public void putAddr(int adr, int val, int pnc) {
 		mem[adr--] = (byte)(val & 077);
 		val >>= 6;

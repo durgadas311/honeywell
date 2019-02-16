@@ -2434,9 +2434,23 @@ public class HW2000FrontPanel extends JFrame
 		String op = "AS200 OBJ";
 		RandomAccessFile obj;
 		byte[] hdr = new byte[8*4];
+		long vis = 0400000000000L;
+		int rev = 0;
 		File src = pickFile(op + " File",
 				"ohw", "AS200 OBJ", _last);
 		if (src == null) {
+			return;
+		}
+		if (!dpi_rev.getText().isEmpty()) try {
+			rev = Integer.valueOf(dpi_rev.getText());
+		} catch (Exception ee) {
+			PopupFactory.warning(this, op, "Revision number invalid");
+			return;
+		}
+		if (!dpi_vis.getText().isEmpty()) try {
+			vis = UtilExecutable.visibility(dpi_vis.getText());
+		} catch (Exception ee) {
+			PopupFactory.warning(this, op, "Visibility invalid");
 			return;
 		}
 		try {
@@ -2470,8 +2484,15 @@ public class HW2000FrontPanel extends JFrame
 		currHi = adr + txt + dat + bss;
 		// Put top of memory in X1...
 		sys.putAddr(4, currHi, sys.M_WM);
-		// Put program name in MOD1 location...
+		// Put data in MOD1 locations...
+		sys.putStr(65, String.format("%03d", rev), 3);
 		sys.putStr(68, src.getName().split("\\.")[0], 8);
+		sys.putRaw(118, vis, 6);
+		sys.putAddr(189, currHi, sys.M_WM); // possibly higher? heap top?
+		sys.setWord(65);	// REV
+		sys.setWord(68);	// PGM
+		sys.setWord(74);	// SEG
+		sys.setWord(113);	// VIS
 		sys.SR = adr;
 		_last = src;
 	}
