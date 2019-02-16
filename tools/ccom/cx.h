@@ -3,8 +3,10 @@
  */
 
 #define	LTYPE	long	/* change to int if no long consts */
-#define	MAXINT	037777777	/* Largest positive short integer */
+#define	MAXINT	037777777	/* Largest positive integer */
+#define	MININT	040000000	/* smallest negative integer */
 #define	MAXUINT	077777777	/* largest unsigned integer */
+#define	MINUINT	000000000	/* smallest unsigned integer */
 #define	HSHSIZ	300	/* # entries in hash table for names */
 #define	CMSIZ	40	/* size of expression stack */
 #define	SSIZE	40	/* size of other expression stack */

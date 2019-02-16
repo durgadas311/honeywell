@@ -47,7 +47,7 @@ struct nlocal {
 struct	nlocal	local[NSYM/2];
 
 unsigned aflag = 1340;	/* address to relocate, HW monitor reserved */
-unsigned tflag;		/* stack size to add to .bss, default 0 */
+unsigned tflag = 0;	/* stack size to add to .bss, default 0 */
 int	xflag;		/* discard local symbols */
 int	Xflag;		/* discard locals starting with 'L' */
 int	rflag;		/* preserve relocation bits, don't define common */
@@ -1077,6 +1077,7 @@ main(argc, argv)
 		case 'l':
 			break;
 		case 'a':
+		case 't':
 		case 'u':
 		case 'o':
 			if (ap[2])

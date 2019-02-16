@@ -1175,7 +1175,22 @@ static struct globcons {
 	{ "@eight", INT, 8 },
 	{ "@twlv", INT, 12 },
 	{ "@none", INT, -1 },
+	{ "@nmax", INT, MININT },
 	{ NULL }
+};
+
+static int masks[VOID+1] = {
+[CHAR] = 077,
+[UNCHAR] = 077,
+[INT] = MAXUINT,
+[UNSIGN] = MAXUINT,
+};
+
+static int sizes[VOID+1] = {
+[CHAR] = SZCHAR,
+[UNCHAR] = SZCHAR,
+[INT] = SZINT,
+[UNSIGN] = SZINT,
 };
 
 union tree *
@@ -1185,9 +1200,11 @@ int val, type, stc;
 	register union tree *p;
 
 	int x;
+	int msk = masks[type];
 	// first, check known global constants...
 	for (x = 0; globals[x].name; ++x) {
-		if (globals[x].type == type && globals[x].value == val) {
+		if (globals[x].type == type &&
+		    (globals[x].value & msk) == (val & msk)) {
 			break;
 		}
 	}
@@ -1215,10 +1232,11 @@ int op, val, type, stc;
 
 	int x;
 	int lab = -1;
+	int msk = masks[type];
 	for (x = 0; x < nconsts; ++x) {
 		if (shared[x].op == op &&
 				shared[x].type == type &&
-				shared[x].value == val) {
+		    		(shared[x].value & msk) == (val & msk)) {
 			lab = shared[x].label;
 			break;
 		}
@@ -1254,12 +1272,6 @@ void prconlab(int lab, int flag) {
 	}
 }
 
-static int sizes[VOID+1] = {
-[CHAR] = SZCHAR,
-[UNCHAR] = SZCHAR,
-[INT] = SZINT,
-[UNSIGN] = SZINT,
-};
 void prcons() {
 	int x;
 	for (x = 0; globals[x].name; ++x) {

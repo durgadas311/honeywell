@@ -27,7 +27,7 @@ char	*crtx0 = "../lib/crtx0.o";
 
 char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
 char	*tmp_c1, *tmp_c2, *tmp_asm, *tmp_pre, *tmp_opt;
-char	*outfile, *aflag;
+char	*outfile, *aflag = NULL, *tflag = NULL;
 char	**av, **clist, **llist, **plist;
 int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, wflag, Lminusflag;
 int	errflag;
@@ -299,6 +299,12 @@ main(argc, argv)
 				else
 					llist[nl++] = argv[i];
 				continue;
+			case 't':
+				if (argv[i][2])
+					tflag = &argv[i][2];
+				else if (++i < argc)
+					tflag = argv[i];
+				continue;
 			case 'a':
 				if (argv[i][2])
 					aflag = &argv[i][2];
@@ -464,6 +470,10 @@ nocom:
 		if (aflag) {
 			av[na++] = "-a";
 			av[na++] = aflag;
+		}
+		if (tflag) {
+			av[na++] = "-t";
+			av[na++] = tflag;
 		}
 		if (outfile) {
 			av[na++] = "-o";

@@ -88,6 +88,10 @@ Pass to linker.
 Pass to linker.
 
 .TP
+\fB\-t\ \fIlen\fR
+Pass to linker.
+
+.TP
 \fB\-w\fR
 Pass to phase-1 compiler \fBc0\fR.
 
@@ -144,6 +148,46 @@ numeric fields. Using pointers unaware can result in problems.
 Because the H200 series require punctuation in memory to terminate
 most operations, uninitialized variables can be disasterous. Take
 extreme caution to initialize all data.
+
+The only H200 compare instruction is effectively unsigned, and so
+compare of signed ints is not as efficient as compare of unsigned.
+
+The H200 instruction set does not include a bitwise OR.
+Niether does it include bitwise NOT or 2's-compliment NEG.
+This means that OR must be implemented using De Morgan's laws:
+.IP
+(A | B) == ~(~A & ~B)
+.br
+or more precisely:
+.br
+-1 ^ ((-1 ^ A) & (-1 ^ B))
+.PP
+and is not very
+efficient compared to AND and XOR.
+
+The compiler, and associated runtime, use index registers X1 through X7. X5 is
+the official "return code". These registers are all used in a temporary fashion,
+however any custom assembly code that makes calls into the runtime must understand that
+these index registers may be overwritten. X1 is the stack pointer, and X2 is the
+frame pointer.
+
+The runtime assumes a MOD1 MSR environment, and sets up argv as follows:
+.TP
+[0] = PGM+SEG
+program name and segment (8 char)
+.TP
+[1] = REV
+program revision number (3 char)
+.TP
+[2] = VIS
+program visibility mask (6 char)
+.PP
+
+The stack pointer (X1) is setup at the end of the .bss section.
+No space is reserved automatically by the runtime, however
+program loaders may do that. The simulator loader adds 256 to the .bss size.
+The \fIld200\fR option \fB\-t\fR may be used to request additional space.
+\fIcc200\fR will pass along any \fB\-t\fR option to the linker.
 
 .SH FILES
 .TP
