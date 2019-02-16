@@ -135,7 +135,7 @@ int f;
 		s = p->x.name;
 		if (f) {
 			if (*s == '_') ++s;
-			printf(".%s", s);
+			printf("^%s", s);
 		} else {
 			printf("%s", s);
 		}
@@ -978,8 +978,8 @@ getree()
 #if 0	// label was already setup, just add ':'
 		ss = s;
 		if (*ss == '_') ++ss;
-		printf(	"\t.word\t.%s\n"
-			".%s::", ss, ss);
+		printf(	"\t.word\t^%s\n"
+			"^%s::", ss, ss);
 #else
 		putchar(':');	// point to start of space (left side)
 #endif
@@ -1231,9 +1231,9 @@ getstring:
 		}
 		ss = s;
 		if (*ss == '_') ++ss;
-		if (op == EXTERN) printf("\t.globl\t%s,.%s\n", s, ss);
-		printf( "%s:\t.word\t.%s\n"
-			".%s:", s, ss, ss); // needs to be on same line for punc control
+		if (op == EXTERN) printf("\t.globl\t%s,^%s\n", s, ss);
+		printf( "%s:\t.word\t^%s\n"
+			"^%s:", s, ss, ss); // needs to be on same line for punc control
 		break;
 
 	case SLABEL:	// non-array, in .bss, with simple size
@@ -1251,9 +1251,9 @@ bss_label:
 		ss = s;
 		if (*ss == '_') ++ss;
 		printf(	"\t.data\n"
-			"%s:\t.word\t.%s\n"
+			"%s:\t.word\t^%s\n"
 			"\t.bss\n"
-			".%s:", s, ss, ss);
+			"^%s:", s, ss, ss);
 		if (t == 1) {
 			printf(	":\t.space\t%d\n", op);
 		} else {
