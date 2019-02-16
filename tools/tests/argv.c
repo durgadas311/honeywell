@@ -4,7 +4,7 @@ int main(argc, argv)
 int argc;
 char **argv;
 {
-	int x;
+	unsigned x;
 	for (x = 0; x < argc; ++x) {
 		puto(x);
 		print(argv[x], PR_SPB | PR_NL);

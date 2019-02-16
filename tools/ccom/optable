@@ -52,69 +52,69 @@
  */
 
 struct table regtab[] = {
-	{106,cr106},	/* load */
-	{30,cr70},	/* prefix ++, handled as += */
-	{31,cr70},	/* prefix --, handled as -= */
-	{32,cr32},	/* postfix ++ */
-	{33,cr32},	/* postfix -- */
-	{37,cr37},	/* unary - */
-	{38,cr37},	/* ~ */
-	{98,cr100},	/* call */
-	{99,cr100},	/* call */
-	{80,cr80},	/* = */
-	{91,cr91},	/* +1, +2 */
-	{92,cr91},	/* -1, -2 */
-	{40,cr40},	/* + */
-	{41,cr40},	/* - */
-	{42,cr42},	/* *, char/int, both signed & unsigned */
-	{43,cr43},	/* /, signed char/int, calls idiv */
-	{14,cr14},	/* PTOI: scale pointer difference to int */
-	{44,cr43},	/* %, signed char/int, calls irem */
-	{45,cr45},	/* >>, signed */
-	{17,cr45},	/* >>, unsigned */
-	{46,cr45},	/* << */
-	{55,cr40},	/* &~ */
-	{48,cr40},	/* | */
-	{49,cr49},	/* ^ */
-	{70,cr70},	/* += */
-	{71,cr70},	/* -= */
-	{72,cr72},	/* *= */
-	{73,cr73},	/* /=, signed char/int, calls idiv */
-	{74,cr73},	/* %=, signed char/int, calls irem */
-	{75,cr75},	/* >>=, signed */
-	{18,cr75},	/* >>=, unsigned */
-	{76,cr75},	/* <<= */
-	{78,cr78},	/* |= */
-	{85,cr78},	/* &= */
-	{79,cr79},	/* ^= */
-	{102,cr102},	/* goto */
-	{51,cr51},	/* cvt int => float */
-	{52,cr52},	/* cvt float => int */
-	{56,cr56},	/* cvt long => float */
-	{57,cr57},	/* cvt float => long */
-	{58,cr58},	/* cvt int => long */
-	{59,cr59},	/* cvt long => int */
-	{82,cr82},	/* *, signed long, calls lmul */
-	{83,cr82},	/* /, signed long, calls ldiv */
-	{84,cr82},	/* %, signed long, calls lrem */
-	{86,cr86},	/* *=, signed long, calls almul */
-	{87,cr86},	/* /=, signed long, calls aldiv */
-	{88,cr86},	/* %=, signed long, calls alrem */
-	{16,cr16},	/* = for bit fields */
-	{109,cr109},	/* cvt int -> char */
-	{117,cr117},	/* /  for unsigned char/int or divisor known positive */
-	{118,cr117},	/* %  for unsigned char/int or divisor known positive */
-	{119,cr119},	/* /= for unsigned char/int or divisor known positive */
-	{120,cr119},	/* %= for unsigned char/int or divisor known positive */
-	{107,cr107},	/* special case (int *) - (int *) */
-	{121,cr121},	/* *, unsigned long, calls lmul */
-	{122,cr121},	/* /, unsigned long, calls uldiv */
-	{123,cr121},	/* %, unsigned long, calls ulrem */
-	{124,cr124},	/* *=, unsigned long, calls almul */
-	{125,cr124},	/* /=, unsigned long, calls ualdiv */
-	{126,cr124},	/* %=, unsigned long, calls ualrem */
-	{127,cr127},	/* cvt unsigned long to float, calls ultof */
-	{130,cr130},	/* special handling of 'x - &name' */
+	{LOAD,cr106},	/* load */
+	{INCBEF,cr70},	/* prefix ++, handled as += */
+	{DECBEF,cr70},	/* prefix --, handled as -= */
+	{INCAFT,cr32},	/* postfix ++ */
+	{DECAFT,cr32},	/* postfix -- */
+	{NEG,cr37},	/* unary - */
+	{COMPL,cr37},	/* ~ */
+	{CALL1,cr100},	/* call */
+	{CALL2,cr100},	/* call */
+	{ASSIGN,cr80},	/* = */
+	{INCOPS,cr91},	/* +1, +2 */
+	{DECOPS,cr91},	/* -1, -2 */
+	{PLUS,cr40},	/* + */
+	{MINUS,cr40},	/* - */
+	{TIMES,cr42},	/* *, char/int, both signed & unsigned */
+	{DIVIDE,cr43},	/* /, signed char/int, calls idiv */
+	{PTOI,cr14},	/* PTOI: scale pointer difference to int */
+	{MOD,cr43},	/* %, signed char/int, calls irem */
+	{RSHIFT,cr45},	/* >>, signed */
+	{URSH,cr45},	/* >>, unsigned */
+	{LSHIFT,cr45},	/* << */
+	{ANDN,cr40},	/* &~ */
+	{OR,cr40},	/* | */
+	{EXOR,cr49},	/* ^ */
+	{ASPLUS,cr70},	/* += */
+	{ASMINUS,cr70},	/* -= */
+	{ASTIMES,cr72},	/* *= */
+	{ASDIV,cr73},	/* /=, signed char/int, calls idiv */
+	{ASMOD,cr73},	/* %=, signed char/int, calls irem */
+	{ASRSH,cr75},	/* >>=, signed */
+	{ASURSH,cr75},	/* >>=, unsigned */
+	{ASLSH,cr75},	/* <<= */
+	{ASOR,cr78},	/* |= */
+	{ASANDN,cr78},	/* &= */
+	{ASXOR,cr79},	/* ^= */
+	{JUMP,cr102},	/* goto */
+	{ITOF,cr51},	/* cvt int => float */
+	{FTOI,cr52},	/* cvt float => int */
+	{FTOL,cr56},	/* cvt long => float */
+	{LTOF,cr57},	/* cvt float => long */
+	{ITOL,cr58},	/* cvt int => long */
+	{LTOI,cr59},	/* cvt long => int */
+	{LTIMES,cr82},	/* *, signed long, calls lmul */
+	{LDIV,cr82},	/* /, signed long, calls ldiv */
+	{LMOD,cr82},	/* %, signed long, calls lrem */
+	{LASTIMES,cr86},	/* *=, signed long, calls almul */
+	{LASDIV,cr86},	/* /=, signed long, calls aldiv */
+	{LASMOD,cr86},	/* %=, signed long, calls alrem */
+	{FSELA,cr16},	/* = for bit fields */
+	{ITOC,cr109},	/* cvt int -> char */
+	{UDIV,cr117},	/* /  for unsigned char/int or divisor known positive */
+	{UMOD,cr117},	/* %  for unsigned char/int or divisor known positive */
+	{ASUDIV,cr119},	/* /= for unsigned char/int or divisor known positive */
+	{ASUMOD,cr119},	/* %= for unsigned char/int or divisor known positive */
+	{PTOI1,cr107},	/* special case (int *) - (int *) */
+	{ULTIMES,cr121},	/* *, unsigned long, calls lmul */
+	{ULDIV,cr121},	/* /, unsigned long, calls uldiv */
+	{ULMOD,cr121},	/* %, unsigned long, calls ulrem */
+	{ULASTIMES,cr124},	/* *=, unsigned long, calls almul */
+	{ULASDIV,cr124},	/* /=, unsigned long, calls ualdiv */
+	{ULASMOD,cr124},	/* %=, unsigned long, calls ualrem */
+	{ULTOF,cr127},	/* cvt unsigned long to float, calls ultof */
+	{MINSTAT,cr130},	/* special handling of 'x - &name' */
 	{0}
 };
 %}
@@ -1228,18 +1228,18 @@ cr130:
  */
 
 struct table efftab[] = {
-	{30,ci70},	/* prefix ++ */
-	{31,ci70},	/* prefix -- */
-	{32,ci70},	/* postfix ++ */
-	{33,ci70},	/* postfix -- */
-	{80,ci80},	/* = */
-	{70,ci70},	/* += */
-	{71,ci70},	/* -= */
-	{78,ci78},	/* |= */
-	{79,ci79},	/* ^= */
-	{85,ci78},	/* &~= */
-	{16,ci16},	/* field assign, FSELA */
-	{116,ci116},	/* structure assignment setup */
+	{INCBEF,ci70},	/* prefix ++ */
+	{DECBEF,ci70},	/* prefix -- */
+	{INCAFT,ci70},	/* postfix ++ */
+	{DECAFT,ci70},	/* postfix -- */
+	{ASSIGN,ci80},	/* = */
+	{ASPLUS,ci70},	/* += */
+	{ASMINUS,ci70},	/* -= */
+	{ASOR,ci78},	/* |= */
+	{ASXOR,ci79},	/* ^= */
+	{ASANDN,ci78},	/* &~= */
+	{FSELA,ci16},	/* field assign, FSELA */
+	{STRSET,ci116},	/* structure assignment setup */
 	{0}
 };
 %}
@@ -1854,63 +1854,71 @@ ci16:
  */
 
 struct table cctab[] = {
-	{106,cc60},	/* load */
-	{55,rest},	/* &~ */
-	{34,rest},	/* ! */
-	{35,rest},	/* & */
-	{36,rest},	/* * */
-	{37,rest},	/* unary - */
-	{40,rest},	/* + */
-	{41,rest},	/* - */
-	{43,rest},	/* / */
-	{81,cc81},	/* & as in "if ((a&b)==0)" */
-	{48,rest},	/* | */
-	{60,cc60},	/* == */
-	{61,cc60},	/* =! */
-	{62,cc60},	/* <=, signed */
-	{63,cc60},	/* <, signed */
-	{64,cc60},	/* >=, signed */
-	{65,cc60},	/* >, signed */
-	{66,cc60},	/* <=, unsigned */
-	{67,cc60},	/* <, unsigned */
-	{68,cc60},	/* >=, unsigned */
-	{69,cc60},	/* > , unsigned */
-	{72,rest},	/* *= */
-	{73,rest},	/* /= */
-	{79,rest},	/* ^= */
+	{LOAD,cc61},	/* load */
+	{ANDN,rest},	/* &~ */
+	{EXCLA,rest},	/* ! */
+	{AMPER,rest},	/* & */
+	{STAR,rest},	/* * */
+	{NEG,rest},	/* unary - */
+	{PLUS,rest},	/* + */
+	{MINUS,rest},	/* - */
+	{DIVIDE,rest},	/* / */
+	{TAND,cc81},	/* & as in "if ((a&b)==0)" */
+	{OR,rest},	/* | */
+	{EQUAL,cc61},	/* == */
+	{NEQUAL,cc61},	/* != */
+	{LESSEQ,cc60},	/* <=, signed */
+	{LESS,cc60},	/* <, signed */
+	{GREATEQ,cc60},	/* >=, signed */
+	{GREAT,cc60},	/* >, signed */
+	{LESSEQP,cc61},	/* <=, unsigned */
+	{LESSP,cc61},	/* <, unsigned */
+	{GREATQP,cc61},	/* >=, unsigned */
+	{GREATP,cc61},	/* > , unsigned */
+	{ASTIMES,rest},	/* *= */
+	{ASDIV,rest},	/* /= */
+	{ASXOR,rest},	/* ^= */
 	{0}
 };
 %}
 
-/* relationals */
+/* unsigned relationals */
+cc61:
+%n,n
+	c	A2,A1
+
+/* signed relationals */
 cc60:
 %c,z
 %a,z
 %ad,zf
 %aub,z
 %af,z
-	c	A2,A1
+	I	A2,A1
 
 %n*,z
 %nd*,zf
+	F*
+	I	A2,#1(R)
+
 %nub*,z
 	F*
-	c	A2,#1(R)
+	I	A2,#1(R)
 
 %nf*,z
 	F*
-	c	A2,#1(R)
+	I	A2,#1(R)
 
 %n,z
 %nf,zf
 	FC
 
 %r,c
-	c	A2,A1
+	I	A2,A1
 
 %n,c
 	F
-	c	A2,A1
+	I	A2,A1
 
 %aw,aw
 %ab,ab
@@ -2144,33 +2152,24 @@ rest:
  */
 
 struct table sptab[] = {
-	{106,cs106},		/* load */
-	{91,cs91},		/* +1, +2 */
-	{92,cs91},		/* -1, -2 */
-	{40,cs40},		/* + */
-	{41,cs40},		/* - */
-	{55,cs40},		/* &~ */
-	{48,cs40},		/* | */
-	{58,cs58},		/* cvt int->long */
-	{56,cs56},		/* cvt float->long */
+	{LOAD,cs106},		/* load */
+	{INCOPS,cs91},		/* +1, +2 */
+	{DECOPS,cs91},		/* -1, -2 */
+	{PLUS,cs40},		/* + */
+	{MINUS,cs40},		/* - */
+	{ANDN,cs40},		/* &~ */
+	{OR,cs40},		/* | */
+	{ITOL,cs58},		/* cvt int->long */
+	{FTOL,cs56},		/* cvt float->long */
 	{0}
 };
 %}
 
-/* load */
+/* load to stack */
 cs106:
-%z,n
-%zf,n
-	lca	A1,&(x1)
-	Q
-
-%c,n
-	lca	A1,&(x1)
-	Q
-
 %ab,n
 %aub,n
-	lca	A1,&(x1)
+	exm	A1,&(x1),001
 	Q
 
 %aw,n
@@ -2181,15 +2180,6 @@ cs106:
 	F*
 	lca	#1(R),&(x1)
 	Q
-
-%cl,n
-	lca	A1,&(x1)
-	QQ
-
-%al,n
-%aul,n
-	lca	A1,&(x1)
-	QQ
 
 /* +1, +2, -1, -2 */
 cs91:

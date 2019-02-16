@@ -287,7 +287,7 @@ char	*opntab[] = {
  */
 char	mov[]	= "lca";
 char	clr[]	= "bs";	// dangerous: punctuation issues
-char	cmp[]	= "c";
+char	cmp[]	= "@cmp";
 char	tst[]	= "tst";
 char	add[]	= "ba";
 char	sub[]	= "bs";
@@ -401,18 +401,19 @@ struct instab instab[] = {
 
 /*
  * Similar table for relationals.
- * The first string is for the positive
+ * The first variant is for the positive
  * test, the second for the inverted one.
+ * Variants apply to BCT only.
  */
 struct boptab branchtab[] = {
 {	EQUAL,	042, 045 },
 {	NEQUAL,	045, 042 },
-
+// signed operands
 {	LESSEQ,	043, 044 },	// B <= A
 {	LESS,	041, 046 },	// B < A
 {	GREATEQ,046, 041 },	// B >= A
 {	GREAT,	044, 043 },	// B > A
-
+// unsigned operands
 {	LESSEQP,043, 044 },	// B <= A ?
 {	LESSP,	041, 046 },	// B < A ?
 {	GREATQP,046, 041 },	// B >= A ?
