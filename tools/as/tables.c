@@ -27,6 +27,8 @@ struct optab opcodes[] = {
 	{ ".data",	P_OP | PDATA  },
 	{ ".bss",	P_OP | PBSS   },
 	{ ".comm",	P_OP | PCOMM  },
+	{ ".error",	P_OP | PERR   },
+	{ ".warning",	P_OP | PWARN  },
 	// * = accepts "Set II Punctuation Indicator" prefix - e.g. "A:"
 
 	/* HW200/2000 machine ops */

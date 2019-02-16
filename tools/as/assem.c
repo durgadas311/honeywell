@@ -41,7 +41,7 @@ void do_pseudo(int op) {
 				count = 0;
 			}
 			if (t != IDENT || symlook(0) == 0) continue;
-			switch (cursym->value) {
+			switch (cursym->value & OP_MSK) {
 			case PIF:	count++; break;
 			case PENDIF:	count--; break;
 			}
@@ -50,6 +50,22 @@ void do_pseudo(int op) {
 
 	case PENDIF:
 		if (--ifcount < 0) cerror(erri);
+		break;
+
+	case PERR:
+	case PWARN:
+		t = tok(0);
+		if (t != STRING) {
+			cerror(errv);
+		}
+		putline(0);
+		serror((char *)conbuf);
+		if (op == PERR) {
+			++errcnt;
+		} else {
+			nexttoken = 0;
+			longjmp(err_jmp, 0);
+		}
 		break;
 
 	case PDATA:

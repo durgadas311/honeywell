@@ -86,6 +86,7 @@ extern void	sym_iter();
 #define errt	20	/* numeric label overflow */
 #define errf	21	/* illegal map file */
 
+extern void	serror(char *str);
 extern void	cerror(int type);
 extern void	xerror(int type);
 extern int 	errcnt;
@@ -169,6 +170,8 @@ extern int scanstr(int pnc);
 #define PBIN	13
 #define PSPACE	14
 #define PADMODE	15
+#define PERR	16
+#define PWARN	17
 
 /* symbol types */
 

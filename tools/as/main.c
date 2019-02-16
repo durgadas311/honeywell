@@ -150,12 +150,18 @@ static char *errtab [] = {
 
 int errcnt = 0;
 
-void cerror(type)
-int type;
+void serror(str)
+char *str;
 {
 	if (nifiles > 1)
 		fprintf(stderr, "%s: ", ifiles[cfile]);
-	fprintf(stderr, "%d: %s\n", line, errtab[type]);
+	fprintf(stderr, "%d: %s\n", line, str);
+}
+
+void cerror(type)
+int type;
+{
+	serror(errtab[type]);
 	errcnt++;
 }
 

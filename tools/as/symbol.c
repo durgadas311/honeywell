@@ -50,7 +50,6 @@ int symlook(flag)
 	SYMBOL **lpp, *sp;
 
 	lpp = &hashtab[hash(&symbuf)];
-
 	/* First see if the symbol has already been defined */
 	for (sp = *lpp; sp; lpp = &(sp->next), sp = sp->next) {
 		if (!strncmp(sp->name, symbuf, 8)) {
