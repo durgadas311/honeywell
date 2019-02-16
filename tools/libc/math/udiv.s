@@ -1,4 +1,4 @@
-// divide two signed numbers, and return both quotient and remainder.
+// divide two unsigned numbers, and return both quotient and remainder.
 // param1 = numerator, param2 = denominator, param3 = (div_t *)
 // 'div_t' is essentially an array of two ints, so the pointer
 // points to:
@@ -9,12 +9,12 @@
 //	+--------+
 // which means it points to the *right* end of element [0].
 
-	.globl	@div
-	.globl	_div
+	.globl	@udiv
+	.globl	_udiv
 	.text
-_div:
+_udiv:
 	scr	0(x1),070
-	lcr	@div,064
+	lcr	@udiv,064
 	csm	8(x1),4(x1)
 	lca	12(x1),x3
 	lca	x5,0(x3)
