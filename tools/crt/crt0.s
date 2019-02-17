@@ -7,7 +7,7 @@
 // loc 186-189 = end of memory address (WM)
 
 	.globl	_main
-	.globl	@zero,@one,@two,@four,@eight,@twlv
+	.globl	@zero,@one,@two,@four,@eight,@twlv,@none
 start:
 	bs	@four,x1	// retreat inside our region
 	lca	x1,x2

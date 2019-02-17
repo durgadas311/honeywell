@@ -9,7 +9,8 @@
 	.globl	_cread
 _cread:
 	scr	0(x1),070
-	pdt	4(x1),013,041,060,0
+	lca	4(x1),x5
+	pdt	0(x5),013,041
 	pcb	.,013,041,010
 	pcb	1f,013,041,041
 	lca	@zero,x5

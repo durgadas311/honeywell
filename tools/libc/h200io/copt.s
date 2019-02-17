@@ -6,8 +6,8 @@
 	.globl	_copt
 _copt:
 	scr	0(x1),070
-	exm	4(x1),3f+6,001	// set option code
-3:	pcb	1f,041,000	// option set above
+	exm	4(x1),3f+7,001	// set option code
+3:	pcb	1f,013,041,000	// option set above
 	lca	@zero,x5
 	lcr	0(x1),077
 

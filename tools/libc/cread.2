@@ -5,6 +5,8 @@ cread  \-  punchcard input
 .B #include <h200io.h>
 .PP
 .BI "int cread(void *" buf ");"
+.br
+.BI "int copt(int " op ");"
 .PP
 
 .SH DESCRIPTION
@@ -20,6 +22,16 @@ it simply stalls.
 There must be a special card to indicate the end of input.
 This is typically a card with "1EOF " in the first 5 columns,
 however the exact semantics are the responsibility of the caller.
+
+.B Copt
+sets a special option for the reader/punch. Options are:
+.TP
+PC_HOL
+Normal mode, hollerith codes.
+.TP
+PC_SPC
+Special codes, for non-numeric (alphabetic) processing
+.PP
 
 .SH "SEE ALSO"
 setpnc (2)

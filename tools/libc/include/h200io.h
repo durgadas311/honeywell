@@ -46,7 +46,9 @@ int sense();	/* (int sw) */
 #define SW_8	030
 
 /* H200/2000 Punchcard I/O */
-int cread();	/* (void *buf) */
+int cread();	/* (void *buf, int op) */
+#define PC_HOL	027
+#define PC_SPC	026
 
 /* H200/2000 Mag Tape I/O */
 int tread();	/* (int lun, void *buf) */
