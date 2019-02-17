@@ -1,0 +1,88 @@
+.TH DREAD 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+dread, dwrite, dset, dtell, drest, dseek
+\-  disk I/O
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "int dread(void *" buf ");"
+.br
+.BI "int dwrite(void *" buf ");"
+.br
+.BI "void dset(struct dsk_adr *" adr ");"
+.br
+.BI "void dtell(struct dsk_adr *" adr ");"
+.br
+.BI "int drest(int " unit ");"
+.br
+.BI "int dseek(int " unit ", int " cyl ");"
+.PP
+
+.SH DESCRIPTION
+.B Dread
+reads one record from disk \fIlun\fR into buffer \fIbuf\fR.
+The record read is based on the address set by the previous \fIdset\fR call
+and the head position set by the last \fIfseek\fR call for this \fIlun\fR.
+The buffer must be terminated by a RM, although typically
+the block size is well-known and the RM is never reached.
+Returns -1 if an error is encountered, otherwise returns
+the number of characters transferred.
+
+If the block size is larger than the buffer, then a character is
+transferred to the position with a RM, and the return value will
+indicate one extra character.
+The true length of such a block can be determined using \fIdtell\fR.
+
+A sequential read is implied. If no \fIdset\fR call was made between
+the last \fIdread\fR and this one, the record/track number is incremented.
+
+.B Dwrite
+writes one record to disk \fIlun\fR from buffer \fIbuf\fR.
+The buffer must be RM-terminated. The buffer length should match
+the record length that was formatted for the current track.
+Returns -1 if an error is encountered, otherwise returns
+the number of characters transferred.
+
+.B Dset
+sets the controller address register. This selects the LUN, cylinder,
+track (head), and record number to be used for the next \fIdread\fR or \fIdwrite\fR.
+
+.B Dtell
+returns the current controller address register contents. This may include
+status information about the previous I/O operation.
+
+.B Drest
+moves the disk head assembly to cylinder 0, i.e. the "home" or "restore"
+position. This function resturns without waiting for the seek to complete.
+
+.B Dseek
+moves the disk head assembly to the position indicated by \fIcyl\fR.
+This function resturns without waiting for the seek to complete.
+
+.SH "DATA STRUCTURES"
+
+The address register data structure is:
+.PP
+.in +4n
+.EX
+struct dsk_adr {
+	char lun;
+	int cyl;
+	int trk;
+	int rec;
+	int sw;	/* dtell only */
+	int dl;	/* dtell only */
+};
+.EE
+.in
+.PP
+
+\fBsw\fR (status and write protect) contains the status as follows:
+bits 0-3 used by format commands.
+bits 4-11 contain error status detail.
+
+\fBdl\fR (data length) contains the record length field from the last I/O operation.
+It is also used during format operations to specify the record length field.
+
+.SH "SEE ALSO"
+setpnc (2)

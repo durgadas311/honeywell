@@ -32,6 +32,19 @@ int isrm();	/* (void *) */
 int isim();	/* (void *) */
 int iswm();	/* (void *) */
 
+/* SENSE switch detection */
+int sense();	/* (int sw) */
+/* These may be ORed, but only for */
+/* SW_1..SW_4 or SW_5..SW_8, producing AND */
+#define SW_1	001
+#define SW_2	002
+#define SW_3	004
+#define SW_4	010
+#define SW_5	021
+#define SW_6	022
+#define SW_7	024
+#define SW_8	030
+
 /* H200/2000 Punchcard I/O */
 int cread();	/* (void *buf) */
 

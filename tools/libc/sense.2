@@ -1,0 +1,20 @@
+.TH SENSE 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+sense  \-  H200 SENSE switch detection
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "int sense(int " sw ");"
+.PP
+
+.SH DESCRIPTION
+.B Sense
+detects the condition of the SENSE switches indicated by \fIsw\fR.
+Multiple switches may be detect, however the condition is always
+for all selected switches being ON. Also, sense switches 1-4 may be
+detected together, or switches 5-8. The constants SW_1-SW_8
+may be ORed, given the above rules.
+
+.SH "SEE ALSO"
+.SH DIAGNOSTICS
+.SH BUGS
