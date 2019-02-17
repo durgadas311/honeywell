@@ -43,4 +43,20 @@ int tfwd();	/* (int lun) */
 int trew();	/* (int lun) */
 int tunl();	/* (int lun) */
 
+/* H200/2000 Disk I/O */
+struct dsk_adr {
+	char lun;
+	int cyl;
+	int trk;
+	int rec;
+	int sw;	/* dtell only */ 
+	int dl;	/* dtell only */ 
+};
+int dread();	/* (void *buf) */
+int dwrite();	/* (void *buf) */
+void dset();	/* (struct dsk_adr *adr) */
+void dtell();	/* (struct dsk_adr *adr) */
+int drest();	/* (int unit) */
+int dseek();	/* (int unit, int cyl) */
+
 #endif /* _H200IO_H_ */
