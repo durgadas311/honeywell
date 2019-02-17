@@ -2488,7 +2488,7 @@ public class HW2000FrontPanel extends JFrame
 		sys.putStr(65, String.format("%03d", rev), 3);
 		sys.putStr(68, src.getName().split("\\.")[0], 8);
 		sys.putRaw(118, vis, 6);
-		sys.putAddr(189, currHi, sys.M_WM); // possibly higher? heap top?
+		sys.putAddr(189, 64*1024, sys.M_WM); // EOM, give program some "heap"
 		sys.setWord(65);	// REV
 		sys.setWord(68);	// PGM
 		sys.setWord(74);	// SEG
