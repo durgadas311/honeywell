@@ -35,6 +35,8 @@ struct	table	*cregtab;
 int	nreg	= 8;
 int	isn	= 10000;
 
+static int binary = 0;
+
 int
 main(argc, argv)
 int	argc;
@@ -105,10 +107,12 @@ int nrleft, nocvt;
 	register union tree *p1;
 	register struct optab *opt;
 
-	if (tree==NULL)
+	if (tree==NULL) {
 		return(NULL);
-	if (table==lsptab)
+	}
+	if (table==lsptab) {
 		table = sptab;
+	}
 	if ((op = tree->t.op)==0)
 		return(0);
 	dope = opdope[op];
@@ -129,22 +133,26 @@ int nrleft, nocvt;
 		if (opdope[p2->t.op]&CNVRT && (nocvt&NOCVR)==0
 			 && (opdope[p2->t.tr1->t.op]&CNVRT)==0) {
 			tree->t.tr2 = p2->t.tr1;
-			if ( (opt = match(tree, table, nrleft, NOCVL)) )
+			if ( (opt = match(tree, table, nrleft, NOCVL)) ) {
 				return(opt);
+			}
 			tree->t.tr2 = p2;
 		} else if (opdope[p1->t.op]&CNVRT && (nocvt&NOCVL)==0
 		 && (opdope[p1->t.tr1->t.op]&CNVRT)==0) {
 			tree->t.tr1 = p1->t.tr1;
-			if ( (opt = match(tree, table, nrleft, NOCVR)) )
+			if ( (opt = match(tree, table, nrleft, NOCVR)) ) {
 				return(opt);
+			}
 			tree->t.tr1 = p1;
 		}
 		d2 = dcalc(p2, nrleft);
 	}
 	i = 0;
-	for (; table->tabop!=op; table++, i++)
-		if (table->tabop==0)
+	for (; table->tabop!=op; table++, i++) {
+		if (table->tabop==0) {
 			return(0);
+		}
+	}
 /*	fprintf(stderr, "op=%d, index=%d, ", op, i); */
 	i = 0;
 	for (opt = table->tabp; opt->tabdeg1!=0; opt++, i++) {
@@ -213,8 +221,9 @@ int reg;
 		}
 	}
 again:
-	if((tree=atree)==0)
+	if((tree=atree)==0) {
 		return(0);
+	}
 	if (tree->t.type==VOID) {
 		if (table!=efftab)
 			error("Illegal use of void");
@@ -295,6 +304,8 @@ again:
 	 * the amount of stack-popping.
 	 */
 	case CALL:
+// this just gets uglier...
+{ int savebin = binary; binary = 0;
 		r = 0;
 		nargs = 0;
 		modf = 0;
@@ -346,6 +357,8 @@ again:
 		if (sz) popstk(sz, cp);
 		if (sz) free(sz);
 		nstack -= nargs;
+binary = savebin;
+}
 		if (table==efftab || table==regtab)
 			return(RSTART);
 		r = RSTART;
@@ -450,7 +463,6 @@ again:
  * Most of the work is the macro-expansion of the
  * code table.
  */
-static int binary = 0;
 int
 cexpr(tree, table, areg)
 register union tree *tree;
@@ -804,8 +816,9 @@ loop:
 				p = p->t.tr1;
 			}
 		}
-		if (table==lsptab && ctable==sptab)
+		if (table==lsptab && ctable==sptab) {
 			ctable = lsptab;
+		}
 		if (c&010)
 			r = reg1;
 		else
@@ -1235,11 +1248,11 @@ register int type;
 	if (tp->t.type==CHAR || tp->t.type==UNCHAR)
 		return(optim(tnode(LOAD, type, tp, TNULL)));
 	tp->t.type = type;
-	if (tp->t.op==AMPER && type&XTYPE)
+	if (tp->t.op==AMPER && type&XTYPE) {
 		tp->t.tr1 = paint(tp->t.tr1, decref(type));
-	else if (tp->t.op==STAR)
+	} else if (tp->t.op==STAR) {
 		tp->t.tr1 = paint(tp->t.tr1, incref(type));
-	else if (tp->t.op==ASSIGN) {
+	} else if (tp->t.op==ASSIGN) {
 		paint(tp->t.tr1, type);
 		paint(tp->t.tr2, type);
 	}

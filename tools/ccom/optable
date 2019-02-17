@@ -1884,6 +1884,15 @@ struct table cctab[] = {
 
 /* unsigned relationals */
 cc61:
+%n,z
+	c	N0,A1
+
+%n,1
+	c	N1,A1
+
+%n,2
+	c	N2,A1
+
 %n,n
 	c	A2,A1
 
@@ -1912,6 +1921,7 @@ cc60:
 %n,z
 %nf,zf
 	FC
+	foo
 
 %r,c
 	I	A2,A1
