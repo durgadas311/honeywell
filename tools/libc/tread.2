@@ -1,0 +1,70 @@
+.TH TREAD 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+tread, tbsp, tfwd, trew, tunl  \-  magnetic tape I/O
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "int tread(int " unit ", void *" buf ");"
+.br
+.BI "int twrite(int " unit ", void *" buf ");"
+.br
+.BI "int isbot(int " unit ");"
+.br
+.BI "int iseot(int " unit ");"
+.br
+.BI "int tfwd(int " unit ");"
+.br
+.BI "int tbsp(int " unit ");"
+.br
+.BI "int trew(int " unit ");"
+.br
+.BI "int tunl(int " unit ");"
+.PP
+
+.SH DESCRIPTION
+.B Tread
+reads one block from tape unit \fIunit\fR into buffer \fIbuf\fR.
+The buffer must be terminated by a RM, although typically
+the block size is well-known and the RM is never reached.
+Returns -1 if an error is encountered, otherwise returns
+the number of characters transferred. Intr-record gaps return 0.
+Typically, two successive IRGs indicate EOF.
+
+If the block size is larger than the buffer, then a character is
+transferred to the position with a RM, and the return value will
+indicate one extra character.
+The true length of such a block is not known.
+
+.B Twrite
+writes one block to tape unit \fIunit\fR from buffer \fIbuf\fR.
+The buffer must be RM-terminated. One IRG is written after the data.
+Returns -1 if an error is encountered, otherwise returns
+the number of characters transferred. An "empty" buffer (one with
+the first character having RM) will write an IRG only.
+Typically, two successive IRGs indicate EOF.
+
+.B Isbot
+returns true if the unit's tape is currently positioned on the BOT mark
+(beginning of tape).
+
+.B Iseot
+returns true if the unit's tape is currently positioned on the EOT mark
+(end of tape).
+
+.B Tfwd
+moves the tape forward to the next IRG.
+
+.B Tbsp
+moves the tape backward to the previous IRG. Note that
+this might be the beginning of the current record, if the
+tape was positioned in the middle of a block.
+
+.B Trew
+rewinds the tape and leaves it ready to read from the beginning.
+
+.B Tunl
+rewinds the tape and unmounts it. The unit cannot be used again
+until an operator mounts a tape.
+
+.SH "SEE ALSO"
+setpnc (2)

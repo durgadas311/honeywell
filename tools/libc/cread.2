@@ -1,0 +1,25 @@
+.TH CREAD 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+cread  \-  punchcard input
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "int cread(void *" buf ");"
+.PP
+
+.SH DESCRIPTION
+.B Cread
+reads one punchcard into buffer \fIbuf\fR.
+The buffer must be terminated by a RM if it is shorter than
+80 characters.
+
+Returns -1 if an error is encountered, zero otherwise.
+Note that the card reader
+does not terminate the operation if the input hopper is empty,
+it simply stalls.
+There must be a special card to indicate the end of input.
+This is typically a card with "1EOF " in the first 5 columns,
+however the exact semantics are the responsibility of the caller.
+
+.SH "SEE ALSO"
+setpnc (2)

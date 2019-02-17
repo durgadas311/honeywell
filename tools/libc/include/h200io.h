@@ -32,4 +32,15 @@ int isrm();	/* (void *) */
 int isim();	/* (void *) */
 int iswm();	/* (void *) */
 
+/* H200/2000 Punchcard I/O */
+int cread();	/* (void *buf) */
+
+/* H200/2000 Mag Tape I/O */
+int tread();	/* (int lun, void *buf) */
+/* these should be ioctls? */
+int tbsp();	/* (int lun) */
+int tfwd();	/* (int lun) */
+int trew();	/* (int lun) */
+int tunl();	/* (int lun) */
+
 #endif /* _H200IO_H_ */
