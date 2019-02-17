@@ -13,4 +13,7 @@ int memcpy();	/* (char *d, char *s, int n) */
 int memcmp();	/* (char *s1, char *s2, int n) */
 int memset();	/* (char *s, int c, int n) */
 
+/* currently, no "free" */
+void *memalign();	/* (int align, int size) */
+
 #endif /* _STDLIB_H_ */

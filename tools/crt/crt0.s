@@ -8,9 +8,12 @@
 
 	.globl	_main
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@none
+	.globl	@heap,@mtop
 start:
 	bs	@four,x1	// retreat inside our region
 	lca	x1,x2
+	lca	x1,@heap	// heap starts here
+	lca	189,@mtop	// max usable memory
 	// copy 8 chars from MOD1 PROG/SEQ location.
 	// string is not punctuated, so must manually copy.
 	lca	av,x5	// a.k.a. '&pgm'
@@ -40,6 +43,9 @@ start:
 @twlv:	.bin	014#4
 @none:	.bin	077777777#4
 @nmax:	.bin	040000000#4
+
+@heap:	.word	0
+@mtop:	.word	0
 
 // a fake argv...
 argv:	.word	av

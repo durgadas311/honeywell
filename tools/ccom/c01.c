@@ -240,8 +240,12 @@ int op;
 		t = t1;
 		if (op==ASSIGN) {
 			if (cvn==PTI) {
-				if (t1!=t2 || ((t1&TYPE)==STRUCT && p1->t.strp!=p2->t.strp))
+				if ((t1!=t2 || ((t1&TYPE)==STRUCT &&
+						p1->t.strp!=p2->t.strp)) &&
+						(t1 & TYPE) != VOID &&
+						(t2 & TYPE) != VOID ) {
 					werror("mixed pointer assignment");
+				}
 				cvn = leftc = 0;
 			} if ((cvn==ITP || cvn==LTP)
 			   && (p2->t.op!=CON || p2->c.value!=0)
