@@ -923,7 +923,7 @@ getree()
 {
 	union tree *expstack[STKS], **sp;
 	register union tree *tp;
-	register int t, op;
+	register int t, op, lastop;
 	char s[80], *ss;	/* big for asm() stuff & long variable names */
 	struct swtab *swp;
 	long outloc = 0;
@@ -932,6 +932,7 @@ getree()
 	char *funcbase;
 	char *cp;
 
+	lastop = -1;
 	funcbase = (char *)resetblk();
 	sp = expstack;
 	for (;;) {
@@ -1217,6 +1218,7 @@ getstring:
 		break;
 
 	case LABEL:
+		if (lastop == LABEL) putchar('\n');
 		label(geti());
 		break;
 
@@ -1298,6 +1300,7 @@ bss_label:
 			sp[-1] = tnode(op, geti(), sp[-1], TNULL);
 		break;
 	}
+	lastop = op;
 	}
 }
 

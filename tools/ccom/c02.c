@@ -571,7 +571,7 @@ forstmt()
 {
 	register int o;
 	register union tree *st;
-	register int l;
+	int test, stmt;
 	char *ss = 0;
 
 	// TODO: optimize empty parts, esp. "for (;;)"
@@ -580,53 +580,61 @@ forstmt()
 	if ((o=symbol()) != SEMI) {		/* init part */
 		peeksym = o;
 		rcexpr(tree(1));
-		if ((o=symbol()) != SEMI)
-			return(o);
+		if ((o=symbol()) != SEMI) {
+			return(o);	// error != 0
+		}
+	// else empty "init"... don't care?
 	}
-	l = isn;
-	isn += 3;
-	branch(l+0);
-	label(l+1);
-	branch(l+2);
-	label(contlab);
+	stmt = isn++;
 	st = NULL;
 	if ((o=symbol()) != SEMI) {		/* test part */
+		test = isn++;
+		// get "test" and save in 'st'
+		// this emits no code.
 		peeksym = o;
 		ss = starttree();
 		st = tree(0);
 		if ((o=symbol()) != SEMI) {
 			endtree(ss);
-			return(o);
+			return(o);	// error != 0
 		}
+	} else {
+		// empty "test"...
+		test = stmt;
 	}
-	if ((o=symbol()) != RPARN) {	/* incr part */
+	// up to this point, no code can be emitted
+	o=symbol();
+	if (o == RPARN) {	// empty "incr" part...
+		contlab = test;
+	}
+	if (test != contlab) {
+		branch(test);	// branch to "test"
+	}
+	if (o != RPARN) {	/* incr part */
+		label(contlab);
+		// emit "incr" under 'contlab'
 		peeksym = o;
 		rcexpr(tree(1));
 		if ((o=symbol()) != RPARN) {
-			if (st)
-				endtree(ss);
-			return(o);
+			if (st) endtree(ss);
+			return(o);	// error != 0
 		}
+	// else empty "incr"...
 	}
-	if (st == NULL) {
-		// TODO: see if there is a better fix.
-		// We just sent label(contlab), and are about to
-		// send label(l+0)... split them up.
-		branch(l+0);
-	}
-	label(l+0);
 	if (st) {
-		cbranch(st, l+1, 1);
+		label(test);	// "test"
+		cbranch(st, stmt, 1);	// if (test) branch to "stmt"
 		endtree(ss);
-	} else {
-		branch(l+1);
+		branch(brklab);	// TODO: not always needed?
 	}
-	branch(brklab);
-	label(l+2);
+	label(stmt);
+	// if stmt is empty, we should cbranch(st,contlab,1)
+	// above and skip this...
 	statement();
 	branch(contlab);
+	//
 	label(brklab);
-	return(0);
+	return(0); // success == 0
 }
 
 /*
