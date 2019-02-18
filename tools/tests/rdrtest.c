@@ -1,7 +1,7 @@
 #include <h200io.h>
 /* Program to test reading punchcards */
 
-static buf[81];
+static char buf[81];
 
 int main(argc, argv)
 int argc;

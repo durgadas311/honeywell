@@ -574,6 +574,7 @@ forstmt()
 	register int l;
 	char *ss = 0;
 
+	// TODO: optimize empty parts, esp. "for (;;)"
 	if ((o=symbol()) != LPARN)
 		return(o);
 	if ((o=symbol()) != SEMI) {		/* init part */
@@ -607,12 +608,19 @@ forstmt()
 			return(o);
 		}
 	}
+	if (st == NULL) {
+		// TODO: see if there is a better fix.
+		// We just sent label(contlab), and are about to
+		// send label(l+0)... split them up.
+		branch(l+0);
+	}
 	label(l+0);
 	if (st) {
 		cbranch(st, l+1, 1);
 		endtree(ss);
-	} else
+	} else {
 		branch(l+1);
+	}
 	branch(brklab);
 	label(l+2);
 	statement();
