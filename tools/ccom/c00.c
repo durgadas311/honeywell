@@ -476,15 +476,18 @@ char *nm;
 	} else {
 		outcode("BS", BSTR2, nm);
 	}
-	while ((c = mapch('"')) >= 0) {
-		if (nchstr < max) {
-			if (nchstr%16 == 0) {
-				outcode("2B", BSTR0);
+	do {
+		while ((c = mapch('"')) >= 0) {
+			if (nchstr < max) {
+				if (nchstr%16 == 0) {
+					outcode("2B", BSTR0);
+				}
+				nchstr++;
+				outcode("1C", c & 0377);
 			}
-			nchstr++;
-			outcode("1C", c & 0377);
 		}
-	}
+	} while ((c = symbol()) == STRING);
+	peeksym = c;
 	if (nchstr < max) {
 		nchstr++;
 		outcode("1C", 0);
