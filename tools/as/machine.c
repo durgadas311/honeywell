@@ -181,7 +181,8 @@ void do_machine(op)
 	}
 	if (opd & OP_C) {
 		putaddr(car.val, car.rel, 0);
-	} else if (t != EOL) { // assemble variants even if not used
+	}
+	if (t != EOL) { // assemble variants even if not used
 		while (t != EOL) {
 			t = parse_var(t);
 		}
