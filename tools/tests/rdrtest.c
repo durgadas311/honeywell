@@ -1,13 +1,23 @@
 #include <h200io.h>
+#include <stdlib.h>
 /* Program to test reading punchcards */
 
 static char buf[81];
+
+/* translation table for IBM026-H punch codes (FORTRAN) */
+static char fortran[] = {
+	"0123456789'=: =&+ABCDEFGHI;.)(]?"
+	"-JKLMNOPQR#$*)\\-</STUVWXYZ@,(~[^"
+};
 
 int main(argc, argv)
 int argc;
 char **argv;
 {
 	int x;
+	char *tr;
+	tr = memalign(64, 64+1);
+	strcpy(tr, fortran);
 	copt(PC_HOL);
 	if (sense(SW_2)) {
 		copt(PC_SPC);
@@ -18,6 +28,9 @@ char **argv;
 		x = cread(buf);
 		if (x) break;
 		if (sense(SW_3) && memcmp(buf, "1EOF ", 5) == 0) break;
+		if (sense(SW_1)) {
+			tran(buf, buf, tr);
+		}
 		lprint(buf, PR_NL);
 	}
 	print("EOF", PR_NL);

@@ -1,0 +1,25 @@
+.TH TRAN 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+tran  \-  H200 MAT instruction
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void tran(char *" d ", char *" s ", void *" tr ");"
+.PP
+
+.SH DESCRIPTION
+.B Tran
+provides an interface into the Move And Translate (MAT) instruction.
+The translation table \fItr\fR must have an address that starts
+on a 64-character boundary (e.g. from \%\fImemalign\fB(64,64)\fR). It must be
+at least 64 characters in length.
+
+The source (\fIs\fR) and destination (\fId\fR) strings must
+have RM terminations, and should normally be the same length.
+There can be no other punctuation in these buffers.
+Source and destination may be the same buffer (translate in-place).
+
+.SH "SEE ALSO"
+setpnc (2)
+.SH DIAGNOSTICS
+.SH BUGS

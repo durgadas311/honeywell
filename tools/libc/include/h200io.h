@@ -32,6 +32,9 @@ int isrm();	/* (void *) */
 int isim();	/* (void *) */
 int iswm();	/* (void *) */
 
+/* H200/2000 special operations */
+void tran();	/* (char *d, char *s, void *tr) */
+
 /* SENSE switch detection */
 int sense();	/* (int sw) */
 /* These may be ORed, but only for */
