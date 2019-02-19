@@ -483,6 +483,9 @@ char *nm;
 					outcode("2B", BSTR0);
 				}
 				nchstr++;
+				if (c == '\\' || c == '"') {
+					outcode("1C", '\\');
+				}
 				outcode("1C", c & 0377);
 			}
 		}

@@ -1281,15 +1281,20 @@ void prcons() {
 	}
 	// assume .data already...
 	for (x = 0; x < nconsts; ++x) {
-		if (shared[x].op == CCON &&
-				shared[x].value >= ' ' &&
-				shared[x].value <= '~') {
-			printf(	"L%d:\t.bin\t'%c'#%d\n",
-				shared[x].label, shared[x].value,
-				sizes[shared[x].type]);
+		int c = shared[x].value;
+		if (shared[x].op == CCON && c >= ' ' && c <= '~') {
+			if (c == '\\' || c == '\'') {
+				printf(	"L%d:\t.bin\t'\\%c'#%d\n",
+					shared[x].label, c,
+					sizes[shared[x].type]);
+			} else {
+				printf(	"L%d:\t.bin\t'%c'#%d\n",
+					shared[x].label, c,
+					sizes[shared[x].type]);
+			}
 		} else {
 			printf(	"L%d:\t.bin\t0x%x#%d\n",
-				shared[x].label, shared[x].value,
+				shared[x].label, c,
 				sizes[shared[x].type]);
 		}
 	}
