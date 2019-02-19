@@ -46,27 +46,27 @@ public class I_MIT implements Instruction {
 				b = sys.readMem(ca);
 				b2 = sys.readMem(ca + 1);
 				sys.CTL.setV(b2); // or 'b'?
-				if (((b | b2) & 0200) != 0) {
+				if (((b | b2) & 0100) != 0) {
 					ca = sys.SR;
 					sys.SR = sys.CSR;
 					sys.CSR = ca;
 					break;
 				}
-				sys.writeMemMask(sys.BAR, b, (byte)0300);
+				sys.writeMemMask(sys.BAR, b, (byte)0100);
 				sys.incrBAR(1);
-				sys.writeMemMask(sys.BAR, b2, (byte)0300);
+				sys.writeMemMask(sys.BAR, b2, (byte)0100);
 				sys.incrBAR(1);
 			} else {
 				ca = c | a;
 				b = sys.readMem(ca);
 				sys.CTL.setV(b);
-				if ((b & 0200) != 0) {
+				if ((b & 0100) != 0) {
 					ca = sys.SR;
 					sys.SR = sys.CSR;
 					sys.CSR = ca;
 					break;
 				}
-				sys.writeMemMask(sys.BAR, b, (byte)0300);
+				sys.writeMemMask(sys.BAR, b, (byte)0100);
 				sys.incrBAR(1);
 			}
 		} while (ai == 0);
