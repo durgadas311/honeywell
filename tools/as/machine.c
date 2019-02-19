@@ -68,7 +68,7 @@ static uint32_t am_mask(int am) {
 }
 
 /* ident, ident(x1), (ident) */
-int parse_addr(int t, EXPR *reg) {
+int parse_addr(int t, EXPR *reg, int simple) {
 	int nt;
 	int xr;
 	int rel;
@@ -76,6 +76,7 @@ int parse_addr(int t, EXPR *reg) {
 	while (t == SPACE) t = token();
 	if (t == LPAREN) {
 		// indirect addressing
+		if (simple) return t;
 		expr();
 		if (token() != RPAREN) {
 			cerror(errs);
@@ -97,6 +98,7 @@ int parse_addr(int t, EXPR *reg) {
 			nexttoken = nt; // unget
 		} else {
 			// indexed addressing
+			if (simple) return nt;
 			nt = token();
 			if (nt != IDENT || !(cursym->type & (SIDX|SIDY))) {
 				cerror(errx);
@@ -147,7 +149,7 @@ void do_machine(op)
 	if (t == COMMENT) t = EOL;
 	if (op & OP_A) {
 		if (t != EOL) {
-			t = parse_addr(t, &aar);
+			t = parse_addr(t, &aar, 0);
 			opd |= OP_A;
 		} else if (op & RQ_A) {
 			cerror(errx);
@@ -155,7 +157,7 @@ void do_machine(op)
 	}
 	if (op & OP_B) {
 		if (t != EOL) {
-			t = parse_addr(t, &bar);
+			t = parse_addr(t, &bar, 0);
 			opd |= OP_B;
 		} else if (op & RQ_B) {
 			cerror(errx);
@@ -163,7 +165,7 @@ void do_machine(op)
 	}
 	if (op & OP_C) {
 		if (t != EOL) {
-			t = parse_addr(t, &car);
+			t = parse_addr(t, &car, 1);
 			opd |= OP_C;
 		} else if (op & RQ_C) {
 			cerror(errx);

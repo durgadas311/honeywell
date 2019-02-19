@@ -95,7 +95,7 @@ void do_pseudo(int op) {
 	case PWORD:	// [punc] addr-expr
 		pnc = punct[0]; // TODO: what default?
 		check_punc(&pnc);
-		t = parse_addr(token(), &reg);
+		t = parse_addr(token(), &reg, 0);
 		putaddr(reg.val, reg.rel, pnc);
 		break;
 

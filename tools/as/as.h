@@ -279,7 +279,7 @@ extern EXPR res;
 
 extern int expr();
 
-extern int parse_addr(int t, EXPR *reg);
+extern int parse_addr(int t, EXPR *reg, int simple);
 
 
 #endif // __AS_H__

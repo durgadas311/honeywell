@@ -63,7 +63,7 @@ struct optab opcodes[] = {
 	{ "csm",    043 | OP_A | OP_B },
 	{ "exm",    010 | OP_A | OP_B },
 	{ "mat",    060 | OP_A | OP_B | OP_C | RQ_A | RQ_B | RQ_C },
-	{ "mit",    062 | OP_A | OP_B | OP_V | RQ_A | RQ_B | RQ_V },
+	{ "mit",    062 | OP_A | OP_B | OP_C | OP_V | RQ_A | RQ_B | RQ_C | RQ_V },
 	{ "lib",    077 | OP_A | OP_B | RQ_A },
 	{ "sib",    076 | OP_A | OP_B | RQ_A },
 	{ "tlu",    057 | OP_A | OP_B | OP_V },
