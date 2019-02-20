@@ -33,7 +33,11 @@ int isim();	/* (void *) */
 int iswm();	/* (void *) */
 
 /* H200/2000 special operations */
-void tran();	/* (char *d, char *s, void *tr) */
+int tran();	/* (char *d, char *s, void *tr, int op) */
+#define TR_6TO6		00
+#define TR_12TO6	01
+#define TR_6TO12	02
+#define TR_12TO12	03
 
 /* SENSE switch detection */
 int sense();	/* (int sw) */

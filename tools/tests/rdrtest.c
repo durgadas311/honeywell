@@ -29,7 +29,7 @@ char **argv;
 		if (x) break;
 		if (sense(SW_3) && memcmp(buf, "1EOF ", 5) == 0) break;
 		if (sense(SW_1)) {
-			tran(buf, buf, tr);
+			tran(buf, buf, tr, TR_6TO6);
 		}
 		lprint(buf, PR_NL);
 	}

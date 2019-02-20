@@ -1,23 +1,59 @@
 .TH TRAN 2 2/14/19 "H200IO" "H200 Programmer's Manual"
 .SH NAME
-tran  \-  H200 MAT instruction
+tran  \-  H200 MIT instruction
 .SH SYNOPSIS
 .B #include <h200io.h>
 .PP
-.BI "void tran(char *" d ", char *" s ", void *" tr ");"
+.BI "int tran(char *" d ", char *" s ", void *" tr ", int " op ");"
 .PP
 
 .SH DESCRIPTION
 .B Tran
-provides an interface into the Move And Translate (MAT) instruction.
+provides an interface into the Move Item and Translate (MIT) instruction.
 The translation table \fItr\fR must have an address that starts
-on a 64-character boundary (e.g. from \%\fImemalign\fB(64,64)\fR). It must be
-at least 64 characters in length.
+on at least a 64-character boundary (e.g. from \%\fImemalign\fB(64,64)\fR).
+It must be at least 64 characters in length. Depending on \fIop\fR,
+and the character encoding of the source, there may be other constraints.
 
-The source (\fIs\fR) and destination (\fId\fR) strings must
-have RM terminations, and should normally be the same length.
+The source (\fIs\fR) string must
+have a RM termination.
+Both strings will normally be the same length, however
+translation stops at the RM of the source.
+Note that if the destination is shorter than the source,
+then the destination buffer will be overrun.
+
 There can be no other punctuation in these buffers.
 Source and destination may be the same buffer (translate in-place).
+
+.B Tran
+returns the number of characters translated from the source.
+Normally, that would be the length of the source buffer.
+However, if there are WM'ed characters in \fItr\fR then the translation
+may stop early, and the return value will indicate the first
+un-translated character.
+
+.SH "OPERATION CODE"
+
+The \fIop\fR parameter may be one of:
+
+.TP
+TR_6TO6
+Translate 6-bit characters to 6-bit characters.
+\fItr\fR is 64 characters long and aligned.
+.TP
+TR_12TO6
+Translate (up to) 12-bit characters to 6-bit characters.
+\fItr\fR is N characters long and aligned, where N is 2 raised to the number of bits.
+For example, if the source is ASCII-7 then the table would 128 characters.
+.TP
+TR_6TO12
+Translate 6-bit characters to 12-bit characters.
+\fItr\fR is 128 characters long and aligned (64 entries of 2 characters each).
+.TP
+TR_12TO12
+Translate (up to) 12-bit characters to 12-bit characters.
+\fItr\fR is sized, and aligned, to twice the encoding size.
+.PP
 
 .SH "SEE ALSO"
 setpnc (2)
