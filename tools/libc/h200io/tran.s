@@ -12,13 +12,14 @@ _tran:
 	exm	16(x1),1f+13,01	// set variant
 	lca	@err,064	// setup CSR in case
 1:	mit	0(x5),0(x6),0,0	// filled in above
-	scr	x5,067	// AAR = end of string, RM+1
+	scr	x5,070	// BAR = end of dest, RM+1
 	bs	@one,x5
-	si	0(x5)		// restore RM
+	si	0(x5)		// set RM
+	sw	0(x5)		// set RM
 2:	bs	4(x1),x5	// length of translation
 	lcr	0(x1),077
 
-err:	scr	x5,067	// AAR = end of tran
+err:	scr	x5,070	// BAR = end of tran (nxt chr)
 	b	2b
 
 	.data
