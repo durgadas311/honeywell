@@ -928,49 +928,49 @@ cr75:
 	F!
 	I	r0,A1
 
-/* =|, =&~ */
+/* =| */
 cr78:
 %aw,aw
-%	[addq1]
+	I	A2,A1
 
 %aub,a
 	IBF	A2,A1'
 
 %a,aw
 %ad,ad
-%	[addq1a]
+	I	A2,A1
 
 %aw,nw*
-%	[addq2]
+	I	A2,A1
 
 %aw,n
-%	[addq3]
+	I	A2,A1
 
 %aub,n
 	SS
 	IBF	0(x1),A1'
 
 %ew*,nw*
-%	[addq4]
+	I	A2,A1
 
 %ad,ef
-%	[addq4a]
+	I	A2,A1
 
 %a,n
 %ad,nf
-%	[addq5]
+	I	A2,A1
 
 %af,nf
-%	[addq6]
+	I	A2,A1
 
 %ew*,n
-%	[addq7]
+	I	A2,A1
 
 %nw*,n
-%	[addq8]
+	I	A2,A1
 
 %n*,n
-%	[addq9]
+	I	A2,A1
 
 %nub*,n
 	FS*
@@ -978,42 +978,42 @@ cr78:
 	IBF	0(x1),*2(x1)
 
 %nd*,nf
-%	[addq9a]
+	I	A2,A1
 
 %nf*,nf
-%	[addq10]
+	I	A2,A1
 
 %al,c
 %aul,c
-%	[addq11]
+	I	A2,A1
 
 %al,al
 %al,aul
 %aul,al
 %aul,aul
-%	[addq12]
+	I	A2,A1
 
 %al,nl
 %al,nul
 %aul,nl
 %aul,nul
-%	[addq13]
+	I	A2,A1
 
 %nl*,c
 %nul*,c
-%	[addq14]
+	I	A2,A1
 
 %nl*,al
 %nl*,aul
 %nul*,al
 %nul*,aul
-%	[addq15]
+	I	A2,A1
 
 %nl*,nl
 %nl*,nul
 %nul*,nl
 %nul*,nul
-%	[addq16]
+	I	A2,A1
 
 /* int -> float */
 cr51:
@@ -1336,7 +1336,6 @@ ci80:
 	F*
 	exm	A2,#1(R),001
 
-%[move6:]
 %nb*,a
 %nub*,a
 	F*
@@ -1346,7 +1345,6 @@ ci80:
 	F*
 	I	A2,#1(R)
 
-%[move7:]
 %n*,ew*
 %nb*,e*
 %nub*,e*
@@ -1354,7 +1352,6 @@ ci80:
 	S1*
 	IBF	#2(R1),#1(R)
 
-%[move8:]
 %nub*,e
 %n*,e
 	F*
@@ -1378,7 +1375,6 @@ ci80:
 	<1	R,8
 	IB1	R,#1(R1)
 
-%[move11:]
 %n*,nw*
 %nb*,n*
 %nub*,n*
@@ -1524,112 +1520,94 @@ ci80:
 	F*
 	I	0(x1),#1(R)
 
-/* |= and &~= */
+/* |= */
 ci78:
 %r,c
-	I"	A1,A2
+	I	A1,A2,fubu
 
-%a,c
+%a,1
+%ab,1
+%aub,1
+	F
+	sst	N1,A1,001
+
+%a,2
+%ab,2
+%aub,2
+	F
+	sst	N2,A1,002
+
+%ab,c
 %aub,c
 	F
-	I"	R,A2
-	<1	R,8
-	movB1	R,A1
+	exm	A2,.+19,001
+	sst	A2,A1,000
+
+%a,c
+	F
+	lca	A2,R
+	ha	NN1,R
+	ha	NN1,A1
+	ext	R,A1
+	ha	NN1,A1
+
+%aw,ab
+	exm	A2,.+19,001
+	sst	A2,A1,000
 
 %aw,aw
-%	[move3]
+	lca	A2,R
+	ha	NN1,R
+	ha	NN1,A1
+	ext	R,A1
+	ha	NN1,A1
 
+%ab,n
 %aub,n
-	S
-	IBF	R,A1
+	exm	A2,.+19,001
+	sst	A2,A1,000
 
 %a,n
-%aub,n
-%	[move5]
+	S
+	I	R,A1,bar
 
 %nb*,c
 %nub*,c
 	F*
-	I"	A2,#1(R)
+	I	A2,#1(R)
 
 %n*,c
 	F*
-	I"	A2,#1(R)
+	I	A2,#1(R)
 
 %n*,aw
 %nb*,a
 %nub*,a
-%	[move6]
+	I	A2,A1
 
 %n*,ew*
 %nb*,e*
 %nub*,e*
-%	[move7]
+	I	A2,A1
 
 %n*,e
-%	[move8]
+	I	A2,A1
 
 %e*,nw*
 %eb*,n*
 %eub*,n*
-%	[move9]
+	I	A2,A1
 
 %e*,n
-%	[move10]
+	I	A2,A1
 
 %n*,nw*
 %nb*,n*
 %nub*,n*
-%	[move11]
+	I	A2,A1
 
 %n*,n
-%	[move12]
-
-%al,c
-%al,au
-%aul,c
-%aul,au
-%	[move13a]
-
-%al,al
-%al,aul
-%aul,al
-%aul,aul
-%	[move13]
-
-%al,nl*
-%al,nul*
-%aul,nl*
-%aul,nul*
-%	[move14]
-
-%al,nl
-%al,nul
-%aul,nl
-%aul,nul
-%	[move15]
-
-%nl*,c
-%nul*,c
-%	[move14a]
-
-%nl*,al
-%nl*,aul
-%nul*,al
-%nul*,aul
-%	[move16a]
-
-%el*,nl
-%el*,nul
-%eul*,nl
-%eul*,nul
-%	[move16]
-
-%nl*,nl
-%nl*,nul
-%nul*,nl
-%nul*,nul
-%	[move17]
+	I	A2,A1
 
 /* ^= */
 ci79:
