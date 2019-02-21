@@ -343,8 +343,6 @@ struct instab instab[] = {
 {	LESSP,	cmp,	tst },
 {	GREATQP,cmp,	tst },
 {	GREATP,	cmp,	tst },
-{	INCOPS,	add,	add },	// requires both operands
-{	DECOPS,	sub,	sub },	// requires both operands
 {	PLUS,	add,	inc },
 {	ASPLUS,	add,	inc },
 {	MINUS,	sub,	dec },
@@ -367,9 +365,6 @@ struct instab instab[] = {
 {	LSHIFT,	sla,	lsla },
 {	ASLSH,	sla,	lsla },
 {	AND,	"ext",	"ext" },
-{	ANDN,	szc,	szc },
-{	ASANDN,	szc,	szc },
-{	TAND,	szc,	szc },
 {	OR,	soc,    soc },
 {	ASOR,	soc,	soc },
 {	EXOR,	xor,	xor },

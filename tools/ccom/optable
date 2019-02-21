@@ -62,8 +62,6 @@ struct table regtab[] = {
 	{CALL1,cr100},	/* call */
 	{CALL2,cr100},	/* call */
 	{ASSIGN,cr80},	/* = */
-	{INCOPS,cr91},	/* +1, +2 */
-	{DECOPS,cr91},	/* -1, -2 */
 	{PLUS,cr40},	/* + */
 	{MINUS,cr40},	/* - */
 	{TIMES,cr42},	/* *, char/int, both signed & unsigned */
@@ -85,7 +83,6 @@ struct table regtab[] = {
 	{ASURSH,cr75},	/* >>=, unsigned */
 	{ASLSH,cr75},	/* <<= */
 	{ASOR,cr78},	/* |= */
-	{ASANDN,cr78},	/* &= */
 	{ASXOR,cr79},	/* ^= */
 	{JUMP,cr102},	/* goto */
 	{ITOF,cr51},	/* cvt int => float */
@@ -189,6 +186,7 @@ cr106:
 
 %n,n
 	F
+	foo
 
 /* ++,-- postfix; the right operand is always a CON */
 cr32:
@@ -223,9 +221,8 @@ cr32:
 
 %nw*,n
 	F*
-	lca	0(x1),#1(R)
+	lca	#1(R),&(x1)
 	I	A2,#1(R)
-	mov	R,&(x1)
 	Q
 
 %nb*,n
@@ -439,13 +436,6 @@ cr45:
 	F!
 	I	R1,r0
 
-/* +1, +2, -1, -2 */
-cr91:
-%n,1
-%n,2
-	F
-	I	R
-
 /* +, -, |, &~ */
 cr40:
 %n,z
@@ -460,12 +450,14 @@ cr40:
 
 %n,c
 	F
+	lca	A1,R
 	I	A2,R
 
 %[add1:]
 %n,aw
 %nf,ad
 	F
+	lca	A1,R
 	IB2	A2,R
 
 %[add2:]
@@ -1237,7 +1229,6 @@ struct table efftab[] = {
 	{ASMINUS,ci70},	/* -= */
 	{ASOR,ci78},	/* |= */
 	{ASXOR,ci79},	/* ^= */
-	{ASANDN,ci78},	/* &~= */
 	{FSELA,ci16},	/* field assign, FSELA */
 	{STRSET,ci116},	/* structure assignment setup */
 	{0}
@@ -1855,7 +1846,6 @@ ci16:
 
 struct table cctab[] = {
 	{LOAD,cc61},	/* load */
-	{ANDN,rest},	/* &~ */
 	{EXCLA,rest},	/* ! */
 	{AMPER,rest},	/* & */
 	{STAR,rest},	/* * */
@@ -1863,7 +1853,6 @@ struct table cctab[] = {
 	{PLUS,rest},	/* + */
 	{MINUS,rest},	/* - */
 	{DIVIDE,rest},	/* / */
-	{TAND,cc81},	/* & as in "if ((a&b)==0)" */
 	{OR,rest},	/* | */
 	{EQUAL,cc61},	/* == */
 	{NEQUAL,cc61},	/* != */
@@ -2117,37 +2106,6 @@ cc60:
 	X0
 	I	R,R+
 	X1
-
-/* & as in "if ((a&b) ==0)" */
-cc81:
-%ab,c
-%aub,c
-	movb	A1,R
-	I"	R,A2*256
-
-%n,c
-	F
-	I"	R,A2
-
-%a,e
-%aub,e
-	S
-	movB1	A1,r0
-	>1	r0,8
-	I	R,r0
-
-%n*,a
-%nub*,a
-%	[move6]
-
-%n,aw
-%	[add1]
-
-%n,e
-%	[add3]
-
-%n,n
-%	[add5]
 
 /* set codes right by moving the result */
 rest:

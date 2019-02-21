@@ -284,17 +284,6 @@ again:
 		goto again;
 
 	/*
-	 * In the generated &~ operator,
-	 * fiddle things so that dedicated code can be
-	 * generated when cctab is used.
-	 */
-	case ANDN:
-		if (table==cctab) {
-			tree->t.op = TAND;
-		}
-		break;
-
-	/*
 	 * Handle a subroutine call. It has to be done
 	 * here because if cexpr got called twice, the
 	 * arguments might be compiled twice.
@@ -532,16 +521,6 @@ int areg;
 		reg = r;
 		goto out;
 	}
-
-#if 0
-	/* Change +2, +1, -1, -2 into special operators for the generation of
-	 * inct, inc, dec and dect. At this point x-1 has been modified to x+(-1),
-	 * and the addition is known not to be subsumed into an addressing mode.
-	 */
-	if (tree->t.op==PLUS && !isfloat(tree)) {
-		p1 = tree->t.tr2;
-	}
-#endif
 
 	/*
 	 * Because of the way the TI990 instruction set works,
@@ -1108,7 +1087,6 @@ int reg, recurf;
 			case PLUS:
 			case MINUS:
 			case AND:
-			case ANDN:
 			case OR:
 			case EXOR:
 			case LSHIFT:
@@ -1138,7 +1116,6 @@ int reg, recurf;
 		case ASPLUS:
 		case ASMINUS:
 		case ASAND:
-		case ASANDN:
 		case ASOR:
 		case ASXOR:
 		case INCBEF:

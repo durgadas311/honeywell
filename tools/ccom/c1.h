@@ -233,7 +233,6 @@ int	xlab1, xlab2, xop, xzero;
 #define	RSHIFT	45
 #define	LSHIFT	46
 #define	AND	47
-#define	ANDN	55
 #define	OR	48
 #define	EXOR	49
 #define	ARROW	50
@@ -271,18 +270,14 @@ int	xlab1, xlab2, xop, xzero;
 #define	ASOR	78
 #define	ASXOR	79
 #define	ASSIGN	80
-#define	TAND	81
 #define	LTIMES	82
 #define	LDIV	83
 #define	LMOD	84
-#define	ASANDN	85
 #define	LASTIMES 86
 #define	LASDIV	87
 #define	LASMOD	88
 
 #define	QUEST	90
-#define INCOPS  91
-#define DECOPS  92
 /* #define	MAX	93	*/ /* not used; wanted macros in param.h */
 #define	MAXP	94
 /* #define	MIN	95	*/ /* not used; wanted macros in param.h */

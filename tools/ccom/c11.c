@@ -758,9 +758,6 @@ int lbl, cond, reg;
 	xz = xzero;
 	xzero = !isrel || (tree->t.tr2->t.op==ITOL && tree->t.tr2->t.tr1->t.op==CON
 		&& tree->t.tr2->t.tr1->c.value==0);
-	if (tree->t.op==ANDN) {
-		tree->t.op = TAND;
-	}
 	if (cexpr(tree, cctab, reg) < 0) {
 		reg = rcexpr(tree, regtab, reg);
 		printf("mov\tr%d,r0\njne\t.+4\nmov\tr%d,r0\n", reg, reg+1);

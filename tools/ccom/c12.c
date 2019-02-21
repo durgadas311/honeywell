@@ -91,50 +91,7 @@ register union tree *tree;
 		tree = acommute(tree);
 		if (tree->t.op == op)
 			tree->t.type = d1;
-#if 0
-		/*
-		 * PDP-11 special:
-		 * replace a&b by a ANDN ~ b.
-		 * This will be undone when in
-		 * truth-value context.
-		 */
-		if (tree->t.op!=AND)
-			return(tree);
-		/*
-		 * long & pos-int is simpler
-		 */
-		if ((tree->t.type==LONG || tree->t.type==UNLONG) && tree->t.tr2->t.op==ITOL
-		 && ((tree->t.tr2->t.tr1->t.op==CON && tree->t.tr2->t.tr1->c.value>=0)
-		   || uns(tree->t.tr2->t.tr1))) {
-			tree->t.type = UNSIGN;
-			t = tree->t.tr2;
-			tree->t.tr2 = tree->t.tr2->t.tr1;
-			t->t.tr1 = tree;
-			tree->t.tr1 = tnode(LTOI, UNSIGN, tree->t.tr1, TNULL);
-			return(optim(t));
-		}
-		/*
-		 * Keep constants to the right
-		 */
-		if ((tree->t.tr1->t.op==ITOL && tree->t.tr1->t.tr1->t.op==CON)
-		  || tree->t.tr1->t.op==LCON) {
-			t = tree->t.tr1;
-			tree->t.tr1 = tree->t.tr2;
-			tree->t.tr2 = t;
-		}
-		/* keep COMPL to make truth-value context handling easier, but invert
-		 * the constant as well in immediate operand case
-		 */
-		if (isconstant(tree->t.tr2))
-			tree->t.tr2->c.value ^= 0177777;
-		else if (tree->t.tr2->t.op==LCON)
-			tree->t.tr2->l.lvalue = ~tree->t.tr2->l.lvalue;
-		tree->t.op = ANDN;
-		op = ANDN;
-		tree->t.tr2 = tnode(COMPL, tree->t.tr2->t.type, tree->t.tr2, TNULL);
-#else
 		return(tree);
-#endif
 	}
 
 	tree->t.tr1 = optim(tree->t.tr1);
@@ -190,12 +147,6 @@ register union tree *tree;
 	case ULASDIV:
 		tree->t.degree = 10;
 		break;
-
-	case ANDN:
-		if (isconstant(tree->t.tr2) && tree->t.tr2->c.value==0) {
-			return(tree->t.tr1);
-		}
-		goto def;
 
 	case CALL:
 		tree->t.degree = 10;
@@ -414,7 +365,6 @@ register union tree *tree;
 		case PLUS:
 		case MINUS:
 		case AND:
-		case ANDN:
 		case OR:
 		case EXOR:
 			subtre->t.tr2 = tnode(LTOI, tree->t.type, subtre->t.tr2, TNULL);
@@ -631,7 +581,6 @@ register union tree *t;
 		t2->t.tr2 = t->t.tr2;
 		t = t2;
 
-	case ASANDN:
 	case ASPLUS:
 	case ASMINUS:
 	case ASOR:
@@ -986,9 +935,6 @@ register int *vp, v;
 			*(unsigned *)vp <<= (unsigned)v;
 		return;
 
-	case ANDN:
-		*vp &= ~ v;
-		return;
 	}
 	error("C error: const");
 }
@@ -1051,10 +997,6 @@ register union tree *lp, *rp;
 
 	case AND:
 		l &= r;
-		break;
-
-	case ANDN:
-		l &= ~r;
 		break;
 
 	case OR:
