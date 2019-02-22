@@ -782,7 +782,15 @@ cr70:
 
 /* '*=' */
 cr72:
+%ab,c
 %aub,c
+%ab,aw
+%aub,aw
+	lca	@zero,R
+	exm	A1,R,001
+	I	A2,R
+	exm	R,A1,001
+
 %a,c
 	I	A2,A1
 
@@ -792,21 +800,74 @@ cr72:
 %a,aub
 	I	A2,A1
 
-%aub,aw
 %a,aw
 	I	A2,A1
 
+%ab,nb
+%aub,nb
+	lca	@zero,R
+	exm	A1,R,001
+	lca	@zero,R+
+	exm	(A2-3),R+,001
+	I	R+,R
+	exm	R,A1,001
+
+%ab,n
 %aub,n
+	SS
+	lca	@zero,R
+	exm	A1,R,001
+	I	(A2-3),R
+	exm	R,A1,001
+
 %a,n
 	SS
-	I	0(x1),A1
+	I	A2,A1
 
+%nb*,nb*
+%nub*,nb*
+	FS*
+	S
+	lca	@zero,R
+	exm	(A1-3),R,001
+	lca	@zero,R+
+	exm	(A2-3),R+,001
+	I	R+,R
+	exm	R,(A1-3),001
+
+%nb*,nb
+%nub*,nb
+%nb*,nub
+%nub*,nub
+	FS*
+	S
+	lca	@zero,R
+	exm	(A1-3),R,001
+	lca	@zero,R+
+	exm	A2,R+,001
+	I	R+,R
+	exm	R,(A1-3),001
+
+%nb*,n
 %nub*,n
+	FS*
+	S
+	lca	@zero,R
+	exm	(A1-3),R,001
+	I	A2,R
+	exm	R,(A1-3),001
+
+%n*,nb
+	FS*
+	S
+	lca	@zero,R
+	exm	A2,R,001
+	I	R,(A1-3)
+
 %n*,n
 	FS*
 	S
-	lca	0(x1),x3
-	I	R,#1(x3)
+	I	A2,(A1-3)
 
 %ad,ad
 %	[addq1a]
