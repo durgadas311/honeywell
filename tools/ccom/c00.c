@@ -519,25 +519,17 @@ int
 getcc()
 {
 	register int c, cc;
-	register char *ccp;
-	char realc;
 
 	cval = 0;
-	ccp = (char *)&cval;
 	cc = 0;
-	while((c=mapch('\'')) >= 0)
-		if(cc++ < LNCPW)
-			*ccp++ = c;
-	if (cc>LNCPW)
+	// All char const are unsigned...
+	while ((c=mapch('\'')) >= 0) {
+		if (cc++ < LNCPW) {
+			cval = c;
+		}
+	}
+	if (cc > LNCPW) {
 		error("Long character constant");
-	if (cc==1) {
-		/* sign extend single char */
-#ifdef __ti990__
-		cval >>= 8;
-#else
-		realc = cval;
-		cval = realc;
-#endif
 	}
 	return(CCON);
 }
@@ -679,7 +671,9 @@ advanc:
 		goto tand;
 
 	case CCON:
+		// all char consts are unsigned
 		*cp = cblock(cval);
+		(*cp)->c.type = UNSIGN;
 		(*cp)->c.op = CCON;
 		++cp;
 		goto tand;
@@ -720,7 +714,7 @@ advanc:
 		  (union str *)NULL, (union tree *)cs, TNULL);
 
 	tand:
-		if(cp>=cmst+CMSIZ) {
+		if (cp >= cmst + CMSIZ) {
 			error("Expression overflow");
 			exit(1);
 		}

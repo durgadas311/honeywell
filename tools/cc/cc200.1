@@ -165,6 +165,14 @@ or more precisely:
 and is not very
 efficient compared to AND and XOR.
 
+The H200 standard instruction set does not include any shift instructions.
+Shifts are implemented using special FPU operations, and as such are much less
+efficient than on conventional processors.
+
+Operations on \fBchar\fR datatypes requires extra manipulation,
+and as such are less efficient. Single-character constants (e.g. 'x')
+are treated as unsigned int, to maximize optimization.
+
 The compiler, and associated runtime, use index registers X1 through X7. X5 is
 the official "return code". These registers are all used in a temporary fashion,
 however any custom assembly code that makes calls into the runtime must understand that

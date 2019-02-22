@@ -90,7 +90,7 @@ loop:
 
 		case EXTERN:
 		case STATIC:
-			neg = ((p->t.type & XTYPE) != PTR);
+			neg = ((p->t.type & XTYPE) == 0);
 			pbase(p, neg);
 			return;
 

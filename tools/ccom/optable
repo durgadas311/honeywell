@@ -442,10 +442,27 @@ cr40:
 	F
 	barfoo
 
-%c,c
+%ab,c
 %aub,c
+	lca	N0,R
+	exm	(A1-3),R,001
+	I	A2,R
+
+%c,c
 %a,c
 	lca	A1,R
+	I	A2,R
+
+%nb*,c
+%nub*,c
+	F
+	lca	N0,R
+	exm	(A1-3),R,001
+	I	A2,R
+
+%n*,c
+	F
+	lca	(A1-3),R
 	I	A2,R
 
 %n,c
@@ -465,14 +482,14 @@ cr40:
 %nf,ed*
 	F
 	S1*
-	IB2	R,#2(R1)
+	IB2	#2(R1),R
 
 %[add3:]
 %n,e
 %nf,ef
 	F
 	S1
-	IBF	R,R1
+	IBF	R1,R
 
 %[add5:]
 %n,n
@@ -786,7 +803,7 @@ cr72:
 %aub,c
 %ab,aw
 %aub,aw
-	lca	@zero,R
+	lca	N0,R
 	exm	A1,R,001
 	I	A2,R
 	exm	R,A1,001
@@ -805,9 +822,9 @@ cr72:
 
 %ab,nb
 %aub,nb
-	lca	@zero,R
+	lca	N0,R
 	exm	A1,R,001
-	lca	@zero,R+
+	lca	N0,R+
 	exm	(A2-3),R+,001
 	I	R+,R
 	exm	R,A1,001
@@ -815,7 +832,7 @@ cr72:
 %ab,n
 %aub,n
 	SS
-	lca	@zero,R
+	lca	N0,R
 	exm	A1,R,001
 	I	(A2-3),R
 	exm	R,A1,001
@@ -828,9 +845,9 @@ cr72:
 %nub*,nb*
 	FS*
 	S
-	lca	@zero,R
+	lca	N0,R
 	exm	(A1-3),R,001
-	lca	@zero,R+
+	lca	N0,R+
 	exm	(A2-3),R+,001
 	I	R+,R
 	exm	R,(A1-3),001
@@ -841,9 +858,9 @@ cr72:
 %nub*,nub
 	FS*
 	S
-	lca	@zero,R
+	lca	N0,R
 	exm	(A1-3),R,001
-	lca	@zero,R+
+	lca	N0,R+
 	exm	A2,R+,001
 	I	R+,R
 	exm	R,(A1-3),001
@@ -852,7 +869,7 @@ cr72:
 %nub*,n
 	FS*
 	S
-	lca	@zero,R
+	lca	N0,R
 	exm	(A1-3),R,001
 	I	A2,R
 	exm	R,(A1-3),001
@@ -860,7 +877,7 @@ cr72:
 %n*,nb
 	FS*
 	S
-	lca	@zero,R
+	lca	N0,R
 	exm	A2,R,001
 	I	R,(A1-3)
 
@@ -1909,14 +1926,62 @@ struct table cctab[] = {
 
 /* unsigned relationals */
 cc61:
+%nb*,z
+%nub*,z
+	lca	N0,R
+	exm	(A1-3),R,001
+	c	N0,R
+
+%nb,z
+%nub,z
+	lca	N0,R
+	exm	A1,R,001
+	c	N0,R
+
 %n,z
 	c	N0,A1
 
+%nb*,1
+%nub*,1
+	lca	N0,R
+	exm	(A1-3),R,001
+	c	N1,R
+
+%nb,1
+%nub,1
+	lca	N0,R
+	exm	A1,R,001
+	c	N1,R
+
 %n,1
-	c	N1,A1
+	c	N1,A1,foo
+
+%nb*,2
+%nub*,2
+	lca	N0,R
+	exm	(A1-3),R,001
+	c	N2,R
+
+%nb,2
+%nub,2
+	lca	N0,R
+	exm	A1,R,001
+	c	N2,R
 
 %n,2
 	c	N2,A1
+
+%nb,n
+%nub,n
+	lca	N0,R
+	exm	A1,R,001
+	c	A2,R
+
+%nb*,n
+%nub*,n
+	lca	N0,R
+	exm	(A1-3),R,001
+	c	A2,R
 
 %n,n
 	c	A2,A1
@@ -1935,6 +2000,7 @@ cc60:
 	F*
 	I	A2,#1(R)
 
+%nb*,z
 %nub*,z
 	F*
 	I	A2,#1(R)
@@ -1950,6 +2016,17 @@ cc60:
 
 %r,c
 	I	A2,A1
+
+%nb*,c
+%nub*,c
+	F
+	lca	N0,R
+	exm	(A1-3),R,001
+	I	A2,R
+
+%n*,c
+	F
+	I	A2,(A1-3)
 
 %n,c
 	F
