@@ -90,6 +90,7 @@ loop:
 
 		case EXTERN:
 		case STATIC:
+			neg = ((p->t.type & XTYPE) != PTR);
 			pbase(p, neg);
 			return;
 
@@ -105,6 +106,11 @@ loop:
 		error("Compiler error: pname");
 		return;
 
+	case STAR:
+		p = p->t.tr1;
+		neg = 0;	// need addr-of ptr variable?
+		goto loop;
+
 	case AMPER:
 		p = p->t.tr1;
 #if 0	// is this still relevant?
@@ -112,7 +118,11 @@ loop:
 			error("Illegal use of register AMPER.NAME.REG");
 		}
 #endif
+#if 0
 		neg = 0;	// need addr-of variable
+#else
+		neg = 1;	// need addr-of real variable
+#endif
 		goto loop;
 
 	case AUTOI:

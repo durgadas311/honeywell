@@ -30,8 +30,9 @@ int op;
 	t2 = INT;
 	if ((dope&BINARY)!=0) {
 		p2 = chkfun(disarray(*--cp));
-		if (p2)
+		if (p2) {
 			t2 = p2->t.type;
+		}
 	}
 	p1 = *--cp;
 	/*
@@ -224,7 +225,7 @@ int op;
 	t = leftc? t2:t1;
 	if ((t==INT||t==CHAR) && (t1==UNSIGN||t2==UNSIGN))
 		t = UNSIGN;
-	if (dope&ASSGOP || op==CAST) {
+	if ((dope&ASSGOP) || op==CAST) {
 		/*
 		 * Weird "lhs op= rhs" requiring a temporary to evaluate as
 		 * "lhs = lhs op rhs" so lhs can be converted up for the

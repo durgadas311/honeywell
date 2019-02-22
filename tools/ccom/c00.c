@@ -768,12 +768,13 @@ advanc:
 
 	case AND:
 	case TIMES:
-		if (andflg)
+		if (andflg) {
 			andflg = 0;
-		else if (o==AND)
+		} else if (o==AND) {
 			o = AMPER;
-		else
+		} else {
 			o = STAR;
+		}
 		goto oponst;
 
 	case LPARN:
@@ -830,7 +831,7 @@ opon1:
 
 		case INCAFT:
 		case DECAFT:
-			p = 37;
+			p = 037;
 			break;
 		case LPARN:
 		case LBRACK:

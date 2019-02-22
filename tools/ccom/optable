@@ -1263,12 +1263,12 @@ ci80:
 %ab,aub
 %aub,ab
 %aub,aub
-	exm	A2,A1,007
+	exm	A2,A1,001
 
 %ab,n
 %aub,n
 	S
-	IB1	R,A1
+	exm	(A2-3),A1,001
 
 %aw,z
 %ad,zf
@@ -1308,10 +1308,7 @@ ci80:
 %a,n*
 %aub,n*
 	S*
-	movB2	#2(R),R
-	>2	R,8
-	<1	R,8
-	IB1	R,A1
+	lca	(A2-3),A1
 
 %[move5:]
 %a,n
