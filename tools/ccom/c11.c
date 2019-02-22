@@ -90,7 +90,6 @@ loop:
 
 		case EXTERN:
 		case STATIC:
-			neg = ((p->t.type & XTYPE) == 0);
 			pbase(p, neg);
 			return;
 
@@ -118,11 +117,7 @@ loop:
 			error("Illegal use of register AMPER.NAME.REG");
 		}
 #endif
-#if 0
-		neg = 0;	// need addr-of variable
-#else
-		neg = 1;	// need addr-of real variable
-#endif
+		neg &= ~1;	// need addr-of variable
 		goto loop;
 
 	case AUTOI:
@@ -1233,11 +1228,6 @@ getstring:
 		outname(s);
 		op = getwd();
 		t = getwd();
-		if ((t & XTYPE) == PTR) {
-			if (op == EXTERN) printf("\t.globl\t%s\n", s);
-			printf("%s:", s); // needs to be on same line for punc control
-			break;
-		}
 		ss = s;
 		if (*ss == '_') ++ss;
 		if (op == EXTERN) printf("\t.globl\t%s,^%s\n", s, ss);

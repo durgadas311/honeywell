@@ -1408,7 +1408,7 @@ register union tree *tree;
 			printf(".bin 0x%x#4\n", tree->c.value);
 		else if (tree->t.op==AMPER) {
 			printf("\t.word\t");
-			pname(tree, 0, 1);
+			pname(tree, 0, 2); // force "real var"
 			putchar('\n');
 		} else
 			goto illinit;
