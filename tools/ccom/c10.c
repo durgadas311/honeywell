@@ -35,6 +35,8 @@ struct	table	*cregtab;
 int	nreg	= 8;
 int	isn	= 10000;
 
+int gflag = 0;
+
 static int binary = 0;
 
 int
@@ -46,6 +48,9 @@ char	*argv[];
 	if (argc<4) {
 		error("Arg count");
 		exit(1);
+	}
+	if (argc > 4 && strcmp(argv[4], "-g") == 0) {
+		++gflag;
 	}
 	if (freopen(argv[1], "r", stdin)==NULL) {
 		error("Missing temp file");

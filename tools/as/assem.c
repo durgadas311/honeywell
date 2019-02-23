@@ -52,6 +52,13 @@ void do_pseudo(int op) {
 		if (--ifcount < 0) cerror(erri);
 		break;
 
+	case PLINE:
+		t = expr();
+		putline(0);
+		// TODO: find a way to store this in object file
+		// line = t;
+		break;
+
 	case PERR:
 	case PWARN:
 		t = tok(0);

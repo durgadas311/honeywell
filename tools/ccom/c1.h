@@ -147,6 +147,7 @@ extern struct	instab	instab[];
 extern struct	boptab	branchtab[];
 extern int	opdope[];
 extern char	*opntab[];
+extern int gflag;
 int	nstack;
 int	nfloat;
 struct	tname	sfuncr;

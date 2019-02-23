@@ -1101,6 +1101,7 @@ getstring:
 	case SWIT:
 		t = geti();
 		line = geti();
+		if (gflag) printf("\t.line %d\n", line);
 		funcbase = (char *)resetblk();
 		while(swp=(struct swtab *)getblk(sizeof(*swp)), swp->swlab = geti())
 			swp->swval = geti();
@@ -1118,6 +1119,7 @@ getstring:
 
 	case EXPR:
 		line = geti();
+		if (gflag) printf("\t.line %d\n", line);
 		if (sp != &expstack[1]) {
 			error("Expression input botch");
 			exit(1);

@@ -172,6 +172,7 @@ extern int scanstr(int pnc);
 #define PADMODE	15
 #define PERR	16
 #define PWARN	17
+#define PLINE	18
 
 /* symbol types */
 

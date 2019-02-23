@@ -29,7 +29,7 @@ char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
 char	*tmp_c1, *tmp_c2, *tmp_asm, *tmp_pre, *tmp_opt;
 char	*outfile, *aflag = NULL, *tflag = NULL;
 char	**av, **clist, **llist, **plist;
-int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, wflag, Lminusflag;
+int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, gflag, wflag, Lminusflag;
 int	errflag;
 int	exfail;
 
@@ -271,6 +271,9 @@ main(argc, argv)
 				if (argv[i][2] == 'g')
 					crt0 = "./gcrt0.o";
 				continue;
+			case 'g':
+				gflag++;
+				continue;
 			case 'w':
 				wflag++;
 				continue;
@@ -410,6 +413,8 @@ main(argc, argv)
 		av[na++] = tmp_c1;
 		av[na++] = tmp_c2;
 		av[na++] = Oflag ? tmp_opt : tmp_asm;
+		if (gflag)
+			av[na++] = "-g";
 		av[na] = 0;
 		if (callsys(ccom1, av)) {
 			cflag++;

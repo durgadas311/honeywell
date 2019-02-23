@@ -20,7 +20,7 @@ asm: $(ASMS)
 	$(CC) -c $<
 
 %.s: %.c
-	$(CC) -S $<
+	$(CC) -S -g $<
 
 clean:
 	rm -f $(OHWS) $(ASMS) *.o a.out
