@@ -391,6 +391,7 @@ cr45:
 %nub,c
 %n,c
 	F
+	lca	A1,R
 	I	A2,R
 
 %nub,a
@@ -474,7 +475,6 @@ cr40:
 %n,aw
 %nf,ad
 	F
-	lca	A1,R
 	IB2	A2,R
 
 %[add2:]
