@@ -1,0 +1,32 @@
+.TH ADR2LINE200 1 2/23/19 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+adr2line200 \- H200/H2000 debug info
+.SH SYNOPSIS
+.B adr2line200
+[
+.BI -e\  file
+]
+.IR adr ...
+.SH DESCRIPTION
+.B Adr2line200 
+displays debug information from H200/H2000 object files
+compiled with \fB-g\fR. If no file is specified, "a.out" is used.
+
+For each \fIadr\fR, information that is available in the
+symbol table is displayed. The offset from the file, 
+offset from the nearest label, and the file and line number
+in source is printed. If any of those is not available
+or not valid for the address, a '?' is printed.
+
+.SH OPTIONS
+.TP 
+.BI \-e\  file
+Use \fIfile\fR to gather information.
+
+.SH "SEE ALSO"
+ld200 (1), 
+nm200 (1), 
+objdump200 (1),
+a.out.200 (5).
+.SH DIAGNOSTICS
+.SH BUGS
