@@ -159,7 +159,6 @@ cr106:
 %nub*,n
 %nb*,n
 	F1*
-	lca	A1,R+
 	lca	N0,R
 	exm	#1(R+),R,001
 
