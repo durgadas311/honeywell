@@ -5,6 +5,7 @@ MAN1 = $(wildcard */*.1)
 MAN2 = $(wildcard */*.2)
 MAN3 = $(wildcard */*.3)
 MAN5 = $(wildcard */*.5)
+MAN7 = $(wildcard */*.7)
 
 TARGETS = tools # tools-inst
 
@@ -35,5 +36,6 @@ man:
 	cp -uv $(MAN2) /usr/local/man/man2
 	cp -uv $(MAN3) /usr/local/man/man3
 	cp -uv $(MAN5) /usr/local/man/man5
+	cp -uv $(MAN7) /usr/local/man/man7
 
 __FRC__:
