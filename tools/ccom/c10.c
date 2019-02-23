@@ -37,8 +37,6 @@ int	isn	= 10000;
 
 int gflag = 0;
 
-static int binary = 0;
-
 int
 main(argc, argv)
 int	argc;
@@ -118,16 +116,19 @@ int nrleft, nocvt;
 	if (table==lsptab) {
 		table = sptab;
 	}
-	if ((op = tree->t.op)==0)
+	if ((op = tree->t.op)==0) {
 		return(0);
+	}
 	dope = opdope[op];
-	if ((dope&LEAF) == 0)
+	if ((dope & LEAF) == 0) {
 		p1 = tree->t.tr1;
-	else
+	} else {
 		p1 = tree;
+	}
 	d1 = dcalc(p1, nrleft);
-	if ((dope&BINARY)!=0) {
+	if ((dope&BINARY) != 0) {
 		p2 = tree->t.tr2;
+		// TODO: probably can't do any of this...
 		/*
 		 * If a subtree starts off with a conversion operator,
 		 * try for a match with the conversion eliminated.
@@ -135,15 +136,15 @@ int nrleft, nocvt;
 		 * the converted int in a register by
 		 * movf double,fr0; movfi fr0,int .
 		 */
-		if (opdope[p2->t.op]&CNVRT && (nocvt&NOCVR)==0
-			 && (opdope[p2->t.tr1->t.op]&CNVRT)==0) {
+		if ((opdope[p2->t.op] & CNVRT) && (nocvt & NOCVR)==0
+			 && (opdope[p2->t.tr1->t.op] & CNVRT)==0) {
 			tree->t.tr2 = p2->t.tr1;
 			if ( (opt = match(tree, table, nrleft, NOCVL)) ) {
 				return(opt);
 			}
 			tree->t.tr2 = p2;
-		} else if (opdope[p1->t.op]&CNVRT && (nocvt&NOCVL)==0
-		 && (opdope[p1->t.tr1->t.op]&CNVRT)==0) {
+		} else if (opdope[p1->t.op] & CNVRT && (nocvt & NOCVL)==0
+		 && (opdope[p1->t.tr1->t.op] & CNVRT)==0) {
 			tree->t.tr1 = p1->t.tr1;
 			if ( (opt = match(tree, table, nrleft, NOCVR)) ) {
 				return(opt);
@@ -153,27 +154,32 @@ int nrleft, nocvt;
 		d2 = dcalc(p2, nrleft);
 	}
 	i = 0;
-	for (; table->tabop!=op; table++, i++) {
-		if (table->tabop==0) {
+	for (; table->tabop != op; table++, i++) {
+		if (table->tabop == 0) {
 			return(0);
 		}
 	}
 /*	fprintf(stderr, "op=%d, index=%d, ", op, i); */
 	i = 0;
-	for (opt = table->tabp; opt->tabdeg1!=0; opt++, i++) {
-		if (d1 > (opt->tabdeg1&DALL)
-		 || (opt->tabdeg1 >= DPTR && (p1->t.op != STAR)))
+	for (opt = table->tabp; opt->tabdeg1 != 0; opt++, i++) {
+		if (d1 > (opt->tabdeg1 & DALL)
+		 || (opt->tabdeg1 >= DPTR && (p1->t.op != STAR))) {
 			continue;
-		if (notcompat(p1, opt->tabtyp1, opt->tabdeg1, op))
+		}
+		if (notcompat(p1, opt->tabtyp1, opt->tabdeg1, op)) {
 			continue;
-		if ((opdope[op]&BINARY)!=0 && p2!=0) {
-			if (d2 > (opt->tabdeg2&DALL)
-			 || ((opt->tabdeg2 >= DPTR) && (p2->t.op != STAR)) )
+		}
+		if ((opdope[op]&BINARY) != 0 && p2 != 0) {
+			if (d2 > (opt->tabdeg2 & DALL)
+			 || ((opt->tabdeg2 >= DPTR) && (p2->t.op != STAR)) ) {
 				continue;
-			if (notcompat(p2,opt->tabtyp2, opt->tabdeg2, 0))
+			}
+			if (notcompat(p2, opt->tabtyp2, opt->tabdeg2, 0)) {
 				continue;
-			if ((opt->tabdeg2&077)==DREG && xdcalc(p2,nrleft)>DREG)
+			}
+			if ((opt->tabdeg2 & 077) == DREG && xdcalc(p2, nrleft) > DREG) {
 				continue;
+			}
 		}
 /*		fprintf(stderr, "offset %d\n", i); */
 		return(opt);
@@ -298,8 +304,6 @@ again:
 	 * the amount of stack-popping.
 	 */
 	case CALL:
-// this just gets uglier...
-{ int savebin = binary; binary = 0;
 		r = 0;
 		nargs = 0;
 		modf = 0;
@@ -351,8 +355,6 @@ again:
 		if (sz) popstk(sz, cp);
 		if (sz) free(sz);
 		nstack -= nargs;
-binary = savebin;
-}
 		if (table==efftab || table==regtab)
 			return(RSTART);
 		r = RSTART;
@@ -516,9 +518,6 @@ int areg;
 	   && tree->t.op!=ITOL)
 		reg1++;
 	// everything after this must exit via 'out:'
-	if (opd & BINARY) {
-		++binary;
-	}
 	/*
 	 * Leaves of the expression tree
 	 */
@@ -652,7 +651,7 @@ loop:
 	/* A2 */
 	case 'B':
 		p = p2;
-		goto adr;
+		//goto adr;
 
 	adr:
 		c = 0;
@@ -1000,9 +999,6 @@ loop:
 	putchar(c);
 	goto loop;
 out:
-	if (opd & BINARY) {
-		--binary;
-	}
 	return(reg);
 }
 
@@ -1279,10 +1275,12 @@ int reg;
 {
 	struct tnode lbuf;
 
-	if (tree->t.op!=STAR && dcalc(tree, nreg-reg) > 12) {
+	if (tree->t.op != STAR && dcalc(tree, nreg-reg) > 12) {
 		return(-1);
 	}
-	if (binary) {
+	// TODO: is this correct?
+	// Prevents extraneous LOAD for some ops...
+	if (table == regtab && tree->t.op == NAME) {
 		return reg;
 	}
 	lbuf.op = LOAD;
@@ -1290,6 +1288,8 @@ int reg;
 	lbuf.degree = tree->t.degree;
 	lbuf.tr1 = tree;
 	lbuf.tr2 = NULL;
+//if (table == regtab)
+//dumptree((union tree *)&lbuf, 0, 'L');
 	return(rcexpr((union tree *)&lbuf, table, reg));
 }
 
@@ -1470,19 +1470,24 @@ union tree *tree;
 	register char *s;
 	char c;
 
-	if (r0==r1)
-		return;
-	if (tree->t.type==LONG || tree->t.type == UNLONG) {
-		if (r0>=nreg || r1>=nreg) {
-			error("register overflow: compiler error");
-		}
-		s = "mov	r%d,r%d\nmov	r%d,r%d\n";
-		if (r0 < r1)
-			printf(s, r0+1,r1+1,r0,r1);
-		else
-			printf(s, r0,r1,r0+1,r1+1);
+	if (r0 == r1) {
 		return;
 	}
-	c = isfloat(tree);
-	printf("mov%.1s	r%d,r%d\n", &c, r0, r1);
+#if 0
+	if (tree->t.type == LONG || tree->t.type == UNLONG) {
+		if (r0 >= nreg || r1 >= nreg) {
+			error("register overflow: compiler error");
+		}
+		s =	"lca\tx%d,x%d\n"
+			"lca\tx%d,x%d\n";
+		if (r0 < r1)
+			printf(s, r0+1, r1+1, r0, r1);
+		else
+			printf(s, r0, r1, r0+1, r1+1);
+		return;
+	}
+	// TODO: handle FLOAT...
+	//c = isfloat(tree);
+#endif
+	printf("lca\tx%d,x%d\n", r0, r1);
 }

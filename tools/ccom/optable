@@ -158,8 +158,10 @@ cr106:
 
 %nub*,n
 %nb*,n
-	F*
-	exm	#1(R),R,01
+	F1*
+	lca	A1,R+
+	lca	N0,R
+	exm	#1(R+),R,001
 
 %n*,n
 %nd*,n
@@ -1350,12 +1352,12 @@ ci80:
 
 %aw,z
 %ad,zf
-	IB1	A2,A1
+	IB1	N0,A1
 
 %nb*,z
 %nub*,z
 	F*
-	exm	A2,#1(R),001
+	exm	N0,#1(R),001
 
 %[move2:]
 %n*,z
@@ -1389,43 +1391,56 @@ ci80:
 	lca	(A2-3),A1
 
 %[move5:]
-%a,n
+%ab,n
 %aub,n
 	S
-	IB1	R,A1
+	exm	A2,A1,001
+
+%a,nb
+%a,nub
+	S
+	lca	N0,A1
+	exm	A2,A1,001
+
+%a,e
+	S
+	I	R,A1
+
+%a,n
+	S
+	I	A2,A1
 
 %nb*,c
 %nub*,c
 	F*
-	exm	A2,#1(R),001
+	exm	A2,0(R),001
 
 %n*,c
 	F*
-	li	R1,A2
-	IB1	R1,#1(R)
+	IB1	A2,0(R)
 
 %nb*,ab
 %nub*,ab
 %nb*,aub
 %nub*,aub
 	F*
-	exm	A2,#1(R),001
+	exm	A2,0(R),001
 
 %nb*,a
 %nub*,a
 	F*
-	exm	A2,#1(R),001
+	exm	A2,0(R),001
 
 %n*,a
 	F*
 	I	A2,#1(R)
 
-%n*,ew*
 %nb*,e*
 %nub*,e*
+%n*,ew*
 	F*
 	S1*
-	IBF	#2(R1),#1(R)
+	IBF	(A2-3),0(R)
 
 %nub*,e
 %n*,e
@@ -1644,7 +1659,7 @@ ci78:
 
 %a,n
 	S
-	I	R,A1,bar
+	I	R,A1
 
 %nb*,c
 %nub*,c
@@ -1954,7 +1969,7 @@ cc61:
 	c	N1,R
 
 %n,1
-	c	N1,A1,foo
+	c	N1,A1
 
 %nb*,2
 %nub*,2

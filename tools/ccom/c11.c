@@ -59,6 +59,10 @@ loop:
 		prconlab(p->f.label, neg);
 		return;
 
+	case CALL1:
+		printf("x5");
+		return;
+
 	case NAME:
 		i = p->n.offset;
 		if (flag>10)
@@ -125,6 +129,7 @@ loop:
 		return;
 
 	}
+dumptree(p, 0, 'e');
 	error("compiler error: bad pname");
 }
 
@@ -157,11 +162,11 @@ int nrleft;
 	if (p==NULL)
 		return(0);
 	d = dcalc(p, nrleft);
-	if (d<16+4 && (p->t.type==CHAR || p->t.type==UNCHAR)) {
+	if (d < DREG && (p->t.type == CHAR || p->t.type == UNCHAR)) {
 		if (nrleft>=1)
-			d = 16+4;
+			d = DREG;
 		else
-			d = 16+8;
+			d = DNRG;
 	}
 	return(d);
 }
@@ -221,24 +226,32 @@ int ast, deg, op;
 	 * an e or n UNCHAR is to be considered an UNSIGNED,
 	 * as long as it is not pointed to.
 	 */
-	if (at==UNCHAR && deg<DPTR && deg>=DREG)
+	if (at == UNCHAR && deg < DPTR && deg >= DREG) {
 		at = UNSIGN;
+	}
 	st = ast;
-	if (st==0)		/* word, byte */
-		return(at!=CHAR && at!=INT && at!=UNSIGN && at<PTR);
-	if (st==1)		/* word */
-		return(at!=INT && at!=UNSIGN && at<PTR);
-	if (st==UNSIGN+2 && (at&XTYPE))
+	if (st == 0) {		/* word, byte */
+		return(at != CHAR && at != INT && at != UNSIGN && at < PTR);
+	}
+	if (st == 1) {		/* word */
+		return(at != INT && at != UNSIGN && at < PTR);
+	}
+	if (st == UNSIGN + 2 && (at & XTYPE)) {
 		return(0);
+	}
 	st -= 2;
-	if ((at&(~(TYPE+XTYPE))) != 0)
-		at = PTR;
-	if ((at&(~TYPE)) != 0)
-		at = (at&TYPE) | PTR;
-	if (st==FLOAT && at==DOUBLE)
+	if ((at & ~(TYPE + XTYPE)) != 0) {
+		at = INT | PTR;
+	}
+	if ((at & ~TYPE) != 0) {
+		at = (at & TYPE) | PTR;
+	}
+	if (st == FLOAT && at == DOUBLE) {
 		at = FLOAT;
-	if (p->t.op==NAME && p->n.class==REG && op==ASSIGN && st==CHAR)
+	}
+	if (p->t.op == NAME && p->n.class == REG && op == ASSIGN && st == CHAR) {
 		return(0);
+	}
 	return(st != at);
 }
 

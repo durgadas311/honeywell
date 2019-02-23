@@ -244,10 +244,10 @@ void dumptree(union tree *p, int level, char tag) {
 		}
 		break;
 	case CON:
-		fprintf(stderr, " L%d = %d\n", p->c.label, p->c.value);
+		fprintf(stderr, " L%d = %d", p->c.label, p->c.value);
 		break;
 	case CCON:
-		fprintf(stderr, " L%d = '%c'\n", p->c.label, p->c.value);
+		fprintf(stderr, " L%d = '%c'", p->c.label, p->c.value);
 		break;
 	case EXPR:
 		break;
@@ -255,6 +255,7 @@ void dumptree(union tree *p, int level, char tag) {
 	fprintf(stderr, " {%lx %lx}\n", (unsigned long)p->t.tr1, (unsigned long)p->t.tr2);
 	// opdope for LOAD not correct?
 	if (op != LOAD && op != STAR && op != INIT &&
+			op != CALL1 &&
 			!(opdope[op] & (BINARY|LVALUE))) {
 		return;
 	}

@@ -702,14 +702,15 @@ advanc:
 			if (xo != LPARN)
 				break;
 		}
+		// putstr() can change cval, so setup early.
+		cs = (struct nmlist *)Tblock(sizeof(struct nmlist));
+		cs->hclass = STATIC;
+		cs->hoffset = cval;
 		if (xo == SIZEOF) {
 			cntstr();
 		} else {
 			putstr(cval, 0, NULL);
 		}
-		cs = (struct nmlist *)Tblock(sizeof(struct nmlist));
-		cs->hclass = STATIC;
-		cs->hoffset = cval;
 		*cp++ = block(NAME, unscflg? ARRAY+UNCHAR:ARRAY+CHAR, &nchstr,
 		  (union str *)NULL, (union tree *)cs, TNULL);
 
