@@ -56,6 +56,7 @@ int	sflag;		/* discard all symbols */
 int	nflag;		/* pure procedure */
 int	dflag;		/* define common even with rflag */
 int	iflag;		/* I/D space separated */
+int	gflag;		/* debug info */
 
 char	*filname;
 char 	*outname = "a.out";
@@ -87,7 +88,7 @@ FILE	*soutb;
 
 // TODO: just look for '_'? or...?
 // Need to eliminate others, "Pxxxx", "@ssss", ".xxxx", ???
-#define local_sym(s)    (s.n_name[0] != 'L')
+#define local_sym(s)    (s.n_name[0] != 'L' && (!gflag || s.n_name[0] != '~'))
 
 void
 cleanup() {
@@ -1030,6 +1031,9 @@ main(argc, argv)
 			continue;
 		case 'd':
 			dflag++;
+			continue;
+		case 'g':
+			gflag++;
 			continue;
 		case 'i':
 			iflag++;

@@ -51,6 +51,16 @@ assembler-language output on corresponding files suffixed `.s'.
 Run only the macro preprocessor, sending output to stdout.
 
 .TP
+\fB\-g\fR
+Generate debug info. Currently only symbols that
+relate source line numbers to .text addresses.
+Symbol names are "~~N" where "N" is the source line number.
+This is in addition to the symbols for local variables and
+function parameters.
+This is passed along to
+the phase-2 compiler \fBc1\fR and the linker.
+
+.TP
 \fB\-v\fR
 Verbose. Show all sub-commands that are executed.
 

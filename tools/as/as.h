@@ -183,6 +183,7 @@ extern int scanstr(int pnc);
 #define	SBSS	  04		/* bss */
 #define	SSEG	  07		/* mask for segment */
 #define	SEXT	 040		/* external (global) symbol */
+#define SMSK	0077
 #define	SREV	0100		/* use opposite end of item */
 #define	SIDX	0200		/* index register X... */
 #define	SIDY	0400		/* index register Y... */

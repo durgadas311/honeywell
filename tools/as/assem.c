@@ -54,8 +54,13 @@ void do_pseudo(int op) {
 
 	case PLINE:
 		t = expr();
+		snprintf(symbuf, 8, "~~%d", res.val);
+		if (!symlook(2)) {
+			cursym->value = curseg->loc;
+			cursym->type = STEXT;
+		}
 		putline(0);
-		// TODO: find a way to store this in object file
+		// TODO: adjust concept of current line?
 		// line = t;
 		break;
 

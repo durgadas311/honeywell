@@ -484,6 +484,8 @@ nocom:
 			av[na++] = "-o";
 			av[na++] = outfile;
 		}
+		if (gflag)
+			av[na++] = "-g";
 		strcpy(buf1, makepath(crt0));
 		av[na++] = buf1;
 		while (i < nl)
