@@ -1055,6 +1055,8 @@ getstring:
 		break;
 
 	case RETRN:
+		t = geti();	// line number
+		if (gflag) printf("\t.line %d\n", t);
 		// return value is in x5...
 		printf(	"\tlca\tx2,x1\n"
 			"\tlca\t-4(x1),x2\n"
@@ -1279,17 +1281,19 @@ bss_label:
 		break;
 
 	case RLABEL:
+		t = geti();	// line number
 		outname(s);
 		if (curfnc) free(curfnc);
 		curfnc = strdup(s);
 		cp = curfnc;
 		if (*cp == '_') ++cp;
-		printf(	"%s:\n"
-			"\tscr\t0(x1),070\n"
+		printf("%s:", curfnc);
+		if (gflag) printf("\t.line %d\n", t);
+		printf(	"\tscr\t0(x1),070\n"
 			"\tlca\tx2,-4(x1)\n"
 			"\tlca\tx1,x2\n"
 			"\tbs\t@%s,x1\n",
-			curfnc, cp);
+			cp);
 		break;
 
 	case BRANCH:

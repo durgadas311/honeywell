@@ -102,7 +102,7 @@ cfunc()
 {
 	register char *cb;
 
-	outcode("BBS", PROG, RLABEL, funcsym->name);
+	outcode("BBNS", PROG, RLABEL, line, funcsym->name);
 	regvar = 9;
 	autolen = STAUTO;
 	maxauto = STAUTO;
@@ -117,7 +117,7 @@ cfunc()
 	if ((peeksym = symbol()) != LBRACE)
 		error("Compound statement required");
 	statement();
-	outcode("BNB", LABEL, retlab, RETRN);
+	outcode("BNBN", LABEL, retlab, RETRN, line);
 /* add STAUTO; overlay bug fix, coupled with section in c11.c */
 	// TODO: need to do this without jumping back and forth...
 	// 'maxauto' can never be zero (STAUTO > 0).
