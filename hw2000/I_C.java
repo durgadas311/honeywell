@@ -4,7 +4,7 @@ public class I_C implements Instruction {
 
 	// compares AAR to BAR...
 	// returns true if BAR is shorter.
-	public static boolean compare(HW2000 sys, boolean enda) {
+	public static byte compare(HW2000 sys, boolean enda) {
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);
@@ -43,7 +43,11 @@ public class I_C implements Instruction {
 			b &= 077;
 		}
 		sys.CTL.setCompare(lt, (z == 0));
-		return (bw != 0 && aw == 0);
+		if (bw != 0 && aw == 0) {
+			return (byte)077;
+		} else {
+			return bw;
+		}
 	}
 
 	public void execute(HW2000 sys) {
