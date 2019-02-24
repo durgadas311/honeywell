@@ -4,7 +4,7 @@ adr2line200 \- H200/H2000 debug info
 .SH SYNOPSIS
 .B adr2line200
 [
-.BI -e\  file
+.I options
 ]
 .IR adr ...
 .SH DESCRIPTION
@@ -13,15 +13,22 @@ displays debug information from H200/H2000 object files
 compiled with \fB-g\fR. If no file is specified, "a.out" is used.
 
 For each \fIadr\fR, information that is available in the
-symbol table is displayed. The offset from the file, 
-offset from the nearest label, and the file and line number
-in source is printed. If any of those is not available
-or not valid for the address, a '?' is printed.
+symbol table is displayed.
+At a minimum, the file and line number are printed (if available).
+Note that stripped object files have no information,
+and only files compiled with \fB-g\fR contain line numbers.
 
 .SH OPTIONS
 .TP 
+.BI \-a
+Print the address. This is particularly useful when
+multiple address are given. Addresses are printed in octal.
+.TP 
 .BI \-e\  file
 Use \fIfile\fR to gather information.
+.TP 
+.BI \-f
+Print the function name.
 
 .SH "SEE ALSO"
 ld200 (1), 

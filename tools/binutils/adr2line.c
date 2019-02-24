@@ -12,6 +12,9 @@ static uint16_t by_val = END;
 static uint16_t by_file = END;
 static uint16_t by_dbg = END;
 
+static int aflag = 0;
+static int fflag = 0;
+
 static int get_file(int a) {
 	int y = -1;
 	int z;
@@ -96,8 +99,11 @@ static int get_symtab(FILE *fp) {
 	}
 	nsyms = hdr.a_syms / sizeof(*symtab);
 	// Do want file symbols here, but separate
+	// Also, only want function names... exclude labels...
 	for (x = 0; x < nsyms; ++x) {
-		if ((symtab[x].n_type & N_TYPE) == N_FN || symtab[x].n_name[0] == '~') {
+		if ((symtab[x].n_type & N_TYPE) == N_FN ||
+				symtab[x].n_name[0] == '~' ||
+				symtab[x].n_name[0] == 'L') {
 			continue;
 		}
 		if (by_val == END ||
@@ -170,45 +176,44 @@ static void addr2line(int adr) {
 	int min, max;
 	min = hdr.a_entry;
 	max = min + hdr.a_text;
-	printf("%07o = ", adr);
+	if (aflag) printf("%07o\n", adr);
 	int f = get_file(adr);
 	if (f < 0) {
-		printf("?");
+		//printf("?");
 	} else {
 		min = symtab[f].n_value;
 		if (symtab[f].n_pad1 != END) {
 			max = symtab[symtab[f].n_pad1].n_value;
 		}
-		int o = adr - symtab[f].n_value;
-		printf("%s", symtab[f].n_name);
-		if (o != 0) {
-			printf("+0%o", o);
+		//int o = adr - symtab[f].n_value;
+		//printf("%s", symtab[f].n_name);
+		//if (o != 0) {
+		//	printf("+0%o", o);
+		//}
+	}
+	if (fflag) {
+		int s = get_symbol(adr);
+		if (s < 0 || symtab[s].n_value < min || symtab[s].n_value >= max) {
+			printf("??\n");
+		} else {
+			printf("%s\n", symtab[s].n_name);
+			//int o = adr - symtab[s].n_value;
+			//if (o != 0) {
+			//	printf("+0%o", o);
+			//}
 		}
 	}
-	printf(" = ");
-	int s = get_symbol(adr);
-	if (s < 0 || symtab[s].n_value < min || symtab[s].n_value >= max) {
-		printf("?");
+	if (f < 0) {
+		printf("??");
 	} else {
-		int o = adr - symtab[s].n_value;
-		printf("%s", symtab[s].n_name);
-		if (o != 0) {
-			printf("+0%o", o);
-		}
+		printf("%s", symtab[f].n_name);
 	}
-	printf(" = ");
 	int d = get_debug(adr);
 	if (d < 0 || symtab[d].n_value < min || symtab[d].n_value >= max) {
-		printf("?");
+		printf(":0\n");
 	} else {
-		if (f < 0) {
-			printf("?");
-		} else {
-			printf("%s", symtab[f].n_name);
-		}
-		printf(" line %s", symtab[d].n_name + 2);
+		printf(":%s\n", symtab[d].n_name + 2);
 	}
-	printf("\n");
 }
 
 int main(int argc, char **argv) {
@@ -218,10 +223,16 @@ int main(int argc, char **argv) {
 	FILE *fp;
 	int x;
 	int adr;
-	while ((x = getopt(argc, argv, "e:")) != EOF) {
+	while ((x = getopt(argc, argv, "ae:f")) != EOF) {
 		switch(x) {
+		case 'a':
+			++aflag;
+			break;
 		case 'e':
 			file = optarg;
+			break;
+		case 'f':
+			++fflag;
 			break;
 		}
 	}
