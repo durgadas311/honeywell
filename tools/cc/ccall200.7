@@ -11,6 +11,26 @@ The C compiler assumes address mode 4. A function may change the
 address mode, however it must restore it to mode 4 before returning to
 C code.
 
+The memory layout of a program consists of \fB.text\fR, \fB.data\fR, \fB.bss\fR,
+stack, and heap sections, in addition to the OS communication area at
+location 0. The stack is placed at the end of the \fB.bss\fR section,
+where additional space is added by the OS loader and possibly during
+the link phase (using the \fB-t\fR option). The heap is oriented \fIabove\fR
+the stack, and contains as much space as the OS loader provided via
+the Upper Memory Limit field in the OS communication area. The stack (top of \fB.bss\fR)
+is passed in X1. This is also the start of the heap.
+Memory allocation library functions use this heap.
+
+For numeric variables, the address used is of the rightmost character.
+For initialized variables, a WM will be on the leftmost character.
+Strings contain no punctuation except for a RM on the terminal
+character, which is equivalent to the standard C '\0' character.
+In other words, strings will have N+1 characters, however that terminal
+character will not be '\0' and will have a RM on it. Array variable addresses
+point to the first element, however that will be the rightmost character of
+the first element. In the case of \fIchar\fR arrays, that is the same
+as the leftmost character of the array (element size is one).
+
 .SH FUNCTIONS
 
 All external C names will have an underscore prepended when
@@ -22,7 +42,7 @@ calls from C must have the underscore.
 The index register X1 is used as the stack pointer.
 
 The index register X2 is used as the frame pointer ("bp"). However,
-a function is required to use X2 that way - but it must preserve
+a function is not required to use X2 that way - but it must preserve
 the caller's value.
 
 Index registers X3 and X4 are reserved for use by the runtime.
@@ -32,12 +52,16 @@ expect to be able to use X3 and X4 without interference.
 Index registers X5, X6, and X7 may be used in generated "C" code. X5 is considered
 the "return value" (of functions as well as expressions).
 
-.SH "STACK"
+.SH "STACK USE"
 
 On entry to a function,
 the 4-character space at \fB0(x1)\fR is available to store the return address.
 The first passed parameter is at \fB4(x1)\fR.
 The second passed parameter is at \fB8(x1)\fR, and so forth.
+These represent the \fIrightmost\fR character of the stack entry.
+With the exception of the return address, all stack entries should have a WM
+at their leftmost character. \fIChar\fR values need to be placed on the
+stack as \fIint\fRs.
 
 In C code, the "frame pointer", X2, will point to the location
 that X1 referenced on entry to the function. In those cases, it is
