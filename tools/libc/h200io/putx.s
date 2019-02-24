@@ -4,7 +4,7 @@
 // args: int
 
 	.globl	@zero,@one
-	.globl	_putx,_lputx
+	.globl	_putx,_lputx,_putwx,_lputwx
 	.text
 _lputx:
 	scr	0(x1),070
@@ -13,11 +13,26 @@ _lputx:
 	pdt	(opi),011,02,0
 	pcb	.,011,02,010
 	lcr	0(x1),077
+
+_lputwx:
+	scr	0(x1),070
+	b	itoa
+	pdt	oc,011,02,0
+	pcb	.,011,02,010
+	lcr	0(x1),077
+
 _putx:
 	scr	0(x1),070
 	b	itoa
 	// 'op' points to first non-zero digit
 	pdt	(opi),012,07,0
+	pcb	.,012,07,010
+	lcr	0(x1),077
+
+_putwx:
+	scr	0(x1),070
+	b	itoa
+	pdt	oc,012,07,0
 	pcb	.,012,07,010
 	lcr	0(x1),077
 

@@ -32,10 +32,10 @@ crt: __FRC__
 	./as/as200 -l -o $@ $? >$*.l
 
 man:
-	cp -uv $(MAN1) /usr/local/man/man1
-	cp -uv $(MAN2) /usr/local/man/man2
-	cp -uv $(MAN3) /usr/local/man/man3
-	cp -uv $(MAN5) /usr/local/man/man5
-	cp -uv $(MAN7) /usr/local/man/man7
+	@cp -uv $(MAN1) /usr/local/man/man1
+	@cp -uv $(MAN2) /usr/local/man/man2
+	@cp -uv $(MAN3) /usr/local/man/man3
+	@cp -uv $(MAN5) /usr/local/man/man5
+	@cp -uv $(MAN7) /usr/local/man/man7
 
 __FRC__:

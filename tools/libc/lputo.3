@@ -1,14 +1,20 @@
 .TH LPUTO 3 2/14/19 "H200IO" "H200 Programmer's Manual"
 .SH NAME
-lputo, lputx, lputd  \-  line printer output of numbers
+lputo, lputx, lputd, lputwo, lputwx, lputwd  \-  line printer output of numbers
 .SH SYNOPSIS
 .B #include <h200io.h>
 .PP
 .BI "void lputo(int " n ");"
-.PP
+.br
 .BI "void lputx(int " n ");"
-.PP
+.br
 .BI "void lputd(int " n ");"
+.br
+.BI "void lputwo(int " n ");"
+.br
+.BI "void lputwx(int " n ");"
+.br
+.BI "void lputwd(int " n ");"
 .PP
 
 .SH DESCRIPTION
@@ -23,6 +29,9 @@ prints the unsigned integer on the line printer as a decimal string.
 
 In all cases, leading zeroes are supressed.
 
+The 'w' variants print the full width number, with leading zeroes.
+The field width depends on the radix. Octal and decimal print 8 digits,
+hex prints 6 digits.
 
 .SH "SEE ALSO"
 lputc (3), puto (3)
