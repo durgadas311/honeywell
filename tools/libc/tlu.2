@@ -1,0 +1,110 @@
+.TH TLU 2 2/14/19 "H200IO" "H200 Programmer's Manual"
+.SH NAME
+tlus, tlui, tadds, taddi  \-  H200 TLU instruction
+.SH SYNOPSIS
+.B #include <h200io.h>
+.PP
+.BI "void *tlus(void *" tbl ", char *" key ", int " op ");"
+.br
+.BI "void *tlui(void *" tbl ", int " key ", int " op ");"
+.br
+.BI "void *tadds(void *" tbl ", char *" key ", int " val ");"
+.br
+.BI "void *taddi(void *" tbl ", int " key ", int " val ");"
+.PP
+
+.SH DESCRIPTION
+\fBTlus\fR and \fBtlui\fR
+provide an interface into the H200 Table LookUp (TLU) instruction.
+The parameter \fItbl\fR is a pointer to the rightmost character of a valid
+table, constructed by \fBtaddi\fR or \fBtadds\fR.
+\fIkey\fR is the kay value to search for, either a string (char *)
+or int (or pointer cast to int) depending on the table type.
+
+The TLU function used must match the type of table constructed.
+\fBTlus\fR can only be used on tables constructed with \fBtadds\fR,
+and \fBtlui\fR can only be used on tables constructed with \fBtaddi\fR.
+
+These functions return a pointer to the table value entry for the matching key,
+or NULL if not found.
+
+.SH "OPERATION CODE"
+
+The \fIop\fR parameter represents the relational test to be made
+on \fIkey\fR. It follows the 04X variant codes on the BCT instruction.
+In other words:
+
+.TP
+01
+table key < search key
+.TP
+02
+table key = search key
+.TP
+03
+table key <= search key
+.TP
+04
+table key > search key
+.TP
+05
+table key != search key
+.TP
+06
+table key >= search key
+.PP
+
+.SH "CONSTRUCTING TABLES"
+
+.B Tadds
+is used to build a table where the key is a string (char *).
+The value is always an int, although a pointer may be cast to it.
+
+.B Taddi
+is used to build a table where the key is an int (or pointer cast to int).
+The value is always an int, although a pointer may be cast to it.
+
+The \fItbl\fR parameter is the current rightmost character of the
+table \fIplus one\fR. On the initial call, this will be a pointer
+to the leftmost character of the space allocated for the table.
+
+Both \fBtaddi\fR and \fBtadds\fR
+return the address of the (new) rightmost character in the table.
+This value must be incremented by one before passing it to the
+next \fBtaddi\fR or \fBtadds\fR call.
+After adding the last table entry, this value is used for
+subsequent TLU calls.
+
+A table must be entirely constructed with only one type.
+In other words, \fBtaddi\fR and \fBtadds\fR
+cannot be mixed on a given table.
+
+Note that the last entry in a table (first entry constructed) is
+normally and "empty" entry - which ensures a search will not
+overrun the boundaries of the table. This is typically just an
+arbitrary character value with a WM.
+
+.SH EXAMPLE
+
+.in +4n
+.EX
+/* construct table in 'tblbuf' */
+void *t = tblbuf;
+setpnc(t, SP_WM); /* empty entry */
+t = tadds(t+1, "keyN", valN);
+ ...
+t = tadds(t+1, "key2", val2);
+t = tadds(t+1, "key1", val1);
+/* table ref is 't' */
+
+ ...
+
+/* lookup "key6" in table */
+void *m = tlus(t, "key6", 02);
+.EE
+.in
+
+.SH "SEE ALSO"
+setpnc (2)
+.SH DIAGNOSTICS
+.SH BUGS

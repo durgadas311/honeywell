@@ -38,6 +38,10 @@ int tran();	/* (char *d, char *s, void *tr, int op) */
 #define TR_12TO6	01
 #define TR_6TO12	02
 #define TR_12TO12	03
+void *tlus();	/* (void *tbl, char *key, int op) */
+void *tadds();	/* (void *tbl, char *key, int val) */
+void *tlui();	/* (void *tbl, int key, int op) */
+void *taddi();	/* (void *tbl, int key, int val) */
 
 /* SENSE switch detection */
 int sense();	/* (int sw) */
