@@ -260,7 +260,11 @@ cr16:
 	socB1	R,A1''
 
 %e*,n
-%	[fas1]
+	S
+	F1*
+	li	r0,Z
+	szcB1	r0,#1(R1)
+	socB1	R,#1(R1)
 
 %n*,n
 	SS
@@ -342,7 +346,6 @@ cr40:
 	S1*
 	IB2	#2(R1),R
 
-%[add3:]
 %n,e
 	F
 	S1
@@ -356,7 +359,9 @@ cr40:
 /* ^ -- xor */
 cr49:
 %n,e
-%	[add3]
+	F
+	S1
+	IBF	R1,R
 
 %n,n
 	FS
@@ -459,16 +464,12 @@ cr70:
 	F*
 	I	0(x1),#1(R)
 
-%[addq9:]
 %nub*,n
 %n*,n
 	SS
 	F*
 	lca	R,x3
 	IBF	0(x1),#1(x3)
-
-%nub*,n
-%	[addq9]
 
 /* '*=' */
 cr72:
@@ -815,17 +816,14 @@ ci80:
 	li	R,A2*256
 	IBF	R,A1
 
-%[move3:]
 %aw,aw
 	I	A2,A1
 
-%[move4:]
 %a,n*
 %aub,n*
 	S*
 	lca	(A2-3),A1
 
-%[move5:]
 %ab,n
 %aub,n
 	S
@@ -884,7 +882,6 @@ ci80:
 	<1	R1,8
 	IB1	R1,#1(R)
 
-%[move9:]
 %e*,nw*
 %eb*,n*
 %eub*,n*
@@ -892,7 +889,6 @@ ci80:
 	F1*
 	IBF	#2(R),#1(R1)
 
-%[move10:]
 %e*,n
 %eub*,n
 	S
@@ -908,7 +904,6 @@ ci80:
 	mov	0(x1)+,r1
 	IBF	#2(R),#1(r1)
 
-%[move12:]
 %n*,n
 %nub*,n
 	FS*
@@ -1025,22 +1020,26 @@ ci70:
 	I	A2,A1
 
 %aw,aw
-%	[move3]
+	I	A2,A1
 
 %a,n*
 %aub,n*
-%	[move4]
+	S*
+	lca	(A2-3),A1
 
 %a,n
 %aub,n
-%	[move5]
+	S
+	exm	A2,A1,001
 
 %nw*,1
 	F*
 	I'	#1(R),#1(R)
 
 %ew*,nw*
-%	[move9]
+	S*
+	F1*
+	IBF	#2(R),#1(R1)
 
 %a,ew*
 %aub,ew*
@@ -1057,10 +1056,16 @@ ci70:
 	movB1	R1,A1
 
 %ew*,n
-%	[move10]
+	S
+	F1*
+	<1	R,8
+	IB1	R,#1(R1)
 
 %nw*,n
-%	[move12]
+	FS*
+	S
+	mov	0(x1)+,r1
+	IB1	R,#1(r1)
 
 %n*,n
 	SS
@@ -1101,7 +1106,6 @@ ci16:
 	li	r0,A2
 	socB1	r0,#1(R)
 
-%[fas1:]
 %e*,n
 	S
 	F1*

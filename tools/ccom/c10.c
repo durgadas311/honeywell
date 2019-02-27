@@ -707,18 +707,16 @@ loop:
 			p = tree;
 		else
 			p = p1;
-		goto pbyte;
+		goto loop;
 
 	/* BF */
 	case 'P':
 		p = tree;
-		goto pb1;
+		goto loop;
 
 	/* B2 */
 	case 'D':
 		p = p2;
-	pbyte:
-	pb1:
 		goto loop;
 #if 0
 	/* BE */
@@ -727,7 +725,7 @@ loop:
 		 || p1->t.type==UNCHAR || p2->t.type==UNCHAR)
 			putchar('b');
 		p = tree;
-		goto pb1;
+		goto loop;
 #endif
 	case '<':
 		c = *string++;
