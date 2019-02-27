@@ -20,18 +20,26 @@ struct kwtab {
 } kwtab[] = {
 	{ "int",	INT },
 	{ "char",	CHAR },
+#ifdef FLOAT_SUPPORT
 	{ "float",	FLOAT },
 	{ "double",	DOUBLE },
+#endif
 	{ "struct",	STRUCT },
+#ifdef LONG_SUPPORT
 	{ "long",	LONG },
+#endif
 	{ "unsigned",	UNSIGN },
 	{ "union",	UNION },
+#ifdef SHORT_SUPPORT
 	{ "short",	INT },
+#endif
 	{ "void",	VOID },
 	{ "auto",	AUTO },
 	{ "extern",	EXTERN },
 	{ "static",	STATIC },
+#ifdef REGISTER_SUPPORT
 	{ "register",	REG },
+#endif
 	{ "goto",	GOTO },
 	{ "return",	RETURN },
 	{ "if",		IF },
