@@ -26,6 +26,7 @@
 #define IM	0200
 #define RM	0300
 
+#define POS	0020	// normalized BCD positive values, LSD
 #define NEG	0040	// BCD negative values, LSD
 
 #define type_opc type_p

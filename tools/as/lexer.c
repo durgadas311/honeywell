@@ -571,11 +571,14 @@ int scanfp(int pnc) {
 
 int scanbcd(int pnc) {
 	int v, c;
-	if (*scanp == PLUS) {
-		++scanp;
-	} else if (*scanp == MINUS) {
+	if (*scanp == MINUS) {
 		++scanp;
 		pnc |= NEG;
+	} else {
+		pnc |= POS;
+		if (*scanp == PLUS) {
+			++scanp;
+		}
 	}
 	char *p = scanp;
 	while (isdigit(*p)) ++p;
@@ -585,7 +588,7 @@ int scanbcd(int pnc) {
 	// TODO: check termination
 	c = 0;
 	while (scanp < p) {
-		v = *scanp++ - '0';
+		v = *scanp++ - '0';	// 000..011
 		if (!c) {
 			v |= (pnc >> 8);
 		}
