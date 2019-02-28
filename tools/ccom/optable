@@ -279,7 +279,6 @@ cr45:
 %nub,c
 %n,c
 	F
-	lca	A1,R //opt.282
 	I	A2,R //opt.283
 
 %nub,a
@@ -832,8 +831,7 @@ ci80:
 %a,nb
 %a,nub
 	S
-	lca	N0,A1 //opt.835
-	exm	A2,A1,001 //opt.836
+	lca	R,A1 //opt.835
 
 %a,e
 	S
@@ -879,7 +877,6 @@ ci80:
 %n*,e
 	F*
 	S1
-	<1	R1,8
 	IB1	R1,#1(R) //opt.883
 
 %e*,nw*

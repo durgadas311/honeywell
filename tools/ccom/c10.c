@@ -1221,8 +1221,9 @@ register int type;
 		return(tp);
 	if (tp->t.type==CHAR && type==INT)
 		return(tp);
-	if (tp->t.type==CHAR || tp->t.type==UNCHAR)
+	if (tp->t.type==CHAR || tp->t.type==UNCHAR) {
 		return(optim(tnode(LOAD, type, tp, TNULL)));
+	}
 	tp->t.type = type;
 	if (tp->t.op==AMPER && type&XTYPE) {
 		tp->t.tr1 = paint(tp->t.tr1, decref(type));
@@ -1275,11 +1276,6 @@ int reg;
 
 	if (tree->t.op != STAR && dcalc(tree, nreg-reg) > 12) {
 		return(-1);
-	}
-	// TODO: is this correct?
-	// Prevents extraneous LOAD for some ops...
-	if (table == regtab && tree->t.op == NAME) {
-		return reg;
 	}
 	lbuf.op = LOAD;
 	lbuf.type = tree->t.type;
