@@ -124,25 +124,25 @@ cr106:
 
 %z,n
 %c,n
-	lca	A1,R
+	lca	A1,R //opt.127
 
 %aub,n
 %ab,n
-	lca	N0,R
-	exm	A1,R,001
+	lca	N0,R //opt.131
+	exm	A1,R,001 //opt.132
 
 %a,n
-	lca	A1,R
+	lca	A1,R //opt.135
 
 %nub*,n
 %nb*,n
 	F1*
-	lca	N0,R
-	exm	#1(R+),R,001
+	lca	N0,R //opt.140
+	exm	#1(R+),R,001 //opt.141
 
 %n*,n
 	F*
-	lca	#1(R),R
+	lca	#1(R),R //opt.145
 
 %n,n
 	F
@@ -155,42 +155,42 @@ cr32:
 %aw,n
 %ab,n
 %aub,n
-	I	A2,A1
+	I	A2,A1 //opt.158
 
 %ew*,1
 	F1*
-	I	A2,#1(R)
+	I	A2,#1(R) //opt.162
 
 %nw*,1
 	F*
-	lca	&(x1),#1(R)
-	I'	#1(R)
-	lca	R,&(x1)
+	lca	&(x1),#1(R) //opt.166
+	I'	#1(R) //opt.167
+	lca	R,&(x1) //opt.168
 	Q
 
 %ew*,n
 	F1*
-	lca	#1(R1),R
-	I	A2,#1(R1)
+	lca	#1(R1),R //opt.173
+	I	A2,#1(R1) //opt.174
 
 %eb*,n
 %eub*,n
 	F1*
-	lca	#1(R1),R
-	I	A2,#1(R1)
+	lca	#1(R1),R //opt.179
+	I	A2,#1(R1) //opt.180
 
 %nw*,n
 	F*
-	lca	#1(R),&(x1)
-	I	A2,#1(R)
+	lca	#1(R),&(x1) //opt.184
+	I	A2,#1(R) //opt.185
 	Q
 
 %nb*,n
 %nub*,n
 	F*
-	lca	&(x1),(R)
-	I	A2,(R)
-	lca	R,&(x1)
+	lca	&(x1),(R) //opt.191
+	I	A2,(R) //opt.192
+	lca	R,&(x1) //opt.193
 	Q
 
 /* - unary */
@@ -212,44 +212,44 @@ cr80:
 %aub,n
 %a,n
 	S
-	lcaB1	R,A1
+	lcaB1	R,A1 //opt.215
 
 %nb*,c
 %nub*,c
 	F*
-	lca	A2,#1(R)
+	lca	A2,#1(R) //opt.220
 
 %n*,c
 	F*
-	lca	A2,#1(R)
+	lca	A2,#1(R) //opt.224
 
 %nb*,ab
 %nub*,ab
 %nb*,aub
 %nub*,aub
 	F*
-	lca	A2,#1(R)
+	lca	A2,#1(R) //opt.231
 
 %nb*,a
 %nub*,a
 	F*
-	lca	A2,#(R)
+	lca	A2,#(R) //opt.236
 
 %n*,aw
 	F*
-	lcaB1	A2,#1(R)
+	lcaB1	A2,#1(R) //opt.240
 
 %nub*,e
 %n*,e
 	F*
 	S1
-	lca	#1(R),R
+	lca	#1(R),R //opt.246
 
 %nub*,n
 %n*,n
 	FS*
 	S
-	lca	0(x1),r0
+	lca	0(x1),r0 //opt.252
 
 /* field assign, value in reg. */
 cr16:
@@ -279,13 +279,13 @@ cr45:
 %nub,c
 %n,c
 	F
-	lca	A1,R
-	I	A2,R
+	lca	A1,R //opt.282
+	I	A2,R //opt.283
 
 %nub,a
 %n,a
 	F
-	I	A2,R
+	I	A2,R //opt.288
 
 %nub,e
 %n,e
@@ -293,7 +293,7 @@ cr45:
 	S1
 	mov	R1,r0
 	jeq	.+4
-	I	R,0
+	I	R,0 //opt.296
 
 %nub,n
 %n,n
@@ -301,7 +301,7 @@ cr45:
 	F
 	mov	0(x1),r0
 	jeq	.+4
-	I	R,0
+	I	R,0 //opt.304
 
 /* +, -, |, &~ */
 cr40:
@@ -311,108 +311,108 @@ cr40:
 
 %ab,c
 %aub,c
-	lca	N0,R
-	exm	(A1-3),R,001
-	I	A2,R
+	lca	N0,R //opt.314
+	exm	(A1-3),R,001 //opt.315
+	I	A2,R //opt.316
 
 %c,c
 %a,c
-	lca	A1,R
-	I	A2,R
+	lca	A1,R //opt.320
+	I	A2,R //opt.321
 
 %nb*,c
 %nub*,c
 	F
-	lca	N0,R
-	exm	(A1-3),R,001
-	I	A2,R
+	lca	N0,R //opt.326
+	exm	(A1-3),R,001 //opt.327
+	I	A2,R //opt.328
 
 %n*,c
 	F
-	lca	(A1-3),R
-	I	A2,R
+	lca	(A1-3),R //opt.332
+	I	A2,R //opt.333
 
 %n,c
 	F
-	lca	A1,R
-	I	A2,R
+	lca	A1,R //opt.337
+	I	A2,R //opt.338
 
 %n,aw
 	F
-	IB2	A2,R
+	IB2	A2,R //opt.342
 
 %n,ew*
 	F
 	S1*
-	IB2	#2(R1),R
+	IB2	#2(R1),R //opt.347
 
 %n,e
 	F
 	S1
-	IBF	R1,R
+	IBF	R1,R //opt.352
 
 %n,n
 	SS
 	F
-	IBF	R,0(x1)
+	IBF	R,0(x1) //opt.357
 
 /* ^ -- xor */
 cr49:
 %n,e
 	F
 	S1
-	IBF	R1,R
+	IBF	R1,R //opt.364
 
 %n,n
 	FS
 	S
-	I	R,0(x1)
+	I	R,0(x1) //opt.369
 
 /* '*' -- low word of result is okay for both signed and unsigned.
  * R is increased by 1 following these snippets.
  */
 cr42:
 %ab,c
-	I	A2,A1
+	I	A2,A1 //opt.376
 
 %a,c
-	lca	A1,R
-	I	A2,R
+	lca	A1,R //opt.379
+	I	A2,R //opt.380
 
 %n,c
 	F
-	I	A2,R
+	I	A2,R //opt.384
 
 %n,aw
 	F
-	IB2	A2,R
+	IB2	A2,R //opt.388
 
 %n,ew*
 	F
 	S1*
-	IB2	R,#2(R1)
+	IB2	R,#2(R1) //opt.393
 
 %n,e
 	F
 	S1
-	IBF	R,R1
+	IBF	R,R1 //opt.398
 
 %n,n
 	SS
 	F
-	IBF	R,0(x1)
+	IBF	R,0(x1) //opt.403
 
 /* / and % -- signed */
 cr43:
 %n,e
 	F!
 	S1!
-	I	A2,A1
+	I	A2,A1 //opt.410
 
 %n,n
 	SS
 	F!
-	I	0(x1),A1
+	I	0(x1),A1 //opt.415
 
 /* PTOI */
 cr14:
@@ -420,56 +420,56 @@ cr14:
 /* +=, -= */
 cr70:
 %aw,1
-	I	A2,A1
+	I	A2,A1 //opt.423
 
 %aw,2
-	I	A2,A1
+	I	A2,A1 //opt.426
 
 %aub,c
 %a,c
-	I	A2,A1
+	I	A2,A1 //opt.430
 
 %aw,aw
-	I	A2,A1
+	I	A2,A1 //opt.433
 
 %aub,aw
 %a,aw
-	I	A2,A1
+	I	A2,A1 //opt.437
 
 %aw,nw*
 	S*
-	I	#2(R),A1
+	I	#2(R),A1 //opt.441
 
 %aw,n
 	S
-	I	R,A1
+	I	R,A1 //opt.445
 
 %a,n
 %aub,n
 	SS
-	I	A1,0(x1)
+	I	A1,0(x1) //opt.450
 
 %ew*,nw*
 	S*
 	F1*
-	I	#2(R),#1(R1)
+	I	#2(R),#1(R1) //opt.455
 
 %ew*,n
 	S
 	F1*
-	I	R,#1(R1)
+	I	R,#1(R1) //opt.460
 
 %nw*,n
 	SS
 	F*
-	I	0(x1),#1(R)
+	I	0(x1),#1(R) //opt.465
 
 %nub*,n
 %n*,n
 	SS
 	F*
-	lca	R,x3
-	IBF	0(x1),#1(x3)
+	lca	R,x3 //opt.471
+	IBF	0(x1),#1(x3) //opt.472
 
 /* '*=' */
 cr72:
@@ -477,54 +477,54 @@ cr72:
 %aub,c
 %ab,aw
 %aub,aw
-	lca	N0,R
-	exm	A1,R,001
-	I	A2,R
-	exm	R,A1,001
+	lca	N0,R //opt.480
+	exm	A1,R,001 //opt.481
+	I	A2,R //opt.482
+	exm	R,A1,001 //opt.483
 
 %a,c
-	I	A2,A1
+	I	A2,A1 //opt.486
 
 %aub,ab
 %aub,aub
 %a,ab
 %a,aub
-	I	A2,A1
+	I	A2,A1 //opt.492
 
 %a,aw
-	I	A2,A1
+	I	A2,A1 //opt.495
 
 %ab,nb
 %aub,nb
-	lca	N0,R
-	exm	A1,R,001
-	lca	N0,R+
-	exm	(A2-3),R+,001
-	I	R+,R
-	exm	R,A1,001
+	lca	N0,R //opt.499
+	exm	A1,R,001 //opt.500
+	lca	N0,R+ //opt.501
+	exm	(A2-3),R+,001 //opt.502
+	I	R+,R //opt.503
+	exm	R,A1,001 //opt.504
 
 %ab,n
 %aub,n
 	SS
-	lca	N0,R
-	exm	A1,R,001
-	I	(A2-3),R
-	exm	R,A1,001
+	lca	N0,R //opt.509
+	exm	A1,R,001 //opt.510
+	I	(A2-3),R //opt.511
+	exm	R,A1,001 //opt.512
 
 %a,n
 	SS
-	I	A2,A1
+	I	A2,A1 //opt.516
 
 %nb*,nb*
 %nub*,nb*
 	FS*
 	S
-	lca	N0,R
-	exm	(A1-3),R,001
-	lca	N0,R+
-	exm	(A2-3),R+,001
-	I	R+,R
-	exm	R,(A1-3),001
+	lca	N0,R //opt.522
+	exm	(A1-3),R,001 //opt.523
+	lca	N0,R+ //opt.524
+	exm	(A2-3),R+,001 //opt.525
+	I	R+,R //opt.526
+	exm	R,(A1-3),001 //opt.527
 
 %nb*,nb
 %nub*,nb
@@ -532,193 +532,193 @@ cr72:
 %nub*,nub
 	FS*
 	S
-	lca	N0,R
-	exm	(A1-3),R,001
-	lca	N0,R+
-	exm	A2,R+,001
-	I	R+,R
-	exm	R,(A1-3),001
+	lca	N0,R //opt.535
+	exm	(A1-3),R,001 //opt.536
+	lca	N0,R+ //opt.537
+	exm	A2,R+,001 //opt.538
+	I	R+,R //opt.539
+	exm	R,(A1-3),001 //opt.540
 
 %nb*,n
 %nub*,n
 	FS*
 	S
-	lca	N0,R
-	exm	(A1-3),R,001
-	I	A2,R
-	exm	R,(A1-3),001
+	lca	N0,R //opt.546
+	exm	(A1-3),R,001 //opt.547
+	I	A2,R //opt.548
+	exm	R,(A1-3),001 //opt.549
 
 %n*,nb
 	FS*
 	S
-	lca	N0,R
-	exm	A2,R,001
-	I	R,(A1-3)
+	lca	N0,R //opt.554
+	exm	A2,R,001 //opt.555
+	I	R,(A1-3) //opt.556
 
 %n*,n
 	FS*
 	S
-	I	A2,(A1-3)
+	I	A2,(A1-3) //opt.561
 
 /* /= and %= -- signed int */
 cr73:
 %a,e
 %aub,e
 	S1!
-	I	0(x1),A1
+	I	0(x1),A1 //opt.568
 
 %a,n
 %aub,n
 	SS
-	I	0(x1),A1
+	I	0(x1),A1 //opt.573
 
 %n*,n
 %nub*,n
 	FS*
 	S!
-	I	R1,#1(x3)
+	I	R1,#1(x3) //opt.579
 
 /* ^= -- =xor */
 cr79:
 %aw,n
 	S
-	I	R,A1
+	I	R,A1 //opt.585
 
 %aub,n
 %ab,n
 	SS
-	I	0(x1),A1
+	I	0(x1),A1 //opt.590
 
 %nub*,n
 %nb*,n
 	FS*
 	S
-	lca	0(x1),x3
-	I	A2,#1(x3)
+	lca	0(x1),x3 //opt.596
+	I	A2,#1(x3) //opt.597
 
 %n*,n
 	FS*
 	S
-	lca	0(x1),x3
-	I	A2,0(x3)
+	lca	0(x1),x3 //opt.602
+	I	A2,0(x3) //opt.603
 
 /* <<=, >>=, unsigned >>= */
 cr75:
 %r,c
-	I	A2,A1
+	I	A2,A1 //opt.608
 
 %r,n
 	S
-	I	A2,A1
+	I	A2,A1 //opt.612
 
 %aub,c
 %a,c
-	I	A2,A1
+	I	A2,A1 //opt.616
 
 %aub,n
 %a,n
 	S
-	I	A2,A1
+	I	A2,A1 //opt.621
 
 /* =| */
 cr78:
 %aw,aw
-	I	A2,A1
+	I	A2,A1 //opt.626
 
 %aub,a
-	IBF	A2,A1'
+	IBF	A2,A1' //opt.629
 
 %a,aw
-	I	A2,A1
+	I	A2,A1 //opt.632
 
 %aw,nw*
-	I	A2,A1
+	I	A2,A1 //opt.635
 
 %aw,n
-	I	A2,A1
+	I	A2,A1 //opt.638
 
 %aub,n
 	SS
-	IBF	0(x1),A1'
+	IBF	0(x1),A1' //opt.642
 
 %ew*,nw*
-	I	A2,A1
+	I	A2,A1 //opt.645
 
 %a,n
-	I	A2,A1
+	I	A2,A1 //opt.648
 
 %ew*,n
-	I	A2,A1
+	I	A2,A1 //opt.651
 
 %nw*,n
-	I	A2,A1
+	I	A2,A1 //opt.654
 
 %n*,n
-	I	A2,A1
+	I	A2,A1 //opt.657
 
 %nub*,n
 	FS*
 	SS
-	IBF	0(x1),*2(x1)
+	IBF	0(x1),*2(x1) //opt.662
 
 /* convert integer to character (sign extend) */
 cr109:
 %n,n
 	F
-	exm	what?
+	exm	what? //opt.668
 
 /* / and % where divisor is unsigned or known to be positive */
 cr117:
 %n,c
 	F
-	I	A2,R
+	I	A2,R //opt.674
 
 %n,aw
 	F
-	I	A2,A1
+	I	A2,A1 //opt.678
 
 %n,ew*
 	F
 	S1*
-	I	#2(R1),R
+	I	#2(R1),R //opt.683
 
 %n,e
 	F
 	S1
-	I	R1,R
+	I	R1,R //opt.688
 
 %n,n
 	SS
 	F
-	I	0(x1),R
+	I	0(x1),R //opt.693
 
 
 /* /= and %= where divisor is unsigned or known to be positive */
 cr119:
 %aub,c
 %a,c
-	I	A2,A1
+	I	A2,A1 //opt.700
 
 %aub,aw
 %a,aw
-	I	A2,A1
+	I	A2,A1 //opt.704
 
 %aub,n
 %a,n
 	SS
-	I	0(x1),A1
+	I	0(x1),A1 //opt.709
 
 %eub*,n
 %e*,n
 	SS
 	F1*
-	I	0(x1),#1(R1)
+	I	0(x1),#1(R1) //opt.715
 
 %nub*,n
 %n*,n
 	FS*
 	SS
-	I	0(x1),#1(R1)
+	I	0(x1),#1(R1) //opt.721
 
 /* (int *) - (int *) */
 cr107:
@@ -730,8 +730,8 @@ cr107:
 cr130:
 %n,n
 	F
-	lca	A2,R1
-	lca	R,R1
+	lca	A2,R1 //opt.733
+	lca	R,R1 //opt.734
 
 %{
 /*
@@ -757,144 +757,144 @@ struct table efftab[] = {
 /* = */
 ci80:
 %r,z
-	lca	A2,A1
+	lca	A2,A1 //opt.760
 
 %ab,z
 %aub,z
-	exm	A2,A1,001
+	exm	A2,A1,001 //opt.764
 
 %r,c
-	lca	A2,A1
+	lca	A2,A1 //opt.767
 
 %r,a
 %r,aub
-	IB2	A2,A1
+	IB2	A2,A1 //opt.771
 
 %r,n
 	S
-	I	R,A1
+	I	R,A1 //opt.775
 
 %ab,c
 %aub,c
-	exm	A2,A1,001
+	exm	A2,A1,001 //opt.779
 
 %ab,ab
 %ab,aub
 %aub,ab
 %aub,aub
-	exm	A2,A1,001
+	exm	A2,A1,001 //opt.785
 
 %ab,n
 %aub,n
 	S
-	exm	(A2-3),A1,001
+	exm	(A2-3),A1,001 //opt.790
 
 %aw,z
-	IB1	N0,A1
+	IB1	N0,A1 //opt.793
 
 %nb*,z
 %nub*,z
 	F*
-	exm	N0,#1(R),001
+	exm	N0,#1(R),001 //opt.798
 
 %n*,z
 	F*
-	lca	A2,#1(R)
+	lca	A2,#1(R) //opt.802
 
 %nub*,z
 	F*
-	exm	A2,#1(R),001
+	exm	A2,#1(R),001 //opt.806
 
 %r,c
-	lca	A2,A1
+	lca	A2,A1 //opt.809
 
 %a,c
-	lca	A2,A1
+	lca	A2,A1 //opt.812
 
 %ab,c
 %aub,c
 	li	R,A2*256
-	IBF	R,A1
+	IBF	R,A1 //opt.817
 
 %aw,aw
-	I	A2,A1
+	I	A2,A1 //opt.820
 
 %a,n*
 %aub,n*
 	S*
-	lca	(A2-3),A1
+	lca	(A2-3),A1 //opt.825
 
 %ab,n
 %aub,n
 	S
-	exm	A2,A1,001
+	exm	A2,A1,001 //opt.830
 
 %a,nb
 %a,nub
 	S
-	lca	N0,A1
-	exm	A2,A1,001
+	lca	N0,A1 //opt.835
+	exm	A2,A1,001 //opt.836
 
 %a,e
 	S
-	I	R,A1
+	I	R,A1 //opt.840
 
 %a,n
 	S
-	I	A2,A1
+	I	A2,A1 //opt.844
 
 %nb*,c
 %nub*,c
 	F*
-	exm	A2,0(R),001
+	exm	A2,0(R),001 //opt.849
 
 %n*,c
 	F*
-	IB1	A2,0(R)
+	IB1	A2,0(R) //opt.853
 
 %nb*,ab
 %nub*,ab
 %nb*,aub
 %nub*,aub
 	F*
-	exm	A2,0(R),001
+	exm	A2,0(R),001 //opt.860
 
 %nb*,a
 %nub*,a
 	F*
-	exm	A2,0(R),001
+	exm	A2,0(R),001 //opt.865
 
 %n*,a
 	F*
-	I	A2,#1(R)
+	I	A2,#1(R) //opt.869
 
 %nb*,e*
 %nub*,e*
 %n*,ew*
 	F*
 	S1*
-	IBF	(A2-3),0(R)
+	IBF	(A2-3),0(R) //opt.876
 
 %nub*,e
 %n*,e
 	F*
 	S1
 	<1	R1,8
-	IB1	R1,#1(R)
+	IB1	R1,#1(R) //opt.883
 
 %e*,nw*
 %eb*,n*
 %eub*,n*
 	S*
 	F1*
-	IBF	#2(R),#1(R1)
+	IBF	#2(R),#1(R1) //opt.890
 
 %e*,n
 %eub*,n
 	S
 	F1*
 	<1	R,8
-	IB1	R,#1(R1)
+	IB1	R,#1(R1) //opt.897
 
 %n*,nw*
 %nb*,n*
@@ -902,19 +902,19 @@ ci80:
 	FS*
 	S*
 	mov	0(x1)+,r1
-	IBF	#2(R),#1(r1)
+	IBF	#2(R),#1(r1) //opt.905
 
 %n*,n
 %nub*,n
 	FS*
 	S
 	mov	0(x1)+,r1
-	IB1	R,#1(r1)
+	IB1	R,#1(r1) //opt.912
 
 /* |= */
 ci78:
 %r,c
-	I	A1,A2,fubu
+	I	A1,A2,fubu //opt.917
 
 %a,1
 %ab,1
@@ -931,23 +931,23 @@ ci78:
 %ab,c
 %aub,c
 	F
-	exm	A2,.+19,001
+	exm	A2,.+19,001 //opt.934
 	sst	A2,A1,000
 
 %a,c
 	F
-	lca	A2,R
+	lca	A2,R //opt.939
 	ha	NN1,R
 	ha	NN1,A1
 	ext	R,A1
 	ha	NN1,A1
 
 %aw,ab
-	exm	A2,.+19,001
+	exm	A2,.+19,001 //opt.946
 	sst	A2,A1,000
 
 %aw,aw
-	lca	A2,R
+	lca	A2,R //opt.950
 	ha	NN1,R
 	ha	NN1,A1
 	ext	R,A1
@@ -955,103 +955,103 @@ ci78:
 
 %ab,n
 %aub,n
-	exm	A2,.+19,001
+	exm	A2,.+19,001 //opt.958
 	sst	A2,A1,000
 
 %a,n
 	S
-	I	R,A1
+	I	R,A1 //opt.963
 
 %nb*,c
 %nub*,c
 	F*
-	I	A2,#1(R)
+	I	A2,#1(R) //opt.968
 
 %n*,c
 	F*
-	I	A2,#1(R)
+	I	A2,#1(R) //opt.972
 
 %n*,aw
 %nb*,a
 %nub*,a
-	I	A2,A1
+	I	A2,A1 //opt.977
 
 %n*,ew*
 %nb*,e*
 %nub*,e*
-	I	A2,A1
+	I	A2,A1 //opt.982
 
 %n*,e
-	I	A2,A1
+	I	A2,A1 //opt.985
 
 %e*,nw*
 %eb*,n*
 %eub*,n*
-	I	A2,A1
+	I	A2,A1 //opt.990
 
 %e*,n
-	I	A2,A1
+	I	A2,A1 //opt.993
 
 %n*,nw*
 %nb*,n*
 %nub*,n*
-	I	A2,A1
+	I	A2,A1 //opt.998
 
 %n*,n
-	I	A2,A1
+	I	A2,A1 //opt.1001
 
 /* +=, -=, ++, -- */
 ci70:
 %aw,1
-	I'	A2,A1
+	I'	A2,A1 //opt.1006
 
 %aw,2
-	I'	A2,A1
+	I'	A2,A1 //opt.1009
 
 %r,c
-	I"	A2,A1
+	I"	A2,A1 //opt.1012
 
 %ab,c
 %aub,c
 	li	r0,A2*256
-	Ib	r0,A1
+	Ib	r0,A1 //opt.1017
 
 %a,c
-	I	A2,A1
+	I	A2,A1 //opt.1020
 
 %aw,aw
-	I	A2,A1
+	I	A2,A1 //opt.1023
 
 %a,n*
 %aub,n*
 	S*
-	lca	(A2-3),A1
+	lca	(A2-3),A1 //opt.1028
 
 %a,n
 %aub,n
 	S
-	exm	A2,A1,001
+	exm	A2,A1,001 //opt.1033
 
 %nw*,1
 	F*
-	I'	#1(R),#1(R)
+	I'	#1(R),#1(R) //opt.1037
 
 %ew*,nw*
 	S*
 	F1*
-	IBF	#2(R),#1(R1)
+	IBF	#2(R),#1(R1) //opt.1042
 
 %a,ew*
 %aub,ew*
 	S*
-	I	#2(R),A1
+	I	#2(R),A1 //opt.1047
 
 %a,n
 %aub,n
 	S
 	movB1	A1',R1
 	>1	R1,8
-	I	R,R1
+	I	R,R1 //opt.1054
 	<1	R1,8
 	movB1	R1,A1
 
@@ -1059,18 +1059,18 @@ ci70:
 	S
 	F1*
 	<1	R,8
-	IB1	R,#1(R1)
+	IB1	R,#1(R1) //opt.1062
 
 %nw*,n
 	FS*
 	S
 	mov	0(x1)+,r1
-	IB1	R,#1(r1)
+	IB1	R,#1(r1) //opt.1068
 
 %n*,n
 	SS
 	F*
-	I	0(x1),#1(R)
+	I	0(x1),#1(R) //opt.1073
 
 /* field = ... */
 ci16:
@@ -1163,14 +1163,14 @@ struct table cctab[] = {
 cc61:
 %nb*,z
 %nub*,z
-	lca	N0,R
-	exm	(A1-3),R,001
+	lca	N0,R //opt.1166
+	exm	(A1-3),R,001 //opt.1167
 	c	N0,R
 
 %nb,z
 %nub,z
-	lca	N0,R
-	exm	A1,R,001
+	lca	N0,R //opt.1172
+	exm	A1,R,001 //opt.1173
 	c	N0,R
 
 %n,z
@@ -1178,14 +1178,14 @@ cc61:
 
 %nb*,1
 %nub*,1
-	lca	N0,R
-	exm	(A1-3),R,001
+	lca	N0,R //opt.1181
+	exm	(A1-3),R,001 //opt.1182
 	c	N1,R
 
 %nb,1
 %nub,1
-	lca	N0,R
-	exm	A1,R,001
+	lca	N0,R //opt.1187
+	exm	A1,R,001 //opt.1188
 	c	N1,R
 
 %n,1
@@ -1193,14 +1193,14 @@ cc61:
 
 %nb*,2
 %nub*,2
-	lca	N0,R
-	exm	(A1-3),R,001
+	lca	N0,R //opt.1196
+	exm	(A1-3),R,001 //opt.1197
 	c	N2,R
 
 %nb,2
 %nub,2
-	lca	N0,R
-	exm	A1,R,001
+	lca	N0,R //opt.1202
+	exm	A1,R,001 //opt.1203
 	c	N2,R
 
 %n,2
@@ -1208,14 +1208,14 @@ cc61:
 
 %nb,n
 %nub,n
-	lca	N0,R
-	exm	A1,R,001
+	lca	N0,R //opt.1211
+	exm	A1,R,001 //opt.1212
 	c	A2,R
 
 %nb*,n
 %nub*,n
-	lca	N0,R
-	exm	(A1-3),R,001
+	lca	N0,R //opt.1217
+	exm	(A1-3),R,001 //opt.1218
 	c	A2,R
 
 %n,n
@@ -1226,80 +1226,80 @@ cc60:
 %c,z
 %a,z
 %aub,z
-	I	A2,A1
+	I	A2,A1 //opt.1229
 
 %n*,z
 	F*
-	I	A2,#1(R)
+	I	A2,#1(R) //opt.1233
 
 %nb*,z
 %nub*,z
 	F*
-	I	A2,#1(R)
+	I	A2,#1(R) //opt.1238
 
 %n,z
 	FC
 	foo
 
 %r,c
-	I	A2,A1
+	I	A2,A1 //opt.1245
 
 %nb*,c
 %nub*,c
 	F
-	lca	N0,R
-	exm	(A1-3),R,001
-	I	A2,R
+	lca	N0,R //opt.1250
+	exm	(A1-3),R,001 //opt.1251
+	I	A2,R //opt.1252
 
 %n*,c
 	F
-	I	A2,(A1-3)
+	I	A2,(A1-3) //opt.1256
 
 %n,c
 	F
-	I	A2,A1
+	I	A2,A1 //opt.1260
 
 %aw,aw
 %ab,ab
 %aub,aub
-	IBF	A2,A1
+	IBF	A2,A1 //opt.1265
 
 %nw*,aw
 %nb*,ab
 %nub*,aub
 	F*
-	IBF	#1(R),A2
+	IBF	#1(R),A2 //opt.1271
 
 %n,aw
 	F
-	IB2	R,A2
+	IB2	R,A2 //opt.1275
 
 %nw*,ew*
 %nb*,eb*
 %nub*,eub*
 	F*
 	S1*
-	IBF	#1(R),#2(R1)
+	IBF	#1(R),#2(R1) //opt.1282
 
 %nw*,e
 	F*
 	S1
-	IB1	#1(R),R1
+	IB1	#1(R),R1 //opt.1287
 
 %n,ew*
 	F
 	S1*
-	IB2	R,#2(R1)
+	IB2	R,#2(R1) //opt.1292
 
 %n,e
 	F
 	S1
-	IBF	R,R1
+	IBF	R,R1 //opt.1297
 
 %n,n
 	SS
 	F
-	IBF	R,&(x1)
+	IBF	R,&(x1) //opt.1302
 	Q
 
 /* set codes right by moving the result */
@@ -1329,37 +1329,37 @@ struct table sptab[] = {
 cs106:
 %ab,n
 %aub,n
-	exm	A1,&(x1),001
+	exm	A1,&(x1),001 //opt.1332
 	Q
 
 %aw,n
-	lca	A1,&(x1)
+	lca	A1,&(x1) //opt.1336
 	Q
 
 %nw*,n
 	F*
-	lca	#1(R),&(x1)
+	lca	#1(R),&(x1) //opt.1341
 	Q
 
 /* unary - */
 cs41:
 %n,n
-	lca	N0,&(x1)
+	lca	N0,&(x1) //opt.1347
 	bs	A1,&(x1)
 	Q
 
 /* unary ~ */
 cs42:
 %n,n
-	lca	A1,&(x1)
+	lca	A1,&(x1) //opt.1354
 	ha	NN1,&(x1)
 	Q
 
 /* | */
 cs43:
 %n,n
-	lca	A1,&(x1)
-	lca	A2,R
+	lca	A1,&(x1) //opt.1361
+	lca	A2,R //opt.1362
 	ha	NN1,&(x1)
 	ha	NN1,R
 	ext	R,&(x1)
@@ -1370,46 +1370,46 @@ cs43:
 cs40:
 %ab,c
 %aub,c
-	lca	N0,&(x1)
-	exm	A1,&(x1),001
-	I	A2,&(x1)
+	lca	N0,&(x1) //opt.1373
+	exm	A1,&(x1),001 //opt.1374
+	I	A2,&(x1) //opt.1375
 	Q
 
 %a,c
-	lca	A1,&(x1)
-	I	A2,&(x1)
+	lca	A1,&(x1) //opt.1379
+	I	A2,&(x1) //opt.1380
 	Q
 
 %nb,c
 %nub,c
 	FS
-	lca	N0,&(x1)
-	exm	A1,&(x1),001
-	I	A2,&(x1)
+	lca	N0,&(x1) //opt.1386
+	exm	A1,&(x1),001 //opt.1387
+	I	A2,&(x1) //opt.1388
 	Q
 
 %n,c
 %n,n
 	FS
-	lca	A1,&(x1)
-	I	A2,&(x1)
+	lca	A1,&(x1) //opt.1394
+	I	A2,&(x1) //opt.1395
 	Q
 
 %a,aw
 	FS
-	I	A2,&(x1)
+	I	A2,&(x1) //opt.1400
 	Q
 
 %a,nw*
 	FS
 	S*
-	I	#2(R),&(x1)
+	I	#2(R),&(x1) //opt.1406
 	Q
 
 %a,n
 	FS
 	S
-	I	R,&(x1)
+	I	R,&(x1) //opt.1412
 	Q
 
 /* setup for structure assign */
@@ -1421,7 +1421,7 @@ ci116:
 %n,n
 	SS
 	F!
-	lca	r1,&(x1)
+	lca	r1,&(x1) //opt.1424
 	Q
 
 /* end of table */
