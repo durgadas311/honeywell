@@ -29,7 +29,8 @@ char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
 char	*tmp_c1, *tmp_c2, *tmp_asm, *tmp_pre, *tmp_opt;
 char	*outfile, *aflag = NULL, *tflag = NULL;
 char	**av, **clist, **llist, **plist;
-int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, gflag, wflag, Lminusflag;
+int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, gflag;
+int	nflag, wflag, Lminusflag;
 int	errflag;
 int	exfail;
 
@@ -274,6 +275,9 @@ main(argc, argv)
 			case 'g':
 				gflag++;
 				continue;
+			case 'n':
+				nflag++;
+				continue;
 			case 'w':
 				wflag++;
 				continue;
@@ -484,13 +488,17 @@ nocom:
 			av[na++] = "-o";
 			av[na++] = outfile;
 		}
-		if (gflag)
+		if (gflag) {
 			av[na++] = "-g";
-		strcpy(buf1, makepath(crt0));
-		av[na++] = buf1;
-		while (i < nl)
+		}
+		if (!nflag) {
+			strcpy(buf1, makepath(crt0));
+			av[na++] = buf1;
+		}
+		while (i < nl) {
 			av[na++] = llist[i++];
-		if (! Lminusflag) {
+		}
+		if (!Lminusflag && !nflag) {
 			sprintf(buf2, "-L%s", makepath("../lib"));
 			av[na++] = buf2;
 			av[na++] = proflag ? "-lc_p" : "-lc";
