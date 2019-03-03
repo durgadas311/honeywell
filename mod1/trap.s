@@ -6,18 +6,19 @@
 // X3 = task base	- trashed by C
 
 // mirrors struct task:
-sr	=	3
-eiaar	=	7
-eibar	=	11
-iiaar	=	15
-iibar	=	19
-eivar	=	20
-iivar	=	25
-brr	=	31
-ibr	=	33
-time	=	43
+flags	=	3	// int (r)
+sr	=	7	// int (r)
+eiaar	=	11	// int (r)
+eibar	=	15	// int (r)
+iiaar	=	19	// int (r)
+iibar	=	23	// int (r)
+eivar	=	24	// char[5] (l)
+iivar	=	29	// char[5] (l)
+brr	=	34	// char[2] (l)
+ibr	=	36	// char[2] (l)
+time	=	47	// "char[10]" (10-chr int) (r)
 
-	.globl	_syscal,_task
+	.globl	_syscal,_task,_endtsk,_runtsk
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
 	.globl	_tick
 
@@ -87,9 +88,19 @@ _runtsk:
 	scr	0(x1),070	// used?
 	lca	4(x1),^task
 	lca	^task,x5
+	lca	@one,flags(x5)	// runnable
 	lcr	eiadr,076
 //	...
 	b	eires
+
+_endtsk:
+	scr	0(x1),070
+	scr	atr,054		// save ATR
+	lca	^task,x5
+	ba	atr,time(x5)
+	lca	@zero,flags(x5)	// done
+	// TODO: any other cleanup?
+	lcr	0(x1),077
 
 	.data
 atr:	.word	0	// temp ATR storage
