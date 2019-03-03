@@ -129,7 +129,7 @@ struct	boptab {
 
 struct	swtab {
 	int	swlab;
-	int	swval;
+	union tree *swval;
 };
 
 extern char	maprel[];

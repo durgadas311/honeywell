@@ -458,12 +458,10 @@ int deflab;
 	range = lp->swval - fp->swval;
 	/* direct switch */
 	if (range>0 && range <= 3*ncase) {
-		if (fp->swval)
-			printf("ai\tr2,-%d\n", UNS(fp->swval));
 		printf(dirsw, UNS(range), deflab, isn, isn);
 		isn++;
-		for (i=fp->swval; ; i++) {
-			if (i==fp->swval) {
+		for (i=fp->swval->c.value; ; i++) {
+			if (i==fp->swval->c.value) {
 				printf("L%d\n", fp->swlab);
 				if (fp==lp)
 					break;
@@ -476,8 +474,9 @@ int deflab;
 	}
 	/* simple switch */
 	if (ncase<10) {
-		for (fp = afp; fp<=lp; fp++)
+		for (fp = afp; fp<=lp; fp++) {
 			breq(fp->swval, fp->swlab);
+		}
 		printf("\tb\tL%d\n", deflab);
 		return;
 	}
@@ -489,7 +488,7 @@ int deflab;
 			poctab[j] = 0;
 		for (swp=fp; swp<=lp; swp++)
 			/* lrem(0, swp->swval, i) */
-			poctab[(unsigned)swp->swval%i]++;
+			poctab[(unsigned)swp->swval->c.value % i]++;
 		worst = 0;
 		for (j=0; j<i; j++)
 			if (poctab[j]>worst)
@@ -509,9 +508,10 @@ int deflab;
 		printf("L%d:", isn++);
 		for (swp=fp; swp<=lp; swp++) {
 			/* lrem(0, swp->swval, tabs) */
-			if ((unsigned)swp->swval%tabs == i) {
+			if ((unsigned)swp->swval->c.value % tabs == i) {
 				/* ldiv(0, swp->swval, tabs) */
-				breq((int)((unsigned)swp->swval/tabs), swp->swlab);
+				breq(NULL, swp->swlab);
+				// (int)((unsigned)swp->swval/tabs), swp->swlab);
 			}
 		}
 		printf("\tb\tL%d\n", deflab);
@@ -520,13 +520,13 @@ int deflab;
 
 void
 breq(v, l)
-int v, l;
+union tree *v;
+int l;
 {
-	if (v==0)
-		printf("\tmov\tr2,r2\n");
-	else
-		printf("\tci\tr2,%d\n", UNS(v));
-	printf("\tbjeq\tL%d\n", l);
+	printf("\tc\t");
+	prconlab(v->c.label, 0);
+	printf(",x5\n");
+	printf("\tbct\tL%d,042\n", l);
 }
 
 int
@@ -534,25 +534,27 @@ sort(afp, alp)
 struct swtab *afp, *alp;
 {
 	register struct swtab *cp, *fp, *lp;
-	int intch, t;
+	int intch;
+	union tree *t;
+	int v;
 
 	fp = afp;
 	lp = alp;
 	while (fp < --lp) {
 		intch = 0;
 		for (cp=fp; cp<lp; cp++) {
-			if (cp->swval == cp[1].swval) {
-				error("Duplicate case (%d)", cp->swval);
+			if (cp->swval->c.value == cp[1].swval->c.value) {
+				error("Duplicate case (%d)", cp->swval->c.value);
 				return(1);
 			}
-			if (cp->swval > cp[1].swval) {
+			if (cp->swval->c.value > cp[1].swval->c.value) {
 				intch++;
 				t = cp->swval;
 				cp->swval = cp[1].swval;
 				cp[1].swval = t;
-				t = cp->swlab;
+				v = cp->swlab;
 				cp->swlab = cp[1].swlab;
-				cp[1].swlab = t;
+				cp[1].swlab = v;
 			}
 		}
 		if (intch==0)
@@ -1118,8 +1120,10 @@ getstring:
 		line = geti();
 		if (gflag) printf("\t.line %d\n", line);
 		funcbase = (char *)resetblk();
-		while(swp=(struct swtab *)getblk(sizeof(*swp)), swp->swlab = geti())
-			swp->swval = geti();
+		// these must be contiguous!
+		while (swp=(struct swtab *)getblk(sizeof(*swp)), swp->swlab = geti()) {
+			swp->swval = tconst(geti(), INT, 1);
+		}
 		pswitch((struct swtab *)funcbase, swp, t);
 		break;
 

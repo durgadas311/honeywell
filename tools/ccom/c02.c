@@ -681,12 +681,14 @@ pswitch()
 	statement();
 	branch(brklab);
 	label(swlab);
-	if (deflab==0)
+	if (deflab==0) {
 		deflab = brklab;
+	}
 	outcode("BNN", SWIT, deflab, line);
-	for (; cswp < swp; cswp++)
+	for (; cswp < swp; cswp++) {
 		outcode("NN", cswp->swlab, cswp->swval);
-	outcode("0");
+	}
+	outcode("N", 0);
 	label(brklab);
 	deflab = dl;
 	swp = sswp;
