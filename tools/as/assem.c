@@ -130,14 +130,24 @@ void do_pseudo(int op) {
 		break;
 
 	case PBYTE:	// [punc] char-expr...
+		// punctuation in listing is difficult...
+		c = 0;
 		do {
 			t = expr();
 			if (pass_gen) {
-				if (t != RABS || res.val < -127 || res.val > 255) {
+				// 'res.val' is *unsigned*
+				b = res.val;
+				if (t != RABS || b < -127 || b > 255) {
 					cerror(errv);
 				}
 			}
+			if (!c) {
+				pnc = (res.val & 0300) << 8;
+			} else {
+				pnc |= (res.val & 0300);
+			}
 			putb(res.val, 1);
+			++c;
 		} while ((t = token()) == COMMA);
 		nexttoken = t;
 		break;
