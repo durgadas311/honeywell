@@ -1,9 +1,6 @@
 // Interrupt (trap) entry into OS.
 // includes MC (syscall).
-
-// X1 = stack (kernel)
-// X2 = frame (used?)	- trashed by C
-// X3 = task base	- trashed by C
+// Also includes "cold boot".
 
 // mirrors struct task:
 flags	=	3	// int (r)
@@ -18,9 +15,24 @@ brr	=	34	// char[2] (l)
 ibr	=	36	// char[2] (l)
 time	=	47	// "char[10]" (10-chr int) (r)
 
-	.globl	_syscal,_task,_endtsk,_runtsk
+	.globl	_task,^task,_memtop,^memtop
+	.globl	_endtsk,_runtsk
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
-	.globl	_tick
+	.globl	_tick,_syscal,_start
+	.text
+
+?start:	// also top of memory, etc.
+	cam	060
+	lca	@start,x1	// set stack pointer
+	bs	@four,x1	// wiggle room
+	lca	@start,_memtop
+	bs	@4k,_memtop	// space for stack
+	sst	@zero,_memtop,077	// force
+	sst	@zero,_memtop-1,077	// 4k boundary
+	lcr	eiadr,066
+	lcr	iiadr,076
+	// TODO: safety net for CSM?
+	b	_start
 
 // EI handler, incl. MC (syscall)
 eires:	lcr	eibar(x5),070
@@ -83,15 +95,22 @@ tick:
 	b	eires
 
 // runtsk(struct task *task)
-// does not return?
+// does not return? only if error...
+// program may re-enter monitor/supervisor
+// through standard points.
 _runtsk:
-	scr	0(x1),070	// used?
-	lca	4(x1),^task
-	lca	^task,x5
+	scr	0(x1),070
+	lca	4(x1),x5
+	c	@zero,flags(x5)
+	bct	1f,042	// task has exited?
+	lca	x5,^task
 	lca	@one,flags(x5)	// runnable
-	lcr	eiadr,076
+	// TODO: must enter interrupt mode?
+	lib	ibr+1(x5),brr+1(x5),006
+	lcr	sr(x5),066
 //	...
 	b	eires
+1:	lcr	0(x1),077
 
 _endtsk:
 	scr	0(x1),070
@@ -119,7 +138,14 @@ iiadr:	.word	ii
 @eight:	.word	8
 @twlv:	.word	12
 @sxtn:	.word	16
+@4k:	.word	4096
+
+@start:	.word	?start
+
 
 // C-linkage for "struct task *task"
 _task:	.word	^task
 ^task:	.word	0
+// ditto for "void *memtop"
+_memtop: .word	^memtop
+^memtop: .word	0
