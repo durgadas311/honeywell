@@ -7,7 +7,7 @@
 // loc 186-189 = end of memory address (WM)
 
 	.globl	_main
-	.globl	@zero,@one,@two,@four,@eight,@twlv
+	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn,@twty
 	.globl	@none,@nmax
 	.globl	@heap,@mtop
 start:
@@ -42,6 +42,8 @@ start:
 @four:	.bin	04#4
 @eight:	.bin	010#4
 @twlv:	.bin	014#4
+@sxtn:	.bin	020#4
+@twty:	.bin	024#4
 @none:	.bin	077777777#4
 @nmax:	.bin	040000000#4
 

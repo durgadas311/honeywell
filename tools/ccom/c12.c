@@ -1116,6 +1116,8 @@ static struct globcons {
 	{ "@four", INT, 4 },
 	{ "@eight", INT, 8 },
 	{ "@twlv", INT, 12 },
+	{ "@sxtn", INT, 16 },
+	{ "@twty", INT, 20 },
 	{ "@none", INT, -1 },
 	{ "@nmax", INT, MININT },
 	{ NULL }

@@ -3,7 +3,7 @@
 // void *tadds(void *tab, char *fld, int val)
 // void *taddi(void *tab, int fld, int val)
 
-	.globl	@zero,@two
+	.globl	@zero,@two,@eight
 	.globl	_tlus,_tadds
 	.globl	_tlui,_taddi
 	.text
