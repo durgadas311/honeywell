@@ -1,4 +1,5 @@
 #include "task.h"
+#include <h200io.h>
 
 extern void endtsk();
 
@@ -11,6 +12,10 @@ int sc;
 		break;
 	case 1:	/* segment load */
 		/* load(...) */
+		break;
+	default:
+		print("BAD SYSCALL", PR_NL);
+		endtsk();
 		break;
 	}
 }

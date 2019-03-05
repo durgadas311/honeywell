@@ -33,6 +33,7 @@ register union tree *t;
 
 static char *curfnc = NULL;
 extern void prconlab(int lab, int flag);
+extern void sprconlab(char *buf, int lab, int flag);
 
 void
 pname(p, flag, neg)
@@ -402,22 +403,7 @@ int t;
  * Strings for switch code.
  */
 
-/*
- * Modified Memorial day May 80 to uniquely identify switch tables
- * (as on Vax) so a shell script can optionally include them in RO code.
- * This is useful in overlays to reduce the size of data space load.
- * wfj 5/80
- */
-char	dirsw[] = {
-	"ci	r2,%d\n"
-	"bjh	L%d\n"
-	"sla	r2,1\n"
-	"mov	@L%d(r2),r0\n"
-	"b	(r0)\n"
-	"\t.data\n"
-	"L%d:"
-};
-
+#if 0
 char	hashsw[] = {
 	"mov	r2,r3\n"
 	"clr	r2\n"
@@ -429,6 +415,7 @@ char	hashsw[] = {
 	"\t.data\n"
 	"L%d:"
 };
+#endif
 
 /*
  * If the unsigned casts below won't compile,
@@ -455,30 +442,44 @@ int deflab;
 		return;
 	ncase = lp-fp;
 	lp--;
-	range = lp->swval - fp->swval;
+	range = lp->swval->c.value - fp->swval->c.value;
 	/* direct switch */
 	if (range>0 && range <= 3*ncase) {
-		printf(dirsw, UNS(range), deflab, isn, isn);
+		static char buf[16];
+		union tree *vc = tconst(range, INT, 0);
+		sprconlab(buf, vc->c.label, 0);
+		printf(	"\tc\t%s,x5\n", buf);
+		printf(	"\tbct\tL%d,044\n", deflab);
+		printf(	"\tba\tx5\n");
+		printf(	"\tba\tx5\n");
+		printf(	"\tba\tL%d,x5\n", isn);
+		printf(	"\tb\t0(x5)\n");
+		printf(	"\t.data\n"
+			"L%d:\t.word\tP%d\n"
+			"P%d:", isn, isn, isn);
 		isn++;
 		for (i=fp->swval->c.value; ; i++) {
 			if (i==fp->swval->c.value) {
-				printf("L%d\n", fp->swlab);
+				printf("\t.word\tL%d\n", fp->swlab);
 				if (fp==lp)
 					break;
 				fp++;
 			} else
-				printf("L%d\n", deflab);
+				printf("\t.word\tL%d\n", deflab);
 		}
 		printf("\t.text\n");
 		return;
 	}
+#if 0
 	/* simple switch */
 	if (ncase<10) {
+#endif
 		for (fp = afp; fp<=lp; fp++) {
 			breq(fp->swval, fp->swlab);
 		}
 		printf("\tb\tL%d\n", deflab);
 		return;
+#if 0
 	}
 	/* hash switch */
 	best = 077777;
@@ -516,6 +517,7 @@ int deflab;
 		}
 		printf("\tb\tL%d\n", deflab);
 	}
+#endif
 }
 
 void
@@ -523,9 +525,9 @@ breq(v, l)
 union tree *v;
 int l;
 {
-	printf("\tc\t");
-	prconlab(v->c.label, 0);
-	printf(",x5\n");
+	static char buf[16];
+	sprconlab(buf, v->c.label, 0);
+	printf("\tc\t%s,x5\n", buf);
 	printf("\tbct\tL%d,042\n", l);
 }
 

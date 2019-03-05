@@ -1207,13 +1207,19 @@ int op, val, type, stc;
 	return(p);
 }
 
-void prconlab(int lab, int flag) {
+void sprconlab(char *buf, int lab, int flag) {
 	if (lab < 0) {
 		// TODO: any way to indirect?
-		printf("%s", globals[(-lab) - 1].name);
+		sprintf(buf, "%s", globals[(-lab) - 1].name);
 	} else {
-		printf("%c%d", flag ? 'P' : 'L', lab);
+		sprintf(buf, "%c%d", flag ? 'P' : 'L', lab);
 	}
+}
+
+void prconlab(int lab, int flag) {
+	static char buf[16];
+	sprconlab(buf, lab, flag);
+	printf("%s", buf);
 }
 
 void prcons() {
