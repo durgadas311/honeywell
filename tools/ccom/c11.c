@@ -400,24 +400,6 @@ int t;
 }
 
 /*
- * Strings for switch code.
- */
-
-#if 0
-char	hashsw[] = {
-	"mov	r2,r3\n"
-	"clr	r2\n"
-	"li	r0,%d\n"
-	"div	r0,r2\n"
-	"sla	r3,1\n"
-	"mov	@L%d(r3),r0\n"
-	"b	(r0)\n"
-	"\t.data\n"
-	"L%d:"
-};
-#endif
-
-/*
  * If the unsigned casts below won't compile,
  * try using the calls to lrem and ldiv.
  */
@@ -427,24 +409,28 @@ pswitch(afp, alp, deflab)
 struct swtab *afp, *alp;
 int deflab;
 {
-	int ncase, i, j, tabs = 0, worst, best, range;
-	register struct swtab *swp, *fp, *lp;
-	int *poctab;
+	int ncase, i, j, tabs = 0, range;
+	register struct swtab *fp, *lp;
 
 	fp = afp;
 	lp = alp;
-	if (fp==lp) {
+	if (fp == lp) {
 		printf("\tb\tL%d\n", deflab);
 		return;
 	}
-	isn++;
-	if (sort(fp, lp))
+	++isn;	// TODO: why?
+	if (sort(fp, lp)) {
 		return;
-	ncase = lp-fp;
-	lp--;
-	range = lp->swval->c.value - fp->swval->c.value;
-	/* direct switch */
-	if (range>0 && range <= 3*ncase) {
+	}
+	ncase = lp - fp;
+	--lp;
+	range = lp->swval - fp->swval;
+	// direct (jump table) switch
+	// sz = 4 * range + 4 + 9 + 6 + 10 + 9 + 5
+	// sz = 4 * range + 43
+	// 4 * ncase + 43 <= sz <= 12 * ncase + 43
+	// ex = 43 + 36
+	if (ncase > 5 && range <= 2 * ncase) {
 		static char buf[16];
 		union tree *vc = tconst(range, INT, 0);
 		sprconlab(buf, vc->c.label, 0);
@@ -457,67 +443,49 @@ int deflab;
 		printf(	"\t.data\n"
 			"L%d:\t.word\tP%d\n"
 			"P%d:", isn, isn, isn);
-		isn++;
-		for (i=fp->swval->c.value; ; i++) {
-			if (i==fp->swval->c.value) {
+		++isn;
+		for (i = fp->swval; ; i++) {
+			if (i == fp->swval) {
 				printf("\t.word\tL%d\n", fp->swlab);
 				if (fp==lp)
 					break;
 				fp++;
-			} else
+			} else {
 				printf("\t.word\tL%d\n", deflab);
+			}
 		}
 		printf("\t.text\n");
 		return;
 	}
-#if 0
-	/* simple switch */
-	if (ncase<10) {
-#endif
-		for (fp = afp; fp<=lp; fp++) {
-			breq(fp->swval, fp->swlab);
+	// simple (brute force) switch
+	// sz = 19 * ncase + 5, or 15 * ncase + 5 if shared constants...
+	// 15 * ncase + 5 <= sz <= 19 * ncase + 5
+	// 24 <= ex <= 24 * ncase
+	if (ncase < 5) {
+		for (fp = afp; fp <= lp; fp++) {
+			union tree *vc = tconst(fp->swval, INT, 0);
+			breq(vc, fp->swlab);
 		}
 		printf("\tb\tL%d\n", deflab);
 		return;
-#if 0
 	}
-	/* hash switch */
-	best = 077777;
-	poctab = (int *)getblk(((ncase+2)/2) * sizeof(*poctab));
-	for (i=ncase/4; i<=ncase/2; i++) {
-		for (j=0; j<i; j++)
-			poctab[j] = 0;
-		for (swp=fp; swp<=lp; swp++)
-			/* lrem(0, swp->swval, i) */
-			poctab[(unsigned)swp->swval->c.value % i]++;
-		worst = 0;
-		for (j=0; j<i; j++)
-			if (poctab[j]>worst)
-				worst = poctab[j];
-		if (i*worst < best) {
-			tabs = i;
-			best = i*worst;
-		}
+	// TLU switch
+	// sz = 8 * ncase + 28
+	// ex = 28 + [8 .. 12 * ncase] + 8
+	// 44 <= ex <= 44 + 12 * ncase
+	printf(	"\ttlu\tx5,L%d,002\n", isn);
+	printf(	"\tscr\tx5,070\n");
+	printf(	"\tbct\tL%d,044\n", deflab);
+	printf(	"\tb\t0(x5)\n");
+	printf(	"\t.data\n");
+	printf(	"\t.byte\t0100\n");
+	for (fp = lp; fp >= afp; --fp) {
+		printf(	"\t.word\tL%d\n", fp->swlab);
+		printf(	"\t.word\tn:%d\n", fp->swval);
 	}
-	i = isn++;
-	printf(hashsw, UNS(tabs), i, i);
-	isn++;
-	for (i=0; i<tabs; i++)
-		printf("L%d\n", isn+i);
-	printf(".text\n");
-	for (i=0; i<tabs; i++) {
-		printf("L%d:", isn++);
-		for (swp=fp; swp<=lp; swp++) {
-			/* lrem(0, swp->swval, tabs) */
-			if ((unsigned)swp->swval->c.value % tabs == i) {
-				/* ldiv(0, swp->swval, tabs) */
-				breq(NULL, swp->swlab);
-				// (int)((unsigned)swp->swval/tabs), swp->swlab);
-			}
-		}
-		printf("\tb\tL%d\n", deflab);
-	}
-#endif
+	printf(	"L%d\t=\t.-1\n", isn);
+	printf(	"\t.text\n");
+	++isn;
 }
 
 void
@@ -537,7 +505,6 @@ struct swtab *afp, *alp;
 {
 	register struct swtab *cp, *fp, *lp;
 	int intch;
-	union tree *t;
 	int v;
 
 	fp = afp;
@@ -545,15 +512,15 @@ struct swtab *afp, *alp;
 	while (fp < --lp) {
 		intch = 0;
 		for (cp=fp; cp<lp; cp++) {
-			if (cp->swval->c.value == cp[1].swval->c.value) {
-				error("Duplicate case (%d)", cp->swval->c.value);
+			if (cp->swval == cp[1].swval) {
+				error("Duplicate case (%d)", cp->swval);
 				return(1);
 			}
-			if (cp->swval->c.value > cp[1].swval->c.value) {
+			if (cp->swval > cp[1].swval) {
 				intch++;
-				t = cp->swval;
+				v = cp->swval;
 				cp->swval = cp[1].swval;
-				cp[1].swval = t;
+				cp[1].swval = v;
 				v = cp->swlab;
 				cp->swlab = cp[1].swlab;
 				cp[1].swlab = v;
@@ -995,14 +962,7 @@ getree()
 		// primary label already emitted!
 		// get string - label name
 		outname(s); // will have '_' prepended...
-#if 0	// label was already setup, just add ':'
-		ss = s;
-		if (*ss == '_') ++ss;
-		printf(	"\t.word\t^%s\n"
-			"^%s::", ss, ss);
-#else
 		putchar(':');	// point to start of space (left side)
-#endif
 		goto getstring;
 
 	case BSTR:	// string constant. indir ref, two labels...
@@ -1123,8 +1083,8 @@ getstring:
 		if (gflag) printf("\t.line %d\n", line);
 		funcbase = (char *)resetblk();
 		// these must be contiguous!
-		while (swp=(struct swtab *)getblk(sizeof(*swp)), swp->swlab = geti()) {
-			swp->swval = tconst(geti(), INT, 1);
+		while (swp = (struct swtab *)getblk(sizeof(*swp)), swp->swlab = geti()) {
+			swp->swval = geti();
 		}
 		pswitch((struct swtab *)funcbase, swp, t);
 		break;

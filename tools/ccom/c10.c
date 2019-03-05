@@ -584,29 +584,9 @@ int areg;
 	}
 	string = opt->tabstring;
 	p1 = tree->t.tr1;
-#if 0
-	if (p1->t.op==FCON && p1->f.label>0) {
-		// TODO: better sharing
-		printf(	".data\n"
-			"L%d: .float %12e\n"
-			".text\n", p1->f.label,
-			p1->f.fvalue);
-		p1->f.label = -p1->f.label;
-	}
-#endif
 	p2 = 0;
 	if (opdope[tree->t.op]&BINARY) {
 		p2 = tree->t.tr2;
-#if 0
-		if (p2->t.op==FCON && p2->f.label>0) {
-			// TODO: better sharing
-			printf(	".data\n"
-				"L%d: .float %12e\n"
-				".text\n", p2->f.label,
-				p2->f.fvalue);
-			p2->f.label = -p2->f.label;
-		}
-#endif
 	}
 
 	numlab = 0;
@@ -718,15 +698,7 @@ loop:
 	case 'D':
 		p = p2;
 		goto loop;
-#if 0
-	/* BE */
-	case 'L':
-		if (p1->t.type==CHAR || p2->t.type==CHAR
-		 || p1->t.type==UNCHAR || p2->t.type==UNCHAR)
-			putchar('b');
-		p = tree;
-		goto loop;
-#endif
+
 	case '<':
 		c = *string++;
 		if ( (c=='1' && (p1->t.type==CHAR || p1->t.type==UNCHAR)) ||
@@ -866,23 +838,7 @@ loop:
 	case 'Q':
 		nstack++;
 		goto loop;
-#if 0
-	case '-':		/* check -(sp) */
-		if (*string=='(') {
-			nstack++;
-			putchar('-');
-			tab = 0;
-			goto loop;
-		}
-		break;
 
-	case ')':		/* check (sp)+ */
-		putchar(')');
-		if (*string=='+')
-			nstack--;
-		tab = 0;
-		goto loop;
-#endif
 	/* #1 */
 	case '#':	// index(R) notation
 		p = p1->t.tr1;
@@ -902,7 +858,7 @@ loop:
 			}
 		} else if (*string=='+') {
 			// should never get here
-			printf("@");
+			fprintf(stderr, "%s %d: cexpr '+' warning\n", __FILE__, __LINE__);
 			string++;
 		} else {
 			printf("0"); // index must be non-blank
@@ -914,13 +870,7 @@ loop:
 	 * Sign extend int to long for / %
 	 */
 	case 'T':
-		c = reg-1;
-		if (uns(p1) || uns(p2)) {
-			printf("clr\tr%d\n", c);
-			goto loop;
-		}
-		printf("mov\tr%d,r%d\n", reg, c);
-		printf("sra\tr%d,15\n", c);
+		fprintf(stderr, "%s %d: cexpr 'T' warning\n", __FILE__, __LINE__);
 		tab = 0;
 		goto loop;
 
@@ -935,44 +885,7 @@ loop:
 		goto loop;
 
 	case 'V':	/* adc sbc, clr, or sxt as required for longs */
-#if 0
-		switch(tree->t.op) {
-		case PLUS:
-		case ASPLUS:
-		case INCBEF:
-		case INCAFT:
-			printf("\njnc\t1f\ninc");
-			numlab++;
-			break;
-
-		case MINUS:
-		case ASMINUS:
-		case NEG:
-		case DECBEF:
-		case DECAFT:
-		case MINSTAT:
-			printf("\njoc\t1f\ndec");
-			numlab++;
-			break;
-
-		case ASSIGN:
-			p = tree->t.tr2;
-			if (p->t.type!=LONG && p->t.type!=UNLONG) {
-				if (uns(p) || uns(tree->t.tr2))
-					printf("clr");
-				else
-					printf(	"\tb\t@sext\n"
-						"\tmov\tr0,");
-				goto loop;
-			}
-
-		default:
-			while ((c = *string++)!='\n' && c!='\0');
-			break;
-		}
-#else
 		fprintf(stderr, "%s %d: cexpr 'V' warning\n", __FILE__, __LINE__);
-#endif
 		goto loop;
 
 	/*
@@ -1467,21 +1380,5 @@ union tree *tree;
 	if (r0 == r1) {
 		return;
 	}
-#if 0
-	if (tree->t.type == LONG || tree->t.type == UNLONG) {
-		if (r0 >= nreg || r1 >= nreg) {
-			error("register overflow: compiler error");
-		}
-		s =	"lca\tx%d,x%d\n"
-			"lca\tx%d,x%d\n";
-		if (r0 < r1)
-			printf(s, r0+1, r1+1, r0, r1);
-		else
-			printf(s, r0, r1, r0+1, r1+1);
-		return;
-	}
-	// TODO: handle FLOAT...
-	//c = isfloat(tree);
-#endif
 	printf("lca\tx%d,x%d\n", r0, r1);
 }

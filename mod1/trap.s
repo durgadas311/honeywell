@@ -35,6 +35,11 @@ time	=	47	// "char[10]" (10-chr int) (r)
 	b	_start
 
 // EI handler, incl. MC (syscall)
+// Note thatan ATR overflow could happen
+// while entering here for other reasons,
+// so we need to check other bits after
+// servicing an ATR overflow, and check
+// ATR first.
 eires:	lcr	eibar(x5),070
 	lcr	eiaar(x5),067
 	rvi	eivar(x5),035	// addr mode changes
@@ -48,9 +53,11 @@ eiind:	.byte	0,0,0,0,0100
 	lca	aar,eiaar(x5)
 	lca	bar,eibar(x5)
 	exm	eiind,eivar(x5),031
-	bbe	sc,eiind+4,020
 	bcc	tick,eiind+4,020
+	// must service all (other) sources before
+	// syscall, as syscall might cause dispatch.
 //	...
+	bbe	sc,eiind+4,020
 	b	eires	// resume program
 
 iires:	lcr	iibar(x5),070
@@ -70,29 +77,31 @@ iiind:	.byte	0,0,0,0,0100
 	b	iires	// resume program
 
 // TODO: context switches require more...
-// ^task is already setup...
+// ^task is already setup in x5...
 sc:
 	scr	eisr,076	// user's SR
 	lca	eisr,sr(x5)
-	ba	brr(x5),eisr-2
-	lca	
+	ba	brr(x5),eisr-2	// relocate SR
 	lca	@zero,0(x1)
-	exm	(sr-3),0(x1),001
-	ba	@one,sr
-	lcr	sr,076	// point past code
+	exm	(eisr-3),0(x1),001
+	ba	@one,sr(x5)
+	lcr	sr(x5),076	// point past func code
 	bs	@four,x1
 	b	_syscal
 	ba	@four,x1
-	b	eires
+	// might be on new task now... X5 must get set
+	lca	^task,x5
+	b	eires	// TODO: return rather than branch?
 
 tick:
+	scr	0(x1),070
 	scr	atr,054		// save ATR
-	ba	atrov,time(x5)
-	ba	atr,time(x5)
-	// TODO: possible context switch...
-	b	_tick
+	ba	atrov,time(x5)	// count overflow
+	ba	atr,time(x5)	// count residual
+	// can't callout to _tick here, might be
+	// a syscall so can't dispatch(?)
 	lcr	@zero,054	// zero ATR
-	b	eires
+	lcr	0(x1),077
 
 // runtsk(struct task *task)
 // does not return? only if error...
@@ -114,6 +123,8 @@ _runtsk:
 
 _endtsk:
 	scr	0(x1),070
+	// ATR should be stopped, but
+	// overflowed should have been handled already?
 	scr	atr,054		// save ATR
 	lca	^task,x5
 	ba	atr,time(x5)
