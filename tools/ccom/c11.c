@@ -678,11 +678,13 @@ again:
 		 && uns(tree->t.tr1))
 			tree->t.op = op = op+LESSEQP-LESSEQ;
 	}
+#if 0
 	if (tree->t.type==LONG || tree->t.type==UNLONG
 	  || (opdope[op]&RELAT&&(tree->t.tr1->t.type==LONG || tree->t.tr1->t.type==UNLONG))) {
 		longrel(tree, lbl, cond, reg);
 		return;
 	}
+#endif
 	rcexpr(tree, cctab, reg);
 	op = tree->t.op;
 	if ((opdope[op]&RELAT)==0)
@@ -717,6 +719,7 @@ int lbl, aop, c;
 	}
 }
 
+#if 0
 void
 longrel(atree, lbl, cond, reg)
 union tree *atree;
@@ -749,7 +752,9 @@ int lbl, cond, reg;
 		&& tree->t.tr2->t.tr1->c.value==0);
 	if (cexpr(tree, cctab, reg) < 0) {
 		reg = rcexpr(tree, regtab, reg);
-		printf("mov\tr%d,r0\njne\t.+4\nmov\tr%d,r0\n", reg, reg+1);
+		printf(	"mov\tr%d,r0\n"
+			"jne\t.+4\n"
+			"mov\tr%d,r0\n", reg, reg+1);
 		branch(xlab1, op, 0);
 	}
 	xlab1 = xl1;
@@ -757,7 +762,9 @@ int lbl, cond, reg;
 	xop = xo;
 	xzero = xz;
 }
+#endif
 
+#if 0
 /*
  * Tables for finding out how best to do long comparisons.
  * First dimen is whether or not the comparison is with 0.
@@ -818,6 +825,7 @@ int f;
 	}
 	return(0);
 }
+#endif
 
 void
 label(l)
@@ -1053,8 +1061,7 @@ getstring:
 	case PROFIL:
 		t = geti();
 		outname(s);
-		printf(	"// profile %s L%d @mcount\n",
-			s, t);
+		printf(	"// profile %s L%d @mcount\n", s, t);
 		break;
 
 	case ASSEM:
@@ -1074,7 +1081,7 @@ getstring:
 
 	case RNAME:
 		outname(s);
-		printf("~%s=r%d\n", s+1, geti());
+		printf("~%s=x%d\n", s+1, geti());
 		break;
 
 	case SWIT:
@@ -1189,6 +1196,7 @@ getstring:
 		break;
 
 	case STRASG:
+#if 0
 		tp = getblk(sizeof(struct fasgn));
 		tp->t.op = STRASG;
 		tp->t.type = geti();
@@ -1196,6 +1204,9 @@ getstring:
 		tp->t.tr1 = *--sp;
 		tp->t.tr2 = NULL;
 		*sp++ = tp;
+#else
+		error("STRASG not supported\n");
+#endif
 		break;
 
 	case NULLOP:
@@ -1324,10 +1335,13 @@ union tree *atp;
 		tp = tp->t.tr2;
 	}
 	if (tp->t.op != ASSIGN) {
+#if 0
 		if (tp->t.op==RFORCE) {	/* function return */
 			if (sfuncr.nloc==0) {
 				sfuncr.nloc = isn++;
-				printf(".bss\nL%d:.=.+%d\n.text\n", sfuncr.nloc,
+				printf(	".bss\n"
+					"L%d:.=.+%d\n"
+					".text\n", sfuncr.nloc,
 					UNS(nwords*sizeof(short)));
 			}
 			atp->t.tr1 = tnode(ASSIGN, STRUCT, (union tree *)&sfuncr, tp->t.tr1);
@@ -1335,6 +1349,7 @@ union tree *atp;
 			printf("li\tr2,L%d\n", sfuncr.nloc);
 			return;
 		}
+#endif
 		if (tp->t.op==CALL) {
 			rcexpr(tp, efftab, RSTART);
 			return;
@@ -1342,7 +1357,9 @@ union tree *atp;
 		error("Illegal structure operation");
 		return;
 	}
+#if 0
 	tp->t.tr2 = strfunc(tp->t.tr2);
+#endif
 	if (nwords==1)
 		paint(tp, INT);
 	else if (nwords==sizeof(short))

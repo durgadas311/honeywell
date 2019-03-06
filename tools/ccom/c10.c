@@ -58,20 +58,15 @@ char	*argv[];
 		error("Can't create %s", argv[3]);
 		exit(1);
 	}
+	// TODO: load "global constants" from file?
 	czero = tconst(0, INT, 1);	// these will pick up globals...
 	cone = tconst(1, INT, 1);	// these will pick up globals...
 	getree();
 	/*
-	 * If any floating-point instructions
-	 * were used, generate a reference that
-	 * pulls in the floating-point part of printf.
-	 */
-	if (nfloat)
-		printf(".globl	fltused\n");
-	/*
 	 * tack on the string file.
 	 */
 	printf("\t.data\n");
+	// TODO: store "global constants" to file? and don't print?
 	// first, dump all constants...
 	prcons();
 
@@ -403,11 +398,6 @@ again:
 			modf = isfloat(tree);
 			dbprint(tree->t.op);
 			if (table==sptab || table==lsptab) {
-				if (tree->t.type==LONG || tree->t.type==UNLONG){
-					// TODO: how to handle this...
-					printf( "\tlca\tx%d,0(x1),foo\n",r+1);
-					nstack++;
-				}
 				printf("\tlca\tx%d,%d(x1)\n",
 					r, -(nstack * SZPTR));
 				nstack++;
@@ -470,7 +460,7 @@ int areg;
 	struct table *ctable;
 	union tree *p2;
 	char *string;
-	int reg, reg1, rreg, flag, opd, numlab;
+	int reg, reg1, rreg, flag, opd;
 	int neg;
 	struct optab *opt;
 
@@ -589,7 +579,6 @@ int areg;
 		p2 = tree->t.tr2;
 	}
 
-	numlab = 0;
 loop:
 	/*
 	 * The 0200 bit asks for a tab.
@@ -877,10 +866,6 @@ loop:
 	case '\n':
 		dbprint(tree->t.op);
 		putchar('\n');
-		if (numlab) {
-			printf("1:");
-			numlab = 0;
-		}
 		tab = 0;
 		goto loop;
 
@@ -895,6 +880,7 @@ loop:
 		printf("%d", UNS(tree->F.mask));
 		goto loop;
 
+#if 0
 	/*
 	 * Relational on long values.
 	 * Might bug out early. E.g.,
@@ -905,6 +891,7 @@ loop:
 			goto out;
 		}
 		goto loop;
+#endif
 	}
 	tab = (c == '\t');
 	putchar(c);
@@ -1215,6 +1202,7 @@ int *flagp;
 	register int retval;
 	int size;
 
+#if 0
 	if (tree->t.op==STRASG) {
 		size = tree->F.mask;
 		tree = tree->t.tr1;
@@ -1227,36 +1215,14 @@ int *flagp;
 			paint(tree, LONG);
 			goto normal;
 		}
-#if 1
 		// TODO: silently convert to pointer?
+		// or convert to memcpy(...)?
 		error("Unimplemented structure assignment");
 		return(0);
-#else
-		if (tree->t.op!=NAME && tree->t.op!=STAR) {
-			error("Unimplemented structure assignment");
-			return(0);
-		}
-		tree = tnode(AMPER, STRUCT+PTR, tree, TNULL);
-		tree = tnode(PLUS, STRUCT+PTR, tree, tconst(size, INT, 0));
-		tree = optim(tree);
-		retval = rcexpr(tree, regtab, RSTART);
-		size /= SZPTR;
-
-		printf(	"\tmov\tr%d,r0\n", retval);
-		printf(	"\tli\tr1,%d\n", UNS(size));
-		printf(	"L%d:\tbs\tc~4,r0\n"
-			"\tbs\tc~4,x1\n", isn);
-		printf("\tmov\t(r0),(sp)\n"
-			"\tdec\tr1\n"
-			"\tjne\tL%d\n", isn);
-		isn++;
-
-		nstack++;
-		return(size*SZPTR);
-#endif
 	}
 
 normal:
+#endif
 	if (nstack || isfloat(tree) || tree->t.type==LONG || tree->t.type==UNLONG) {
 		rcexpr(tree, sptab, RSTART);
 		retval = arlength(tree->t.type);
@@ -1268,6 +1234,7 @@ normal:
 	return(retval);
 }
 
+#if 0
 union tree *
 strfunc(tp)
 register union tree *tp;
@@ -1277,6 +1244,7 @@ register union tree *tp;
 	paint(tp, STRUCT+PTR);
 	return(tnode(STAR, STRUCT, tp, TNULL));
 }
+#endif
 
 /*
  * Compile an initializing expression
