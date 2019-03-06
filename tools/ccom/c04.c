@@ -74,11 +74,11 @@ int isstruct;
 	register struct nmlist *hp;
 	register int nextisstruct;
 
-	if (tp == NULL || tp->t.op==NULLOP) {
+	if (tp == NULL || tp->t.op == NULLOP) {
 		outcode("B", XNULLOP);
 		return;
 	}
-	nextisstruct = tp->t.type==STRUCT;
+	nextisstruct = (tp->t.type == STRUCT);
 	switch(tp->t.op) {
 
 	case NAME:
@@ -140,8 +140,9 @@ int isstruct;
 		outcode("BN", tp->t.op, tp->t.type);
 		break;
 	}
-	if (nextisstruct && isstruct==0)
+	if (nextisstruct && isstruct == 0) {
 		outcode("BNN", STRASG, STRUCT, tp->t.strp->S.ssize);
+	}
 }
 
 /*
