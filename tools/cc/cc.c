@@ -239,8 +239,8 @@ main(argc, argv)
 
 	basepath();
 
-	/* ld currently adds upto 5 args; 10 is room to spare */
-	av = (char **)calloc(argc+10, sizeof (char **));
+	/* ld currently adds upto 14 args; 20 is room to spare */
+	av = (char **)calloc(argc+20, sizeof (char **));
 	clist = (char **)calloc(argc, sizeof (char **));
 	llist = (char **)calloc(argc, sizeof (char **));
 	plist = (char **)calloc(argc, sizeof (char **));
@@ -495,12 +495,14 @@ nocom:
 			strcpy(buf1, makepath(crt0));
 			av[na++] = buf1;
 		}
+		if (!Lminusflag) {
+			sprintf(buf2, "-L%s", makepath("../lib"));
+			av[na++] = buf2;
+		}
 		while (i < nl) {
 			av[na++] = llist[i++];
 		}
 		if (!Lminusflag && !nflag) {
-			sprintf(buf2, "-L%s", makepath("../lib"));
-			av[na++] = buf2;
 			av[na++] = proflag ? "-lc_p" : "-lc";
 			av[na++] = proflag ? "-lcrt_p" : "-lcrt";
 		}
