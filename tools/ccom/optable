@@ -844,23 +844,23 @@ ci80:
 %nb*,c
 %nub*,c
 	F*
-	exm	A2,0(R),001 //opt.849
+	exm	A2,#1(R),001 //opt.849
 
 %n*,c
 	F*
-	IB1	A2,0(R) //opt.853
+	IB1	A2,#1(R) //opt.853
 
 %nb*,ab
 %nub*,ab
 %nb*,aub
 %nub*,aub
 	F*
-	exm	A2,0(R),001 //opt.860
+	exm	A2,#1(R),001 //opt.860
 
 %nb*,a
 %nub*,a
 	F*
-	exm	A2,0(R),001 //opt.865
+	exm	A2,#1(R),001 //opt.865
 
 %n*,a
 	F*
@@ -871,7 +871,7 @@ ci80:
 %n*,ew*
 	F*
 	S1*
-	IBF	(A2-3),0(R) //opt.876
+	IBF	(A2-3),#1(R) //opt.876
 
 %nub*,e
 %n*,e
@@ -1383,6 +1383,12 @@ cs40:
 	lca	N0,&(x1) //opt.1386
 	exm	A1,&(x1),001 //opt.1387
 	I	A2,&(x1) //opt.1388
+	Q
+
+%e,n
+	FS
+	lca	R,&(x1) //opt.1394a
+	I	A2,&(x1) //opt.1395a
 	Q
 
 %n,c

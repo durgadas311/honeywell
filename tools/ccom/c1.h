@@ -56,7 +56,6 @@ struct	xtname {
 struct	tconst {
 	int	op;
 	int	type;
-	int	label;
 	uint32_t value;
 };
 
@@ -66,7 +65,6 @@ struct	tconst {
 struct	lconst {
 	int	op;
 	int	type;
-	int	label;
 	LTYPE	lvalue;
 };
 
@@ -76,7 +74,6 @@ struct	lconst {
 struct	ftconst {
 	int	op;
 	int	type;
-	int	label;
 	double	fvalue;
 };
 

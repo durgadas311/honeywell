@@ -278,7 +278,6 @@ register union tree *tree;
 			subtre = getblk(sizeof(struct lconst));
 			subtre->l.op = LCON;
 			subtre->l.type = LONG;
-			subtre->l.label = isn++;
 			subtre->l.lvalue = tree->t.tr1->c.value;
 			return(subtre);
 		}
@@ -296,7 +295,6 @@ register union tree *tree;
 			tree = getblk(sizeof(struct ftconst));
 			tree->f.op = FCON;
 			tree->f.type = DOUBLE;
-			tree->f.label = isn++;
 			tree->f.fvalue = subtre->l.lvalue;
 			return(optim(tree));
 		}
@@ -309,7 +307,6 @@ register union tree *tree;
 			tree = getblk(sizeof(struct ftconst));
 			tree->f.op = FCON;
 			tree->f.type = DOUBLE;
-			tree->f.label = isn++;
 			if (uns(subtre))
 				tree->f.fvalue = (unsigned)subtre->c.value;
 			else
@@ -349,14 +346,15 @@ register union tree *tree;
 			return(subtre);
 
 		case NAME:
-			subtre->n.offset += 2;
+			subtre->n.offset += SZINT;
 			subtre->t.type = tree->t.type;
 			return(subtre);
 
 		case STAR:
 			subtre->t.type = tree->t.type;
 			subtre->t.tr1->t.type = tree->t.type+PTR;
-			subtre->t.tr1 = tnode(PLUS, tree->t.type, subtre->t.tr1, tconst(2, INT, 0));
+			subtre->t.tr1 = tnode(PLUS, tree->t.type, subtre->t.tr1,
+							tconst(SZINT, INT, 0));
 			return(optim(subtre));
 
 		case ITOL:
@@ -1141,31 +1139,7 @@ union tree *
 tconst(val, type, stc)
 int val, type, stc;
 {
-	register union tree *p;
-
-	int x;
-	int msk = masks[type];
-	// first, check known global constants...
-	for (x = 0; globals[x].name; ++x) {
-		if (globals[x].type == type &&
-		    (globals[x].value & msk) == (val & msk)) {
-			break;
-		}
-	}
-	if (!globals[x].name) {
-		return tconst0(CON, val, type, stc);
-	}
-	if (stc) {
-		p = malloc(sizeof(struct tconst));
-	} else {
-		p = getblk(sizeof(struct tconst));
-	}
-	++globals[x].flag;
-	p->c.op = CON;
-	p->c.type = type;
-	p->c.value = val;
-	p->c.label = -(x + 1);
-	return(p);
+	return tconst0(CON, val, type, stc);
 }
 
 union tree *
@@ -1174,17 +1148,6 @@ int op, val, type, stc;
 {
 	register union tree *p;
 
-	int x;
-	int lab = -1;
-	int msk = masks[type];
-	for (x = 0; x < nconsts; ++x) {
-		if (shared[x].op == op &&
-				shared[x].type == type &&
-		    		(shared[x].value & msk) == (val & msk)) {
-			lab = shared[x].label;
-			break;
-		}
-	}
 	if (stc) {
 		p = malloc(sizeof(struct tconst));
 	} else {
@@ -1193,6 +1156,34 @@ int op, val, type, stc;
 	p->c.op = op;
 	p->c.type = type;
 	p->c.value = val;
+	return(p);
+}
+
+void prlab(int lab, int flag) {
+	printf("%c%d", flag ? 'P' : 'L', lab);
+}
+
+void sprconlab(char *buf, int val, int op, int type) {
+	int x;
+	int msk = masks[type];
+	// first, check known global constants...
+	for (x = 0; globals[x].name; ++x) {
+		if (globals[x].type == type &&
+		    (globals[x].value & msk) == (val & msk)) {
+			++globals[x].flag;
+			sprintf(buf, "%s", globals[x].name);
+			return;
+		}
+	}
+	int lab = -1;
+	for (x = 0; x < nconsts; ++x) {
+		if (shared[x].op == op &&
+				shared[x].type == type &&
+		    		(shared[x].value & msk) == (val & msk)) {
+			lab = shared[x].label;
+			break;
+		}
+	}
 	if (lab < 0) {
 		lab = isn++;
 		if (nconsts < NSHARED) {
@@ -1203,22 +1194,12 @@ int op, val, type, stc;
 			++nconsts;
 		}
 	}
-	p->c.label = lab;
-	return(p);
+	sprintf(buf, "L%d", lab);
 }
 
-void sprconlab(char *buf, int lab, int flag) {
-	if (lab < 0) {
-		// TODO: any way to indirect?
-		sprintf(buf, "%s", globals[(-lab) - 1].name);
-	} else {
-		sprintf(buf, "%c%d", flag ? 'P' : 'L', lab);
-	}
-}
-
-void prconlab(int lab, int flag) {
+void prconlab(int val, int op, int type) {
 	static char buf[16];
-	sprconlab(buf, lab, flag);
+	sprconlab(buf, val, op, type);
 	printf("%s", buf);
 }
 

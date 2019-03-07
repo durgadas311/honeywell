@@ -55,16 +55,19 @@ extdef()
 			}
 			if (paraml)
 				error("Inappropriate parameters");
-		} else if ((o=symbol())==COMMA || o==SEMI) {
+		} else if ((o=symbol()) == COMMA || o == SEMI) {
 			peeksym = o;
 			// No alignment, H200 doesn't use it
 			o = length((union tree *)ds);
-			if (sclass==STATIC) {
+			if (sclass == STATIC) {
 				setinit(ds);
-				if ((ds->htype&XTYPE)==ARRAY) {
+				if ((ds->htype&XTYPE) == ARRAY) {
 					// .bss is implied, uninitialized array space
 					outcode("BSBSCN", SYMDEF, "",
 						ALABEL, ds->name, ds->htype & TYPE, o);
+				} else if (ds->htype == STRUCT) {
+					outcode("BSBSCN", SYMDEF, "",
+						ALABEL, ds->name, CHAR, o);
 				} else {
 					outcode("BSBSN", SYMDEF, "",
 						SLABEL, ds->name, o);
@@ -72,7 +75,7 @@ extdef()
 			} else if (scflag)
 				outcode("BSN", CSPACE, ds->name, o);
 		} else {
-			if (o!=ASSIGN) {
+			if (o != ASSIGN) {
 				error("Declaration syntax");
 				peeksym = o;
 			}

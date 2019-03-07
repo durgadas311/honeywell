@@ -244,10 +244,10 @@ void dumptree(union tree *p, int level, char tag) {
 		}
 		break;
 	case CON:
-		fprintf(stderr, " L%d = %d", p->c.label, p->c.value);
+		fprintf(stderr, " = %d", p->c.value);
 		break;
 	case CCON:
-		fprintf(stderr, " L%d = '%c'", p->c.label, p->c.value);
+		fprintf(stderr, " = '%c'", p->c.value);
 		break;
 	case EXPR:
 		break;

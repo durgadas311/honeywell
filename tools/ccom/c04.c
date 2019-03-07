@@ -278,12 +278,14 @@ union tree *cs;
 		t = decref(t);
 		n *= cs->t.subsp[nd++];
 	}
-	if ((t&~TYPE)==FUNC)
+	if ((t&~TYPE)==FUNC) {
 		return(0);
+	}
 	elsz = tylength(cs, t);
 	n *= elsz;
-	if (n >= (unsigned)50000)
+	if (n >= (unsigned)50000) {
 		werror("very large data structure");
+	}
 	return(n);
 }
 

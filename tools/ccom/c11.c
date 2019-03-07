@@ -32,8 +32,9 @@ register union tree *t;
 }
 
 static char *curfnc = NULL;
-extern void prconlab(int lab, int flag);
-extern void sprconlab(char *buf, int lab, int flag);
+extern void prlab(int lab, int flag);
+extern void prconlab(int val, int op, int type);
+extern void sprconlab(char *buf, int val, int op, int type);
 
 void
 pname(p, flag, neg)
@@ -47,17 +48,19 @@ loop:
 	switch(p->t.op) {
 
 	case LCON:
-		prconlab(p->l.label, neg);
+		// TODO: implement
+		// prconlab(p->l.value, p->t.op, p->t.type);
 		return;
 
 	case SFCON:
 	case CON:
 	case CCON:
-		prconlab(p->c.label, 0);
+		prconlab(p->c.value, p->t.op, p->t.type);
 		return;
 
 	case FCON:
-		prconlab(p->f.label, neg);
+		// TODO: implement
+		// prconlab(p->f.value, p->t.op, p->t.type);
 		return;
 
 	case CALL1:
@@ -141,7 +144,7 @@ int f;
 {
 	char *s;
 	if (p->n.class==SOFFS || p->n.class==STATIC) {
-		prconlab(p->n.nloc, f);
+		prlab(p->n.nloc, f);
 	} else {
 		s = p->x.name;
 		if (f) {
@@ -367,7 +370,7 @@ int t;
 	case DOUBLE:
 		return(SZDOUB);
 	}
-	error("botch: peculiar type %d", t);
+	error("arlength botch: peculiar type %d", t);
 	return(1024);
 }
 
@@ -394,8 +397,10 @@ int t;
 	case FLOAT:
 	case DOUBLE:
 		return(SZDOUB);
+	case STRUCT:
+		return 1;
 	}
-	error("botch: peculiar type %d", t);
+	error("ellength botch: peculiar type %d", t);
 	return(1024);
 }
 
@@ -432,8 +437,7 @@ int deflab;
 	// ex = 43 + 36
 	if (ncase > 5 && range <= 2 * ncase) {
 		static char buf[16];
-		union tree *vc = tconst(range, INT, 0);
-		sprconlab(buf, vc->c.label, 0);
+		sprconlab(buf, range, CON, INT);
 		printf(	"\tc\t%s,x5\n", buf);
 		printf(	"\tbct\tL%d,044\n", deflab);
 		printf(	"\tba\tx5\n");
@@ -463,8 +467,7 @@ int deflab;
 	// 24 <= ex <= 24 * ncase
 	if (ncase < 5) {
 		for (fp = afp; fp <= lp; fp++) {
-			union tree *vc = tconst(fp->swval, INT, 0);
-			breq(vc, fp->swlab);
+			breq(fp->swval, fp->swlab);
 		}
 		printf("\tb\tL%d\n", deflab);
 		return;
@@ -490,11 +493,10 @@ int deflab;
 
 void
 breq(v, l)
-union tree *v;
-int l;
+int v, l;
 {
 	static char buf[16];
-	sprconlab(buf, v->c.label, 0);
+	sprconlab(buf, v, CON, INT);
 	printf("\tc\t%s,x5\n", buf);
 	printf("\tbct\tL%d,042\n", l);
 }
@@ -554,9 +556,7 @@ register union tree *tree;
 
 	if ( (d = ispow2(tree)) ) {
 		for (i=0; (d>>=1)!=0; i++);
-		// need to reference a different constant!
-		// can't just change value...
-		tree->t.tr2 = tconst(i, tree->t.tr2->t.type, 0);
+		tree->t.tr2->c.value = i;
 		switch (tree->t.op) {
 
 		case TIMES:
@@ -831,36 +831,23 @@ void
 label(l)
 int l;
 {
-	prconlab(l, 0);
+	prlab(l, 0);
 	putchar(':');
 }
 
-static void adjstk(char *op, union tree *sz, char *f) {
+static void adjstk(char *op, int sz, char *f) {
 	printf("\t%s\t", op);
-	if (sz->t.op == LABEL) {
-		prconlab(-sz->c.label, 0);
-	} else if (sz->t.op == NAME) {
-		if (sz->n.class == EXTERN) {
-			printf("%s", sz->x.name);
-		} else {
-			prconlab(sz->n.nloc, 0);
-		}
-	} else if (sz->t.op == CON) {
-		prconlab(sz->c.label, 0);
-	} else {
-		printf("0");
-		error("Stack adjust reference botch");
-	}
+	prconlab(sz, CON, INT);
 	printf(",x1\n");
 }
 
 void
-popstk(union tree *sz, char *f) {
+popstk(int sz, char *f) {
 	adjstk("ba", sz, f);
 }
 
 void
-pushstk(union tree *sz, char *f) {
+pushstk(int sz, char *f) {
 	adjstk("bs", sz, f);
 }
 
@@ -1160,6 +1147,7 @@ getstring:
 		*sp++ = tconst0(CCON, geti(), t, 0);
 		break;
 
+#if 0
 	case LCON:
 		geti();	/* ignore type, assume long */
 		op = geti();	// lo bit
@@ -1172,7 +1160,6 @@ getstring:
 		tp = getblk(sizeof(struct lconst));
 		tp->l.op = LCON;
 		tp->l.type = LONG;
-		tp->l.label = isn++;
 		tp->l.lvalue = ((long)t<<32) | UNS(op);	/* nonportable */
 		*sp++ = tp;
 		break;
@@ -1182,10 +1169,10 @@ getstring:
 		tp = getblk(sizeof(struct ftconst));
 		tp->f.op = FCON;
 		tp->f.type = t;
-		tp->f.label = isn++;
 		tp->f.fvalue = atof(s);
 		*sp++ = tp;
 		break;
+#endif
 	case FSEL:
 		tp = tnode(FSEL, geti(), *--sp, TNULL);
 		t = geti();
@@ -1232,6 +1219,7 @@ getstring:
 	case SLABEL:	// non-array, in .bss, with simple size
 		outname(s);
 		t = op = geti();	// total size
+		// TODO: struct needs to be different...
 		goto bss_label;
 
 	case ALABEL:	// array, in .bss, with element and num-elements

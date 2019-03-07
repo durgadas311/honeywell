@@ -343,12 +343,10 @@ again:
 		if (modf && tree->t.tr1->t.op==NAME
 		   && tree->t.tr1->n.class==EXTERN)
 			tree->t.op = CALL1;
-		union tree *sz = r ? tconst(r, INT, 1) : NULL;
-		if (sz) pushstk(sz, cp);
+		if (r) pushstk(r, cp);
 		if (cexpr(tree, regtab, reg)<0)
 			error("compiler botch: call");
-		if (sz) popstk(sz, cp);
-		if (sz) free(sz);
+		if (r) popstk(r, cp);
 		nstack -= nargs;
 		if (table==efftab || table==regtab)
 			return(RSTART);
@@ -394,11 +392,14 @@ again:
 	}
 	if (table!=regtab && (table!=cctab||(opdope[tree->t.op]&RELAT)==0)) {
 		if((r=cexpr(tree, regtab, reg))>=0) {
+			if (tree->t.op != LOAD) {
+				return r;
+			}
 	fixup:
 			modf = isfloat(tree);
 			dbprint(tree->t.op);
 			if (table==sptab || table==lsptab) {
-				printf("\tlca\tx%d,%d(x1)\n",
+				printf("\tlca\tx%d,%d(x1) // fixup\n",
 					r, -(nstack * SZPTR));
 				nstack++;
 			}
