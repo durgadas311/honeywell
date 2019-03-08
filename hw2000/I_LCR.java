@@ -15,6 +15,7 @@ public class I_LCR implements Instruction {
 		}
 		boolean restore = true;
 		int reg = sys.loadFromAAR();
+		reg &= 01777777;
 		switch(v) {
 		case 054:
 			sys.ATR = reg;

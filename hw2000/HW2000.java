@@ -21,6 +21,7 @@ public class HW2000 implements CoreMemory
 	public int[] cr;
 
 	int ATR;
+	int atrr;
 	public int CSR;
 	public int EIR;
 	public int AAR;
@@ -108,6 +109,7 @@ public class HW2000 implements CoreMemory
 		traps.clear();
 		tics = 0;
 		ATR = 0;
+		atrr = 0;
 		SR = 0;
 		setAM(HW2000CCR.AIR_AM_3C);
 		CTL.reset();
@@ -150,12 +152,16 @@ public class HW2000 implements CoreMemory
 	private void updClock() {
 		// TODO: don't even advance clock unless enabled?
 		if (CTL.isPROTECT() && CTL.allowCLK()) {
-			ATR += tics;
-			int cy = ATR & ~077777777;
-			ATR &= 077777777;
-			if (cy != 0) { //should only ever be "1(xxx)"
-				// TODO: trigger interrupt as appropriate
-				CTL.setEI(HW2000CCR.EIR_CLOCK);
+			atrr += tics;	// TODO: always incr?
+			atrr &= 0377;	// (i.e. free-running?)
+			if (atrr == 0) {
+				ATR += 1;
+				int cy = ATR & ~01777777;
+				ATR &= 01777777;
+				if (cy != 0) { //should only ever be "1(xxx)"
+					// TODO: trigger interrupt as appropriate
+					CTL.setEI(HW2000CCR.EIR_CLOCK);
+				}
 			}
 		}
 		// In all cases, reset tics

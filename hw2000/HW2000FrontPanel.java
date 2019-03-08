@@ -2267,35 +2267,38 @@ public class HW2000FrontPanel extends JFrame
 			break;
 		case 054:
 			val = sys.ATR;
-			if (incr != 0) { sys.ATR += incr; }
+			if (incr != 0) { sys.ATR += incr; sys.ATR &= 01777777; }
 			break;
 		case 064:
 			val = sys.CSR;
-			if (incr != 0) { sys.CSR += incr; }
+			if (incr != 0) { sys.CSR += incr; sys.CSR &= 01777777; }
 			break;
 		case 066:
 			val = sys.EIR;
-			if (incr != 0) { sys.EIR += incr; }
+			if (incr != 0) { sys.EIR += incr; sys.EIR &= 01777777; }
 			break;
 		case 067:
 			val = sys.AAR;
-			if (incr != 0) { sys.AAR += incr; }
+			if (incr != 0) { sys.AAR += incr; sys.AAR &= 01777777; }
 			break;
 		case 070:
 			val = sys.BAR;
-			if (incr != 0) { sys.BAR += incr; }
+			if (incr != 0) { sys.BAR += incr; sys.BAR &= 01777777; }
 			break;
 		case 076:
 			val = sys.IIR;
-			if (incr != 0) { sys.IIR += incr; }
+			if (incr != 0) { sys.IIR += incr; sys.IIR &= 01777777; }
 			break;
 		case 077:
 			val = sys.SR;
-			if (incr != 0) { sys.SR += incr; }
+			if (incr != 0) { sys.SR += incr; sys.SR &= 01777777; }
 			break;
 		default:
 			val = sys.cr[reg & 077];
-			if (incr != 0) { sys.cr[reg & 077] += incr; }
+			if (incr != 0) {
+				sys.cr[reg & 077] += incr;
+				sys.cr[reg & 077] &= 01777777;
+			}
 			break;
 		}
 		return val;
@@ -2339,28 +2342,28 @@ public class HW2000FrontPanel extends JFrame
 			sys.AC[r] = d;
 			break;
 		case 054:
-			sys.ATR = val;
+			sys.ATR = val & 01777777;
 			break;
 		case 064:
-			sys.CSR = val;
+			sys.CSR = val & 01777777;
 			break;
 		case 066:
-			sys.EIR = val;
+			sys.EIR = val & 01777777;
 			break;
 		case 067:
-			sys.AAR = val;
+			sys.AAR = val & 01777777;
 			break;
 		case 070:
-			sys.BAR = val;
+			sys.BAR = val & 01777777;
 			break;
 		case 076:
-			sys.IIR = val;
+			sys.IIR = val & 01777777;
 			break;
 		case 077:
-			sys.SR = val;
+			sys.SR = val & 01777777;
 			break;
 		default:
-			sys.cr[reg & 077] = val;
+			sys.cr[reg & 077] = val & 01777777;
 			break;
 		}
 	}
