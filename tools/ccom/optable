@@ -82,6 +82,7 @@ struct table regtab[] = {
 	{ASRSH,cr75},	/* >>=, signed */
 	{ASURSH,cr75},	/* >>=, unsigned */
 	{ASLSH,cr75},	/* <<= */
+	{ASAND,cr78},	/* &= */
 	{ASOR,cr78},	/* |= */
 	{ASXOR,cr79},	/* ^= */
 	{JUMP,cr102},	/* goto */
@@ -302,7 +303,7 @@ cr45:
 	jeq	.+4
 	I	R,0 //opt.304
 
-/* +, -, |, &~ */
+/* +, -, |, & */
 cr40:
 %n,z
 	F
@@ -322,19 +323,16 @@ cr40:
 %nb*,c
 %nub*,c
 	F
-	lca	N0,R //opt.326
-	exm	(A1-3),R,001 //opt.327
 	I	A2,R //opt.328
+
+%n,c
+	F
+	I	A2,R //opt.338
 
 %n*,c
 	F
 	lca	(A1-3),R //opt.332
 	I	A2,R //opt.333
-
-%n,c
-	F
-	lca	A1,R //opt.337
-	I	A2,R //opt.338
 
 %n,aw
 	F
@@ -619,7 +617,7 @@ cr75:
 	S
 	I	A2,A1 //opt.621
 
-/* =| */
+/* |=, &= */
 cr78:
 %aw,aw
 	I	A2,A1 //opt.626
@@ -647,13 +645,15 @@ cr78:
 	I	A2,A1 //opt.648
 
 %ew*,n
-	I	A2,A1 //opt.651
+	F*
+	I	A2,#1(R) //opt.651
 
 %nw*,n
 	I	A2,A1 //opt.654
 
 %n*,n
-	I	A2,A1 //opt.657
+	lca	A1,R
+	I	A2,#1(R) //opt.657
 
 %nub*,n
 	FS*
@@ -1138,6 +1138,7 @@ struct table cctab[] = {
 	{PLUS,rest},	/* + */
 	{MINUS,rest},	/* - */
 	{DIVIDE,rest},	/* / */
+	{AND,rest},	/* & */
 	{OR,rest},	/* | */
 	{EQUAL,cc61},	/* == */
 	{NEQUAL,cc61},	/* != */
@@ -1225,6 +1226,10 @@ cc60:
 %aub,z
 	I	A2,A1 //opt.1229
 
+%n,z
+	FC
+	I	N0,A1 //opt.1240
+
 %n*,z
 	F*
 	I	A2,#1(R) //opt.1233
@@ -1233,10 +1238,6 @@ cc60:
 %nub*,z
 	F*
 	I	A2,#1(R) //opt.1238
-
-%n,z
-	FC
-	foo
 
 %r,c
 	I	A2,A1 //opt.1245
@@ -1299,11 +1300,10 @@ cc60:
 	IBF	R,&(x1) //opt.1302
 	Q
 
-/* set codes right by moving the result */
 rest:
 %n,n
 	H
-	barf
+	c	N0,R //opt.1306
 
 %{
 /*

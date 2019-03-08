@@ -365,6 +365,7 @@ struct instab instab[] = {
 {	LSHIFT,	sla,	lsla },
 {	ASLSH,	sla,	lsla },
 {	AND,	"ext",	"ext" },
+{	ASAND,	"ext",	"ext" },
 {	OR,	soc,    soc },
 {	ASOR,	soc,	soc },
 {	EXOR,	xor,	xor },

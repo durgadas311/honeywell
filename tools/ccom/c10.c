@@ -108,10 +108,10 @@ int nrleft, nocvt;
 	if (tree==NULL) {
 		return(NULL);
 	}
-	if (table==lsptab) {
+	if (table == lsptab) {
 		table = sptab;
 	}
-	if ((op = tree->t.op)==0) {
+	if ((op = tree->t.op) == 0) {
 		return(0);
 	}
 	dope = opdope[op];
@@ -121,7 +121,7 @@ int nrleft, nocvt;
 		p1 = tree;
 	}
 	d1 = dcalc(p1, nrleft);
-	if ((dope&BINARY) != 0) {
+	if ((dope & BINARY) != 0) {
 		p2 = tree->t.tr2;
 		// TODO: probably can't do any of this...
 		/*
@@ -131,15 +131,15 @@ int nrleft, nocvt;
 		 * the converted int in a register by
 		 * movf double,fr0; movfi fr0,int .
 		 */
-		if ((opdope[p2->t.op] & CNVRT) && (nocvt & NOCVR)==0
-			 && (opdope[p2->t.tr1->t.op] & CNVRT)==0) {
+		if ((opdope[p2->t.op] & CNVRT) && (nocvt & NOCVR) == 0
+			 && (opdope[p2->t.tr1->t.op] & CNVRT) == 0) {
 			tree->t.tr2 = p2->t.tr1;
 			if ( (opt = match(tree, table, nrleft, NOCVL)) ) {
 				return(opt);
 			}
 			tree->t.tr2 = p2;
-		} else if (opdope[p1->t.op] & CNVRT && (nocvt & NOCVL)==0
-		 && (opdope[p1->t.tr1->t.op] & CNVRT)==0) {
+		} else if (opdope[p1->t.op] & CNVRT && (nocvt & NOCVL) == 0
+		 && (opdope[p1->t.tr1->t.op] & CNVRT) == 0) {
 			tree->t.tr1 = p1->t.tr1;
 			if ( (opt = match(tree, table, nrleft, NOCVR)) ) {
 				return(opt);

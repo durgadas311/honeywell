@@ -576,6 +576,7 @@ register union tree *tree;
 			tree->t.op = RSHIFT;
 			tree->t.tr2->c.value = i;
 			i = tree->t.type;
+			// TODO: This is almost-certainly wrong...
 			tree->t.type = LONG;
 			tree = tnode(LTOI, i, tree, TNULL);
 			break;

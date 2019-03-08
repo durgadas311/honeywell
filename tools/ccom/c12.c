@@ -1165,6 +1165,10 @@ void prlab(int lab, int flag) {
 
 void sprconlab(char *buf, int val, int op, int type) {
 	int x;
+	// TODO: any other type-collapsing?
+	if (type == UNSIGN || (type & XTYPE) == PTR) {
+		type = INT;
+	}
 	int msk = masks[type];
 	// first, check known global constants...
 	for (x = 0; globals[x].name; ++x) {
@@ -1212,6 +1216,8 @@ void prcons() {
 	}
 	// assume .data already...
 	for (x = 0; x < nconsts; ++x) {
+		// fprintf(stderr, "mkconst: %d (0%o) L%d\n",
+		// 	shared[x].value, shared[x].type, shared[x].label);
 		int c = shared[x].value;
 		if (shared[x].op == CCON && c >= ' ' && c <= '~') {
 			if (c == '\\' || c == '\'') {
