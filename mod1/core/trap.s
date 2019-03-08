@@ -3,10 +3,7 @@
 // Also includes "cold boot".
 
 // mirrors struct task:
-flags	=	0	// char
-id	=	1	// char
-//p1	=	2	// char
-//p2	=	3	// char
+flags	=	3	// int (r)
 sr	=	7	// int (r)
 eiaar	=	11	// int (r)
 eibar	=	15	// int (r)
@@ -16,7 +13,8 @@ eivar	=	24	// char[5] (l)
 iivar	=	29	// char[5] (l)
 brr	=	34	// char[2] (l)
 ibr	=	36	// char[2] (l)
-time	=	47	// "char[10]" (10-chr int) (r)
+time	=	46	// "char[9]" (10-chr int) (r)
+id	=	47	// char
 
 	.globl	_task,^task,_memtop,^memtop
 	.globl	_endtsk,_runtsk
@@ -161,7 +159,7 @@ _initsk:
 
 	.data
 atr:	.word	0	// temp ATR storage
-atrov:	.bin	0100000000#5	// 2^24
+atrov:	.bin	02000000#5	// 2^19
 aar:	.word	0
 bar:	.word	0
 eisr:	.word	0

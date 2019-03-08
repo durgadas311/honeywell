@@ -26,3 +26,29 @@ void start() {
 	/* must never return from here... */
 	asm(" h .");
 }
+
+void sched() {
+	struct task *t, *t1, *tn;
+	if (task == &montsk) {
+		t = &tasks[0];
+	} else {
+		t = task;
+	}
+	tn = 0;
+	for (t1 = t + 1; t1 != t; ++t1) {
+		if ((t1->flags & 2) != 0) {
+			tn = t1;
+			/* t1->flags = t1->flags & ~2; */
+			t1->flags &= ~2;
+			break;
+		}
+		if (tn == 0 && t1->flags & 1) {
+			tn = t1;
+		}
+	}
+	if (tn == 0) {
+		return;
+	}
+	/* TODO: any shutdown required? */
+	task = tn;
+}

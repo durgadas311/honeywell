@@ -2,10 +2,7 @@
 #define __TASK_H__
 
 struct task {
-	char	flags;
-	char	id;
-	char	p1;
-	char	p2;
+	int	flags;
 	void	*sr;
 	int	eiaar;
 	int	eibar;
@@ -15,7 +12,8 @@ struct task {
 	char	iivar[5];
 	char	brr[2];
 	char	ibr[2];
-	char	time[10];
+	char	time[9];
+	char	id;
 };
 
 extern struct task *task;
