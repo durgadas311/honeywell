@@ -8,12 +8,12 @@ LD = ld200
 all: mod1.os
 
 mod1.os: trap.o mod1comm.o start.o syscall.o tick.o
-	$(CC) -n -o $@ $^
+	$(CC) -n -o $@ $^ -lc
 
 %.o: %.s
 	$(AS) -u -o $@ $<
 
-%.o: %.c
+%.o: %.c task.h
 	$(CC) -c $<
 
 clean:

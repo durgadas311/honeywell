@@ -3,7 +3,10 @@
 // Also includes "cold boot".
 
 // mirrors struct task:
-flags	=	3	// int (r)
+flags	=	0	// char
+id	=	1	// char
+//p1	=	2	// char
+//p2	=	3	// char
 sr	=	7	// int (r)
 eiaar	=	11	// int (r)
 eibar	=	15	// int (r)
@@ -110,10 +113,9 @@ tick:
 _runtsk:
 	scr	0(x1),070
 	lca	4(x1),x5
-	c	@zero,flags(x5)
-	bct	1f,042	// task has exited?
+	bce	1f,flags(x5),000	// task has exited?
 	lca	x5,^task
-	lca	@one,flags(x5)	// runnable
+	sst	@one,flags(x5),077	// runnable - bit or char?
 	// TODO: must enter interrupt mode?
 	lib	ibr+1(x5),brr+1(x5),006
 	lcr	sr(x5),066
@@ -121,15 +123,40 @@ _runtsk:
 	b	eires
 1:	lcr	0(x1),077
 
+// endtsk() - end current task
 _endtsk:
 	scr	0(x1),070
-	// ATR should be stopped, but
-	// overflowed should have been handled already?
+	// ATR should be stopped, but overflowed
+	// should have been handled already?
 	scr	atr,054		// save ATR
 	lca	^task,x5
 	ba	atr,time(x5)
-	lca	@zero,flags(x5)	// done
+	sst	@zero,flags(x5),077	// done
 	// TODO: any other cleanup?
+	lcr	0(x1),077
+
+// initsk(struct task *task) - init task struct
+// Since initial run will only be via EI resume,
+// no need to mess with II fields.
+// Defaults to "user" task, caller must change
+// if desired.
+// Caller must setup IBR/BRR, id, as well as comm area.
+// TODO: need to worry about latent punctuation?
+_initsk:
+	scr	0(x1),070
+	lca	4(x1),x5	// task
+	sst	@zero,flags(x5),077
+	sst	@zero,id(x5),077
+	lca	@zero,eiaar(x5)
+	lca	@zero,eibar(x5)
+	lca	@zero,time(x5)	// zero time...
+	lca	@zero,time-3(x5) // ...
+	lca	@zero,time-6(x5) // ... and set WM
+	sst	@zero,ibr(x5),077 // clear ibr LO
+	sst	// clear ibr HI
+	sst	// clear brr LO
+	sst	// clear brr HI	// end of @zero...
+	exm	user,eivar(x5),031
 	lcr	0(x1),077
 
 	.data
@@ -142,6 +169,11 @@ eisr:	.word	0
 eiadr:	.word	ei
 iiadr:	.word	ii
 
+// USER mode for LVI (RNM)
+user:	.byte	000,060,000,042,0100	// 4-chr-adr, PROT + RELOC
+//sys:	.byte	000,060,000,000,0100	// 4-chr-adr
+
+// global constants
 @zero:	.word	0
 @one:	.word	1
 @two:	.word	2
