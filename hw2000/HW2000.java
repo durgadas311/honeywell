@@ -153,12 +153,12 @@ public class HW2000 implements CoreMemory
 		// TODO: don't even advance clock unless enabled?
 		if (CTL.isPROTECT() && CTL.allowCLK()) {
 			atrr += tics;	// TODO: always incr?
+			int cy = atrr & ~0377;
 			atrr &= 0377;	// (i.e. free-running?)
-			if (atrr == 0) {
+			if (cy != 0) {
 				ATR += 1;
-				int cy = ATR & ~01777777;
 				ATR &= 01777777;
-				if (cy != 0) { //should only ever be "1(xxx)"
+				if (ATR == 0) {
 					// TODO: trigger interrupt as appropriate
 					CTL.setEI(HW2000CCR.EIR_CLOCK);
 				}
