@@ -20,7 +20,7 @@ ret	=	47	// char
 	.globl	_task,^task,_memtop,^memtop
 	.globl	_endtsk,_runtsk,_initsk,_inimon
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
-	.globl	_tick,_syscal,_start
+	.globl	_tick,_syscal,_start,_panic
 	.text
 
 ?start:	// also top of memory, etc.
@@ -62,16 +62,21 @@ eiind:	.byte	0,0,0,0,0100
 	lca	aar,eiaar(x5)
 	lca	bar,eibar(x5)
 	exm	eiind,eivar(x5),031
+	scr	eisr,066	// user's SR from EIR
+	lca	eisr,sr(x5)
 	bcc	tick,eiind+4,020
 	// must service all (other) sources before
 	// syscall, as syscall might cause dispatch.
-//	...
+	bbe	eivio,eiind+4,040
+	// bbe	eicp,eiind+4,010	// cons/panel intr
+	// bbe	eipi,eiind+4,004	// periph intr
 	bbe	sc,eiind+4,020
 	b	eires	// resume program
 
 // II - FPE, adr/opcode violation, instr timeout.
 // These are all fatal to the task.
 iires:	lca	^task,x5
+	lcr	sr(x5),076	// set IIR for RNM
 	lcr	iibar(x5),070
 	lcr	iiaar(x5),067
 	rvi	iivar(x5),033
@@ -94,19 +99,23 @@ iiind:	.byte	0,0,0,0,0100
 	sst	@none,iivar+4(x5),004 // move IM bit to data
 	b	2b
 
+// Nothing to do but panic here...
+eivio:	lca	eiava,0(x1)
+	bs	@four,x1
+	b	_panic	// does not return,
+	h	.	// but just in case...
+
 // TODO: context switches require more...
 // ^task is already setup in x5...
 sc:
-	scr	eisr,066	// user's SR
-	lca	eisr,sr(x5)
 	ba	brr(x5),eisr-2	// relocate SR
 	lca	@zero,0(x1)
-	exm	(eisr-3),0(x1),001	// arg is sc num
+	exm	(eisr-3),0(x1),001 // arg is sc num
 	ba	@one,sr(x5)	// point past func code
 	bs	@four,x1
 	b	_syscal
 	ba	@four,x1
-	b	eires	// TODO: return rather than branch?
+	b	eires
 
 tick:
 	scr	0(x1),070
@@ -158,8 +167,10 @@ _endtsk:
 _initsk:
 	scr	0(x1),070
 	lca	4(x1),x5	// task
-	sst	@zero,flags(x5),077
+	// TODO: memset? or CLEAR?
+	lca	@zero,flags(x5)
 	sst	@zero,id(x5),077
+	sst	@zero,ret(x5),077
 	lca	@zero,eiaar(x5)
 	lca	@zero,eibar(x5)
 	lca	@zero,time(x5)	// zero time...
@@ -211,6 +222,8 @@ user:	.byte	000,060,000,042,0100	// 4-chr-adr, PROT + RELOC
 
 @start:	.word	?start
 
+eiava:	.word	eiav
+eiav:	.string	f:"EI adr vio_"
 
 // C-linkage for "struct task *task"
 _task:	.word	^task
