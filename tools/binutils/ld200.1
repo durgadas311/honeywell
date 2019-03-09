@@ -138,10 +138,17 @@ is that here the data starts at location 0.
 Use \fIadr\fR as the "entry" address, which is also the load address.
 Default for H200 is 1340 (decimal), which is adequate for MOD1 applications.
 .TP
+\fB\-h\fR\ \fIlen\fR
+Use \fIlen\fR as the heap size, or additional memory after \fB.bss\fR.
+Default is zero (no additional space).
+Loaders should use this value to complete the range of memory
+needed to run the program.
+.TP
 \fB\-t\fR\ \fIlen\fR
 Use \fIlen\fR as the stack size, or simply additional space added to \fB.bss\fR.
 Default is zero (no additional space). since this number is not communicated
 to the program when it runs, there is no automatic method to setup a stack.
+Loaders must setup X1 to point to the end of \fB.bss\fR.
 .TP
 \fB\-o\fR\ \fIname\fR
 Use \fIname\fR as the output file name, instead of \fBa.out\fR.

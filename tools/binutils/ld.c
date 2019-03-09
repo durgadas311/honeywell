@@ -48,6 +48,7 @@ struct	nlocal	local[NSYM/2];
 
 unsigned aflag = 1340;	/* address to relocate, HW monitor reserved */
 unsigned tflag = 0;	/* stack size to add to .bss, default 0 */
+unsigned hflag = 0;	/* heap size to add after .bss, default 0 */
 int	xflag;		/* discard local symbols */
 int	Xflag;		/* discard locals starting with 'L' */
 int	rflag;		/* preserve relocation bits, don't define common */
@@ -708,9 +709,9 @@ setupout()
 	filhdr.a_text = tsize;
 	filhdr.a_data = dsize;
 	filhdr.a_bss = bsize + tflag;
+	filhdr.a_heap = hflag;	// TODO: accumulate from .o's?
 	filhdr.a_syms = sflag ? 0 : (ssize + (sizeof cursym)*(symp-symtab));
 	filhdr.a_entry = aflag; /* use 'a_entry' for loading base address */
-	filhdr.a_unused = 0;
 	filhdr.a_flag = rflag ? 0 : A_NRELFLG;
 	puthdr(toutb, &filhdr);
 }
@@ -1057,6 +1058,16 @@ main(argc, argv)
 				option = *p++;
 			}
 			tflag = getnum (option);
+			continue;
+		case 'h':
+			if (ap[2]) {		/* option -hN */
+				option = ap+2;
+			} else {		/* option -h N (with space) */
+				if (++c >= argc)
+					error(1, "Bad -h");
+				option = *p++;
+			}
+			hflag = getnum (option);
 			continue;
 		case 'o':
 			if (ap[2]) {		/* option -oN */

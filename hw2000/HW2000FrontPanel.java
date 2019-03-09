@@ -2473,6 +2473,7 @@ public class HW2000FrontPanel extends JFrame
 		int txt = ldInt(hdr, 1);	// a_text
 		int dat = ldInt(hdr, 2);	// a_data
 		int bss = ldInt(hdr, 3);	// a_bss
+		int heap = ldInt(hdr, 6);	// a_heap
 		// TODO: leave bss as-is, or pad with stack space?
 		// TODO: what about heap?
 		bss += 256; // user can add more, via -t
@@ -2481,17 +2482,26 @@ public class HW2000FrontPanel extends JFrame
 		} catch (Exception ee) {
 			PopupFactory.warning(this, op, ee.getMessage());
 		}
+		// Equiv of CLEAR directive...
 		Arrays.fill(sys.mem, adr + txt + dat, adr + txt + dat + bss, (byte)0);
 		try { obj.close(); } catch (Exception ee) {}
 		currLow = adr;
 		currHi = adr + txt + dat + bss;
-		// Put top of memory in X1...
+		// Put top of .bss in X1... stack pointer
 		sys.putAddr(4, currHi, sys.M_WM);
+		// Equiv of RANGE directive
+		if (heap != 0) {
+			currHi += heap;
+		} else {
+			currHi += 64*1024; // TODO: should there be any default?
+		}
+		// Since running stand-alone, no need for IBR/BRR or memory
+		// allocation, etc.
 		// Put data in MOD1 locations...
 		sys.putStr(65, String.format("%03d", rev), 3);
 		sys.putStr(68, src.getName().split("\\.")[0], 8);
 		sys.putRaw(118, vis, 6);
-		sys.putAddr(189, 64*1024, sys.M_WM); // EOM, give program some "heap"
+		sys.putAddr(189, currHi, sys.M_WM); // EOM, give program some "heap"
 		sys.setWord(65);	// REV
 		sys.setWord(68);	// PGM
 		sys.setWord(74);	// SEG

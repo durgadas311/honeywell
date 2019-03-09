@@ -17,7 +17,7 @@ struct exec {
 	uint32_t	a_bss;  	/* size of unitialized data */
 	uint32_t	a_syms; 	/* size of symbol table */
 	uint32_t	a_entry; 	/* entry point */
-	uint32_t	a_unused;	/* not used */
+	uint32_t	a_heap;		/* heap size - alloc after .bss */
 	uint32_t	a_flag; 	/* relocation info stripped */
 };
 

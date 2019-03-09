@@ -38,7 +38,7 @@ size(char *filename) {
 		return;
 	}
 	if (!header_printed) {
-		printf("   text    data     bss     %s     hex filename\n",
+		printf("   text    data     bss    heap     %s     hex filename\n",
 			base==8 ? "oct" : "dec");
 		header_printed = 1;
 	}
@@ -47,10 +47,11 @@ size(char *filename) {
 		close(f);
 		return;
 	}
-	sum = hdr.a_text + hdr.a_data + hdr.a_bss;
-	printf(base==16 ? "%#7x %#7x %#7x" :
-		base==8 ? "%#7o %#7o %#7o" : "%7u %7u %7u",
-		hdr.a_text, hdr.a_data, hdr.a_bss);
+	sum = hdr.a_text + hdr.a_data + hdr.a_bss + hdr.a_heap;
+	printf(base==16 ? "%#7x %#7x %#7x %#7x" :
+		base==8 ? "%#7o %#7o %#7o %#7o" :
+		"%7u %7u %7u %7u",
+		hdr.a_text, hdr.a_data, hdr.a_bss, hdr.a_heap);
 	printf(base==8 ? " %#7o" : " %7u", sum);
 	printf(" %7x %s\n", sum, filename);
 	close(f);

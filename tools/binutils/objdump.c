@@ -477,6 +477,11 @@ static char *fhdr(FILE *fp) {
 				idx++, hdr.a_bss, base, 0, off);
 		// no 'off' change - .bss not in file
 	}
+	if (hdr.a_heap) {
+		printf(	"  %d  (heap) %08x   %07o   %07o    %08x\n",
+				idx++, hdr.a_heap, base, 0, off);
+		// no 'off' change - heap not in file
+	}
 	if (!(hdr.a_flag & A_NRELFLG)) {
 		printf(	"  %d  .reloc %08x   %07o   %07o    %08x\n",
 				idx++, hdr.a_text + hdr.a_data, 0, 0, off);

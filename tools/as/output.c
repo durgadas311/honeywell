@@ -40,7 +40,7 @@ void outhdr()
 	hdr.a_bss	= bss.maxloc;
 	hdr.a_syms	= symcount * sizeof(struct nlist);
 	hdr.a_entry	= 0;
-	hdr.a_unused 	= 0;
+	hdr.a_heap 	= 0; // TODO: allow each .o to specify?
 	hdr.a_flag  	= 0;
 
 	n = write(ofile, &hdr, sizeof(hdr));

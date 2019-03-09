@@ -27,7 +27,7 @@ char	*crtx0 = "../lib/crtx0.o";
 
 char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
 char	*tmp_c1, *tmp_c2, *tmp_asm, *tmp_pre, *tmp_opt;
-char	*outfile, *aflag = NULL, *tflag = NULL;
+char	*outfile, *aflag = NULL, *tflag = NULL, *hflag = NULL;
 char	**av, **clist, **llist, **plist;
 int	cflag, Oflag, Pflag, Sflag, Eflag, proflag, vflag, gflag;
 int	nflag, wflag, Lminusflag;
@@ -239,7 +239,7 @@ main(argc, argv)
 
 	basepath();
 
-	/* ld currently adds upto 14 args; 20 is room to spare */
+	/* ld currently adds upto 16 args; 20 is room to spare */
 	av = (char **)calloc(argc+20, sizeof (char **));
 	clist = (char **)calloc(argc, sizeof (char **));
 	llist = (char **)calloc(argc, sizeof (char **));
@@ -305,6 +305,12 @@ main(argc, argv)
 					Lminusflag++;
 				else
 					llist[nl++] = argv[i];
+				continue;
+			case 'h':
+				if (argv[i][2])
+					hflag = &argv[i][2];
+				else if (++i < argc)
+					hflag = argv[i];
 				continue;
 			case 't':
 				if (argv[i][2])
@@ -483,6 +489,10 @@ nocom:
 		if (tflag) {
 			av[na++] = "-t";
 			av[na++] = tflag;
+		}
+		if (hflag) {
+			av[na++] = "-h";
+			av[na++] = hflag;
 		}
 		if (outfile) {
 			av[na++] = "-o";
