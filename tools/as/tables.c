@@ -76,7 +76,7 @@ struct optab opcodes[] = {
 	{ "mce",    074 | OP_A | OP_B },
 	{ "pdt",    066 | OP_A | RQ_A | OP_V | RQ_V },
 	{ "pcb",    064 | OP_A | RQ_A | OP_V | RQ_V },
-	{ "iic",    000 },	// TBD
+//	{ "iic",    000 },	// TBD
 	// Variant specifies operation:
 	{ "fma",    007 | OP_A | RQ_A | OP_V | RQ_V },
 	{ "faa",    006 | OP_V | RQ_V },

@@ -157,7 +157,7 @@ public class InstrDecode {
 		i_flags[OP_PDT] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
 		i_flags[OP_PCB] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
 
-		i_flags[OP_IIC] = OP_PRIV;
+		// TBD: i_flags[OP_IIC] = OP_PRIV;
 		// FPU
 		i_flags[OP_FMA] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V;
 		i_flags[OP_FAA] = OP_HAS_V | OP_REQ_V;
@@ -216,7 +216,7 @@ public class InstrDecode {
 			i_exec[OP_PDT] = new I_PDT();
 			i_exec[OP_PCB] = new I_PCB();
 
-			i_exec[OP_IIC] = new I_IIC();
+			// TBD: i_exec[OP_IIC] = new I_IIC();
 			// FPU
 			i_exec[OP_FMA] = new I_FMA();
 			i_exec[OP_FAA] = new I_FAA();
@@ -274,7 +274,7 @@ public class InstrDecode {
 			i_asm.put("PDT", OP_PDT);
 			i_asm.put("PCB", OP_PCB);
 
-			i_asm.put("IIC", OP_IIC);
+			// TBD: i_asm.put("IIC", OP_IIC);
 
 			i_asm.put("FMA", OP_FMA);
 			i_asm.put("FAA", OP_FAA);
