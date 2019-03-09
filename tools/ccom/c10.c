@@ -407,7 +407,7 @@ again:
 				// need to test non-zero?
 				printf("\tc\t");
 				pname(czero, 0, 0);
-				printf(",x%d\n", r);
+				printf(",x%d //c10.410\n", r);
 			}
 			return(r);
 		}

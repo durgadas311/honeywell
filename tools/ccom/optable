@@ -1172,7 +1172,7 @@ cc61:
 	c	N0,R
 
 %n,z
-	c	N0,A1
+	c	N0,A1 //opt.1175
 
 %nb*,1
 %nub*,1
@@ -1187,7 +1187,7 @@ cc61:
 	c	N1,R
 
 %n,1
-	c	N1,A1
+	c	N1,A1 //opt.1190
 
 %nb*,2
 %nub*,2
@@ -1202,7 +1202,7 @@ cc61:
 	c	N2,R
 
 %n,2
-	c	N2,A1
+	c	N2,A1 //opt.1205
 
 %nb,n
 %nub,n
@@ -1217,7 +1217,8 @@ cc61:
 	c	A2,R
 
 %n,n
-	c	A2,A1
+	F
+	c	A2,R //opt.1220
 
 /* signed relationals */
 cc60:
