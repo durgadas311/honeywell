@@ -13,11 +13,12 @@ eivar	=	24	// char[5] (l)
 iivar	=	29	// char[5] (l)
 brr	=	34	// char[2] (l)
 ibr	=	36	// char[2] (l)
-time	=	46	// "char[9]" (10-chr int) (r)
-id	=	47	// char
+time	=	45	// "char[8]" (10-chr int) (r)
+id	=	46	// char
+ret	=	47	// char
 
 	.globl	_task,^task,_memtop,^memtop
-	.globl	_endtsk,_runtsk
+	.globl	_endtsk,_runtsk,_initsk,_inimon
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
 	.globl	_tick,_syscal,_start
 	.text
@@ -30,19 +31,26 @@ id	=	47	// char
 	bs	@4k,_memtop	// space for stack
 	sst	@zero,_memtop,077	// force
 	sst	@zero,_memtop-1,077	// 4k boundary
-	lcr	eiadr,066
-	lcr	iiadr,076
+	lcr	eiadr,066	// setup EIR
+	lcr	iiadr,076	// setup IIR
 	// TODO: safety net for CSM?
 	b	_start
 
-// EI handler, incl. MC (syscall)
+// EI handler, incl. MC (syscall).
 // Note thatan ATR overflow could happen
 // while entering here for other reasons,
 // so we need to check other bits after
 // servicing an ATR overflow, and check
 // ATR first.
-eires:	lcr	eibar(x5),070
-	lcr	eiaar(x5),067
+// EI in II cannot incl. syscall? and so
+// cannot change tasks? Must return to II
+// in that case!
+eires:
+	// might be on new task now... X5 must get set
+	lca	^task,x5
+	lcr	sr(x5),066	// set EIR for RNM
+	lcr	eibar(x5),070	// restore BAR
+	lcr	eiaar(x5),067	// restore AAR
 	rvi	eivar(x5),035	// addr mode changes
 	rnm
 ei:	svi	075
@@ -61,7 +69,10 @@ eiind:	.byte	0,0,0,0,0100
 	bbe	sc,eiind+4,020
 	b	eires	// resume program
 
-iires:	lcr	iibar(x5),070
+// II - FPE, adr/opcode violation, instr timeout.
+// These are all fatal to the task.
+iires:	lca	^task,x5
+	lcr	iibar(x5),070
 	lcr	iiaar(x5),067
 	rvi	iivar(x5),033
 	rnm
@@ -74,24 +85,27 @@ iiind:	.byte	0,0,0,0,0100
 	lca	aar,iiaar(x5)
 	lca	bar,iibar(x5)
 	exm	iiind,iivar(x5),031
-//	...
-	b	iires	// resume program
+	bcc	1f,iiind+4,020
+2:	exm	iivar+4(x5),ret(x5),001	// result/exit code
+	b	_endtsk
+	b	_sched	// find something new to run
+	b	iires	// resume something else
+1:	// FPE, odd case (item mark)
+	sst	@none,iivar+4(x5),004 // move IM bit to data
+	b	2b
 
 // TODO: context switches require more...
 // ^task is already setup in x5...
 sc:
-	scr	eisr,076	// user's SR
+	scr	eisr,066	// user's SR
 	lca	eisr,sr(x5)
 	ba	brr(x5),eisr-2	// relocate SR
 	lca	@zero,0(x1)
-	exm	(eisr-3),0(x1),001
-	ba	@one,sr(x5)
-	lcr	sr(x5),076	// point past func code
+	exm	(eisr-3),0(x1),001	// arg is sc num
+	ba	@one,sr(x5)	// point past func code
 	bs	@four,x1
 	b	_syscal
 	ba	@four,x1
-	// might be on new task now... X5 must get set
-	lca	^task,x5
 	b	eires	// TODO: return rather than branch?
 
 tick:
@@ -108,6 +122,7 @@ tick:
 // does not return? only if error...
 // program may re-enter monitor/supervisor
 // through standard points.
+// TODO: when is this used?
 _runtsk:
 	scr	0(x1),070
 	lca	4(x1),x5
@@ -116,7 +131,7 @@ _runtsk:
 	sst	@one,flags(x5),077	// runnable - bit or char?
 	// TODO: must enter interrupt mode?
 	lib	ibr+1(x5),brr+1(x5),006
-	lcr	sr(x5),066
+	lcr	sr(x5),066	// EIR
 //	...
 	b	eires
 1:	lcr	0(x1),077
@@ -124,8 +139,8 @@ _runtsk:
 // endtsk() - end current task
 _endtsk:
 	scr	0(x1),070
-	// ATR should be stopped, but overflowed
-	// should have been handled already?
+	// ATR should be stopped, but is it
+	// already zeroed?
 	scr	atr,054		// save ATR
 	lca	^task,x5
 	ba	atr,time(x5)
@@ -157,6 +172,18 @@ _initsk:
 	exm	user,eivar(x5),031
 	lcr	0(x1),077
 
+// Special, addtn, setup for supervisor
+	.globl	_superv
+_inimon:
+	scr	0(x1),070
+	lca	4(x1),x5	// struct task *montsk
+	exm	@zero,eivar+3(x5),001	// force sys mode
+	bct	_superv,040	// branch never, set AAR
+	scr	sr(x5),067	// run supervisor code entry
+	exm	@zero,id(x5),001	// special task id
+	lca	@one,flags(x5)	// always runnable
+	lcr	0(x1),077
+
 	.data
 atr:	.word	0	// temp ATR storage
 atrov:	.bin	02000000#5	// 2^19
@@ -174,6 +201,7 @@ user:	.byte	000,060,000,042,0100	// 4-chr-adr, PROT + RELOC
 // global constants
 @zero:	.word	0
 @one:	.word	1
+@none:	.word	-1
 @two:	.word	2
 @four:	.word	4
 @eight:	.word	8

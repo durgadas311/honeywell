@@ -2,6 +2,7 @@
 #include <h200io.h>
 
 extern void endtsk();
+extern void sched();
 
 void syscal(sc)
 int sc;
@@ -9,7 +10,6 @@ int sc;
 	switch (sc) {
 	case 0:	/* program exit */
 		endtsk();
-		/* sched(); */
 		break;
 	case 1:	/* segment load */
 		/* either an overlay or chained prog */
@@ -18,7 +18,8 @@ int sc;
 	default:
 		print("BAD SYSCALL", PR_NL);
 		endtsk();
-		/* sched(); */
 		break;
 	}
+	/* TODO: ever not sched()? */
+	sched();
 }

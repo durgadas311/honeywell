@@ -1,26 +1,22 @@
 #include "task.h"
 
+#define NTASK	4
+
 extern void *memtop;
 extern void superv();
 
 static struct task montsk;
 
-static struct task tasks[4];
-
-static void *monfnc = superv;
+static struct task tasks[NTASK];
 
 void start() {
 	unsigned x;
 
 	initsk(&montsk);
-	montsk.eivar[3] = 0;
-	montsk.sr = monfnc;
-	montsk.id = '0';
-	for (x = 0; x < 4; ++x) {
+	inimon(&montsk);
+	for (x = 0; x < NTASK; ++x) {
 		initsk(&tasks[x]);
 	}
-	/* TODO: more initialization... */
-	montsk.flags = 1;
 	runtsk(&montsk);	/* should not return */
 
 	/* must never return from here... */
@@ -35,18 +31,23 @@ void sched() {
 		t = task;
 	}
 	tn = 0;
-	for (t1 = t + 1; t1 != t; ++t1) {
+	t1 = t;
+	do {
+		++t1;
+		if (t1 == &tasks[NTASK]) {
+			t1 = &tasks[0];
+		}
 		if ((t1->flags & 2) != 0) {
 			tn = t1;
-			/* t1->flags = t1->flags & ~2; */
 			t1->flags &= ~2;
 			break;
 		}
 		if (tn == 0 && t1->flags & 1) {
 			tn = t1;
 		}
-	}
+	} while (t1 != t);
 	if (tn == 0) {
+		task = &montsk;
 		return;
 	}
 	/* TODO: any shutdown required? */

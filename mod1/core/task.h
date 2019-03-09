@@ -12,9 +12,11 @@ struct task {
 	char	iivar[5];
 	char	brr[2];
 	char	ibr[2];
-	char	time[9];
+	char	time[8];
 	char	id;
+	char	ret;
 };
 
 extern struct task *task;
+
 #endif /* __TASK_H__ */

@@ -7,7 +7,7 @@ LD = ld200
 
 all: mod1.os
 
-mod1.os: trap.o mod1comm.o start.o syscall.o tick.o
+mod1.os: trap.o mod1comm.o start.o syscall.o tick.o superv.o
 	$(CC) -n -o $@ $^ -lc
 
 %.o: %.s
@@ -17,4 +17,4 @@ mod1.os: trap.o mod1comm.o start.o syscall.o tick.o
 	$(CC) -c $<
 
 clean:
-	rm -f mod1.os *.o a.out
+	rm -f mod1.os *.o a.out $(ASMS)
