@@ -65,6 +65,7 @@ char 	*outname = "a.out";
 unsigned int	tsize;
 unsigned int	dsize;
 unsigned int	bsize;
+unsigned int	hsize;
 unsigned int	ssize;
 unsigned int	nsym;
 
@@ -520,10 +521,11 @@ load1(libflg, loff)
 		tsize += filhdr.a_text;
 		dsize += filhdr.a_data;
 		bsize += filhdr.a_bss;
+		hsize += filhdr.a_heap;
 		ssize += nloc;
 
-		total = tsize + dsize + bsize;
-		if (total > 0xF000) {
+		total = tsize + dsize + bsize + hsize;
+		if (total > 0777777) {
 			/*fprintf (stderr, "Size = %d(%x)\n", total, total);*/
 			error(1, "Program is too big");
 		}
@@ -709,7 +711,9 @@ setupout()
 	filhdr.a_text = tsize;
 	filhdr.a_data = dsize;
 	filhdr.a_bss = bsize + tflag;
-	filhdr.a_heap = hflag;	// TODO: accumulate from .o's?
+	if (hflag) {
+		filhdr.a_heap = hflag;
+	}
 	filhdr.a_syms = sflag ? 0 : (ssize + (sizeof cursym)*(symp-symtab));
 	filhdr.a_entry = aflag; /* use 'a_entry' for loading base address */
 	filhdr.a_flag = rflag ? 0 : A_NRELFLG;

@@ -140,7 +140,8 @@ Default for H200 is 1340 (decimal), which is adequate for MOD1 applications.
 .TP
 \fB\-h\fR\ \fIlen\fR
 Use \fIlen\fR as the heap size, or additional memory after \fB.bss\fR.
-Default is zero (no additional space).
+Default is the sum of \fB.heap\fR directives in object files.
+This value \fIreplaces\fR whatever is in object files.
 Loaders should use this value to complete the range of memory
 needed to run the program.
 .TP

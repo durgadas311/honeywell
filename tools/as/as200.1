@@ -52,6 +52,9 @@ Use \fIfile\fR as the object file instead of \fBa.out\fR.
 
 .SS "Honeywell 200/2000 directives"
 .TP
+.BI \.heap\  num
+Set default heap size. Values are cummulative.
+.TP
 .BI \.space\  num
 Move current section location counter forward \fInum\fR characters.
 In \fB.text\fR and \fB.data\fR sections, space is filled with zero.

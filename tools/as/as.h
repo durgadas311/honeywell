@@ -174,6 +174,7 @@ extern int scanstr(int pnc);
 #define PERR	16
 #define PWARN	17
 #define PLINE	18
+#define PHEAP	19
 
 /* symbol types */
 
@@ -222,6 +223,7 @@ extern struct segment {
 	char tbuf[OBSIZE];	/* text buffer */
 	char rbuf[OBSIZE];	/* relocation bits buffer */
 } text, data, bss, comm;
+extern int hsize;
 
 typedef struct segment SEGMNT;
 

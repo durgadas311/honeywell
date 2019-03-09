@@ -25,3 +25,5 @@ _memalign:
 
 2:	lca	@zero,x5
 	lcr	0(x1),077
+
+	.heap	2048	// some default heap space

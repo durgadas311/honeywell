@@ -2,6 +2,7 @@
 #include "as.h"
 
 SEGMNT text, data, bss, comm;
+int hsize;
 
 SYMBOL *curlab;		/* current label */
 SEGMNT *curseg;		/* current segment */
@@ -150,6 +151,14 @@ void do_pseudo(int op) {
 			++c;
 		} while ((t = token()) == COMMA);
 		nexttoken = t;
+		break;
+
+	case PHEAP:
+		t = expr();
+		if (t != RABS || res.val < 0) { // TODO: maximum?
+			cerror(errv);
+		}
+		hsize += res.val;
 		break;
 
 	case PSPACE:
