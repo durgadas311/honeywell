@@ -873,11 +873,16 @@ ci80:
 	S1*
 	IBF	(A2-3),#1(R) //opt.876
 
+%nb*,e
 %nub*,e
+	F*
+	S1
+	exm	R1,#1(R),001 //opt.883a
+
 %n*,e
 	F*
 	S1
-	IB1	R1,#1(R) //opt.883
+	I	R1,#1(R) //opt.883
 
 %e*,nw*
 %eb*,n*

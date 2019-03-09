@@ -16,6 +16,7 @@ void start() {
 	inimon(&montsk);
 	for (x = 0; x < NTASK; ++x) {
 		initsk(&tasks[x]);
+		tasks[x].id = 'A' + x;
 	}
 	runtsk(&montsk);	/* should not return */
 
