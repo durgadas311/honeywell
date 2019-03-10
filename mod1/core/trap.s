@@ -19,6 +19,7 @@ ret	=	47	// char
 
 	.globl	_task,^task,_memtop,^memtop
 	.globl	_endtsk,_runtsk,_initsk,_inimon
+	.globl	_scret,_scarg,_scptr
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
 	.globl	_tick,_syscal,_start,_panic
 	.text
@@ -116,6 +117,41 @@ sc:
 	b	_syscal
 	ba	@four,x1
 	b	eires
+
+// Utility routines for syscall implementations
+
+// void scret(int val) - set a return value for a syscall
+_scret:	scr	0(x1),070
+	lca	^task,x5
+	lca	@zero,x3
+	ba	brr(x5),x3-2	// task base adr
+	lca	4(x1),x5(x3)	// caller's X5 reg
+	lcr	0(x1),077
+
+// int scarg(int off) - get an arg for a syscall
+// arg is not relocated (if it was a pointer).
+_scarg:	scr	0(x1),070
+	lca	^task,x5
+	lca	@zero,x3
+	ba	brr(x5),x3-2	// task base adr
+	lca	x2(x3),x4	// caller's bp (X2)
+	ba	4(x1),x4	// bp+off
+	lca	0(x4),x5	// val into ret
+	lcr	0(x1),077
+
+// void *scptr(int off) - get a ptr arg for a syscall
+// arg is assumed to be ptr and is relocated.
+_scptr:	scr	0(x1),070
+	lca	^task,x5
+	lca	@zero,x3
+	ba	brr(x5),x3-2	// task base adr
+	lca	x2(x3),x4	// caller's bp (X2)
+	ba	4(x1),x4	// bp+off
+	lca	0(x4),x5	// val into ret
+	ba	x3,x5		// relocate it
+	lcr	0(x1),077
+
+/////////////////////////////////////////////////////////
 
 tick:
 	scr	0(x1),070

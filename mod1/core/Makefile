@@ -2,7 +2,7 @@ SRCS = $(wildcard *.c)
 ASMS = $(subst .c,.s,$(SRCS))
 
 # 'trap' must be first!
-MOD1 = trap.o mod1comm.o start.o syscall.o tick.o superv.o panic.o
+MOD1 = trap.o mod1comm.o start.o syscall.o tick.o superv.o panic.o sgets.o
 
 CC = cc200
 AS = as200
