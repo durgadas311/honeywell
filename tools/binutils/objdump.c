@@ -241,6 +241,9 @@ static void print_addr(uint8_t *b, uint8_t *r, int s, int t) {
 		} else {
 			c = 'x';
 		}
+		if (a & 01000000) {
+			a |= ~01777777;
+		}
 		printf("%c%d(%c%d)", t, a, c, m & 0b01111);
 	}
 	if (y >= 0) {

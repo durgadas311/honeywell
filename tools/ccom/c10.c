@@ -182,6 +182,20 @@ int nrleft, nocvt;
 	return(0);
 }
 
+static int syscall(union tree *tree) {
+	unsigned int scn = 0;
+	union tree *t1 = tree->t.tr1;
+	if (t1->t.op != NAME || (t1->t.type & XTYPE) != FUNC ||
+			t1->x.class != EXTERN ||
+			sscanf(t1->x.name, "__sc%o", &scn) != 1 ||
+			scn > 077) {
+		return 0;
+	}
+	printf(	"\tmc\n"
+		"\t.byte\t0%03o\n", scn | 0100);
+	return 1;
+}
+
 /*
  * Given a tree, a code table, and a register,
  * produce code to evaluate the tree with the appropriate table.
@@ -344,8 +358,12 @@ again:
 		   && tree->t.tr1->n.class==EXTERN)
 			tree->t.op = CALL1;
 		if (r) pushstk(r, cp);
-		if (cexpr(tree, regtab, reg)<0)
+		// Special case for system calls...
+		// avoids extra call frame and routines.
+		// "__sc###" translates to "mc;.byte ###"
+		if (!syscall(tree) && cexpr(tree, regtab, reg)<0) {
 			error("compiler botch: call");
+		}
 		if (r) popstk(r, cp);
 		nstack -= nargs;
 		if (table==efftab || table==regtab)

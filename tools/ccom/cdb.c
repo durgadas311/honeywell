@@ -255,7 +255,7 @@ void dumptree(union tree *p, int level, char tag) {
 	fprintf(stderr, " {%lx %lx}\n", (unsigned long)p->t.tr1, (unsigned long)p->t.tr2);
 	// opdope for LOAD not correct?
 	if (op != LOAD && op != STAR && op != INIT &&
-			op != CALL1 &&
+			op != CALL1 && op != CALL2 &&
 			!(opdope[op] & (BINARY|LVALUE))) {
 		return;
 	}
