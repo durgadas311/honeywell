@@ -364,6 +364,11 @@ public class HW2000 implements CoreMemory
 				count = 0;
 			}
 		}
+		if (CTL.inStdMode() && CTL.isPROTECT() &&
+				CTL.isTIMOUT() && tics > 1000) {
+			throw new IIException("Instruction Timeout",
+				HW2000CCR.IIR_TIMOUT);
+		}
 		return mem[a];
 	}
 
@@ -374,6 +379,11 @@ public class HW2000 implements CoreMemory
 	public void writeMem(int adr, byte val) {
 		int a = validAdr(adr);
 		++tics;
+		if (CTL.inStdMode() && CTL.isPROTECT() &&
+				CTL.isTIMOUT() && tics > 1000) {
+			throw new IIException("Instruction Timeout",
+				HW2000CCR.IIR_TIMOUT);
+		}
 		mem[a] = val;
 	}
 
@@ -381,6 +391,11 @@ public class HW2000 implements CoreMemory
 	public byte writeMemMask(int adr, byte val, byte mask) {
 		int a = validAdr(adr);
 		++tics;
+		if (CTL.inStdMode() && CTL.isPROTECT() &&
+				CTL.isTIMOUT() && tics > 1000) {
+			throw new IIException("Instruction Timeout",
+				HW2000CCR.IIR_TIMOUT);
+		}
 		mem[a] = (byte)((mem[a] & mask) | (val & ~mask));
 		return mem[a];
 	}
@@ -678,6 +693,11 @@ public class HW2000 implements CoreMemory
 			max += (hasB() ? am_na : 0);
 		}
 		while (isr != 0 && isr - fsr < max && !chkWord(isr)) {
+			if (CTL.inStdMode() && CTL.isPROTECT() &&
+					CTL.isTIMOUT() && isr - SR > 500) {
+				throw new IIException("Instruction Timeout, extract",
+					HW2000CCR.IIR_TIMOUT);
+			}
 			// With enforced max, this check may not be needed.
 			if (halt) {
 				throw new HaltException("extraction");

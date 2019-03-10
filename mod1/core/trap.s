@@ -242,7 +242,7 @@ eiadr:	.word	ei
 iiadr:	.word	ii
 
 // USER mode for LVI (RNM)
-user:	.byte	000,060,000,042,0100	// 4-chr-adr, PROT + RELOC
+user:	.byte	000,060,000,062,0100	// 4-chr-adr, PROT + TIMEOUT + RELOC
 //sys:	.byte	000,060,000,000,0100	// 4-chr-adr
 
 // global constants
