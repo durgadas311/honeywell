@@ -17,11 +17,14 @@ time	=	45	// "char[8]" (10-chr int) (r)
 id	=	46	// char
 ret	=	47	// char
 
-	.globl	_task,^task,_memtop,^memtop
+	// public/exports
+	.globl	_memtop,^memtop
 	.globl	_endtsk,_runtsk,_initsk,_inimon
 	.globl	_scret,_scarg,_scptr
 	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
+	// externals
 	.globl	_tick,_syscal,_start,_panic
+	.globl	_montsk,^task
 	.text
 
 ?start:	// also top of memory, etc.
@@ -188,10 +191,16 @@ _endtsk:
 	// already zeroed?
 	scr	atr,054		// save ATR
 	lca	^task,x5
+	c	_montsk,x5
+	bct	1f,042		// superv cannot exit
 	ba	atr,time(x5)
 	sst	@zero,flags(x5),077	// done
 	// TODO: any other cleanup?
 	lcr	0(x1),077
+1:	lca	monxa,0(x1)
+	bs	@four,x1
+	b	_panic	// does not return,
+	h	.	// but just in case...
 
 // initsk(struct task *task) - init task struct
 // Since initial run will only be via EI resume,
@@ -260,10 +269,9 @@ user:	.byte	000,060,000,062,0100	// 4-chr-adr, PROT + TIMEOUT + RELOC
 
 eiava:	.word	eiav
 eiav:	.string	f:"EI adr vio_"
+monxa:	.word	monx
+monx:	.string	f:"Monitor killed_"
 
-// C-linkage for "struct task *task"
-_task:	.word	^task
-^task:	.word	0
-// ditto for "void *memtop"
+// C-linkage for "void *memtop"
 _memtop: .word	^memtop
 ^memtop: .word	0

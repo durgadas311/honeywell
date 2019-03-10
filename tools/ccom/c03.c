@@ -113,12 +113,15 @@ struct nmlist *tptr;
 
 		default:
 			peeksym = o;
-			if (isadecl==0)
+			if (isadecl==0) {
 				return(0);
-			if (tkw<0)
+			}
+			if (tkw<0) {
 				tkw = INT;
-			if (skw==0)
+			}
+			if (skw==0) {
 				skw = blklev==0? DEFXTRN: AUTO;
+			}
 			if (unsignf) {
 				if (tkw==INT)
 					tkw = UNSIGN;

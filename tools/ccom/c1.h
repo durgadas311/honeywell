@@ -322,7 +322,7 @@ int	xlab1, xlab2, xop, xzero;
 #define	PROG	202
 #define	DATA	203
 #define	BSS	204
-#define	CSPACE	205
+//#define	CSPACE	205
 #define	SSPACE	206
 #define	SYMDEF	207
 #define	SAVE	208

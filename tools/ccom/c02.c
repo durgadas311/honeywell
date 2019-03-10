@@ -10,7 +10,7 @@ void
 extdef()
 {
 	register int o;
-	int sclass, scflag;
+	int sclass;
 	struct nmlist typer;
 	register struct nmlist *ds;
 
@@ -21,59 +21,58 @@ extdef()
 	blklev = 0;
 	if (getkeywords(&sclass, &typer)==0) {
 		sclass = EXTERN;
-		if (peeksym!=NAME)
+		if (peeksym!=NAME) {
 			goto syntax;
+		}
 	}
-	scflag = 0;
-	if (sclass==DEFXTRN) {
-		scflag++;
-		sclass = EXTERN;
-	}
-	if (sclass!=EXTERN && sclass!=STATIC && sclass!=TYPEDEF)
+	if (sclass != EXTERN && sclass != DEFXTRN &&
+			sclass != STATIC && sclass != TYPEDEF) {
 		error("Illegal storage class");
+	}
 	do {
 		defsym = 0;
 		paraml = NULL;
 		parame = NULL;
-		if (sclass==TYPEDEF) {
+		if (sclass == TYPEDEF) {
 			decl1(TYPEDEF, &typer, 0, (struct nmlist *)NULL);
 			continue;
 		}
 		decl1(EXTERN, &typer, 0, (struct nmlist *)NULL);
-		if ((ds=defsym)==0)
+		if ((ds = defsym) == 0) {
 			return;
+		}
 		funcsym = ds;
-		if ((ds->htype&XTYPE)==FUNC) {
-			if ((peeksym=symbol())==LBRACE || peeksym==KEYW
-			 || (peeksym==NAME && csym->hclass==TYPEDEF)) {
+		if ((ds->htype & XTYPE) == FUNC) {
+			if ((peeksym = symbol()) == LBRACE || peeksym == KEYW
+			 || (peeksym == NAME && csym->hclass == TYPEDEF)) {
 				funcblk.type = decref(ds->htype);
 				funcblk.strp = ds->hstrp;
 				setinit(ds);
-				outcode("BS", SYMDEF, sclass==EXTERN?ds->name:"");
+				outcode("BS", SYMDEF, sclass != STATIC ? ds->name : "");
 				cfunc();
 				return;
 			}
 			if (paraml)
 				error("Inappropriate parameters");
-		} else if ((o=symbol()) == COMMA || o == SEMI) {
+		} else if (sclass == EXTERN) {
+			// No actual storage defined... just label refs.
+			// bit of a kludge...
+			outcode("BSCN", SLABEL, ds->name, 1, 0);
+		} else if ((o = symbol()) == COMMA || o == SEMI) {
 			peeksym = o;
 			// No alignment, H200 doesn't use it
 			o = length((union tree *)ds);
-			if (sclass == STATIC) {
-				setinit(ds);
-				if ((ds->htype&XTYPE) == ARRAY) {
-					// .bss is implied, uninitialized array space
-					outcode("BSBSCN", SYMDEF, "",
-						ALABEL, ds->name, ds->htype & TYPE, o);
-				} else if (ds->htype == STRUCT) {
-					outcode("BSBSCN", SYMDEF, "",
-						ALABEL, ds->name, CHAR, o);
-				} else {
-					outcode("BSBSN", SYMDEF, "",
-						SLABEL, ds->name, o);
-				}
-			} else if (scflag)
-				outcode("BSN", CSPACE, ds->name, o);
+			setinit(ds);
+			if ((ds->htype&XTYPE) == ARRAY) {
+				// .bss is implied, uninitialized array space
+				outcode("BSCCN", ALABEL, ds->name, sclass != STATIC,
+						ds->htype & TYPE, o);
+			} else if (ds->htype == STRUCT) {
+				outcode("BSCCN", ALABEL, ds->name, sclass != STATIC,
+						CHAR, o);
+			} else {
+				outcode("BSCN", SLABEL, ds->name, sclass != STATIC, o);
+			}
 		} else {
 			if (o != ASSIGN) {
 				error("Declaration syntax");
@@ -83,9 +82,10 @@ extdef()
 			outcode("BBSCC", DATA, NLABEL, ds->name, sclass, ds->htype);
 			cinit(ds, 1, sclass);
 		}
-	} while ((o=symbol())==COMMA);
-	if (o==SEMI)
+	} while ((o = symbol()) == COMMA);
+	if (o == SEMI) {
 		return;
+	}
 syntax:
 	if (o==RBRACE) {
 		error("Too many }'s");
@@ -105,6 +105,7 @@ cfunc()
 {
 	register char *cb;
 
+	// TODO: allow adr-of for functions.
 	outcode("BBNS", PROG, RLABEL, line, funcsym->name);
 	regvar = 9;
 	autolen = STAUTO;

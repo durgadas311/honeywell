@@ -10,6 +10,11 @@ LD = ld200
 
 all: mod1.os
 
+asm:
+	for i in $(SRCS); do \
+	$(CC) -S -g $$i; \
+	done
+
 mod1.os: $(MOD1)
 	$(CC) -n -o $@ $^ -lc
 

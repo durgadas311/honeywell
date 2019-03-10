@@ -905,7 +905,7 @@ getree()
 {
 	union tree *expstack[STKS], **sp;
 	register union tree *tp;
-	register int t, op, lastop;
+	register int x, t, op, lastop;
 	char s[80], *ss;	/* big for asm() stuff & long variable names */
 	struct swtab *swp;
 	long outloc = 0;
@@ -1008,7 +1008,8 @@ getstring:
 		printf("\t.bss\n");
 		break;
 
-	case SYMDEF:
+	case SYMDEF: // only for functions, currently
+		// TODO: support for adr-of function
 		outname(s);
 		if (*s) printf("\t.globl\t%s\n", s);
 		sfuncr.nloc = 0;
@@ -1023,13 +1024,9 @@ getstring:
 			"\tlcr\t0(x1),077\n");
 		break;
 
-	case CSPACE:
-		outname(s);
-		printf("\t.comm\t%s,%d\n", s, UNS(geti()));
-		break;
-
 	case SSPACE:
-		printf("\t.space\t%d\n", UNS(t=geti()));
+		t=UNS(geti());
+		printf("\t.space\t%d\n", t);
 		totspace += (unsigned)t;
 		break;
 
@@ -1219,12 +1216,14 @@ getstring:
 
 	case SLABEL:	// non-array, in .bss, with simple size
 		outname(s);
+		x = getwd();
 		t = op = geti();	// total size
 		// TODO: struct needs to be different...
 		goto bss_label;
 
 	case ALABEL:	// array, in .bss, with element and num-elements
 		outname(s);
+		x = getwd();
 		t = getwd();	// elem type
 		op = geti();	// total size
 		// TODO: more interpretation of type?
@@ -1232,6 +1231,10 @@ getstring:
 bss_label:
 		ss = s;
 		if (*ss == '_') ++ss;
+		if (x) printf("\t.globl\t%s,^%s\n", s, ss);
+		if (!t) {
+			break;
+		}
 		printf(	"\t.data\n"
 			"%s:\t.word\t^%s\n"
 			"\t.bss\n"

@@ -5,9 +5,11 @@
 extern void *memtop;
 extern void superv();
 
-static struct task montsk;
+struct task montsk;
 
-static struct task tasks[NTASK];
+struct task tasks[NTASK];
+
+struct task *task;
 
 void start() {
 	unsigned x;
