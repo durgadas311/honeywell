@@ -53,7 +53,8 @@
 00000         SCR   CLC,01           COMPUTE ACTUAL LENGTH
 00000         SCR   SLC,11
 00000         BS    SLC,CLC
-00000         BCT   DONE,60          ZERO MEANS FILE MARK
+00000         C     ZERO,CLC
+00000         BCT   DONE,42          ZERO MEANS FILE MARK
 00000*
 00000L PUT    MSPUT F1,
 00000         B     MORE
@@ -89,6 +90,7 @@
 00000*
 00000  SEQN   DCW   +000            START NUM IS +1
 00000  ONE    DCW   +1
+00000  ZERO   DCW   #1B0
 00000*
 00000   RECD1 RESV, 80              DATA BUFFER
 00000 L       DCW   #1A

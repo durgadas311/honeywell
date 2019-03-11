@@ -64,6 +64,7 @@ public class P_CardReaderPunch extends JFrame
 		boolean offset_ill = false;
 		boolean offset_err = false;
 		boolean offset_next = false;
+		boolean allow = false;
 		boolean interrupt = false;
 		int code = 0;
 		byte[] card;
@@ -80,19 +81,28 @@ public class P_CardReaderPunch extends JFrame
 	File _last = null;
 	boolean isOn = false;
 	CharConverter cvt;
+	HW2000 sys;
+	int irq;
+	int ints;
 	int vUnit;
 	LightedButton start;
 	LightedButton stop;
 	LightedButton runout;
 	boolean ready;
 
-	public P_CardReaderPunch(CharConverter cvt) {
+	// Read rate is 300 or 400 cards/minute (200-150 mS).
+	// Punch rate is 50-270 cards/minute (depends on num cols).
+	// (1200-222 mS, ~12mS per col + 200 mS)
+
+	public P_CardReaderPunch(CharConverter cvt, int irq, HW2000 hw) {
 		super("H214-2 Card Reader/Punch");
 		java.net.URL url = getClass().getResource("icons/pcd-96.png");
 		if (url != null) {
 			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
 		}
 		this.cvt = cvt;
+		this.irq = irq;
+		this.sys = hw;
 		viewer = null;
 		stall = new Semaphore(0);
 		hopper = new CardHopper("Hopper", 20, 100, 4, false);
@@ -344,6 +354,7 @@ public class P_CardReaderPunch extends JFrame
 
 		addWindowListener(this);
 		pack();
+		ints = 0;
 
 		hopper.addBlank(50);
 		updateStacker();
@@ -352,9 +363,10 @@ public class P_CardReaderPunch extends JFrame
 
 	public void reset() {
 		unStall(true);
+		ints = 0;
 	}
 
-	public void setInterrupt(HW2000 sys) {
+	public void setInterrupt() {
 	}
 
 	private void autoVisible(boolean on) {
@@ -551,11 +563,18 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			}
 		}
+		try {
+			Thread.sleep(100L); // reasonable compromise
+		} catch (Exception ee) {}
 		// make sure we don't read same card twice
 		vacateReader();
+		if (pcs.allow) {
+			setInt(true);
+		}
 	}
 
 	public void doOut(RWChannel rwc, PunchCardStatus pcs) {
+		int cnt = 0;
 		rwc.startCLC();
 		fillPunch();
 		for (int x = 0; x < 80; ++x) {
@@ -571,18 +590,40 @@ public class P_CardReaderPunch extends JFrame
 				byte a = rwc.readChar();
 				p = cvt.hwToPun(a, (pcs.code == 1));
 			}
+			if (p != 0) {
+				cnt = x; // last col punched...
+			}
 			putCol(pcs, x, p);
 			if (rwc.incrCLC()) {
 				return;
 			}
 		}
+		try {
+			Thread.sleep(100L); // reasonable compromise
+		} catch (Exception ee) {}
 		// make sure we don't punch same card twice
 		vacatePunch();
+		if (pcs.allow) {
+			setInt(false);
+		}
 	}
 
 	public boolean busy(byte c2) {
 		int io = ((c2 & 040) >> 5);
 		return sts[io].busy;
+	}
+
+	private void clrInt(boolean in) {
+		ints &= ~(in ? 2 : 1);
+		if (ints == 0) {
+			sys.CTL.clrPC(irq);
+		}
+	}
+
+	private void setInt(boolean in) {
+		ints |= (in ? 2 : 1);
+		// Always non-zero
+		sys.CTL.clrPC(irq);
 	}
 
 	public boolean ctl(RWChannel rwc) {
@@ -673,7 +714,12 @@ public class P_CardReaderPunch extends JFrame
 			case 031:
 				pcs.offset_next = true;
 				break;
+			case 070:
+			case 071:
+				pcs.allow = ((cx[x] & 1) != 0);
+				break;
 			case 074:
+				clrInt(in);
 				pcs.interrupt = false;
 				break;
 			case 075:

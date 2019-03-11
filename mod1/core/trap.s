@@ -2,6 +2,18 @@
 // includes MC (syscall).
 // Also includes "cold boot".
 
+// ATR handling dilemma:
+// Do we count time spent in the monitor? Syscalls make some
+// sense, but interrupt less because they may be for other task's.
+// We also have a race condition, where we take an EI for
+// (e.g.) a syscall but then ATR overflows after the SVI.
+// We must turn off clock (LIB), then SVI again, then check
+// overflow. Additionally, SVI must be called while still in
+// EI mode in order to return valid status, so we can't
+// resume "normal" mode to perform the syscall. Although,
+// if we perform the syscall in normal mode, then ATR overflow
+// should get handled.
+
 // mirrors struct task:
 flags	=	3	// int (r)
 sr	=	7	// int (r)
@@ -58,10 +70,17 @@ eires:
 	rvi	eivar(x5),035	// addr mode changes
 	rnm
 ei:	svi	075
-eiind:	.byte	0,0,0,0,0100
+eiind:	.byte	0,0,0,0,0	// no WM allowed!
 	cam	060
 	scr	aar,067
 	scr	bar,070
+	// TODO:
+	// ATR is still counting! and might overflow!
+	// do we turn off here (LIB), and not account
+	// for "system time"? Or run up until dispatch
+	// ?
+	//	lib	@zero,@zero,0
+	// TODO: how long/when do we stay in intr mode?
 	lca	^task,x5
 	lca	aar,eiaar(x5)
 	lca	bar,eibar(x5)
@@ -71,7 +90,7 @@ eiind:	.byte	0,0,0,0,0100
 	bcc	tick,eiind+4,020
 	// must service all (other) sources before
 	// syscall, as syscall might cause dispatch.
-	bbe	eivio,eiind+4,040
+	bbe	eivio,eiind+4,040	// adr vio in II
 	// bbe	eicp,eiind+4,010	// cons/panel intr
 	// bbe	eipi,eiind+4,004	// periph intr
 	bbe	sc,eiind+4,020
@@ -86,7 +105,7 @@ iires:	lca	^task,x5
 	rvi	iivar(x5),033
 	rnm
 ii:	svi	073
-iiind:	.byte	0,0,0,0,0100
+iiind:	.byte	0,0,0,0,0	// no WM allowed!
 	cam	060
 	scr	aar,067
 	scr	bar,070
@@ -156,14 +175,24 @@ _scptr:	scr	0(x1),070
 
 /////////////////////////////////////////////////////////
 
-tick:
+tick:	// X5 has task struct ptr
 	scr	0(x1),070
-	scr	atr,054		// save ATR
 	ba	atrov,time(x5)	// count overflow
-	ba	atr,time(x5)	// count residual
-	// can't callout to _tick here, might be
-	// a syscall so can't dispatch(?)
+	lcr	0(x1),077
+
+// sustsk() - suspend current task.
+// get ready to run a different task.
+// must still be in EI mode!
+_sustsk:
+	scr	0(x1),070
+	lib	@zero,@zero,0	// stop clock
+	svi	040		// save only EI
+eis:	.byte	0
+	scr	atr,054		// save ATR
 	lcr	@zero,054	// zero ATR
+	lca	4(x1),x5
+	bcc	tick,eis,020
+	ba	atr,time(x5)	// count residual
 	lcr	0(x1),077
 
 // runtsk(struct task *task)
@@ -177,8 +206,8 @@ _runtsk:
 	bce	1f,flags(x5),000	// task has exited?
 	lca	x5,^task
 	sst	@one,flags(x5),077	// runnable - bit or char?
-	// TODO: must enter interrupt mode?
-	lib	ibr+1(x5),brr+1(x5),006
+	// TODO: must enter interrupt mode?!
+	lib	ibr+1(x5),brr+1(x5),006	// LCR and ATR on
 	lcr	sr(x5),066	// EIR
 //	...
 	b	eires

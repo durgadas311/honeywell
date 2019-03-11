@@ -1886,7 +1886,7 @@ public class HW2000FrontPanel extends JFrame
 			if (typePressed) {
 				c = 't';
 			} else {
-				c = p.inChar(sys);
+				c = p.inChar();
 			}
 			if (c < 0) {
 				if (state != 0) {
@@ -2183,7 +2183,7 @@ public class HW2000FrontPanel extends JFrame
 			if (a.equals("stop")) {
 				doStop();
 			} else if (a.equals("inter")) {
-				getConsole().setInterrupt(sys);
+				getConsole().setInterrupt();
 				sys.endWait();
 			} else if (sys.halt) {
 				if (a.equals("run")) {

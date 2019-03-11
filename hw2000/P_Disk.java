@@ -111,7 +111,7 @@ public class P_Disk extends JFrame
 	private class DiskStatus {
 		RandomAccessFile dev;
 		int cyl;
-		boolean busy;
+		javax.swing.Timer busy;
 		byte flag;
 		JButton a_bt;
 		JButton b_bt;
@@ -122,7 +122,6 @@ public class P_Disk extends JFrame
 		public DiskStatus() {
 			dev = null;
 			cyl = 0;
-			busy = false;
 			flag = 0;
 		}
 	}
@@ -185,10 +184,15 @@ public class P_Disk extends JFrame
 	int vLen;
 	boolean vOK;
 
+	int irq;
+	boolean cInts;
+	boolean dInts;
+	int ints;
+
 	// 11 platters, 20 usable surfaces
 	// 200 cyls (0000-0312 or 203?)
 	// 10400 char/trk
-	public P_Disk() {
+	public P_Disk(int irq, HW2000 hw) {
 		super("H278 Disk Pack Devices");
 		java.net.URL url = getClass().getResource("icons/dpi-96.png");
 		if (url != null) {
@@ -196,6 +200,8 @@ public class P_Disk extends JFrame
 		}
 		Font smallFont = new Font("Sans-Serif", Font.PLAIN, 8);
 		_last = new File(System.getProperty("user.dir"));
+		this.irq = irq;
+		this.sys = hw;
 		busy = false;
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
@@ -209,6 +215,8 @@ public class P_Disk extends JFrame
 
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new DiskStatus();
+			sts[x].busy = new javax.swing.Timer(1, this);
+			sts[x].busy.setActionCommand(String.format("%d", x));
 			JPanel pn = new JPanel();
 			pn.setLayout(new FlowLayout());
 			JButton bt = new JButton(String.format("%03o", x));
@@ -262,6 +270,9 @@ public class P_Disk extends JFrame
 			pn.add(sts[x].mnt_pn);
 			add(pn);
 		}
+		cInts = false;
+		dInts = false;
+		ints = 0;
 
 		addWindowListener(this);
 		pack();
@@ -280,9 +291,12 @@ public class P_Disk extends JFrame
 			sts[0].cyl = 0;
 			sts[0].cyl_pn.setText("000-00");
 		}
+		cInts = false;
+		dInts = false;
+		ints = 0;
 	}
 
-	public void setInterrupt(HW2000 sys) {
+	public void setInterrupt() {
 	}
 
 	private void autoVisible(boolean on) {
@@ -661,8 +675,7 @@ public class P_Disk extends JFrame
 	}
 
 	public void io(RWChannel rwc) {
-		this.sys = rwc.sys;
-		if (rwc.sys.bootstrap) {
+		if (sys.bootstrap) {
 			// Special case defaults, for BOOTSTRAP
 			rwc.c3 = (byte)020;	// EXTENDED READ INITIAL
 			rwc.c4 = (byte)000;
@@ -689,7 +702,6 @@ public class P_Disk extends JFrame
 			error = true;
 			return;
 		}
-		sts[adr_lun].busy = true;
 		busy = true;
 		extended = ((rwc.c3 & 020) == 020);
 		verify = ((rwc.c3 & 010) == 010);
@@ -713,7 +725,9 @@ public class P_Disk extends JFrame
 		}
 		// cyl not changed by run()...
 		// but if we track record/sector...
-		sts[adr_lun].busy = false;
+		if (cInts) {
+			setInt(0);
+		}
 		busy = false;
 	}
 
@@ -960,6 +974,69 @@ public class P_Disk extends JFrame
 		return busy;
 	}
 
+	private void clrInt(int src) {
+		ints &= ~(1 << src);
+		if (ints == 0) {
+			sys.CTL.clrPC(irq);
+		}
+	}
+
+	private void setInt(int src) {
+		ints |= (1 << src);
+		// must be non-zero... but trigger again?
+		sys.CTL.setPC(irq);
+	}
+
+	private boolean ctlIntr(byte c3) {
+		boolean br = false;
+		switch(c3 & 007) {
+		case 000:
+		case 001:
+			cInts = ((c3 & 1) != 0);
+			break;
+		case 002:
+		case 003:
+			// TODO: which drive?
+			dInts = ((c3 & 1) != 0);
+			break;
+		case 004:	// control
+			clrInt(0);
+			break;
+		case 005:
+			br = ((ints & 1) != 0);
+			break;
+		case 006:	// drive/device
+			// TODO: which drive?
+			clrInt(1);
+			break;
+		case 007:
+			// TODO: which drive?
+			br = ((ints & 2) != 0);
+			break;
+		}
+		return br;
+	}
+
+	private boolean chkBusy(int lun) {
+		if (sts[lun].busy.isRunning()) {
+			return true;
+		}
+		return (adr_lun == lun && busy);
+	}
+
+	private void seek(int lun, int cyl) {
+		// must not land here if sts[lun].busy.isRunning()
+		int diff = sts[lun].cyl - cyl;
+		if (diff < 0) {
+			diff = -diff;
+		}
+		sts[lun].cyl = cyl;
+		sts[lun].cyl_pn.setText(String.format("%03d-%02d", sts[lun].cyl, adr_trk));
+		// TODO: what is cyl-to-cyl seek time? assume 1mS...
+		sts[lun].busy.setDelay(diff); // seek time, mS
+		sts[lun].busy.start();
+	}
+
 	public boolean ctl(RWChannel rwc) {
 		// C3-Cn:
 		//	xxxDDD = Tape Drive/Unit DDD
@@ -991,7 +1068,7 @@ public class P_Disk extends JFrame
 			}
 			// device busy...
 			lun = rwc.c3 & 007;
-			if (sts[lun].busy) {
+			if (chkBusy(lun)) {
 				branch = true;
 			}
 			break;
@@ -1009,11 +1086,10 @@ public class P_Disk extends JFrame
 				break;
 			}
 			lun = rwc.c3 & 007;
-			if (sts[lun].busy) {
+			if (chkBusy(lun)) {
 				branch = true;
 			} else {
-				sts[lun].cyl = (rwc.c5 << 6) | rwc.c6;
-				sts[lun].cyl_pn.setText(String.format("%03d-00", sts[lun].cyl));
+				seek(lun, (rwc.c5 << 6) | rwc.c6);
 			}
 			break;
 		case 030:
@@ -1021,11 +1097,10 @@ public class P_Disk extends JFrame
 				break;
 			}
 			lun = rwc.c3 & 007;
-			if (sts[lun].busy) {
+			if (chkBusy(lun)) {
 				branch = true;
-			} else if (in) {
-				sts[lun].cyl = 0;
-				sts[lun].cyl_pn.setText("000-00");
+			} else {
+				seek(lun, 0);
 			}
 			break;
 		case 040:
@@ -1053,10 +1128,10 @@ public class P_Disk extends JFrame
 			}
 			break;
 		case 070:
-			// TODO: handle interrupt control
 			if (in) {
 				break;
 			}
+			branch = ctlIntr(rwc.c3);
 			break;
 		}
 		return branch;
@@ -1095,6 +1170,13 @@ public class P_Disk extends JFrame
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof javax.swing.Timer) {
+			//int lun = e.getActionCommand().charAt(0) - '0';
+			if (dInts) {
+				setInt(1);	// lun not specified...
+			}
+			return;
+		}
 		if (!(e.getSource() instanceof JButton)) {
 			return;
 		}

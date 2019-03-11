@@ -32,8 +32,8 @@
 00000         B     NEXT
 00000*
 00000L DONE   MSCLOSF1,
-00000         EXT   CNT,CNT
-00000         BCT   NONE,60
+00000         C     ZERO,CNT
+00000         BCT   NONE,42
 00000         B     DECOUT
 00000         PDT   NUM,10,02,01
 00000         PCB   *,10,02,00
@@ -41,6 +41,8 @@
 00000  NONE   PDT   NOF,10,02,01
 00000         PCB   *,10,02,00
 00000         B     (164)      PROGRAM EXIT
+00000*
+00000  ZERO   DCW   #1B0
 00000*
 00000  ABORT  DCW   #1C40
 00000  CONT   DCW   #1C10

@@ -89,5 +89,13 @@ only the last (current) character is cancelled.
 <P>The <B>TYPE-button</B> is only available on the 220-3 control panel.
 The LOG button/indicator is only present on the 220-1 console.
 
+<P>The "data termination interrupt" function is assumed to mean the end of input
+(pressing carriage return, or entering too many characters for the buffer).
+The (non-differentiated) interrupt function is assumed to mean completion
+of a buffer of output characters.
+The INTERRUPT button causes a specific, separate, EI and is not part of the
+peripheral control interrupt scheme.
+Documentation is not clear on these.
+
 </BODY>
 </HTML>

@@ -15,11 +15,14 @@ public class P_Time
 	boolean interrupt = false;
 	Timer timer;
 	HW2000 sys;
+	int irq;
 
 	public static SimpleDateFormat _timestamp =
 		new java.text.SimpleDateFormat("HH:mm:ss.S");
 
-	public P_Time() {
+	public P_Time(int irq, HW2000 hw) {
+		this.irq = irq;
+		this.sys = hw;
 		timer = new Timer(500, this);
 		// do not start timer until program asks for it.
 	}
@@ -29,7 +32,7 @@ public class P_Time
 	}
 
 	// I.e. Front Panel switch
-	public void setInterrupt(HW2000 sys) {
+	public void setInterrupt() {
 	}
 
 	public void visible(boolean on) {
@@ -49,7 +52,7 @@ public class P_Time
 		Date dt = new Date();
 		String tod = _timestamp.format(dt);
 		for (int x = 0; x < 10; ++x) {
-			byte c = rwc.sys.pdc.cvt.asciiToHw((byte)tod.charAt(x));
+			byte c = sys.pdc.cvt.asciiToHw((byte)tod.charAt(x));
 			byte m = rwc.writeChar(c);
 			rwc.incrCLC();
 			if ((m & 0300) == 0300) break;
@@ -65,7 +68,6 @@ public class P_Time
 	}
 
 	public boolean ctl(RWChannel rwc) {
-		this.sys = rwc.sys;
 		boolean branch = false;
 		if (rwc.c3 == 010) {
 			// never busy
@@ -100,6 +102,8 @@ public class P_Time
 				break;
 			case 004:
 			case 006:
+				// TODO: possible race with actionPerformed()
+				sys.CTL.clrPC(irq);
 				interrupt = false;
 				break;
 			case 005:
@@ -118,6 +122,6 @@ public class P_Time
 			return;
 		}
 		interrupt = true;
-		sys.CTL.setEI(HW2000CCR.EIR_PC);
+		sys.CTL.setPC(irq);
 	}
 }

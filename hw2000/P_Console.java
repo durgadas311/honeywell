@@ -27,12 +27,16 @@ public class P_Console extends JFrame
 	boolean isOn = false;
 	boolean offline = false;
 	boolean interrupt = false;
+	int irq;
+	boolean allow;
+	int ints;
+	HW2000 sys;
 	boolean dataTerm = false;
 	int io; // only valid between io() and run()
 	LightedButton log;
 	LightedButton type;
 
-	public P_Console(Properties props) {
+	public P_Console(Properties props, int irq, HW2000 hw) {
 		super("H220 Console");
 		java.net.URL url = getClass().getResource("icons/con-96.png");
 		if (url != null) {
@@ -40,6 +44,8 @@ public class P_Console extends JFrame
 		}
 		kq = new java.util.concurrent.LinkedBlockingDeque<Integer>();
 		_last = new File(System.getProperty("user.dir"));
+		this.irq = irq;
+		this.sys = hw;
 		odev = null;
 		idev = null;
 		sts = new ConsoleStatus[2];
@@ -108,6 +114,10 @@ public class P_Console extends JFrame
 			mb.add(pn);
 		}
 		setJMenuBar(mb);
+		allow = false;
+		ints = 0;
+		interrupt = false;
+		dataTerm = false;
 
 		addWindowListener(this);
 		text.addKeyListener(this);
@@ -161,12 +171,15 @@ public class P_Console extends JFrame
 		if (sts[1].busy) {
 			kq.add(-1);
 		}
+		allow = false;
+		ints = 0;
+		interrupt = false;
+		dataTerm = false;
 	}
 
 	// I.e. Front Panel switch
-	public void setInterrupt(HW2000 sys) {
+	public void setInterrupt() {
 		// This is only a one-shot interrupt condition?
-		// interrupt = true;
 		sys.CTL.setEI(HW2000CCR.EIR_CONS);
 	}
 
@@ -218,7 +231,7 @@ public class P_Console extends JFrame
 			// Or... use CR as termination of input?
 			byte c = 0;
 			while (true) {
-				c = getChar(rwc.sys, true);
+				c = getChar(true);
 				if (c < 0) {
 					// caller must check CLC (CLC - SLC)
 					break;
@@ -240,6 +253,10 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
+		dataTerm = true;
+		if (allow) {
+			setInt(0);
+		}
 		unit.busy = false;
 		if (type != null) {
 			type.setOn(false);
@@ -254,9 +271,15 @@ public class P_Console extends JFrame
 		autoVisible(true);
 	}
 
+	private void printCR() throws Exception {
+		printBuf("\n");
+		try {
+			Thread.sleep(150);
+		} catch (Exception ee) {}
+	}
+
 	public void doOut(RWChannel rwc, ConsoleStatus unit) {
 		rwc.startCLC();
-		String s = "";
 		boolean print = true;
 		// Printing stops *before* char with record mark...
 		try {
@@ -267,24 +290,28 @@ public class P_Console extends JFrame
 				}
 				a &= 077;
 				if (col >= 64) {
-					s += "\n";
+					printCR();
 					col = 0;
-					printBuf(s);
-					s = "";
 				}
-				s += rwc.sys.pdc.cvt.hwToLP(a);
+				printBuf(sys.pdc.cvt.hwToLP(a));
 				++col;
 				if (rwc.incrCLC()) {
 					break;
 				}
+				try {
+					Thread.sleep(50);
+				} catch (Exception ee) {}
 			}
 			if (rwc.c3 != 0) {
-				s += "\n";
+				printCR();
 				col = 0;
 			}
-			printBuf(s);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
+		}
+		interrupt = true;
+		if (allow) {
+			setInt(1);
 		}
 		unit.busy = false;
 	}
@@ -298,7 +325,7 @@ public class P_Console extends JFrame
 	}
 
 	// return -1 on CR
-	private byte getChar(HW2000 sys, boolean echo) throws Exception {
+	private byte getChar(boolean echo) throws Exception {
 		int a;
 		if (idev != null) {
 			a = idev.read();
@@ -331,10 +358,10 @@ public class P_Console extends JFrame
 	// Note: may return special chars (unicode).
 	// Called by Control Mode, and Logging Mode (which discards)
 	// Does not echo!
-	public int inChar(HW2000 sys) {
+	public int inChar() {
 		byte c = -2;
 		try {
-			c = getChar(sys, false);
+			c = getChar(false);
 		} catch (Exception ee) {}
 		if (c < -1) {
 			return -1;
@@ -345,13 +372,13 @@ public class P_Console extends JFrame
 		return sys.pdc.cvt.hwToLP(c).charAt(0);
 	}
 
-	public String input(HW2000 sys) {
+	public String input() {
 		// TODO: lights up "TYPE"?
 		String ret = "";
 		byte c = -1;
 		try {
 			while (true) {
-				c = getChar(sys, true);
+				c = getChar(true);
 				if (c < 0) {
 					break;
 				}
@@ -386,6 +413,19 @@ public class P_Console extends JFrame
 		}
 	}
 
+	private void clrInt(int src) {
+		ints &= ~(1 << src);
+		if (ints == 0) {
+			sys.CTL.clrPC(irq);
+		}
+	}
+
+	private void setInt(int src) {
+		ints |= (1 << src);
+		// always non-zero...
+		sys.CTL.setPC(irq);
+	}
+
 	public boolean ctl(RWChannel rwc) {
 		boolean branch = false;
 		int io = ((rwc.c2 & 040) >> 5);
@@ -398,12 +438,13 @@ public class P_Console extends JFrame
 			} else if ((cx[x] & 070) == 070) {
 				switch(cx[x] & 007) {
 				case 000:
-					// allow OFF
+					allow = false;
 					break;
 				case 001:
-					// allow ON
+					allow = true;
 					break;
 				case 004:
+					clrInt(0);
 					dataTerm = false;
 					break;
 				case 005:
@@ -412,6 +453,7 @@ public class P_Console extends JFrame
 					}
 					break;
 				case 006:
+					clrInt(1);
 					interrupt = false;
 					break;
 				case 007:

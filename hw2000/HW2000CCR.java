@@ -25,7 +25,7 @@ public class HW2000CCR {
 	public static final byte AIR_ZB = (byte)0004;
 	public static final byte AIR_LE = (byte)0002;
 	public static final byte AIR_EQ = (byte)0001;
-	private static final byte AIR_CLEAR = (byte)0017;
+	private static final byte AIR_CLEAR = (byte)(AIR_OVR|AIR_ZB|AIR_LE|AIR_EQ);
 
 	public static final byte XIR_TRAP = AIR_TRAP;
 	public static final byte XIR_AM = AIR_AM;
@@ -42,7 +42,7 @@ public class HW2000CCR {
 	public static final byte IOR_S1_IM = (byte)0004;
 	public static final byte IOR_S2_IM = (byte)0002;
 	public static final byte IOR_S3_IM = (byte)0001;
-	private static final byte IOR_CLEAR = (byte)0070;
+	private static final byte IOR_CLEAR = (byte)(IOR_MPO|IOR_DVC|IOR_EXO);
 
 	public static final byte PIR_PROTECT = (byte)0040;
 	public static final byte PIR_TIMOUT = (byte)0020;
@@ -50,7 +50,7 @@ public class HW2000CCR {
 	public static final byte PIR_PROCEED = (byte)0004;
 	public static final byte PIR_RELOC = (byte)0002;
 	public static final byte PIR_II = (byte)0001;
-	private static final byte PIR_CLEAR = (byte)0064;
+	private static final byte PIR_CLEAR = (byte)(PIR_PROTECT|PIR_TIMOUT|PIR_PROCEED);
 
 	public static final byte EIR_CLOCK = (byte)0200;
 	public static final byte EIR_ADRVIO = (byte)0040;
@@ -59,19 +59,22 @@ public class HW2000CCR {
 	public static final byte EIR_PC = (byte)0004;
 	public static final byte EIR_EI = (byte)0002;
 	public static final byte EIR_II = (byte)0001;
-	private static final byte EIR_CLEAR = (byte)0270;
+	private static final byte EIR_INTS = (byte)(EIR_CLOCK|EIR_ADRVIO|EIR_MC|EIR_CONS|EIR_PC);
+	private static final byte EIR_CLEAR = (byte)(EIR_CLOCK|EIR_ADRVIO|EIR_MC|EIR_CONS);
 
 	public static final byte IIR_FPE = (byte)0200;
 	public static final byte IIR_ADRVIO = (byte)0040;
 	public static final byte IIR_OPVIO = (byte)0020;
 	public static final byte IIR_TIMOUT = (byte)0010;
-	private static final byte IIR_CLEAR = (byte)0270;
+	private static final byte IIR_INTS = (byte)(IIR_FPE|IIR_ADRVIO|IIR_OPVIO|IIR_TIMOUT);
+	private static final byte IIR_CLEAR = (byte)(IIR_FPE|IIR_ADRVIO|IIR_OPVIO|IIR_TIMOUT);
 
 	private byte[] ccr;
 	private byte[] clr;
 	private boolean eIntr;
 	private boolean iIntr;
 	private byte varLIB;
+	private int pcInts;
 
 	public HW2000CCR() {
 		ccr = new byte[7];
@@ -88,6 +91,7 @@ public class HW2000CCR {
 		varLIB = 0;
 		eIntr = false;
 		iIntr = false;
+		pcInts = 0;
 	}
 
 	public void reset() {
@@ -95,6 +99,7 @@ public class HW2000CCR {
 		varLIB = 0;
 		eIntr = false;
 		iIntr = false;
+		pcInts = 0;
 	}
 
 	public boolean isEQ() { return ((ccr[AIR] & AIR_EQ) != 0); }
@@ -229,36 +234,53 @@ public class HW2000CCR {
 		return ((ccr[EIR] & (EIR_EI | EIR_II)) == EIR_II);
 	}
 
-	public void setEI(byte typ) {
-		synchronized (this) {
+	// Peripheral Control interrupts
+	public synchronized void setPC(int src) {
+		pcInts |= (1 << src);
+		if (pcInts != 0) {
 			eIntr = true;
-			ccr[EIR] |= typ;
+			ccr[EIR] |= EIR_PC;
+		}
+	}
+	public synchronized void clrPC(int src) {
+		pcInts &= ~(1 << src);
+		if (pcInts == 0) {
+			// can't reset eIntr... unless
+			// all sources known.
+			ccr[EIR] &= ~EIR_PC;
 		}
 	}
 
+	public synchronized void setEI(byte typ) {
+		eIntr = true;
+		ccr[EIR] |= typ;
+	}
+
 	// Returns EIR_EI, EIR_II, or 0
-	public byte clearIntr() {
+	public synchronized byte clearIntr() {
 		byte r = 0;
 		if ((ccr[EIR] & EIR_EI) != 0) {
 			// TODO: handle pending II?
 			ccr[EIR] &= ~EIR_EI;
 			ccr[AIR] = ccr[XIR];
 			r = EIR_EI;
+			// If another EI was posted since taking this one,
+			// eIntr will be set...
 		} else if ((ccr[EIR] & EIR_II) != 0) {
 			ccr[EIR] &= ~EIR_II;
 			r = EIR_II;
+			// If another II was posted since taking this one,
+			// eIntr will be set... (not possible?)
 		}
 		return r;
 	}
 
-	public void setII(byte typ) {
-		synchronized (this) {
-			iIntr = true;
-			ccr[IIR] |= typ;
-		}
+	public synchronized void setII(byte typ) {
+		iIntr = true;
+		ccr[IIR] |= typ;
 	}
 
-	public boolean isEI() {
+	public synchronized boolean isEI() {
 		if (eIntr && (ccr[EIR] & EIR_EI) == 0) {
 			eIntr = false;
 			ccr[EIR] |= EIR_EI;
@@ -271,24 +293,13 @@ public class HW2000CCR {
 		return false;
 	}
 
-	public boolean isII() {
+	public synchronized boolean isII() {
 		if (iIntr && inStdMode()) {
 			iIntr = false;
 			ccr[EIR] |= EIR_II;
 			return true;
 		}
 		return false;
-	}
-
-	public void doRNM() {
-		if ((ccr[EIR] & EIR_EI) != 0) {
-			ccr[EIR] &= ~EIR_EI;
-			ccr[AIR] = ccr[XIR];
-			return;
-		} else if ((ccr[EIR] & EIR_II) != 0) {
-			ccr[EIR] &= ~EIR_II;
-			return;
-		}
 	}
 
 	public byte peekCR(int x) {

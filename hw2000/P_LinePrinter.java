@@ -20,14 +20,21 @@ public class P_LinePrinter extends JFrame
 	File _last = null;
 	boolean isOn = false;
 	byte[] ftape;
+	int irq;
+	boolean allow;
+	boolean intr;
+	HW2000 sys;
+	long lastLine;
 
-	public P_LinePrinter() {
+	public P_LinePrinter(int irq, HW2000 hw) {
 		super("H222 Line Printer");
 		java.net.URL url = getClass().getResource("icons/prt-96.png");
 		if (url != null) {
 			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
 		}
 		_last = new File(System.getProperty("user.dir"));
+		this.irq = irq;
+		this.sys = hw;
 		ftape = new byte[66];
 		Arrays.fill(ftape, (byte)0);
 		ftape[0] = 1;	// HOF
@@ -91,6 +98,9 @@ public class P_LinePrinter extends JFrame
 		mu.add(mi);
 		mb.add(mu);
 		setJMenuBar(mb);
+		lastLine = 0;
+		allow = false;
+		intr = false;
 
 		addWindowListener(this);
 		pack();
@@ -114,9 +124,12 @@ public class P_LinePrinter extends JFrame
 	}
 
 	public void reset() {
+		allow = false;
+		intr = false;
+		lastLine = 0;
 	}
 
-	public void setInterrupt(HW2000 sys) {
+	public void setInterrupt() {
 	}
 
 	private void autoVisible(boolean on) {
@@ -146,6 +159,20 @@ public class P_LinePrinter extends JFrame
 	}
 
 	private void printBuf(String s) throws Exception {
+		// speed ranges from 650-1300 lpm, or
+		// 92mS to 46mS per line...
+		if (s.endsWith("\n")) {
+			// speed depends on length of line,
+			// but we don't have full context here.
+			if (lastLine > 0) {
+				long t = 60 - ((System.nanoTime() -
+					lastLine + 500000) / 1000000);
+				if (t > 0) try {
+					Thread.sleep(t);
+				} catch (Exception ee) {}
+			}
+			lastLine = System.nanoTime();
+		}
 		if (dev != null) {
 			dev.write(s.getBytes());
 		}
@@ -177,7 +204,7 @@ public class P_LinePrinter extends JFrame
 					printBuf(s);
 					s = "";
 				}
-				s += rwc.sys.pdc.cvt.hwToLP(a);
+				s += sys.pdc.cvt.hwToLP(a);
 				++col;
 				if (rwc.incrCLC()) {
 					break;
@@ -223,6 +250,10 @@ public class P_LinePrinter extends JFrame
 		} catch (Exception ee) {
 			// TODO: handle exceptions? How to pass along EI/II exceptions to CPU?
 		}
+		if (allow) {
+			intr = true;
+			sys.CTL.setPC(irq);
+		}
 		busy = false;
 	}
 
@@ -244,8 +275,45 @@ public class P_LinePrinter extends JFrame
 	}
 
 	public boolean ctl(RWChannel rwc) {
-		// TODO: apply control chars?
-		return busy;
+		boolean branch = false;
+		byte[] cx = new byte[]{ rwc.c3, rwc.c4, rwc.c5, rwc.c6, rwc.c7 };
+		for (int x = 0; x < rwc.cn - 2; ++x) {
+			switch(cx[x]) {
+			case 010:	// if busy
+			case 030:	// if busy or paper moving
+				if (busy) {
+					branch = true;
+				}
+				break;
+			case 020:	// if paper moving
+			case 040:	// if error
+				break;
+			case 001:	// if end of form
+				if (ln + 1 >= ftape.length) { // TODO: right?
+					branch = true;
+				}
+				break;
+			case 002:	// if channel eight
+				if ((ftape[ln] & 0x80) != 0) {
+					branch = true;
+				}
+				break;
+			case 070:	// allow off
+			case 071:	// allow on
+				allow = ((cx[x] & 1) != 0);
+				break;
+			case 074:	// intr off
+				sys.CTL.clrPC(irq);
+				intr = false;
+				break;
+			case 075:	// if intr
+				if (intr) {
+					branch = true;
+				}
+				break;
+			}
+		}
+		return branch;
 	}
 
 	private File pickFile(String purpose, String typ, String dsc) {

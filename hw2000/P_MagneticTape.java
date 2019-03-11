@@ -6,19 +6,44 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 // TODO: should we be using the same error codes as Disk?
+
+// Basic 9-track tape stats:
+//	Standard reel was 2400ft.
+//	Small reel assumed to be 800ft.
+//	"frame" is a single 1x9 bit value on tape.
+// H204D:
+//	4x6-bit chars stored in 3 frames.
+//	800/1600 bpi (use 1600bpi here).
+//	Data rate 105 ips (~6uS per frame) (204D-5).
+//	Rewind speed unknown (300 ips assumed).
+//	IRG is 0.6 in. (960 frames, 1280 H-chars).
+// Raw length computations use "bits", i.e. H-chars * 6.
+
 public class P_MagneticTape extends JFrame
 		implements Peripheral, SequentialRecordIO,
 			ActionListener, WindowListener {
 
+	// Timing constants, based on stats.
+	static final int UPF = 6; // uSecs/frame R/W speed
+	static final int MPI = 4; // mSecs/inch rewind speed
+
+	// We always assume 1600bpi recording density...
+	static final int FPI = 1600; // frames/in a.k.a. "bpi"
+	static final int BPI = FPI * 8; // bits per inch, 8x frames/inch
+	static final int IRG = ((BPI * 6) / 10); // bits/gap (0.6in)
+
 	private class MagTapeStatus {
 		RandomAccessFile dev;
+		long len; // approximate length of unspooled tape
 		boolean beg;
 		boolean end;
 		boolean wrRing;
 		boolean permit;
 		boolean in;
 		int count;
-		boolean busy;
+		javax.swing.Timer busy;
+		boolean read;
+		boolean write;
 		boolean reverse;
 		boolean backspace;
 		boolean erase;
@@ -30,10 +55,11 @@ public class P_MagneticTape extends JFrame
 		JLabel mnt_pn;
 
 		public MagTapeStatus() {
-			busy = false;
 			dev = null;
 			beg = end = permit = wrRing = false;
+			read = write = false;
 			count = 0;
+			len = 0;
 		}
 	}
 	MagTapeStatus[] sts;
@@ -44,14 +70,20 @@ public class P_MagneticTape extends JFrame
 	JCheckBox wp;	// write *permit* (write-ring inserted)
 	File _last = null;
 	boolean isOn = false;
+	HW2000 sys;
+	int irq;
+	boolean allow;
+	boolean intr;
 
-	public P_MagneticTape() {
+	public P_MagneticTape(int irq, HW2000 hw) {
 		super("H204B Magnetic Tape Unit");
 		java.net.URL url = getClass().getResource("icons/mti-96.png");
 		if (url != null) {
 			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
 		}
 		_last = new File(System.getProperty("user.dir"));
+		this.irq = irq;
+		this.sys = hw;
 		sts = new MagTapeStatus[8];
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
@@ -60,6 +92,9 @@ public class P_MagneticTape extends JFrame
 
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new MagTapeStatus();
+			sts[x].busy = new javax.swing.Timer(1, this);
+			sts[x].busy.setActionCommand(String.format("%d", x));
+			sts[x].busy.setRepeats(false);
 			JPanel pn = new JPanel();
 			pn.setLayout(new FlowLayout());
 			JButton bt = new JButton(String.format("%03o", x));
@@ -90,15 +125,19 @@ public class P_MagneticTape extends JFrame
 			pn.add(sts[x].mnt_pn);
 			add(pn);
 		}
+		allow = false;
+		intr = false;
 
 		addWindowListener(this);
 		pack();
 	}
 
 	public void reset() {
+		allow = false;
+		intr = false;
 	}
 
-	public void setInterrupt(HW2000 sys) {
+	public void setInterrupt() {
 	}
 
 	private void autoVisible(boolean on) {
@@ -128,7 +167,7 @@ public class P_MagneticTape extends JFrame
 
 	public void io(RWChannel rwc) {
 		boolean in = rwc.isInput();
-		if (rwc.sys.bootstrap) {
+		if (sys.bootstrap) {
 			// Special case defaults, for BOOTSTRAP
 			rwc.c3 = (byte)060;	// Read forward, unit 0
 			rwc.c4 = (byte)000;	// Stop at Rec Mark, Std FMT
@@ -230,28 +269,51 @@ public class P_MagneticTape extends JFrame
 			// set error?
 			return;
 		}
-		sts[unit].busy = true;
+		if (in) {
+			sts[unit].read = true;
+		} else {
+			sts[unit].write = true;
+		}
 	}
 
 	public void run(RWChannel rwc) {
 		int unit = rwc.c3 & 007;
-		if (!sts[unit].busy) {
-			return;
-		}
+		long cnt = sts[unit].len;
 		if ((rwc.c2 & 040) == PeriphDecode.P_OUT) {
 			doOut(rwc, sts[unit]);
+			sts[unit].write = false;
 		} else {
 			doIn(rwc, sts[unit]);
+			sts[unit].read = false;
 		}
+		if (cnt < sts[unit].len) {
+			cnt = sts[unit].len - cnt;
+		} else {
+			cnt -= sts[unit].len;
+		}
+		cnt /= 8; // HW packs 4x6bit chars in 3x8bit frames
+		if (cnt < 1) cnt = 1;
+		cnt *= UPF;
+		try {
+			Thread.sleep(cnt / 1000, (int)(cnt % 1000));
+		} catch (Exception ee) {}
 		updateDisp(unit);
-		sts[unit].busy = false;
+		if (allow) {
+			intr = true;
+			sys.CTL.setPC(irq);
+		}
 	}
 
 	private void doIn(RWChannel rwc, MagTapeStatus unit) {
+		if (!unit.read) {
+			return;
+		}
 		rwc.startCLC();
 		int a = -1;
 		long fp = 0;
 		try {
+			// TODO: READ REVERSE: CLC/SLC is *rightmost* char,
+			// and must rwc.decrCLC()... and RM is leftmost?
 			if (unit.backspace) {
 				fp = unit.dev.getFilePointer();
 				if (fp == 0) {
@@ -261,6 +323,7 @@ public class P_MagneticTape extends JFrame
 			do {
 				if (unit.backspace) {
 					if (--fp == 0) {
+						unit.len = 0;
 						break;
 					}
 					unit.dev.seek(fp);
@@ -275,10 +338,18 @@ public class P_MagneticTape extends JFrame
 					// caller must look at CLC (CLC - SLC).
 					// (CLC == SLC) means EOF (File Mark)
 					if (unit.backspace) {
+						unit.len -= IRG;
 						// TODO: proper location to leave...
 						unit.dev.seek(fp);
+					} else {
+						unit.len += IRG;
 					}
 					break;
+				}
+				if (unit.backspace) {
+					unit.len -= 6;
+				} else {
+					unit.len += 6;
 				}
 				if (unit.fwdspace || unit.backspace) {
 					continue;
@@ -291,16 +362,22 @@ public class P_MagneticTape extends JFrame
 						(unit.count > 0 && --unit.count == 0)) {
 					do {
 						a = unit.dev.read();
+						unit.len += 6;
 					} while (a >= 0 && (a & 0300) != 0300);
+					unit.len += IRG;
 					break;
 				}
 			} while (true);
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
+		if (unit.len < 0) unit.len = 0;
 	}
 
 	public void doOut(RWChannel rwc, MagTapeStatus unit) {
+		if (!unit.write) {
+			return;
+		}
 		rwc.startCLC();
 		if (!unit.wrRing || !unit.permit) {
 			unit.errno = 00502;
@@ -313,9 +390,11 @@ public class P_MagneticTape extends JFrame
 				if (unit.count == 0 && (a & 0300) == 0300) {
 					// "zero-length record" just means EOF,
 					// a.k.a. "File Mark".
+					unit.len += IRG;
 					unit.dev.write((byte)0300);
 					break;
 				}
+				unit.len += 6;
 				a &= 077;
 				unit.dev.write(a);
 				if (rwc.incrCLC()) {
@@ -323,6 +402,7 @@ public class P_MagneticTape extends JFrame
 				}
 				// This does not permit 0-char xfers
 				if (unit.count > 0 && --unit.count == 0) {
+					unit.len += IRG;
 					unit.dev.write((byte)0300);
 					break;
 				}
@@ -333,8 +413,33 @@ public class P_MagneticTape extends JFrame
 	}
 
 	public boolean busy(byte c2) {
-		// without unit number, we are not busy?
+		// TODO: can we provide this?
 		return false;
+	}
+
+	private boolean chkBusy(int unit, boolean in) {
+		// TODO: does rewind get checked?
+		//if (sts[unit].busy.isRunning()) {
+		//	return true;
+		//}
+		if (in && sts[unit].read) {
+			return true;
+		}
+		if (!in && sts[unit].write) {
+			return true;
+		}
+		return false;
+	}
+
+	private void startRew(int unit) {
+		long len = 0;
+		sts[unit].stat_pn.setText("...");
+		sts[unit].end = false;
+		sts[unit].beg = false;
+		len = (sts[unit].len / BPI); // approx. inches
+		if (len < 1) len = 1;
+		sts[unit].busy.setDelay((int)len * MPI);
+		sts[unit].busy.start();
 	}
 
 	public boolean ctl(RWChannel rwc) {
@@ -363,16 +468,20 @@ public class P_MagneticTape extends JFrame
 		case 070:
 			switch(rwc.c3 & 007) {
 			case 0:
-				// allow OFF
-				break;
 			case 1:
-				// allow ON
+				// allow ON/OFF
+				allow = ((rwc.c3 & 1) != 0);
 				break;
 			case 4:
 				// interrupt OFF
+				sys.CTL.clrPC(irq);
+				intr = false;
 				break;
 			case 5:
 				// branch if interrupt ON
+				if (intr) {
+					branch = true;
+				}
 				break;
 			}
 			break;
@@ -396,23 +505,12 @@ public class P_MagneticTape extends JFrame
 					sts[unit].dev.close();
 				} catch (Exception ee) {}
 				sts[unit].dev = null;
-				sts[unit].stat_pn.setText("");
-				sts[unit].mnt_pn.setText("No Tape");
-				sts[unit].end = false;
-				sts[unit].beg = false;
-			} else {
-				// rewind
-				try {
-					sts[unit].dev.seek(0L);
-				} catch (Exception ee) {}
-				sts[unit].stat_pn.setText("0");
-				sts[unit].end = false;
-				sts[unit].beg = true;
 			}
+			startRew(unit);
 			break;
 		case 000:
 			unit = rwc.c3 & 007;
-			if (sts[unit].busy) {
+			if (chkBusy(unit, in)) {
 				branch = true;
 			}
 			break;
@@ -433,6 +531,22 @@ public class P_MagneticTape extends JFrame
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof javax.swing.Timer) {
+			// Rewind/release is finished...
+			int un = e.getActionCommand().charAt(0) - '0';
+			sts[un].len = 0;
+			if (sts[un].dev != null) { // rewind, no release...
+				try {
+					sts[un].dev.seek(0L);
+				} catch (Exception ee) {}
+				sts[un].stat_pn.setText("0");
+				sts[un].beg = true;
+			} else {
+				sts[un].stat_pn.setText("");
+				sts[un].mnt_pn.setText("No Tape");
+			}
+			return;
+		}
 		if (!(e.getSource() instanceof JButton)) {
 			return;
 		}
@@ -441,10 +555,7 @@ public class P_MagneticTape extends JFrame
 		if (a == 'R') {
 			int c = b.getActionCommand().charAt(1) - '0';
 			if (sts[c].dev != null) {
-				try {
-					sts[c].dev.seek(0L);
-					sts[c].stat_pn.setText("0");
-				} catch (Exception ee) {}
+				startRew(c);
 			}
 		} else if (a == 'P') {
 			int c = b.getActionCommand().charAt(1) - '0';

@@ -13,8 +13,14 @@ public class RWChannel implements Runnable {
 	public byte c7;
 	public int cn;
 
+	// id "-1" means null RWC...
 	public RWChannel(byte id) {
 		periph = null;
+		if (id < 0) {
+			clc = slc = -1;
+			return;
+		}
+		// These can never be < 0
 		clc = (byte)(id & 027);
 		slc = (byte)(clc + 010);
 	}
@@ -27,29 +33,32 @@ public class RWChannel implements Runnable {
 	}
 
 	public boolean busy() {
-		return (periph != null);
+		return (clc >= 0 && periph != null);
 	}
 
-	private void loadCtl(HW2000 hw) {
-		cn = hw.numXtra();
+	private void loadCtl() {
+		cn = sys.numXtra();
 		int x = 1;
-		if (PeriphDecode.isEsc(hw.getXtra(1))) {
+		if (PeriphDecode.isEsc(sys.getXtra(1))) {
 			++x;
 			--cn;
 		}
 		// These return 0 if not exist
-		c2 = hw.getXtra(x++);
-		c3 = hw.getXtra(x++);
-		c4 = hw.getXtra(x++);
-		c5 = hw.getXtra(x++);
-		c6 = hw.getXtra(x++);
-		c7 = hw.getXtra(x++);
+		c2 = sys.getXtra(x++);
+		c3 = sys.getXtra(x++);
+		c4 = sys.getXtra(x++);
+		c5 = sys.getXtra(x++);
+		c6 = sys.getXtra(x++);
+		c7 = sys.getXtra(x++);
 	}
 
 	public boolean isInput() {
 		return ((c2 & 040) == PeriphDecode.P_IN);
 	}
 
+	// These are only called from peripheral during I/O, and
+	// I/O is neever started for null RWC, so we don't need
+	// to check "clc < 0" here.
 	public void writeMem(byte c) {
 		sys.rawWriteMem(sys.cr[clc], c);
 	}
@@ -86,8 +95,13 @@ public class RWChannel implements Runnable {
 			return; // throw something?
 		}
 		sys = hw;
+		if (clc < 0) {
+			// invalid! never do I/O on null RWC...
+			// TODO: throw exception?
+			return;
+		}
 		periph = p;
-		loadCtl(hw);
+		loadCtl();
 		sys.cr[slc] = sys.validAdr(sys.AAR); // translate to physical address
 		lastSR = -1;
 		sys.setupWait();
@@ -108,13 +122,13 @@ public class RWChannel implements Runnable {
 			hw.SR = hw.AAR;
 		} else if (p != null) {
 			sys = hw;
-			loadCtl(hw);
+			loadCtl();
 			if (p.ctl(this)) {
 				hw.BAR = hw.SR;
 				hw.SR = hw.AAR;
 			}
 		}
-		if (sr != hw.SR && sr == lastSR) {
+		if (sr != hw.SR && sr == lastSR && clc >= 0) {
 			if (++count >= 10000) {
 				hw.waitIO();
 				count = 0;

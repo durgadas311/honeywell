@@ -26,23 +26,25 @@ public class PeriphDecode {
 	private Peripheral[] p_idevs;
 	public CharConverter cvt;
 	private RWChannel[] p_chans;
+	private RWChannel nullRWC;
 
-	public PeriphDecode(Properties props) {
+	public PeriphDecode(Properties props, HW2000 hw) {
 		cvt = new CharConverter();
 		p_odevs = new Peripheral[8];
 		p_idevs = new Peripheral[8];
 		p_chans = new RWChannel[16];
-		p_odevs[P_LP] = new P_LinePrinter();
-		p_odevs[P_CO] = new P_Console(props);
+		p_odevs[P_LP] = new P_LinePrinter(P_LP, hw);
+		p_odevs[P_CO] = new P_Console(props, P_CO, hw);
 		p_idevs[P_CO] = p_odevs[P_CO];
-		p_odevs[P_MT] = new P_MagneticTape();
+		p_odevs[P_MT] = new P_MagneticTape(P_MT, hw);
 		p_idevs[P_MT] = p_odevs[P_MT];
-		p_odevs[P_PP] = new P_CardReaderPunch(cvt);
+		p_odevs[P_PP] = new P_CardReaderPunch(cvt, P_PP, hw);
 		p_idevs[P_PP] = p_odevs[P_PP];
-		p_odevs[P_DK] = new P_Disk();
+		p_odevs[P_DK] = new P_Disk(P_DK, hw);
 		p_idevs[P_DK] = p_odevs[P_DK];
-		p_odevs[P_TI] = new P_Time();
+		p_odevs[P_TI] = new P_Time(P_TI, hw);
 		p_idevs[P_TI] = p_odevs[P_TI];
+		nullRWC = new RWChannel((byte)-1); // no I/O, never busy...
 	}
 
 	public void reset() {
@@ -68,6 +70,11 @@ public class PeriphDecode {
 	}
 
 	public RWChannel getChannel(byte ca) {
+		// channel 00 means "no RWC",
+		// but need to have an object...
+		if (ca == 0) {
+			return nullRWC;
+		}
 		// fudge, rather than use a complex translation
 		byte cx = (byte)(ca & 027);
 		cx = (byte)((cx + (cx & 007)) >> 1);

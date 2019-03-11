@@ -270,7 +270,9 @@ public class CardHopper extends CardHandler implements MouseListener {
 			} catch (Exception ee) {}
 			idev = null;
 		}
-		hopper.remove();
+		if (!hopper.isEmpty()) {
+			hopper.remove();
+		}
 		return nextDeck(); // calls update()
 	}
 

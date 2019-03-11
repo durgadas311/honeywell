@@ -43,7 +43,8 @@
 00430         SCR   CLC,01            MUST MATCH RWC
 00430         SCR   SLC,11            MUST MATCH RWC
 00430         BS    SLC,CLC
-00430         BCT   ERROR,60          ERROR IF EOF
+00430         C     ZERO,CLC
+00430         BCT   ERROR,42          ERROR IF EOF
 00430         BCE   LOAD,BUFFER,42    BOOTSTRAP BANNER CHAR
 00430  ERROR  H     *                 CAN'T CONTINUE
 00060*
@@ -59,7 +60,8 @@
 00430         BA    CLC,DIST
 00430         BS    ONE,DIST
 00430         BS    ONE,NREC
-00430         BCT   (RUN-3),60        RUN LOADER IF DONE
+00430         C     ZERO,NREC
+00430         BCT   (RUN-3),42        RUN LOADER IF DONE
 00430         B     MORE
 00060*
 00450  CLC    DSA   0
@@ -68,6 +70,7 @@
 00440  EPTR   DSA   BUFFER+256       RE-USED LATER
 00450  FILL   DC    #1B0             NO PUNC
 00450*
+00450  ZERO   DCW   #1B0
 00450  ONE    DCW   #1B1
 00450  PTR    DSA   0         RECORD PTR
 00450  DIST   DSA   0         DISTRIBUTION PTR (LOAD ADR)

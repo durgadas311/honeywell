@@ -20,7 +20,8 @@
 00000         SCR   CLC,01            MUST MATCH RWC IN PDT
 00000         SCR   SLC,11            MUST MATCH RWC IN PDT
 00000         BS    SLC,CLC
-00000         BCT   DONE,60           ZERO MEANS EOF...
+00000         C     ZERO,CLC
+00000         BCT   DONE,42           ZERO MEANS EOF...
 00000* ... BUT COULD BE END OF CYL, CHECK FOR TLR? OR?
 00000         PCB   TLR,11,04,60      CHECK TLR
 00000         LCA   BEGR,ENDR 
@@ -56,6 +57,7 @@
 00000         PCB   *,10,02,00
 00000  DONE   H
 00000*
+00000  ZERO   DCW   #1B0
 00000  CLC    DSA   0
 00000  SLC    DSA   0
 00000  ENDR   DSA   0

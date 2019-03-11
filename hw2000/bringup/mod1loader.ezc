@@ -171,7 +171,8 @@
 00000         BA    ONE,IX6
 00000         BA    ONE,IX5
 00000         BS    ONE,SLEN
-00000         BCT   NEXT,60            IF SLEN == 0 DONE
+00000         C     ZERO,SLEN
+00000         BCT   NEXT,42            IF SLEN == 0 DONE
 00000         CW    0+X5
 00000         CI    0+X5
 00000         B     MOV2               ELSE KEEP MOVING
@@ -295,7 +296,8 @@
 00000  GOT2   BA    SIX,FND          POINT TO VIS
 00000         MCW   (FND-3),VISCHK
 00000         EXT   118,VISCHK
-00000         BCT   GOT0,60          VISIB FAIL
+00000         C     ZERO,VISCHK
+00000         BCT   GOT0,42          VISIB FAIL
 00000         B     GOT3
 00000**GOT4   BA    XXX,FND          POINT TO MSA
 00000**       MCW   (FND-3),73       MSA TO PROG FIELD
@@ -309,6 +311,7 @@
 00000*
 00000  ZEROA  DSA   0
 00000  ONES   DCW   #1C77
+00000  ZERO   DCW   #1B0
 00000  ONE    DCW   #1B1
 00000  TWO    DCW   #1B2
 00000  FOUR   DCW   #1B4

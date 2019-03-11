@@ -77,7 +77,7 @@ public class HW2000 implements CoreMemory
 		cr = new int[64];
 		Arrays.fill(cr, 0);
 		idc = new InstrDecode(false);
-		pdc = new PeriphDecode(props);
+		pdc = new PeriphDecode(props, this);
 		op_xtra_siz = 8;
 		op_xtra = new byte[op_xtra_siz];
 
