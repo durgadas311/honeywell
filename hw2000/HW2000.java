@@ -355,6 +355,11 @@ public class HW2000 implements CoreMemory
 		}
 		int a = validAdr(adr);
 		++tics;
+		if (tics > 1000 && CTL.inStdMode() &&
+				CTL.isPROTECT() && CTL.isTIMOUT()) {
+			throw new IIException("Instruction Timeout",
+				HW2000CCR.IIR_TIMOUT);
+		}
 		if (fp != null) {
 			if (count == 0) {
 				fp.setAddress(a);
@@ -363,11 +368,6 @@ public class HW2000 implements CoreMemory
 			if (++count > 2000000) {
 				count = 0;
 			}
-		}
-		if (CTL.inStdMode() && CTL.isPROTECT() &&
-				CTL.isTIMOUT() && tics > 1000) {
-			throw new IIException("Instruction Timeout",
-				HW2000CCR.IIR_TIMOUT);
 		}
 		return mem[a];
 	}
@@ -379,8 +379,8 @@ public class HW2000 implements CoreMemory
 	public void writeMem(int adr, byte val) {
 		int a = validAdr(adr);
 		++tics;
-		if (CTL.inStdMode() && CTL.isPROTECT() &&
-				CTL.isTIMOUT() && tics > 1000) {
+		if (tics > 1000 && CTL.inStdMode() &&
+				CTL.isPROTECT() && CTL.isTIMOUT()) {
 			throw new IIException("Instruction Timeout",
 				HW2000CCR.IIR_TIMOUT);
 		}
@@ -391,8 +391,8 @@ public class HW2000 implements CoreMemory
 	public byte writeMemMask(int adr, byte val, byte mask) {
 		int a = validAdr(adr);
 		++tics;
-		if (CTL.inStdMode() && CTL.isPROTECT() &&
-				CTL.isTIMOUT() && tics > 1000) {
+		if (tics > 1000 && CTL.inStdMode() &&
+				CTL.isPROTECT() && CTL.isTIMOUT()) {
 			throw new IIException("Instruction Timeout",
 				HW2000CCR.IIR_TIMOUT);
 		}
@@ -640,12 +640,17 @@ public class HW2000 implements CoreMemory
 	public void clearIntr() {
 		byte i = CTL.clearIntr();
 		if (i == 0) {
+			// was not in interrupt...
 			return;
 		}
 		if (fp != null) {
 			fp.setInterrupt(0);
 		}
 		int t;
+		// Interrupts may have been triggered while
+		// servicing previous one(s). Intr was re-asserted,
+		// but must keep EIR/IIR in sync with SR so do the
+		// exchange and let fetch detect interrupt.
 		if (i == HW2000CCR.EIR_EI) {
 			// TODO: handle pending II?
 			setAM(CTL.getAM());
@@ -687,23 +692,23 @@ public class HW2000 implements CoreMemory
 		// of instructions. However, it seems unlikely that such code
 		// would be using that technique to turn off large blocks of
 		// instructions (conditional branches would be more practical).
-		int max = 999; // a reasonable limitation?
+		int max = 500; // a reasonable limitation?
 		if (noWM()) {
 			max = (hasA() ? am_na : 0);
 			max += (hasB() ? am_na : 0);
 		}
 		while (isr != 0 && isr - fsr < max && !chkWord(isr)) {
-			if (CTL.inStdMode() && CTL.isPROTECT() &&
-					CTL.isTIMOUT() && isr - SR > 500) {
-				throw new IIException("Instruction Timeout, extract",
-					HW2000CCR.IIR_TIMOUT);
-			}
 			// With enforced max, this check may not be needed.
 			if (halt) {
 				throw new HaltException("extraction");
 			}
 			// TODO: add visual feedback?
 			isr = (isr + 1) & 0x7ffff;
+		}
+		if ((isr == 0 || isr - fsr >= max) && CTL.inStdMode() &&
+				CTL.isPROTECT() && CTL.isTIMOUT()) {
+			throw new IIException("Instruction Timeout, extract",
+				HW2000CCR.IIR_TIMOUT);
 		}
 		// Caller handles exceptions, leave SR at start of instruction
 		// (if during fetch/extract). Exceptions during execute
