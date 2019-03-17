@@ -111,6 +111,10 @@ This flag also prevents final definitions from being
 given to common symbols,
 and suppresses the `undefined symbol' diagnostics.
 .TP
+\fB\-C\fR
+Do not recognize/generate automatic constants.
+See \fBAUTOMATIC CONSTANTS\fR for more information.
+.TP
 \fB\-d\fR
 force definition of common storage
 even if the
@@ -154,6 +158,36 @@ Loaders must setup X1 to point to the end of \fB.bss\fR.
 \fB\-o\fR\ \fIname\fR
 Use \fIname\fR as the output file name, instead of \fBa.out\fR.
 .PP
+.SH "AUTOMATIC CONSTANTS"
+The sharing of constants is essential to controlling the size of
+H200 programs.
+To facilitate this, \fBld200\fR will recognize external undefined
+symbols that have a special name format as constants.
+Currently, only 4 character (24-bit) integer shared constants are
+supported.
+The symbol name contains the constant value, and is used to
+generate that value in \fB.data\fR during link time.
+The following symbol name formats are recognized:
+
+.TP
+\fB@\fIXXXXXX\fR
+The value is the 24-bit hexadecimal value \fIXXXXXX\fR.
+.TP
+\fB@P\fIDDDDD\fR
+The value is the positive decimal value \fIDDDDD\fR.
+.TP
+\fB@N\fIDDDDD\fR
+The value is the negative decimal value \fIDDDDD\fR.
+.TP
+\fB@T\fIXX\fR
+The value is the H200 equivalent of the ASCII-7 hexadecimal code \fIXX\fR.
+
+.PP
+Note that in order for constants to be shared they must use the
+same representation. For example:
+\fB@41\fR, \fB@000041\fR, \fB@P65\fR, and \fB@T41\fR are
+different constants (not shared), even though they all have the same value.
+
 .SH FILES
 /lib/lib?.a   libraries
 

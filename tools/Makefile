@@ -29,7 +29,7 @@ crt: __FRC__
 	for i in ${CRT}; do $(MAKE) -C $$i install; done
 
 %.o: %.s
-	./as/as200 -l -o $@ $? >$*.l
+	as200 -l -u -o $@ $? >$*.l
 
 man:
 	@cp -uv $(MAN1) /usr/local/man/man1

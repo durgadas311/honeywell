@@ -11,9 +11,14 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <ctype.h>
 #include <limits.h>
 #include "a.out.h"
 #include "ar.h"
+
+extern char hw200[];
+
+static char *curfile;
 
 #define	NSYM	1103	/* size of symbol table */
 #define	NLIBF	256	/* max object files from libs */
@@ -51,6 +56,7 @@ unsigned tflag = 0;	/* stack size to add to .bss, default 0 */
 unsigned hflag = 0;	/* heap size to add after .bss, default 0 */
 int	xflag;		/* discard local symbols */
 int	Xflag;		/* discard locals starting with 'L' */
+int	Cflag;		/* do not generate auto constants */
 int	rflag;		/* preserve relocation bits, don't define common */
 int	arflag;		/* original copy of rflag */
 int	sflag;		/* discard all symbols */
@@ -547,6 +553,7 @@ load1arg(filename)
 {
 	long loff;
 	register int nlinked;
+curfile = filename;
 
 	if (getfile(filename)==0) {
 /*printf("load1arg: %s\n", filename);*/
@@ -579,6 +586,105 @@ again:
 	*libp++ = 0;
 }
 
+static int
+isconst(char *n) {
+	int l = sizeof(cursym.n_name);
+	if (*n++ != '@') {
+		return 0;
+	}
+	--l;
+	if (*n == 'P' || *n == 'N') {
+		--l;
+		++n;
+		while (l > 0 && *n != 0) {
+			if (!isdigit(*n++)) {
+				return 0;
+			}
+			--l;
+		}
+		return 1;
+	}
+	if (*n == 'T') {
+		++n;
+		--l;
+		// TODO: accept only 2 digits?
+	}
+	while (l > 0 && *n != 0) {
+		if (!isxdigit(*n++)) {
+			return 0;
+		}
+		--l;
+	}
+	return 1;
+}
+
+static int
+getconst(char *n) {
+	unsigned long v;
+	if (*n++ != '@') {
+		return 0;
+	}
+	if (*n == 'P' || *n == 'N') {
+		v = strtoul(n + 1, NULL, 10);
+		if (*n == 'N') {
+			v = -v;
+		}
+		return (int)(v & 077777777);
+	}
+	if (*n == 'T') {
+		v = strtoul(n + 1, NULL, 16);
+		return hw200[v & 0x7f];
+	}
+	v = strtoul(n, NULL, 16);
+	return (int)(v & 077777777);
+}
+
+/*
+ * Undefined Externals of the forms:
+ *	@<XXXXXX>
+ *	@P<DDDDD>
+ *	@N<DDDDD>
+ *	@T<XX>
+ * where X are hex digits and D are decimal digits,
+ * represent shared constants with hexadecimal value XXXXXX,
+ * positive decimal value DDDDD, negative decimal value DDDDD,
+ * or ASCII character hex value XX, respectively. In the case
+ * of @T<XX> the ASCII code will be converted to the
+ * equivalent H200 character.
+ */
+static void
+autoconst() {
+	struct nlist *sp;
+	for (sp = symtab; sp < symp; sp++) {
+		if (sp->n_type != N_EXT + N_UNDF ||
+				!isconst(sp->n_name)) {
+			continue;
+		}
+		// allocate space for const, tag in list
+		sp->n_type = N_REG;
+		sp->n_value = dsize + 3;
+		dsize += 4;
+	}
+}
+
+static void
+genconst() {
+	struct nlist *sp;
+	// All auto-constants are 4-char (24-bit) integers.
+	admode = 4; // fudge for putword() used out of context
+	for (sp = symtab; sp < symp; sp++) {
+		if (sp->n_type != N_REG) {
+			continue;
+		}
+		// TODO: does this need to be N_EXT+N_DATA?
+		sp->n_type = N_DATA;
+		putword(doutb, getconst(sp->n_name), (0100 << 24));
+		if (rflag) {
+			putint(0, droutb);
+		}
+	}
+}
+
 void
 middle()
 {
@@ -589,6 +695,12 @@ middle()
 	p_etext = *lookup("_etext");
 	p_edata = *lookup("_edata");
 	p_end = *lookup("_end");
+	/*
+	 * Automatically generate shared constants
+	 */
+	if (!Cflag) {
+		autoconst();
+	}
 	/*
 	 * If there are any undefined symbols, save the relocation bits.
 	 */
@@ -669,6 +781,7 @@ middle()
 			continue;
 
 		case N_EXT+N_DATA:
+		case N_REG: // auto-gen consts in .data
 			sp->n_value += dorigin;
 			continue;
 
@@ -906,6 +1019,9 @@ finishout()
 		}
 #endif
 	}
+	if (!Cflag) {
+		genconst();
+	}
 	copy(doutb);
 	if (rflag) {
 		copy(troutb);
@@ -1030,6 +1146,9 @@ main(argc, argv)
 		case 's':
 			sflag++;
 			xflag++;
+			continue;
+		case 'C':
+			Cflag++;
 			continue;
 		case 'n':
 			nflag++;

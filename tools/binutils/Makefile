@@ -24,8 +24,8 @@ clean:
 	${CC} ${CFLAGS} -o $@ $<
 
 ld200: ld.c ar.h a.out.h
-	${CC} ${CFLAGS} -o $@ $<
-nm200: nm.c a.out.h
+	${CC} ${CFLAGS} -o $@ $< ../as/hw200.o
+nm200: nm.c a.out.h ../as/hw200.o
 	${CC} ${CFLAGS} -o $@ $<
 ar200: ar.c ar.h a.out.h
 	${CC} ${CFLAGS} -o $@ $<
@@ -38,7 +38,7 @@ objdump200: objdump.c a.out.h
 adr2line200: adr2line.c a.out.h
 	${CC} ${CFLAGS} -o $@ $<
 out2brt: out2brt.o ../as/hw200.o
-	$(CC) -o $@ out2brt.o ../as/hw200.o
+	$(CC) -o $@ $< ../as/hw200.o
 
 ../as/hw200.o:
 	$(MAKE) -C ../as hw200.o
