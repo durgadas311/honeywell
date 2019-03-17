@@ -33,7 +33,7 @@ ret	=	47	// char
 	.globl	_memtop,^memtop
 	.globl	_endtsk,_runtsk,_initsk,_inimon
 	.globl	_scret,_scarg,_scptr
-	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn
+	.globl	@P0,@P1,@P4,@P4096,@N1
 	// externals
 	.globl	_tick,_syscal,_start,_panic
 	.globl	_montsk,^task
@@ -42,11 +42,11 @@ ret	=	47	// char
 ?start:	// also top of memory, etc.
 	cam	060
 	lca	@start,x1	// set stack pointer
-	bs	@four,x1	// wiggle room
+	bs	@P4,x1	// wiggle room
 	lca	@start,_memtop
-	bs	@4k,_memtop	// space for stack
-	sst	@zero,_memtop,077	// force
-	sst	@zero,_memtop-1,077	// 4k boundary
+	bs	@P4096,_memtop	// space for stack
+	sst	@P0,_memtop,077	// force
+	sst	@P0,_memtop-1,077	// 4k boundary
 	lcr	eiadr,066	// setup EIR
 	lcr	iiadr,076	// setup IIR
 	// TODO: safety net for CSM?
@@ -79,7 +79,7 @@ eiind:	.byte	0,0,0,0,0	// no WM allowed!
 	// do we turn off here (LIB), and not account
 	// for "system time"? Or run up until dispatch
 	// ?
-	//	lib	@zero,@zero,0
+	//	lib	@P0,@P0,0
 	// TODO: how long/when do we stay in intr mode?
 	lca	^task,x5
 	lca	aar,eiaar(x5)
@@ -119,12 +119,12 @@ iiind:	.byte	0,0,0,0,0	// no WM allowed!
 	b	_sched	// find something new to run
 	b	iires	// resume something else
 1:	// FPE, odd case (item mark)
-	sst	@none,iivar+4(x5),004 // move IM bit to data
+	sst	@N1,iivar+4(x5),004 // move IM bit to data
 	b	2b
 
 // Nothing to do but panic here...
 eivio:	lca	eiava,0(x1)
-	bs	@four,x1
+	bs	@P4,x1
 	b	_panic	// does not return,
 	h	.	// but just in case...
 
@@ -132,12 +132,12 @@ eivio:	lca	eiava,0(x1)
 // ^task is already setup in x5...
 sc:
 	ba	brr(x5),eisr-2	// relocate SR
-	lca	@zero,0(x1)
+	lca	@P0,0(x1)
 	exm	(eisr-3),0(x1),001 // arg is sc num
-	ba	@one,sr(x5)	// point past func code
-	bs	@four,x1
+	ba	@P1,sr(x5)	// point past func code
+	bs	@P4,x1
 	b	_syscal
-	ba	@four,x1
+	ba	@P4,x1
 	b	eires
 
 // Utility routines for syscall implementations
@@ -145,7 +145,7 @@ sc:
 // void scret(int val) - set a return value for a syscall
 _scret:	scr	0(x1),070
 	lca	^task,x5
-	lca	@zero,x3
+	lca	@P0,x3
 	ba	brr(x5),x3-2	// task base adr
 	lca	4(x1),x5(x3)	// caller's X5 reg
 	lcr	0(x1),077
@@ -154,7 +154,7 @@ _scret:	scr	0(x1),070
 // arg is not relocated (if it was a pointer).
 _scarg:	scr	0(x1),070
 	lca	^task,x5
-	lca	@zero,x3
+	lca	@P0,x3
 	ba	brr(x5),x3-2	// task base adr
 	lca	x2(x3),x4	// caller's bp (X2)
 	ba	4(x1),x4	// bp+off
@@ -165,7 +165,7 @@ _scarg:	scr	0(x1),070
 // arg is assumed to be ptr and is relocated.
 _scptr:	scr	0(x1),070
 	lca	^task,x5
-	lca	@zero,x3
+	lca	@P0,x3
 	ba	brr(x5),x3-2	// task base adr
 	lca	x2(x3),x4	// caller's bp (X2)
 	ba	4(x1),x4	// bp+off
@@ -185,11 +185,11 @@ tick:	// X5 has task struct ptr
 // must still be in EI mode!
 _sustsk:
 	scr	0(x1),070
-	lib	@zero,@zero,0	// stop clock
+	lib	@P0,@P0,0	// stop clock
 	svi	040		// save only EI
 eis:	.byte	0
 	scr	atr,054		// save ATR
-	lcr	@zero,054	// zero ATR
+	lcr	@P0,054	// zero ATR
 	lca	4(x1),x5
 	bcc	tick,eis,020
 	ba	atr,time(x5)	// count residual
@@ -205,7 +205,7 @@ _runtsk:
 	lca	4(x1),x5
 	bce	1f,flags(x5),000	// task has exited?
 	lca	x5,^task
-	sst	@one,flags(x5),077	// runnable - bit or char?
+	sst	@P1,flags(x5),077	// runnable - bit or char?
 	// TODO: must enter interrupt mode?!
 	lib	ibr+1(x5),brr+1(x5),006	// LCR and ATR on
 	lcr	sr(x5),066	// EIR
@@ -223,11 +223,11 @@ _endtsk:
 	c	_montsk,x5
 	bct	1f,042		// superv cannot exit
 	ba	atr,time(x5)
-	sst	@zero,flags(x5),077	// done
+	sst	@P0,flags(x5),077	// done
 	// TODO: any other cleanup?
 	lcr	0(x1),077
 1:	lca	monxa,0(x1)
-	bs	@four,x1
+	bs	@P4,x1
 	b	_panic	// does not return,
 	h	.	// but just in case...
 
@@ -242,18 +242,18 @@ _initsk:
 	scr	0(x1),070
 	lca	4(x1),x5	// task
 	// TODO: memset? or CLEAR?
-	lca	@zero,flags(x5)
-	sst	@zero,id(x5),077
-	sst	@zero,ret(x5),077
-	lca	@zero,eiaar(x5)
-	lca	@zero,eibar(x5)
-	lca	@zero,time(x5)	// zero time...
-	lca	@zero,time-3(x5) // ...
-	lca	@zero,time-6(x5) // ... and set WM
-	sst	@zero,ibr(x5),077 // clear ibr LO
+	lca	@P0,flags(x5)
+	sst	@P0,id(x5),077
+	sst	@P0,ret(x5),077
+	lca	@P0,eiaar(x5)
+	lca	@P0,eibar(x5)
+	lca	@P0,time(x5)	// zero time...
+	lca	@P0,time-3(x5) // ...
+	lca	@P0,time-6(x5) // ... and set WM
+	sst	@P0,ibr(x5),077 // clear ibr LO
 	sst	// clear ibr HI
 	sst	// clear brr LO
-	sst	// clear brr HI	// end of @zero...
+	sst	// clear brr HI	// end of @P0...
 	exm	user,eivar(x5),031
 	lcr	0(x1),077
 
@@ -262,11 +262,11 @@ _initsk:
 _inimon:
 	scr	0(x1),070
 	lca	4(x1),x5	// struct task *montsk
-	exm	@zero,eivar+3(x5),001	// force sys mode
+	exm	@P0,eivar+3(x5),001	// force sys mode
 	bct	_superv,040	// branch never, set AAR
 	scr	sr(x5),067	// run supervisor code entry
-	exm	@zero,id(x5),001	// special task id
-	lca	@one,flags(x5)	// always runnable
+	exm	@P0,id(x5),001	// special task id
+	lca	@P1,flags(x5)	// always runnable
 	lcr	0(x1),077
 
 	.data
@@ -282,17 +282,6 @@ iiadr:	.word	ii
 // USER mode for LVI (RNM)
 user:	.byte	000,060,000,062,0100	// 4-chr-adr, PROT + TIMEOUT + RELOC
 //sys:	.byte	000,060,000,000,0100	// 4-chr-adr
-
-// global constants
-@zero:	.word	0
-@one:	.word	1
-@none:	.word	-1
-@two:	.word	2
-@four:	.word	4
-@eight:	.word	8
-@twlv:	.word	12
-@sxtn:	.word	16
-@4k:	.word	4096
 
 @start:	.word	?start
 
