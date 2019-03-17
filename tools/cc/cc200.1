@@ -216,6 +216,27 @@ program loaders may do that. The simulator loader adds 256 to the .bss size.
 The \fIld200\fR option \fB\-t\fR may be used to request additional space.
 \fIcc200\fR will pass along any \fB\-t\fR option to the linker.
 
+.SH "SHARED CONSTANTS"
+The compiler leverages the automatic shared constants feature of \fBld200\fR.
+When integrating assembly code with C code, it is necessary to use the same
+representations for constants as C uses in order to achieve sharing.
+The compiler does the following when generating automatic constant symbols:
+
+.TP
+character constants:
+The symbol uses the \fB@T\fIXX\fR form, with two-digit hexadecimal
+using upper-case letters.
+.TP
+0 <= value <= 99999
+The symbol uses the \fB@P\fIDDDDD\fR form, with no leading zeroes.
+.TP
+-99999 <= value < 0
+The symbol uses the \fB@N\fIDDDDD\fR form, with no leading zeroes.
+.TP
+all other values:
+The symbol uses the \fB@\fIXXXXXX\fR form, with six-digit hexadecimal
+using upper-case letters.
+
 .SH FILES
 .TP
 file.c

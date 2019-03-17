@@ -1101,26 +1101,6 @@ static struct consts {
 } shared[NSHARED];
 static int nconsts = 0;
 
-static struct globcons {
-	char *name;
-	int type;
-	int value;
-	int flag;
-} globals[] = {
-	// crt0.s must define these:
-	{ "@zero", INT, 0 },
-	{ "@one", INT, 1 },
-	{ "@two", INT, 2 },
-	{ "@four", INT, 4 },
-	{ "@eight", INT, 8 },
-	{ "@twlv", INT, 12 },
-	{ "@sxtn", INT, 16 },
-	{ "@twty", INT, 20 },
-	{ "@none", INT, -1 },
-	{ "@nmax", INT, MININT },
-	{ NULL }
-};
-
 static int masks[VOID+1] = {
 [CHAR] = 077,
 [UNCHAR] = 077,
@@ -1170,15 +1150,23 @@ void sprconlab(char *buf, int val, int op, int type) {
 		type = INT;
 	}
 	int msk = masks[type];
-	// first, check known global constants...
-	for (x = 0; globals[x].name; ++x) {
-		if (globals[x].type == type &&
-		    (globals[x].value & msk) == (val & msk)) {
-			++globals[x].flag;
-			sprintf(buf, "%s", globals[x].name);
-			return;
-		}
+
+	if (op == CCON) {
+		sprintf(buf, "@T%02X", val & 0x7f);
+		return;
 	}
+	// must be 'CON'?
+	if (type == INT) {
+		if (val >= 0 && val <= 99999) {
+			sprintf(buf, "@P%d", val);
+		} else if (val < 0 && val >= -99999) {
+			sprintf(buf, "@N%d", -val);
+		} else {
+			sprintf(buf, "@%06X", val & msk);
+		}
+		return;
+	}
+	// TODO: is this code reached?
 	int lab = -1;
 	for (x = 0; x < nconsts; ++x) {
 		if (shared[x].op == op &&
@@ -1209,12 +1197,8 @@ void prconlab(int val, int op, int type) {
 
 void prcons() {
 	int x;
-	for (x = 0; globals[x].name; ++x) {
-		if (globals[x].flag) {
-			printf("\t.globl\t%s\n", globals[x].name);
-		}
-	}
 	// assume .data already...
+	// TODO: Are these used anymore?
 	for (x = 0; x < nconsts; ++x) {
 		// fprintf(stderr, "mkconst: %d (0%o) L%d\n",
 		// 	shared[x].value, shared[x].type, shared[x].label);
