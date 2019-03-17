@@ -4,7 +4,7 @@
 // remember: C prepends a '_' to names.
 // args: string, return: length (x5)
 
-	.globl	@one
+	.globl	@P1
 	.globl	_strlen
 	.text
 _strlen:
@@ -14,5 +14,5 @@ _strlen:
 	mos	0(x5),0(x5),010	// stops at WM, not RM...
 	scr	x5,067
 	bs	4(x1),x5
-	bs	@one,x5
+	bs	@P1,x5
 	lcr	0(x1),077

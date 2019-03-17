@@ -3,7 +3,7 @@
 
 // args: int
 
-	.globl	@zero,@one
+	.globl	@P0,@P1
 	.globl	_putx,_lputx,_putwx,_lputwx
 	.text
 _lputx:
@@ -48,10 +48,10 @@ itoa:	scr	itoax,070
 	mcw	in,ins	// >> 6 (1 char)
 	ba	ins	// << 1
 	ba	ins	// << 1
-	c	@zero,in
+	c	@P0,in
 	bct	2f,042		// if 0, we're done
 	bcc	2f,(opi),010	// or WM - end of field
-	bs	@one,op
+	bs	@P1,op
 	b	1b
 2:
 itoax::	b	0	// return
@@ -68,5 +68,5 @@ opi:	// for indirect ref to "op"
 op:	.word	0
 oop:	.word	ocx
 
-mx:	.bin	011#1	// cut-off for hex letters
+mx:	.bin	'9'#1	// cut-off for hex letters
 aa:	.bin	007#1	// offset for 0xa..0xf => A..F

@@ -1,7 +1,7 @@
 // void tran(char *d, char *s, void *tr, int op)
 // string 's' must have a RM.
 
-	.globl	@one
+	.globl	@P1
 	.globl	_tran
 	.text
 _tran:
@@ -13,7 +13,7 @@ _tran:
 	lca	@err,064	// setup CSR in case
 1:	mit	0(x5),0(x6),0,0	// filled in above
 	scr	x5,070	// BAR = end of dest, RM+1
-	bs	@one,x5
+	bs	@P1,x5
 	si	0(x5)		// set RM
 	sw	0(x5)		// set RM
 2:	bs	4(x1),x5	// length of translation

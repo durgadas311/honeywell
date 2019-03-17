@@ -1,13 +1,13 @@
 // implement >> (shift right) on 'int', result in x5
 
-	.globl	@zero
+	.globl	@P0
 	.globl	@sra
 	.text
 9:	csm	// return, but keep CSR pointing here
 ?sra:	scr	x3,067	// save AAR (ptr to num shifts)
 	scr	x4,070	// save BAR (ptr to value)
 	lca	0(x3),x3
-	c	@zero,x3
+	c	@P0,x3
 	bct	1f,042
 	lca	0(x4),num
 	exm	x3,2f+2,001	// num bits into place

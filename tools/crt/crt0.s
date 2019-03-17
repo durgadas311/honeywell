@@ -7,11 +7,10 @@
 // loc 186-189 = end of memory address (WM)
 
 	.globl	_main
-	.globl	@zero,@one,@two,@four,@eight,@twlv,@sxtn,@twty
-	.globl	@none,@nmax
-	.globl	@heap,@mtop
+	.globl	@P4,@P8
+	.globl	@mtop
 start:
-	bs	@four,x1	// retreat inside our region
+	bs	@P4,x1	// retreat inside our region
 	lca	x1,x2
 	lca	x1,@heap	// heap starts here
 	lca	189,@mtop	// max usable memory
@@ -29,24 +28,11 @@ start:
 	exm	118,5(x5),021	// move VIS
 	lca	argv,0(x1)	// param2 = argv
 	lca	argc,-4(x1)	// param1 = argc
-	bs	@eight,x1
+	bs	@P8,x1
 	b	_main
 	h	.	// don't allow continue
 
 	.data
-// Public constants - make these "clean" ints
-// However, LCA when dest is short/char is problematic
-@zero:	.bin	0#4
-@one:	.bin	01#4
-@two:	.bin	02#4
-@four:	.bin	04#4
-@eight:	.bin	010#4
-@twlv:	.bin	014#4
-@sxtn:	.bin	020#4
-@twty:	.bin	024#4
-@none:	.bin	077777777#4
-@nmax:	.bin	040000000#4
-
 @heap:	.word	0
 @mtop:	.word	0
 

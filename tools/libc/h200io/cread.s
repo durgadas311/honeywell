@@ -5,7 +5,7 @@
 // user must ensure EOF card is present.
 // If buffer is smaller than 80 chars, must have RM.
 
-	.globl	@zero,@none
+	.globl	@P0,@N1
 	.globl	_cread
 _cread:
 	scr	0(x1),070
@@ -13,8 +13,8 @@ _cread:
 	pdt	0(x5),013,041
 	pcb	.,013,041,010
 	pcb	1f,013,041,041
-	lca	@zero,x5
+	lca	@P0,x5
 	lcr	0(x1),077
 
-1:	lca	@none,x5
+1:	lca	@N1,x5
 	lcr	0(x1),077

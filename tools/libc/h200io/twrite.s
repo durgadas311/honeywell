@@ -2,7 +2,7 @@
 // int twrite(int unit, void *buf)
 // returns num chars on success, -1 on error
 
-	.globl	@zero,@none
+	.globl	@N1
 	.globl	_twrite
 _twrite:
 	scr	0(x1),070
@@ -20,5 +20,5 @@ _twrite:
 	bs	x6,x5	// num chars transferred
 	lcr	0(x1),077
 
-1:	lca	@none,x5
+1:	lca	@N1,x5
 	lcr	0(x1),077

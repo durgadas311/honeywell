@@ -2,7 +2,7 @@
 // int tbsp(int unit)
 // returns 0 on success, -1 on error
 
-	.globl	@zero,@none
+	.globl	@P0
 	.globl	_tbsp
 _tbsp:
 	scr	0(x1),070
@@ -11,5 +11,5 @@ _tbsp:
 
 2:	pdt	0(x5),014,040,000,0	// unit set above
 3:	pcb	.,014,040,00		// unit set above
-	lca	@zero,x5	// never any error?
+	lca	@P0,x5			// never any error?
 	lcr	0(x1),077

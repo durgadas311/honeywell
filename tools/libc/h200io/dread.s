@@ -14,8 +14,7 @@
 //	int dl;	- dtell only
 // };
 
-	.globl	@zero,@none,@one
-
+	.globl	@P0,@P1,@N1
 	.globl	_dset
 _dset:	lca	4(x1),x5	// adr reg buf
 	exm	0(x5),lun,001
@@ -30,7 +29,7 @@ _dset:	lca	4(x1),x5	// adr reg buf
 	pdt	adr,015,004,004
 	// no need to wait?
 	pcb	.,015,004,010	// wait ctrl idle
-	exm	@zero,nxt,001
+	exm	@P0,nxt,001
 	lcr	0(x1),077
 
 	.globl	_dread
@@ -50,10 +49,10 @@ _dread:
 	scr	x5,005	// we know x5 has WM
 	scr	x6,015
 	bs	x6,x5	// num chars transferred
-	exm	@one,nxt,001
+	exm	@P1,nxt,001
 	lcr	0(x1),077
 
-4:	lca	@none,x5
+4:	lca	@N1,x5
 	lcr	0(x1),077
 
 	.globl	_dwrite

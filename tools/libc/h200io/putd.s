@@ -3,7 +3,8 @@
 
 // args: int
 
-	.globl	@zero,@one,@div
+	.globl	@P0,@P1,@P10
+	.globl	@div
 	.globl	_putd,_lputd,_putwd,_lputwd
 	.text
 _lputd:
@@ -41,13 +42,13 @@ itoa:	scr	itoax,070
 	lcr	@div,064
 	bs	ocx
 	lca	oop,op
-1:	csm	ten,in		// in / 10
+1:	csm	@P10,in		// in / 10
 	exm	x6,(opi),001	// *opi = in % 10
 	lca	x5,in		// in /= 10;
-	c	@zero,in
+	c	@P0,in
 	bct	2f,042		// if 0, we're done
 	bcc	2f,(opi),010	// or WM - end of field
-	bs	@one,op
+	bs	@P1,op
 	b	1b
 2:
 itoax::	b	0	// return
@@ -62,4 +63,3 @@ ocx:	.string "12345678"
 opi:	// for indirect ref to "op"
 op:	.word	0
 oop:	.word	ocx
-ten:	.bin	012#4	// 10, as int

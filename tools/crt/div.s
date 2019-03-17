@@ -2,7 +2,7 @@
 // B / A => X5 r X6
 
 // this is a CSM call, but stack (x1) should still be usable.
-	.globl	@one,@zero,@four
+	.globl	@P0,@P1,@P6
 	.globl	@div,@udiv
 	.text
 9:	csm	// return, but keep CSR pointing here
@@ -31,11 +31,11 @@
 // If this were not so expensive, we could
 // optimize the division. main problem is "num <<= 6".
 .if 0	// while (ct > 6 && den > (num << 6)) {
-3:	c	ct,six
+3:	c	ct,@P6
 	bct	6f,046
 	c	den-1,num
 	bct	6f,046
-	bs	six,ct	// ct -= 6
+	bs	@P6,ct	// ct -= 6
 	ba	num	// num <<= 6
 	ba	num
 	ba	num
@@ -50,9 +50,9 @@
 	c	den,num	//
 	bct	3f,041	// if (den <= num) {
 	bs	den,num	//	num -= den
-	ba	@one,num //	num += 1
-3:	bs	@one,ct
-	c	@zero,ct
+	ba	@P1,num //	num += 1
+3:	bs	@P1,ct
+	c	@P0,ct
 	bct	6b,045	// } while (--ct > 0)
 
 	bbe	6f,sd,040	// signs differ?
@@ -80,7 +80,7 @@
 @div:	.word	?div
 @udiv:	.word	?udiv
 
-// double-recision register space
+// double-precision register space
 numh:	.word	0	// HL:DE
 num:	.word	n:0
 
