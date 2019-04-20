@@ -44,6 +44,9 @@ public class HW2000 implements CoreMemory
 	private byte[] op_xtra;
 	private int op_xtra_siz;
 	private int op_xtra_num;
+	private boolean isPDT;
+	private boolean protViol;	// delayed exception
+	private int protAdr;
 	Instruction op_exec;
 	public boolean halt;
 	public boolean singleStep;
@@ -273,19 +276,23 @@ public class HW2000 implements CoreMemory
 		BAR = incrAdr(BAR, inc);
 	}
 
+	// Translate the address
 	public int validAdr(int adr) {
 		int a = adr;
-		// TODO: if PROCEED is set on PDT, also check violations
-		if (CTL.inStdMode()) {
-			if (CTL.isRELOC()) {
-				a += adr_min;
-			}
-			if (CTL.isPROTECT() &&
-					a < adr_min || a >= adr_max) {
-				throw new IIException(
-					String.format("Address violation %07o", a),
-					HW2000CCR.IIR_ADRVIO);
-			}
+		if (CTL.inStdMode() && CTL.isRELOC()) {
+			a += adr_min;
+		}
+		return a;
+	}
+
+	// Translate address and check for protection violation
+	public int writeAdr(int adr) {
+		int a = validAdr(adr);
+		if (CTL.inStdMode() && CTL.isPROTECT() && !isPDT &&
+				a < adr_min || a >= adr_max) {
+			protViol = true;
+			protAdr = a;
+			return -1;
 		}
 		return a;
 	}
@@ -377,12 +384,15 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void writeMem(int adr, byte val) {
-		int a = validAdr(adr);
+		int a = writeAdr(adr);
 		++tics;
 		if (tics > 1000 && CTL.inStdMode() &&
 				CTL.isPROTECT() && CTL.isTIMOUT()) {
 			throw new IIException("Instruction Timeout",
 				HW2000CCR.IIR_TIMOUT);
+		}
+		if (a < 0) {
+			return;
 		}
 		mem[a] = val;
 	}
@@ -396,7 +406,13 @@ public class HW2000 implements CoreMemory
 			throw new IIException("Instruction Timeout",
 				HW2000CCR.IIR_TIMOUT);
 		}
-		mem[a] = (byte)((mem[a] & mask) | (val & ~mask));
+		if (CTL.inStdMode() && CTL.isPROTECT() && !isPDT &&
+				a < adr_min || a >= adr_max) {
+			protViol = true;
+			protAdr = a;
+		} else {
+			mem[a] = (byte)((mem[a] & mask) | (val & ~mask));
+		}
 		return mem[a];
 	}
 
@@ -416,22 +432,34 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void setWord(int adr) {
-		int a = validAdr(adr);
+		int a = writeAdr(adr);
+		if (a < 0) {
+			return;
+		}
 		mem[a] |= 0100;
 	}
 
 	public void setItem(int adr) {
-		int a = validAdr(adr);
+		int a = writeAdr(adr);
+		if (a < 0) {
+			return;
+		}
 		mem[a] |= 0200;
 	}
 
 	public void clrWord(int adr) {
-		int a = validAdr(adr);
+		int a = writeAdr(adr);
+		if (a < 0) {
+			return;
+		}
 		mem[a] &= ~0100;
 	}
 
 	public void clrItem(int adr) {
-		int a = validAdr(adr);
+		int a = writeAdr(adr);
+		if (a < 0) {
+			return;
+		}
 		mem[a] &= ~0200;
 	}
 
@@ -478,8 +506,11 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void zero(int adr, int len) {
-		int a = validAdr(adr);
+		int a = writeAdr(adr);
 		if (a >= mem.length) {
+			return;
+		}
+		if (a < 0) {
 			return;
 		}
 		if (len < 0) {
@@ -517,20 +548,20 @@ public class HW2000 implements CoreMemory
 		int ix = ((am & 0x0f) * 4) - am_na + 1;
 		// this is really confusing... not sure at all...
 		if (am > 0x10) {
-			// must be 4-char addr mode.
+			// must be 4-char addr mode. Y1-Y15
 			if (!CTL.isRELOC()) {
-				ix += (IBR << 12);	// Y1-Y15
+				ix += (IBR << 12);
 			}
 		} else if (am_na == 4) {
 			// no further adjustment for X1-X15?
 		} else {
-			// must be 3-char addr mode
+			// must be 3-char addr mode. X1-X6
 			if (!CTL.isRELOC()) {
-				ix += (oSR & ~0x07fff);	// X1-X6
+				ix += (oSR & ~0x07fff);
 			}
 		}
 		if (CTL.isRELOC()) {
-			ix += (BRR << 12);	// Y1-Y15
+			ix += (BRR << 12);
 		}
 		// 'ix' is physical address. This also avoids protection, which is implied in docs
 		int ax = 0;
@@ -724,6 +755,13 @@ public class HW2000 implements CoreMemory
 		// sort it out...
 		fetchXtra(isr);
 		SR = isr;
+		isPDT = (_proceed && op_exec instanceof I_PDT);
+		// PDT A operand protection violation...
+		if (isPDT && writeAdr(AAR) < 0) {
+			throw new IIException(
+				String.format("Address violation %07o", AAR),
+				HW2000CCR.IIR_ADRVIO);
+		}
 	}
 
 	// TODO: trace AAR/BAR (etc) after execute?
@@ -753,6 +791,11 @@ public class HW2000 implements CoreMemory
 		}
 		op_exec.execute(this);
 		updClock();
+		if (protViol) {
+			throw new IIException(
+				String.format("Address violation %07o", protAdr),
+				HW2000CCR.IIR_ADRVIO);
+		}
 	}
 
 	private boolean _trace = false; // enable/disable
@@ -863,6 +906,7 @@ public class HW2000 implements CoreMemory
 					continue;
 				}
 				tracing = (_trace && SR >= _trace_low && SR < _trace_hi);
+				protViol = false;
 				fetch();
 				if (tracing) {
 					oAAR = AAR;
