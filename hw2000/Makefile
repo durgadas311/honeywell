@@ -48,14 +48,14 @@ SHIPS = H2000.jar hwprogs.tgz h2000.tgz
 all: $(EXTCLASSES) $(CLASSES)
 
 www: __FRC__
-	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/hw2000
+	rsync -Wuv www/*.* durgadas.com:/var/www/html/hw2000
 
 ship: $(SHIPS)
 	rsync -Wuv $(SHIPS) LICENSE ../cardpunch/*.jar \
 		../fortran4/Fortran4Embedded.jar \
 		../easycoder/EasyCoder.jar \
-		durgadas.com:/http/durgadas.com/sebhc/hw2000
-	rsync -rWuv www/downloads/. durgadas.com:/http/durgadas.com/sebhc/hw2000/.
+		durgadas.com:/var/www/html/sebhc/hw2000
+	rsync -rWuv www/downloads/. durgadas.com:/var/www/html/sebhc/hw2000/.
 
 jar: H2000.jar ../easycoder/EasyCoder.jar
 

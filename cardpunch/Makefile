@@ -57,7 +57,7 @@ docs/About5.html: __FRC__
 	./mkAbout5 >$@
 
 www: __FRC__
-	rsync -Wuv www/*.* durgadas.com:/http/durgadas.com/sims/punchcards
+	rsync -Wuv www/*.* durgadas.com:/var/www/html/sims/punchcards
 
 $(HWCLASSES):
 	ln -s ../hw2000/$@ .
