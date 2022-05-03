@@ -23,16 +23,16 @@ all: $(EXTCLASSES) $(CLASSES)
 jar: EasyCoder.jar
 
 %.class: %.java
-	javac -source 1.7 -target 1.7 $?
+	javac $?
 
 Assembler.class: $(JAVAS)
-	javac -source 1.7 -target 1.7 Assembler.java
+	javac Assembler.java
 
 ezc.class: ezc.java Assembler.class
-	javac -source 1.7 -target 1.7 ezc.java
+	javac ezc.java
 
 EasyCoder.class: EasyCoder.java Assembler.class
-	javac -source 1.7 -target 1.7 EasyCoder.java
+	javac EasyCoder.java
 
 EasyCoder.jar: all bootmt.mti
 	echo "Main-Class: EasyCoder" >Manifest.txt

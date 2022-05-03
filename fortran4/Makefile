@@ -31,7 +31,7 @@ Fortran4Embedded.jar: all
 	jar cfm $@ Manifest.txt $(EMBCLS)
 
 %.class: %.java
-	javac -source 1.7 -target 1.7 $?
+	javac $?
 
 $(CPCLASSES):
 	ln -s ../cardpunch/$@ .

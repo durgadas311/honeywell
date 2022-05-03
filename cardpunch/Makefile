@@ -6,7 +6,7 @@ HWCLASSES = PopupFactory.class
 all: $(HWCLASSES) $(CLASSES)
 
 %.class: %.java
-	javac -source 1.7 -target 1.7 $?
+	javac $?
 
 jar: CardPunch.jar Viewer.jar DataCenter.jar
 

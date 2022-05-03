@@ -132,6 +132,11 @@ public class P_MagneticTape extends JFrame
 		pack();
 	}
 
+	// embedded version, no GUI
+	public P_MagneticTape() {
+		super("embedded");	// not used
+	}
+
 	public void reset() {
 		allow = false;
 		intr = false;

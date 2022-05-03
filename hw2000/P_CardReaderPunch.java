@@ -361,6 +361,19 @@ public class P_CardReaderPunch extends JFrame
 		setReady(true);
 	}
 
+	// embedded version
+	public P_CardReaderPunch(CharConverter cvt) {
+		super("embedded");	// not used
+		this.cvt = cvt;
+		sts = new PunchCardStatus[2];
+		// Output
+		sts[0] = new PunchCardStatus(); // output - punch
+		sts[0].card = new byte[160]; // 80 columns, 16 bits each
+		// Input
+		sts[1] = new PunchCardStatus(); // input - reader
+		sts[1].card = new byte[160]; // 80 columns, 16 bits each
+	}
+
 	public void reset() {
 		unStall(true);
 		ints = 0;
@@ -432,7 +445,9 @@ public class P_CardReaderPunch extends JFrame
 
 	private void putCard() {
 		sts[0].empty = true;
-		stacker.putCard(sts[0].card);
+		if (stacker != null) {
+			stacker.putCard(sts[0].card);
+		}
 	}
 
 	private void passCard() {
@@ -442,6 +457,10 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	private boolean getCard() {
+		if (hopper == null) {
+			Arrays.fill(sts[1].card, (byte)0);
+			return true;
+		}
 		// 'pcs' must be sts[1]...
 		int a;
 		while (true) {

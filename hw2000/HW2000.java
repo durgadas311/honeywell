@@ -384,6 +384,9 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void writeMem(int adr, byte val) {
+		if (halt) {
+			throw new HaltException("memory read");
+		}
 		int a = writeAdr(adr);
 		++tics;
 		if (tics > 1000 && CTL.inStdMode() &&
@@ -399,6 +402,9 @@ public class HW2000 implements CoreMemory
 
 	// 'mask' is bits to preserve from current mem value
 	public byte writeMemMask(int adr, byte val, byte mask) {
+		if (halt) {
+			throw new HaltException("memory read");
+		}
 		int a = validAdr(adr);
 		++tics;
 		if (tics > 1000 && CTL.inStdMode() &&

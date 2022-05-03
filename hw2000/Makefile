@@ -102,7 +102,7 @@ hwprogs.zip: $(addprefix bringup/,$(PROGS))
 	zip -j $@ $(addprefix bringup/,$(PROGS))
 
 %.class: %.java
-	javac -source 1.7 -target 1.7 $?
+	javac $?
 
 $(CPCLASSES):
 	ln -s ../cardpunch/$@ .
