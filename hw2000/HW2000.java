@@ -356,6 +356,17 @@ public class HW2000 implements CoreMemory
 		return mem[adr];
 	}
 
+	private void fpUpdate(int a) {
+		if (fp == null) return;
+		if (count == 0) {
+			fp.setAddress(a);
+			fp.setContents(mem[a]);
+		}
+		if (++count > 2000000) {
+			count = 0;
+		}
+	}
+
 	public byte readMem(int adr) {
 		if (halt) {
 			throw new HaltException("memory read");
@@ -367,15 +378,7 @@ public class HW2000 implements CoreMemory
 			throw new IIException("Instruction Timeout",
 				HW2000CCR.IIR_TIMOUT);
 		}
-		if (fp != null) {
-			if (count == 0) {
-				fp.setAddress(a);
-				fp.setContents(mem[a]);
-			}
-			if (++count > 2000000) {
-				count = 0;
-			}
-		}
+		fpUpdate(a);
 		return mem[a];
 	}
 
@@ -385,7 +388,7 @@ public class HW2000 implements CoreMemory
 
 	public void writeMem(int adr, byte val) {
 		if (halt) {
-			throw new HaltException("memory read");
+			throw new HaltException("memory write");
 		}
 		int a = writeAdr(adr);
 		++tics;
@@ -398,12 +401,13 @@ public class HW2000 implements CoreMemory
 			return;
 		}
 		mem[a] = val;
+		fpUpdate(a);
 	}
 
 	// 'mask' is bits to preserve from current mem value
 	public byte writeMemMask(int adr, byte val, byte mask) {
 		if (halt) {
-			throw new HaltException("memory read");
+			throw new HaltException("memory mask");
 		}
 		int a = validAdr(adr);
 		++tics;
@@ -418,6 +422,7 @@ public class HW2000 implements CoreMemory
 			protAdr = a;
 		} else {
 			mem[a] = (byte)((mem[a] & mask) | (val & ~mask));
+			fpUpdate(a);
 		}
 		return mem[a];
 	}
