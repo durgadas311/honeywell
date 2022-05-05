@@ -538,6 +538,134 @@ public class HW2000 implements CoreMemory
 		return mem.length;
 	}
 
+	public int getCtrlReg(byte reg) {
+		int val = 0;
+		int r;
+		long d;
+		byte s;
+		switch(reg & 077) {
+		case 041:
+		case 045:
+		case 051:
+		case 055: // exponent of FP ACC
+		case 042:
+		case 046:
+		case 052:
+		case 056: // low mantissa of FP ACC
+		case 043:
+		case 047:
+		case 053:
+		case 057: // high mantissa of FP ACC
+			r = (reg & 014) >> 2;
+			d  = AC[r];
+			s = (byte)((d >> 48) & 1);
+			if ((d & 03777777777777777L) == 0) {
+				break;
+			}
+			switch(reg & 003) {
+			case 001: // exponent
+				val = (int)(d & 07777);
+				break;
+			case 002: // low mantissa
+				val = (int)((d >> 12) & 0777777);
+				break;
+			case 003: // high mantissa
+				val = (int)((d >> 30) & 0777777);
+				break;
+			}
+			break;
+		case 054:
+			val = ATR;
+			break;
+		case 064:
+			val = CSR;
+			break;
+		case 066:
+			val = EIR;
+			break;
+		case 067:
+			val = AAR;
+			break;
+		case 070:
+			val = BAR;
+			break;
+		case 076:
+			val = IIR;
+			break;
+		case 077:
+			val = SR;
+			break;
+		default:
+			val = cr[reg & 077];
+			break;
+		}
+		return val;
+	}
+
+	public void setCtrlReg(byte reg, int val) {
+		int r;
+		long d;
+		byte s;
+		switch(reg & 077) {
+		case 041:
+		case 045:
+		case 051:
+		case 055: // exponent of FP ACC
+		case 042:
+		case 046:
+		case 052:
+		case 056: // low mantissa of FP ACC
+		case 043:
+		case 047:
+		case 053:
+		case 057: // high mantissa of FP ACC
+			r = (reg & 014) >> 2;
+			d  = AC[r];
+			switch(reg & 003) {
+			case 001: // exponent
+				val &= 07777;
+				d = (d & 07777777777770000L) | val;
+				break;
+			case 002: // low mantissa
+				// must know sign to handle properly...
+				val &= 0777777;
+				d = (d & 07777770000007777L) | (val << 12);
+				break;
+			case 003: // high mantissa
+				val &= 0777777;
+				denorm[r] = ((val & 0200000) == 0);
+				d = (d & 00000007777777777L) | (val << 30);
+				break;
+			}
+			AC[r] = d;
+			break;
+		case 054:
+			ATR = val & 01777777;
+			break;
+		case 064:
+			CSR = val & 01777777;
+			break;
+		case 066:
+			EIR = val & 01777777;
+			break;
+		case 067:
+			AAR = val & 01777777;
+			break;
+		case 070:
+			BAR = val & 01777777;
+			break;
+		case 076:
+			IIR = val & 01777777;
+			break;
+		case 077:
+			SR = val & 01777777;
+			break;
+		default:
+			cr[reg & 077] = val & 01777777;
+			break;
+		}
+	}
+
 	// 
 	private int fetchAddr(int ptr, int ref) {
 		int a = 0;
@@ -1029,6 +1157,12 @@ public class HW2000 implements CoreMemory
 	// Range is inclusive, both ends
 	public void dumpHW(int beg, int end) {
 		String marks = " WIR";
+		if (beg >= mem.length) {
+			beg = mem.length - 1;
+		}
+		if (end >= mem.length) {
+			end = mem.length - 1;
+		}
 		int m = beg & ~0177;	// 128 locations per row...
 		listOut(String.format("\n\nMemory Dump: %07o - %07o\n", beg, end));
 		while (m <= end) {

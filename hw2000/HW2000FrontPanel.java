@@ -1850,7 +1850,7 @@ public class HW2000FrontPanel extends JFrame
 		sys.SR = addressReg;
 		sys.AAR = addressReg;
 		sys.BAR = addressReg;
-		setCtrlReg(c1, addressReg);
+		sys.setCtrlReg(c1, addressReg);
 		sys.CTL.setV(c1);
 		sys.setXtra(new byte[]{c1, c2});
 		Instruction op_exec = sys.idc.getExec(InstrDecode.OP_PDT);
@@ -1949,7 +1949,7 @@ public class HW2000FrontPanel extends JFrame
 				case 't':
 					v = sys.rawReadMem(addressReg);
 					setAddress(addressReg + 1);
-					setCtrlReg((byte)controlReg, addressReg);
+					sys.setCtrlReg((byte)controlReg, addressReg);
 					setContents(v);
 					p.output(String.format("%03o", v));
 					dc += 4;
@@ -1998,7 +1998,7 @@ public class HW2000FrontPanel extends JFrame
 					setContents(v);
 					sys.rawWriteMem(addressReg, (byte)contentsReg);
 					setAddress(addressReg + 1);
-					setCtrlReg((byte)controlReg, addressReg);
+					sys.setCtrlReg((byte)controlReg, addressReg);
 					++dc;
 					if (dc >= 64) {
 						p.output("\n");
@@ -2027,7 +2027,7 @@ public class HW2000FrontPanel extends JFrame
 					v = 0;
 				} else if (dc == 9) {
 					setAddress(v);
-					setCtrlReg((byte)controlReg, addressReg);
+					sys.setCtrlReg((byte)controlReg, addressReg);
 					p.output("\n");
 					return;
 				}
@@ -2168,7 +2168,7 @@ public class HW2000FrontPanel extends JFrame
 					setAddress(getCtrlReg((byte)controlReg, -1));
 					setContents(sys.rawReadMem(addressReg));
 				} else if (idx == btnEnter) {
-					setCtrlReg((byte)controlReg, addressReg);
+					sys.setCtrlReg((byte)controlReg, addressReg);
 				} else {
 					setAddress(addressReg | (1 << idx));
 				}
@@ -2230,142 +2230,12 @@ public class HW2000FrontPanel extends JFrame
 	}
 
 	private int getCtrlReg(byte reg, int incr) {
-		int val = 0;
-		int r;
-		long d;
-		byte s;
-		switch(reg & 077) {
-		case 041:
-		case 045:
-		case 051:
-		case 055: // exponent of FP ACC
-		case 042:
-		case 046:
-		case 052:
-		case 056: // low mantissa of FP ACC
-		case 043:
-		case 047:
-		case 053:
-		case 057: // high mantissa of FP ACC
-			r = (reg & 014) >> 2;
-			d  = sys.AC[r];
-			s = (byte)((d >> 48) & 1);
-			if ((d & 03777777777777777L) == 0) {
-				break;
-			}
-			switch(reg & 003) {
-			case 001: // exponent
-				val = (int)(d & 07777);
-				break;
-			case 002: // low mantissa
-				val = (int)((d >> 12) & 0777777);
-				break;
-			case 003: // high mantissa
-				val = (int)((d >> 30) & 0777777);
-				break;
-			}
-			break;
-		case 054:
-			val = sys.ATR;
-			if (incr != 0) { sys.ATR += incr; sys.ATR &= 01777777; }
-			break;
-		case 064:
-			val = sys.CSR;
-			if (incr != 0) { sys.CSR += incr; sys.CSR &= 01777777; }
-			break;
-		case 066:
-			val = sys.EIR;
-			if (incr != 0) { sys.EIR += incr; sys.EIR &= 01777777; }
-			break;
-		case 067:
-			val = sys.AAR;
-			if (incr != 0) { sys.AAR += incr; sys.AAR &= 01777777; }
-			break;
-		case 070:
-			val = sys.BAR;
-			if (incr != 0) { sys.BAR += incr; sys.BAR &= 01777777; }
-			break;
-		case 076:
-			val = sys.IIR;
-			if (incr != 0) { sys.IIR += incr; sys.IIR &= 01777777; }
-			break;
-		case 077:
-			val = sys.SR;
-			if (incr != 0) { sys.SR += incr; sys.SR &= 01777777; }
-			break;
-		default:
-			val = sys.cr[reg & 077];
-			if (incr != 0) {
-				sys.cr[reg & 077] += incr;
-				sys.cr[reg & 077] &= 01777777;
-			}
-			break;
+		int val = sys.getCtrlReg(reg);
+		boolean fpreg = ((reg & 060) == 040 && (reg & 003) != 0);
+		if (!fpreg && incr != 0) {
+			sys.setCtrlReg(reg, val + incr); // masked internally
 		}
 		return val;
-	}
-
-	private void setCtrlReg(byte reg, int val) {
-		int r;
-		long d;
-		byte s;
-		switch(reg & 077) {
-		case 041:
-		case 045:
-		case 051:
-		case 055: // exponent of FP ACC
-		case 042:
-		case 046:
-		case 052:
-		case 056: // low mantissa of FP ACC
-		case 043:
-		case 047:
-		case 053:
-		case 057: // high mantissa of FP ACC
-			r = (reg & 014) >> 2;
-			d  = sys.AC[r];
-			switch(reg & 003) {
-			case 001: // exponent
-				val &= 07777;
-				d = (d & 07777777777770000L) | val;
-				break;
-			case 002: // low mantissa
-				// must know sign to handle properly...
-				val &= 0777777;
-				d = (d & 07777770000007777L) | (val << 12);
-				break;
-			case 003: // high mantissa
-				val &= 0777777;
-				sys.denorm[r] = ((val & 0200000) == 0);
-				d = (d & 00000007777777777L) | (val << 30);
-				break;
-			}
-			sys.AC[r] = d;
-			break;
-		case 054:
-			sys.ATR = val & 01777777;
-			break;
-		case 064:
-			sys.CSR = val & 01777777;
-			break;
-		case 066:
-			sys.EIR = val & 01777777;
-			break;
-		case 067:
-			sys.AAR = val & 01777777;
-			break;
-		case 070:
-			sys.BAR = val & 01777777;
-			break;
-		case 076:
-			sys.IIR = val & 01777777;
-			break;
-		case 077:
-			sys.SR = val & 01777777;
-			break;
-		default:
-			sys.cr[reg & 077] = val & 01777777;
-			break;
-		}
 	}
 
 	private File pickFile(String purpose, String sfx, String typ, File prev) {
@@ -2970,6 +2840,11 @@ ee.printStackTrace();
 					dumpHi = Integer.valueOf(dump_hi.getText(), radix);
 				} else {
 					dumpHi = currHi;
+				}
+				if (dumpLow >= sys.size() || dumpHi >= sys.size()) {
+					PopupFactory.warning(this, "Dump",
+						"Dump out of range");
+					return 0;
 				}
 			} catch (Exception ee) {
 				return 0;

@@ -16,33 +16,7 @@ public class I_LCR implements Instruction {
 		boolean restore = true;
 		int reg = sys.loadFromAAR();
 		reg &= 01777777;
-		switch(v) {
-		case 054:
-			sys.ATR = reg;
-			break;
-		case 064:
-			sys.CSR = reg;
-			break;
-		case 066:
-			sys.EIR = reg;
-			break;
-		case 067:
-			restore = false;
-			sys.AAR = reg;
-			break;
-		case 070:
-			sys.BAR = reg;
-			break;
-		case 076:
-			sys.IIR = reg;
-			break;
-		case 077:
-			sys.SR = reg;
-			break;
-		default:
-			sys.cr[v] = reg;
-			break;
-		}
+		sys.setCtrlReg(v, reg);
 		if (restore) {
 			sys.restoreAAR();
 		}

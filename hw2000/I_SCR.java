@@ -14,32 +14,7 @@ public class I_SCR implements Instruction {
 				throw new IIException("SCR violation", HW2000CCR.IIR_OPVIO);
 			}
 		}
-		switch(v) {
-		case 054:
-			reg = sys.ATR;
-			break;
-		case 064:
-			reg = sys.CSR;
-			break;
-		case 066:
-			reg = sys.EIR;
-			break;
-		case 067:
-			reg = sys.iaar;
-			break;
-		case 070:
-			reg = sys.BAR;
-			break;
-		case 076:
-			reg = sys.IIR;
-			break;
-		case 077:
-			reg = sys.SR;
-			break;
-		default:
-			reg = sys.cr[v];
-			break;
-		}
+		reg = sys.getCtrlReg(v);
 		sys.storeToAAR(reg);
 		sys.restoreAAR();
 		sys.addTics(4 - sys.am_na);
