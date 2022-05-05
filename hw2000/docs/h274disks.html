@@ -153,5 +153,29 @@ The PCB instructions to test busy can select different drives,
 allow for multiple head-movement operations to be started and then
 polled to see what drive is ready to do I/O.
 
+<P>"Control Busy" is assumed to mean that the controller is performing an I/O
+transfer, between memory and the device selected by the "D" field in
+the address register.
+
+<P>"Device Busy" is assumed to mean that a device (drive)
+is performing a seek/restore operation OR an active I/O operation where
+that drive number is in the "D" field of the address register.
+
+<P>If "control allow" is ON and "control busy" transitions to not-busy,
+then a peripheral control EI is generated and the "control interrupt function"
+is turned ON.
+
+<P>If "drive allow" is ON and and drive's "device busy" transitions to not-busy,
+then a peripheral control EI is generated and the "device interrupt function"
+is turned ON. Unclear how to distinguish what drive completed, unless only one
+drive can be performing a seek/restore at a time. "Device busy" can be tested
+on each drive individually, and seek/restore can be initiated on each drive individually,
+but it appears that "device interrupt" is a combined status.
+Presumably, the OS must check all drives for "busy", combined with a list of ones
+which are (were) waiting, to determine which drive(s) are complete.
+Presumably, the "device interrupt" is not generated if only the transfer
+to that device completed, although it seems convenient to show the device busy while
+a transfer on that device is pending/active.
+
 </BODY>
 </HTML>

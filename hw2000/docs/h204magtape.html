@@ -36,6 +36,27 @@ then clicking PERMIT will toggle between write (illuminated) and protected (off)
 If the PERMIT indicator will not light when the button is clicked, the tape was
 mounted without "Write Ring".
 
+<P>The details of the control and multiple drives with respect to
+interrupts is not known. While the "rewind" (and unload) function is
+initiated by a PCB, other tape movement commands (with or without I/O
+transfer) are initiated by PDT. The main difference being that tape movement
+initiated by a PDT will be sensing the tape for interrecord gaps (if
+not actually reading data). Write, and possibly erase, are exceptions.
+Beginning and end of tape marks are always sensed.
+
+<P>It will be assumed that any operation reaching completion will
+generate a "control interrupt" (and peripheral control EI).
+The OS must then check each drive for status to determine
+how to interpret the interrupt. Presumably, the OS maintains
+a table of outstanding tape operations, from which it can
+determine what is complete.
+
+<P>It is also assumed that only one operation can be active
+at a time, although the commands seem to allow for more concurrency.
+Perhaps multiple RWCs could be employed to allow multiple
+transfers, although the control might still require some context
+in order to map drives to RWCs. Current simulator code may not
+support this.
 
 </BODY>
 </HTML>

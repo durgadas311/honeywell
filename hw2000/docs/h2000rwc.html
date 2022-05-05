@@ -9,7 +9,9 @@ Instead, there are 16 fully independent RWCs, with the SLCs (C1 character) numbe
 10-17 and 30-37 (CLCs numbered 00-07 and 20-27, respectively).
 Buffered mode is ignored (bit 40), as is bit 10, so if PDT/PCB instructions
 expect to use different
-RWCs then the bits 27 must be unique.
+RWCs then the bits 27 must be unique. PCB instructions may select
+"no RWC" by using the value 00. This requires that the value 10 (or 40 or 50)
+be used to select CLC/SLC 00. Use of 00 on a PDT instruction will not work.
 
 <P>Simultaneity will exceed that of the original hardware, but should be
 compatible with any existing software. Also, the degree of simultaneity
