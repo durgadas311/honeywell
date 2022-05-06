@@ -3,6 +3,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Random;
 import java.io.*;
 import java.util.concurrent.Semaphore;
 import java.lang.reflect.Constructor;
@@ -121,6 +122,11 @@ public class HW2000 implements CoreMemory
 
 	public void clearMem() {
 		Arrays.fill(mem, (byte)0);
+	}
+
+	public void randMem() {
+		Random r = new Random(System.nanoTime());
+		r.nextBytes(mem);
 	}
 
 	public byte getSENSE() {

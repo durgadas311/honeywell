@@ -222,6 +222,9 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Clear Memory", KeyEvent.VK_Z);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Rand Memory", KeyEvent.VK_Y);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mb.add(mu);
 		mu = new JMenu("Help");
 		mi = new JMenuItem("About", KeyEvent.VK_I);
@@ -1948,7 +1951,7 @@ public class HW2000FrontPanel extends JFrame
 				// TODO: implement this (TYPE button depressed)
 				// should not have a keyboard equivalent...
 				case 't':
-					v = sys.rawReadMem(addressReg);
+					v = sys.rawReadMem(addressReg) & 0xff;
 					setAddress(addressReg + 1);
 					sys.setCtrlReg((byte)controlReg, addressReg);
 					setContents(v);
@@ -2914,6 +2917,8 @@ ee.printStackTrace();
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_Z) {
 			sys.clearMem();
+		} else if (mi.getMnemonic() == KeyEvent.VK_Y) {
+			sys.randMem();
 		} else if (mi.getMnemonic() == KeyEvent.VK_I) {
 			showAbout();
 		} else if (mi.getMnemonic() == KeyEvent.VK_E) {
