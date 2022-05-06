@@ -589,11 +589,11 @@ public class HW2000 implements CoreMemory
 		case 066:
 			val = EIR;
 			break;
-		case 067:
-			val = AAR;
-			break;
 		case 070:
 			val = BAR;
+			break;
+		case 074:
+			val = AAR;
 			break;
 		case 076:
 			val = IIR;
@@ -654,11 +654,11 @@ public class HW2000 implements CoreMemory
 		case 066:
 			EIR = val & 01777777;
 			break;
-		case 067:
-			AAR = val & 01777777;
-			break;
 		case 070:
 			BAR = val & 01777777;
+			break;
+		case 074:
+			AAR = val & 01777777;
 			break;
 		case 076:
 			IIR = val & 01777777;
@@ -731,9 +731,15 @@ public class HW2000 implements CoreMemory
 		fsr += am_na;
 	}
 
+	public void saveAAR() {
+		if (iaar >= 0) {
+			cr[067] = iaar;
+		}
+	}
+
 	public void restoreAAR() {
 		if (iaar >= 0) {
-			AAR = iaar;
+			AAR = cr[067];
 		}
 	}
 

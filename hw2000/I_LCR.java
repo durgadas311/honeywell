@@ -13,13 +13,11 @@ public class I_LCR implements Instruction {
 				throw new IIException("LCR violation", HW2000CCR.IIR_OPVIO);
 			}
 		}
-		boolean restore = true;
+		sys.saveAAR();
 		int reg = sys.loadFromAAR();
 		reg &= 01777777;
 		sys.setCtrlReg(v, reg);
-		if (restore) {
-			sys.restoreAAR();
-		}
+		sys.restoreAAR();
 		sys.addTics(4 - sys.am_na);
 	}
 }

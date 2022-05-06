@@ -5,6 +5,7 @@ public class I_RVI implements Instruction {
 		if (sys.numXtra() == 0) {
 			throw new FaultException("SVI malformed");
 		}
+		sys.saveAAR();
 		byte v = sys.getXtra(0);
 		byte a;
 		if ((v & 001) != 0) {

@@ -15,12 +15,12 @@ The VC (variant character, octal) code is also the same as used on the front pan
 <TR><TD>04</TD><TD>CLC4</TD><TD></TD><TD>24</TD><TD>CLC12</TD><TD></TD> <TD>44</TD><TD>WR2</TD><TD></TD><TD>64</TD><TD>CSR</TD></TR>
 <TR><TD>05</TD><TD>CLC5</TD><TD></TD><TD>25</TD><TD>CLC13</TD><TD></TD> <TD>45</TD><TD>ACC1</TD><TD></TD><TD>65</TD><TD></TD></TR>
 <TR><TD>06</TD><TD>CLC6</TD><TD></TD><TD>26</TD><TD>CLC14</TD><TD></TD> <TD>46</TD><TD>ACC1</TD><TD></TD><TD>66</TD><TD>EIR</TD></TR>
-<TR><TD>07</TD><TD>CLC7</TD><TD></TD><TD>27</TD><TD>CLC15</TD><TD></TD> <TD>47</TD><TD>ACC1</TD><TD></TD><TD>67</TD><TD>AAR</TD></TR>
+<TR><TD>07</TD><TD>CLC7</TD><TD></TD><TD>27</TD><TD>CLC15</TD><TD></TD> <TD>47</TD><TD>ACC1</TD><TD></TD><TD>67</TD><TD>AAR'</TD></TR>
 <TR><TD>10</TD><TD>SLC0</TD><TD></TD><TD>30</TD><TD>SLC8</TD><TD></TD> <TD>50</TD><TD>WR3</TD><TD></TD><TD>70</TD><TD>BAR</TD></TR>
 <TR><TD>11</TD><TD>SLC1</TD><TD></TD><TD>31</TD><TD>SLC9</TD><TD></TD> <TD>51</TD><TD>ACC2</TD><TD></TD><TD>71</TD><TD></TD></TR>
 <TR><TD>12</TD><TD>SLC2</TD><TD></TD><TD>32</TD><TD>SLC10</TD><TD></TD> <TD>52</TD><TD>ACC2</TD><TD></TD><TD>72</TD><TD></TD></TR>
 <TR><TD>13</TD><TD>SLC3</TD><TD></TD><TD>33</TD><TD>SLC11</TD><TD></TD> <TD>53</TD><TD>ACC2</TD><TD></TD><TD>73</TD><TD></TD></TR>
-<TR><TD>14</TD><TD>SLC4</TD><TD></TD><TD>34</TD><TD>SLC12</TD><TD></TD> <TD>54</TD><TD>ATR</TD><TD></TD><TD>74</TD><TD></TD></TR>
+<TR><TD>14</TD><TD>SLC4</TD><TD></TD><TD>34</TD><TD>SLC12</TD><TD></TD> <TD>54</TD><TD>ATR</TD><TD></TD><TD>74</TD><TD>AAR</TD></TR>
 <TR><TD>15</TD><TD>SLC5</TD><TD></TD><TD>35</TD><TD>SLC13</TD><TD></TD> <TD>55</TD><TD>ACC3</TD><TD></TD><TD>75</TD><TD></TD></TR>
 <TR><TD>16</TD><TD>SLC6</TD><TD></TD><TD>36</TD><TD>SLC14</TD><TD></TD> <TD>56</TD><TD>ACC3</TD><TD></TD><TD>76</TD><TD>IIR</TD></TR>
 <TR><TD>17</TD><TD>SLC7</TD><TD></TD><TD>37</TD><TD>SLC15</TD><TD></TD> <TD>57</TD><TD>ACC3</TD><TD></TD><TD>77</TD><TD>SR</TD></TR>
@@ -31,18 +31,20 @@ The VC (variant character, octal) code is also the same as used on the front pan
 <UL>
 <LI>CLC - Current Location Counter (Read-Write Channel)
 <LI>SLC - Starting Location Counter (Read-Write Channel)
-<LI>ACC - Floating Point Accumulator (actual address unknown)
+<LI>ACC - Floating Point Accumulator
 <LI>WR - Working Register (actual address unknown)
+<LI>AAR' - Temporary AAR during LCR/SCR/RVI instructions
 </UL>
 
 <P>This implementation provides register memory for all 64 control memory locations.
 Work registers are not used by this implementation and so may be used for any purpose.
-<P>ACC registers are actually shadows of the real data. The
-Front Panel formats real data into these registers when CONTROL DISPLAY
-accesses them, and endeavors to update real data when CONTROL ENTER is pressed.
-Note that updating ACC registers using CONTROL ENTER is not likely to have good results.
-The LCR and SCR instructions do not access actual Floating Point Unit ACC data,
-only whatever is currently in the associated CR.
+
+<P>ACC registers are actually shadows of the real data.
+The simulation formats real data into these registers when they are accessed,
+and endeavors to update real data when changed.
+Since three CRs represent a single floating point value,
+it is possible to get nonsense floating point values if the three CRs
+are updated inconsistently.
 
 </BODY>
 </HTML>

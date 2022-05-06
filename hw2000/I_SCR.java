@@ -14,6 +14,7 @@ public class I_SCR implements Instruction {
 				throw new IIException("SCR violation", HW2000CCR.IIR_OPVIO);
 			}
 		}
+		sys.saveAAR();
 		reg = sys.getCtrlReg(v);
 		sys.storeToAAR(reg);
 		sys.restoreAAR();
