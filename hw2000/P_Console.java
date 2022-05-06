@@ -264,11 +264,15 @@ public class P_Console extends JFrame
 	}
 
 	private void printBuf(String s) throws Exception {
-		putChar(s);
+		int n = s.length();
+		for (int x = 0; x < n; ++x) {
+			putChar(s.substring(x, x + 1));
+		}
+		autoVisible(true);
+		// do this last in case there is an exception
 		if (odev != null) {
 			odev.write(s.getBytes());
 		}
-		autoVisible(true);
 	}
 
 	private void printCR() throws Exception {
@@ -289,12 +293,7 @@ public class P_Console extends JFrame
 					break;
 				}
 				a &= 077;
-				if (col >= 64) {
-					printCR();
-					col = 0;
-				}
 				printBuf(sys.pdc.cvt.hwToLP(a));
-				++col;
 				if (rwc.incrCLC()) {
 					break;
 				}
@@ -304,7 +303,6 @@ public class P_Console extends JFrame
 			}
 			if (rwc.c3 != 0) {
 				printCR();
-				col = 0;
 			}
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
@@ -316,11 +314,20 @@ public class P_Console extends JFrame
 		unit.busy = false;
 	}
 
-	// Can only have '\n' at end...
+	// Single character ONLY
 	private void putChar(String s) {
-		int n = s.length();
+		int n = s.length();	// always "1"
+		if (s.equals("\n")) {
+			col = 0;
+		} else {
+			++col;
+		}
 		text.insert(s, carr);
 		carr += n;
+		if (col >= 64) {
+			text.insert("\n", carr++);
+			col = 0;
+		}
 		text.setCaretPosition(carr);
 	}
 
@@ -338,7 +345,6 @@ public class P_Console extends JFrame
 		a = Character.toUpperCase((char)a);
 		if (a == '\n') {
 			// TODO: is <CR> always echoed?
-			col = 0;
 			if (echo) {
 				putChar("\n");
 			}
@@ -392,13 +398,9 @@ public class P_Console extends JFrame
 	}
 
 	public void output(String s) {
-		if (odev != null) {
-			try {
-				odev.write(s.getBytes());
-			} catch (Exception ee) {}
-		}
-		putChar(s);
-		autoVisible(true);
+		try {
+			printBuf(s);
+		} catch (Exception ee) {}
 	}
 
 	public void poke() {

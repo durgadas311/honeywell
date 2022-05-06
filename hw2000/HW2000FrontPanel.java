@@ -135,6 +135,7 @@ public class HW2000FrontPanel extends JFrame
 			getConsole().visible(true);
 		} else {
 			fullControlPanel();
+			type = getConsole().getTypeBtn();
 		}
 
 		//---------------------------------------------------------
@@ -1951,14 +1952,7 @@ public class HW2000FrontPanel extends JFrame
 					setAddress(addressReg + 1);
 					sys.setCtrlReg((byte)controlReg, addressReg);
 					setContents(v);
-					p.output(String.format("%03o", v));
-					dc += 4;
-					if (dc >= 64) {
-						p.output("\n");
-						dc = 0;
-					} else {
-						p.output(" ");
-					}
+					p.output(String.format("%03o ", v));
 					// TODO: best method to slow-down output.
 					// Simulate 10 chars/sec...
 					try {

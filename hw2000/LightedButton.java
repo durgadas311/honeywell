@@ -39,7 +39,7 @@ public class LightedButton extends JButton {
 		super();
 		setIcon(icon);
 		next = null;
-		id = -1;
+		id = 0;
 		setPreferredSize(new Dimension(40, 30));
 		setBackground(off);
 		setOpaque(true);
