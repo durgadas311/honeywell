@@ -86,12 +86,12 @@ the operator simply pressed Carriage Return (entered an empty line).
     <TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH><TH>&nbsp;</TH>
     <TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH><TH>&nbsp;</TH>
     <TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH></TR>
-<TR><TD>00</TD><TD>none</TD><TD>none</TD><TD>&nbsp;</TD>
-    <TD>20</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+<TR><TD>00</TD><TD>none</TD><TD>--</TD><TD>&nbsp;</TD>
+    <TD>20</TD><TD></TD><TD>20*</TD><TD>&nbsp;</TD>
     <TD>40</TD><TD>RWC 2'</TD><TD>06</TD><TD>&nbsp;</TD>
     <TD>60</TD><TD>RWC 8</TD><TD>00</TD></TR>
 <TR><TD>01</TD><TD>RWC 4'</TD><TD>25</TD><TD>&nbsp;</TD>
-    <TD>21</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>21</TD><TD></TD><TD>21*</TD><TD>&nbsp;</TD>
     <TD>41</TD><TD>RWC 1'</TD><TD>05</TD><TD>&nbsp;</TD>
     <TD>61</TD><TD>RWC 9'</TD><TD>24</TD></TR>
 <TR><TD>02</TD><TD>RWC 5'+</TD><TD>26</TD><TD>&nbsp;</TD>
@@ -103,11 +103,11 @@ the operator simply pressed Carriage Return (entered an empty line).
     <TD>43</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
     <TD>63</TD><TD>RWC 9+</TD><TD>20</TD></TR>
 <TR><TD>04</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
-    <TD>24</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>24</TD><TD></TD><TD>24*</TD><TD>&nbsp;</TD>
     <TD>44</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
     <TD>64</TD><TD>RWC 9</TD><TD>20</TD></TR>
 <TR><TD>05</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
-    <TD>25</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>25</TD><TD></TD><TD>25*</TD><TD>&nbsp;</TD>
     <TD>45</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
     <TD>65</TD><TD>RWC 9</TD><TD>20</TD></TR>
 <TR><TD>06</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
@@ -116,43 +116,47 @@ the operator simply pressed Carriage Return (entered an empty line).
     <TD>66</TD><TD>RWC 9</TD><TD>20</TD></TR>
 <TR><TD>07</TD><TD>RWC 5'</TD><TD>26</TD><TD>&nbsp;</TD>
     <TD>27</TD><TD>RWC 9'</TD><TD>24</TD><TD>&nbsp;</TD>
-    <TD>47</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
-    <TD>67</TD><TD></TD><TD></TD></TR>
-<TR><TD>10</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
-    <TD>30</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>47</TD><TD></TD><TD>07*</TD><TD>&nbsp;</TD>
+    <TD>67</TD><TD></TD><TD>27*</TD></TR>
+<TR><TD>10</TD><TD></TD><TD>00*</TD><TD>&nbsp;</TD>
+    <TD>30</TD><TD></TD><TD>20*</TD><TD>&nbsp;</TD>
     <TD>50</TD><TD>RWC 2</TD><TD>02</TD><TD>&nbsp;</TD>
     <TD>70</TD><TD>RWC 5</TD><TD>22</TD></TR>
-<TR><TD>11</TD><TD>RWC 1</TD><TD>01</TD><TD>&nbsp;</TD>
-    <TD>31</TD><TD>RWC 4</TD><TD>21</TD><TD>&nbsp;</TD>
-    <TD>51</TD><TD>RWC 1+</TD><TD>01</TD><TD>&nbsp;</TD>
-    <TD>71</TD><TD>RWC 4+</TD><TD>21</TD></TR>
-<TR><TD>12</TD><TD>RWC 2</TD><TD>02</TD><TD>&nbsp;</TD>
-    <TD>32</TD><TD>RWC 5</TD><TD>22</TD><TD>&nbsp;</TD>
-    <TD>52</TD><TD>RWC 2+</TD><TD>02</TD><TD>&nbsp;</TD>
-    <TD>72</TD><TD>RWC 5+</TD><TD>22</TD></TR>
-<TR><TD>13</TD><TD>RWC 3</TD><TD>03</TD><TD>&nbsp;</TD>
-    <TD>33</TD><TD>RWC 6</TD><TD>23</TD><TD>&nbsp;</TD>
-    <TD>53</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
-    <TD>73</TD><TD>RWC 6+</TD><TD>23</TD></TR>
-<TR><TD>14</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
-    <TD>34</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+<TR><TD BGCOLOR="lightgreen">11</TD><TD>RWC 1</TD><TD>01</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">31</TD><TD>RWC 4</TD><TD>21</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">51</TD><TD>RWC 1+</TD><TD>01</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">71</TD><TD>RWC 4+</TD><TD>21</TD></TR>
+<TR><TD BGCOLOR="lightgreen">12</TD><TD>RWC 2</TD><TD>02</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">32</TD><TD>RWC 5</TD><TD>22</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">52</TD><TD>RWC 2+</TD><TD>02</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">72</TD><TD>RWC 5+</TD><TD>22</TD></TR>
+<TR><TD BGCOLOR="lightgreen">13</TD><TD>RWC 3</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">33</TD><TD>RWC 6</TD><TD>23</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">53</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">73</TD><TD>RWC 6+</TD><TD>23</TD></TR>
+<TR><TD>14</TD><TD></TD><TD>04*</TD><TD>&nbsp;</TD>
+    <TD>34</TD><TD></TD><TD>24*</TD><TD>&nbsp;</TD>
     <TD>54</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
     <TD>74</TD><TD>RWC 6+</TD><TD>23</TD></TR>
-<TR><TD>15</TD><TD>RWC 1'</TD><TD>05</TD><TD>&nbsp;</TD>
-    <TD>35</TD><TD>RWC 4'</TD><TD>25</TD><TD>&nbsp;</TD>
+<TR><TD BGCOLOR="lightgreen">15</TD><TD>RWC 1'</TD><TD>05</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">35</TD><TD>RWC 4'</TD><TD>25</TD><TD>&nbsp;</TD>
     <TD>55</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
     <TD>75</TD><TD>RWC 6+</TD><TD>23</TD></TR>
-<TR><TD>16</TD><TD>RWC 2'</TD><TD>06</TD><TD>&nbsp;</TD>
-    <TD>36</TD><TD>RWC 5'</TD><TD>26</TD><TD>&nbsp;</TD>
+<TR><TD BGCOLOR="lightgreen">16</TD><TD>RWC 2'</TD><TD>06</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">36</TD><TD>RWC 5'</TD><TD>26</TD><TD>&nbsp;</TD>
     <TD>56</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
     <TD>76</TD><TD>RWC 6+</TD><TD>23</TD></TR>
-<TR><TD>17</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
-    <TD>37</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
-    <TD>57</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
-    <TD>77</TD><TD>none</TD><TD>none</TD></TR>
+<TR><TD BGCOLOR="lightgreen">17</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
+    <TD BGCOLOR="lightgreen">37</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
+    <TD>57</TD><TD></TD><TD>07*</TD><TD>&nbsp;</TD>
+    <TD>77</TD><TD>none</TD><TD>--</TD></TR>
 </TABLE>
 
-<P>+ RWC interlock (not used in simulation)
+<P><TABLE>
+<TR><TD>+</TD><TD>RWC interlock (not used in simulation)</TD></TR>
+<TR><TD>*</TD><TD>For compatability with direct assignment (not a valid Honeywell variant)</TD></TR>
+<TR><TD BGCOLOR="lightgreen">green</TD><TD>variant uses same CLC/SLC for both mapped and direct schemes</TD></TR>
+</TABLE>
 
 </BODY>
 </HTML>
