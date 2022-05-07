@@ -642,7 +642,7 @@ public class P_CardReaderPunch extends JFrame
 	private void setInt(boolean in) {
 		ints |= (in ? 2 : 1);
 		// Always non-zero
-		sys.CTL.clrPC(irq);
+		sys.CTL.setPC(irq);
 	}
 
 	public boolean ctl(RWChannel rwc) {

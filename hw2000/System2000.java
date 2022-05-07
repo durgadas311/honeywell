@@ -9,9 +9,13 @@ public class System2000 {
 		Properties props = new Properties();
 		System.setProperty("awt.useSystemAAFontSettings","on");
 		System.setProperty("swing.aatext", "true");
+		String[] ss;
 		for (String arg : args) {
 			if (arg.equals("220-3")) {
 				props.setProperty("console", "220-3");
+			} else if (arg.matches(".*=.*")) {
+				ss = arg.split("=", 2);
+				props.setProperty(ss[0], ss[1]);
 			}
 		}
 		// TODO: process options

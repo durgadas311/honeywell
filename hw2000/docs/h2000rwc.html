@@ -3,15 +3,28 @@
 <TITLE>Series 2000 Read/Write Channels</TITLE>
 </HEAD>
 <BODY>
-This implementation does not follow the various Honeywell documentation
+By default, this implementation does not follow the various Honeywell documentation
 for specific Read/Write Channels and combinations.
 Instead, there are 16 fully independent RWCs, with the SLCs (C1 character) numbered
 10-17 and 30-37 (CLCs numbered 00-07 and 20-27, respectively).
-Buffered mode is ignored (bit 40), as is bit 10, so if PDT/PCB instructions
-expect to use different
+Buffered mode is ignored (bit 40), as is bit 10,
+so if PDT/PCB instructions expect to use different
 RWCs then the bits 27 must be unique. PCB instructions may select
-"no RWC" by using the value 00. This requires that the value 10 (or 40 or 50)
-be used to select CLC/SLC 00. Use of 00 on a PDT instruction will not work.
+"no RWC" by using the value 00 or 77. This requires that the value 10 (or 40 or 50)
+be used to select CLC/SLC 00. Use of 00 or 77 on a PDT instruction will not work.
+
+<P>As an option, the traditional Honeywell mapping of RWC variant character
+to CLC/SLC registers may be selected. Passing "rwc=map" on the commandline
+when invoking the simulator will switch to Honeywell mapping.
+This may be required when running legacy code that makes assumptions
+about the relationship between the variant character and CLC/SLC registers.
+Note that "interlock" is still ignored, in the sense that multiple
+channels are not actually consumed.
+The primary CLC/SLC is used to perform the I/O.
+It is not clear if CLC/SLC(s) for the secondary interlocked channel(s)
+were affected in these cases.
+A table showing the mapping of variant character to CLC register
+is found at the end of this page.
 
 <P>Simultaneity will exceed that of the original hardware, but should be
 compatible with any existing software. Also, the degree of simultaneity
@@ -43,9 +56,6 @@ It is not known how a programmer, in a multiprogramming environment, ensures tha
 a RWC does not get re-used between the time an operation completes and the
 program queries the status with PCB.
 
-<P>Currently, peripheral insterrupts are not implemented,
-except for the Interval Timer "timeout" and the front panel INTERRUPT button.
-
 <P>For many peripherals, it is possible to return less input data than requested.
 A program can query the CLC register to determine this, however since these registers
 contain physical addresses it will normally be necessary to subtract SLC from CLC
@@ -69,6 +79,80 @@ reported by the perihperal, this condition usually means "end of file" (or some 
 controlled end-of-data condition). Typically, this is for Magnetic Tape
 and Disk Drives. A 0-length transfer for Console input, for example, would mean
 the operator simply pressed Carriage Return (entered an empty line).
+
+<H3>Standard Honeywell RWC Mapping</H3>
+<TABLE BORDER>
+<TR><TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH><TH>&nbsp;</TH>
+    <TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH><TH>&nbsp;</TH>
+    <TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH><TH>&nbsp;</TH>
+    <TH>C1</TH><TH>MNEMONIC</TH><TH>CLC</TH></TR>
+<TR><TD>00</TD><TD>none</TD><TD>none</TD><TD>&nbsp;</TD>
+    <TD>20</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>40</TD><TD>RWC 2'</TD><TD>06</TD><TD>&nbsp;</TD>
+    <TD>60</TD><TD>RWC 8</TD><TD>00</TD></TR>
+<TR><TD>01</TD><TD>RWC 4'</TD><TD>25</TD><TD>&nbsp;</TD>
+    <TD>21</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>41</TD><TD>RWC 1'</TD><TD>05</TD><TD>&nbsp;</TD>
+    <TD>61</TD><TD>RWC 9'</TD><TD>24</TD></TR>
+<TR><TD>02</TD><TD>RWC 5'+</TD><TD>26</TD><TD>&nbsp;</TD>
+    <TD>22</TD><TD>RWC 8+</TD><TD>00</TD><TD>&nbsp;</TD>
+    <TD>42</TD><TD>RWC 2'</TD><TD>06</TD><TD>&nbsp;</TD>
+    <TD>62</TD><TD>RWC 8+</TD><TD>00</TD></TR>
+<TR><TD>03</TD><TD>RWC 6'+</TD><TD>27</TD><TD>&nbsp;</TD>
+    <TD>23</TD><TD>RWC 9+</TD><TD>20</TD><TD>&nbsp;</TD>
+    <TD>43</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
+    <TD>63</TD><TD>RWC 9+</TD><TD>20</TD></TR>
+<TR><TD>04</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
+    <TD>24</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>44</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
+    <TD>64</TD><TD>RWC 9</TD><TD>20</TD></TR>
+<TR><TD>05</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
+    <TD>25</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>45</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
+    <TD>65</TD><TD>RWC 9</TD><TD>20</TD></TR>
+<TR><TD>06</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
+    <TD>26</TD><TD>RWC 8'</TD><TD>04</TD><TD>&nbsp;</TD>
+    <TD>46</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
+    <TD>66</TD><TD>RWC 9</TD><TD>20</TD></TR>
+<TR><TD>07</TD><TD>RWC 5'</TD><TD>26</TD><TD>&nbsp;</TD>
+    <TD>27</TD><TD>RWC 9'</TD><TD>24</TD><TD>&nbsp;</TD>
+    <TD>47</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>67</TD><TD></TD><TD></TD></TR>
+<TR><TD>10</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>30</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>50</TD><TD>RWC 2</TD><TD>02</TD><TD>&nbsp;</TD>
+    <TD>70</TD><TD>RWC 5</TD><TD>22</TD></TR>
+<TR><TD>11</TD><TD>RWC 1</TD><TD>01</TD><TD>&nbsp;</TD>
+    <TD>31</TD><TD>RWC 4</TD><TD>21</TD><TD>&nbsp;</TD>
+    <TD>51</TD><TD>RWC 1+</TD><TD>01</TD><TD>&nbsp;</TD>
+    <TD>71</TD><TD>RWC 4+</TD><TD>21</TD></TR>
+<TR><TD>12</TD><TD>RWC 2</TD><TD>02</TD><TD>&nbsp;</TD>
+    <TD>32</TD><TD>RWC 5</TD><TD>22</TD><TD>&nbsp;</TD>
+    <TD>52</TD><TD>RWC 2+</TD><TD>02</TD><TD>&nbsp;</TD>
+    <TD>72</TD><TD>RWC 5+</TD><TD>22</TD></TR>
+<TR><TD>13</TD><TD>RWC 3</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD>33</TD><TD>RWC 6</TD><TD>23</TD><TD>&nbsp;</TD>
+    <TD>53</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD>73</TD><TD>RWC 6+</TD><TD>23</TD></TR>
+<TR><TD>14</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>34</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>54</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD>74</TD><TD>RWC 6+</TD><TD>23</TD></TR>
+<TR><TD>15</TD><TD>RWC 1'</TD><TD>05</TD><TD>&nbsp;</TD>
+    <TD>35</TD><TD>RWC 4'</TD><TD>25</TD><TD>&nbsp;</TD>
+    <TD>55</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD>75</TD><TD>RWC 6+</TD><TD>23</TD></TR>
+<TR><TD>16</TD><TD>RWC 2'</TD><TD>06</TD><TD>&nbsp;</TD>
+    <TD>36</TD><TD>RWC 5'</TD><TD>26</TD><TD>&nbsp;</TD>
+    <TD>56</TD><TD>RWC 3+</TD><TD>03</TD><TD>&nbsp;</TD>
+    <TD>76</TD><TD>RWC 6+</TD><TD>23</TD></TR>
+<TR><TD>17</TD><TD>RWC 3'</TD><TD>07</TD><TD>&nbsp;</TD>
+    <TD>37</TD><TD>RWC 6'</TD><TD>27</TD><TD>&nbsp;</TD>
+    <TD>57</TD><TD></TD><TD></TD><TD>&nbsp;</TD>
+    <TD>77</TD><TD>none</TD><TD>none</TD></TR>
+</TABLE>
+
+<P>+ RWC interlock (not used in simulation)
 
 </BODY>
 </HTML>

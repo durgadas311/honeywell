@@ -22,11 +22,21 @@ public class PeriphDecode {
 	public static final byte RWC_2 = 2;
 	public static final byte RWC_3 = 3;
 
+	// Based on H200/H2000 PDT c1 tables.
+	// 100 = "null" values for PCB, 101 = illegal values
+	private static final byte[] map = new byte[]{
+		100,025,026,027,027,027,027,026, 101,001,002,003,101,005,006,007,
+		101,101,000,020,101,101,004,024, 101,021,022,023,101,025,026,027,
+		006,005,006,007,007,007,007,101, 002,001,002,003,003,003,003,101,
+		000,024,000,020,020,020,020,101, 022,021,022,023,023,023,023,100
+	};
+
 	private Peripheral[] p_odevs;
 	private Peripheral[] p_idevs;
 	public CharConverter cvt;
 	private RWChannel[] p_chans;
 	private RWChannel nullRWC;
+	private boolean mapRWC;
 
 	public PeriphDecode(Properties props, HW2000 hw) {
 		cvt = new CharConverter();
@@ -45,6 +55,8 @@ public class PeriphDecode {
 		p_odevs[P_TI] = new P_Time(P_TI, hw);
 		p_idevs[P_TI] = p_odevs[P_TI];
 		nullRWC = new RWChannel((byte)-1); // no I/O, never busy...
+		String s = props.getProperty("rwc");
+		mapRWC = (s != null && s.equals("map"));
 	}
 
 	public void reset() {
@@ -69,19 +81,37 @@ public class PeriphDecode {
 		}
 	}
 
+	private byte getRWCdir(byte ca) {
+		// fudge, rather than use a complex translation
+		if (ca == 0 || ca == 077) {
+			return 100;
+		}
+		return ca;
+	}
+
+	private byte getRWCmap(byte ca) {
+		return map[ca];
+	}
+
 	public RWChannel getChannel(byte ca) {
-		// channel 00 means "no RWC",
+		byte ci;
+		if (mapRWC) {
+			ci = getRWCmap(ca);
+		} else {
+			ci = getRWCdir(ca);
+		}
+		// 100 means "no RWC",
 		// but need to have an object...
-		if (ca == 0) {
+		if (ci > 077) {
 			return nullRWC;
 		}
-		// fudge, rather than use a complex translation
-		byte cx = (byte)(ca & 027);
+		// squeeze 020 and 007 bits together
+		byte cx = (byte)(ci & 027);
 		cx = (byte)((cx + (cx & 007)) >> 1);
 		RWChannel c;
 		// Only create channels as needed
 		if ((c = p_chans[cx]) == null) {
-			c = p_chans[cx] = new RWChannel(ca);
+			c = p_chans[cx] = new RWChannel(ci);
 		}
 		return c;
 	}
