@@ -3,6 +3,9 @@
 <TITLE>Series 2000 Bootstrap</TITLE>
 </HEAD>
 <BODY>
+
+<H3>Details on BOOTSTRAP implementation</H3>
+
 The BOOTSTRAP button executes a PDT instruction with RWC (c1) set to 11,
 Peripheral Control Designation (c2) set from the Contents register,
 and SR, AAR, and BAR set from Address register. 
@@ -44,6 +47,47 @@ If the bootstrap record contains more sophisticated code,
 subsequent loads mey use something like BRT (Binary Run Tape)
 formats to restore code and punctuation (and other artifacts).
 
+<H3>A real-life (movie) example</H3>
+
+In the movie "Billion dollar Brain" (1967), Karl Malden operates
+an H200. It's not known exactly what he runs there, as the only
+"output" seems to be some "orders" printed on the line printer
+(which could come from either the deck of punch cards he loads,
+or the mag tape reel he mounts). But he does actually operate
+the H200 correctly and it seems that the print-out is actually
+the result of his actions on the H200.
+The actions he performs are:
+
+<OL>
+<LI>Walks into the machine room with a mag tape and box
+of punch cards.
+<LI>Mounts the mag tape on a drive.
+<LI>Puts the deck of punch cards in the reader hopper.
+<LI>Enters "41" into the Contents register on the front panel
+(the device address for the card reader).
+The Address register is already 00000 (system already Initialized
+or at least FP was cleared).
+<LI>Presses the BOOTSTRAP button.
+<LI>Presses the RUN button.
+</OL>
+
+<P>After this, the line printer starts printing. So, the BOOTSTRAP
+should have caused the first punch card to be loaded into address 00000.
+RUN would have started executing the bootstrap code.
+The bootstrap code either loads another program, or possibly is
+itself the code that prints information on the line printer.
+We don't know if that information comes from subsequent punch cards or
+from the mag tape he mounted.
+
+<P>In the story, it is likely that the
+mag tape was meant to contain encrypted data and so perhaps there
+was a decryption program on punch cards that processed the data.
+Of course, no where does he enter a decryption key so the
+data was not really very secure - but one required both the tape
+and the deck of cards in order to decrypt it.
+
+<P>A clip of the movie, showing this scene, is on YouTube
+<A HREF="https://www.youtube.com/watch?v=i8Rv7clC_A4">here</A>.
 
 </BODY>
 </HTML>
