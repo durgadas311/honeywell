@@ -54,6 +54,7 @@ public class HW2000 implements CoreMemory
 	public boolean bootstrap; // force clearing of punctuation
 	private boolean _proceed;
 	private int tics;
+	private long u0; // FP update timer
 	private Map<String, HW2000Trap> traps;
 
 	private int fsr;
@@ -364,12 +365,12 @@ public class HW2000 implements CoreMemory
 
 	private void fpUpdate(int a) {
 		if (fp == null) return;
-		if (count == 0) {
+		long u1 = System.nanoTime();
+		// update every ~20mS
+		if (u1 - u0 >= 20000000) {
 			fp.setAddress(a);
 			fp.setContents(mem[a]);
-		}
-		if (++count > 2000000) {
-			count = 0;
+			u0 = u1;
 		}
 	}
 
@@ -933,8 +934,6 @@ public class HW2000 implements CoreMemory
 		listOut(s);
 	}
 
-	int count = 0;
-
 	public void execute() {
 		if (fp != null) {
 			// TODO: clean this up (?)
@@ -1047,6 +1046,7 @@ public class HW2000 implements CoreMemory
 			} catch (Exception ee) {}
 		}
 		halt = false;
+		u0 = System.nanoTime();
 		while (!halt) {
 			if (SR == (-1 & am_mask)) {
 				trap(); // protect from Exceptions also?
