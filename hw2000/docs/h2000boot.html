@@ -1,0 +1,49 @@
+<HTML>
+<HEAD>
+<TITLE>Series 2000 Bootstrap</TITLE>
+</HEAD>
+<BODY>
+The BOOTSTRAP button executes a PDT instruction with RWC (c1) set to 11,
+Peripheral Control Designation (c2) set from the Contents register,
+and SR, AAR, and BAR set from Address register. 
+The console 'B' command performs the same action but first
+sets the Contents register from the first parameter
+and the Address register from the second.
+Basically, the Contents register provides the peripheral device address
+and the Address register provides the memory location where the record is loaded.
+
+<P>The length of the "record" is determined by the periphal device and media.
+<UL>
+<LI>Card readers load 80 characters from the next (current) card.
+<LI>Mag Tape will load from the current tape position until the next IRG is sensed
+(Inter Record Gap, i.e. record mark).
+<LI>Disk will load the first sector on the first cylinder on the first head.
+It is not clear how this was done on real hardware.
+It is assumed that the disk controller has been reset,
+by using the Initialize button, which restores the heads to cylinder 0
+and sets "0" in the head and sector registers.
+</UL>
+
+<P>Note that the computer does not automatically run the loaded record.
+The operator must press Run, possibly after performing additional
+preparation.
+
+<P>The contents of the bootstrap record is entirely up to the operator/programmer.
+It may be a stand-alone program or the first in a series of loaders
+eventually  running a program, monitor, or operating system.
+Depending on the contents of the bootstrap record, additional manual steps
+may be required to complete the boot process.
+The load/run address must be known and entered before BOOTSTRAP,
+although typically that is 0000000.
+
+<P>Because peripherals do not transfer puncuation, some other method must be
+used to restore the punctuation to the code before running it.
+One method is to prepend the code with SW (and SI) instructions -
+which do not require punctuation when used in "format a".
+If the bootstrap record contains more sophisticated code,
+subsequent loads mey use something like BRT (Binary Run Tape)
+formats to restore code and punctuation (and other artifacts).
+
+
+</BODY>
+</HTML>

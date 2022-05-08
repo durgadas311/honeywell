@@ -71,9 +71,9 @@ assuming 2 microseconds per count.
 <LI><A HREF="h213timedevices.html">Models 213-3/4 Interval Timer/Time-of-day Clock</A>
 </UL>
 <P>
-The system has two implied modes of operation. The default (without monitor)
-allows a program to be assembled (File->Assemble) into memory
-directly and can be executed by pressing the
+The simulation has two implied modes of operation.
+The default (without monitor) allows a program to be assembled
+(File->Assemble) into memory directly and can be executed by pressing the
 "Run" button (i.e. SR is setup by assembler).
 The second mode is entered by selecting File->Monitor and
 choosing "monitor.ezc" (or equivalent), then pressing Run.
@@ -81,11 +81,11 @@ Note, the file browse window has a checkbox for "Listing" which
 enables generation of an assembler listing.
 <P>
 There are still some complications with monitor mode, it may be necessary to
-press Initialize when switching between modes. Note, Initialize currently zeroes
-all of memory.
+press Initialize when switching between modes.
 <P>
-The built-in assembler is basic but functional. Not all Easycoder directives are
-supported, but there should be enough to get by. All main op-codes are supported,
+The built-in assembler is basic but functional.
+Not all Easycoder directives are supported, but there should be enough to get by.
+All main op-codes are supported,
 but non of the "pseudo" op-codes (e.g. implied variants).
 <P>
 The sample programs include "machin.ezc", which is the program from
@@ -97,7 +97,9 @@ There are a lot of unanswered questions that may lead to unexpected behavior
 for someone familiar with the original hardware. If you have information
 that can help me improve the authenticity of this project, please share.
 <P>
-The BOOTSTRAP button/function now works, and there is a mag tape bootstrap loader program that the
+Details of the BOOTSTRAP button and console 'B' command are described
+<A HREF="h2000boot.html">here</A>.
+There is a mag tape bootstrap loader program that the
 assembler can use to create a mag tape image of a program, which can be run via BOOTSTRAP.
 When selecting a file to assemble, check the "Tape Image" box. This will result in a ".mti"
 file being created, complete with loader, header, and punctuation repair blocks.

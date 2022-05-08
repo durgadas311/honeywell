@@ -29,5 +29,15 @@ similar to the one provided on the 220-3 console.
 <LI><A HREF="h274disks.html">Model 278 Disk Pack Devices</A>
 <LI><A HREF="h213timedevices.html">Models 213-3/4 Interval Timer/Time-of-day Clock</A>
 </UL>
+<P>
+Details of the BOOTSTRAP button and console 'B' command are described
+<A HREF="h2000boot.html">here</A>.
+There is a mag tape bootstrap loader program that the
+assembler can use to create a mag tape image of a program, which can be run via BOOTSTRAP.
+When selecting a file to assemble, check the "Tape Image" box. This will result in a ".mti"
+file being created, complete with loader, header, and punctuation repair blocks.
+Note, programs used with this loader must be ORG'ed (at least) at 1340 (decimal).
+The program "mcetests.ezc" can be assembled with this option, and yields an image that
+can be mounted on Tape Drive Unit 000 and used with the BOOTSTRAP function. Use a boot address of 0.
 </BODY>
 </HTML>
