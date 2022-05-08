@@ -10,6 +10,9 @@ import java.lang.reflect.Constructor;
 
 public class HW2000 implements CoreMemory
 {
+	public static final int checkIntv = 1000; // number of tics between sleeps
+	public static final long nsPerTic = 2000; // 2uS per tic (cycle)
+
 	public static final byte M_IM = (byte)0x80;
 	public static final byte M_WM = 0x40;
 	public static final byte M_SIGN = 0x30;
@@ -55,6 +58,7 @@ public class HW2000 implements CoreMemory
 	private boolean _proceed;
 	private int tics;
 	private long u0; // FP update timer
+	private boolean throttled;
 	private Map<String, HW2000Trap> traps;
 
 	private int fsr;
@@ -934,18 +938,20 @@ public class HW2000 implements CoreMemory
 		listOut(s);
 	}
 
-	public void execute() {
+	public int execute() {
 		if (fp != null) {
 			// TODO: clean this up (?)
 			fp.setActive(op_exec instanceof I_PDT || op_exec instanceof I_PCB);
 		}
 		op_exec.execute(this);
+		int clk = tics;
 		updClock();
 		if (protViol) {
 			throw new IIException(
 				String.format("Address violation %07o", protAdr),
 				HW2000CCR.IIR_ADRVIO);
 		}
+		return clk;
 	}
 
 	private boolean _trace = false; // enable/disable
@@ -1037,7 +1043,14 @@ public class HW2000 implements CoreMemory
 		return false;
 	}
 
+	public void throttle(boolean throt) {
+		throttled = throt;
+	}
+
 	public void run() {
+		int clk;
+		int limit = checkIntv;
+		long t0;
 		if (fp != null) {
 			fp.setRunStop(true);
 			// Pause, for aesthetics
@@ -1046,7 +1059,7 @@ public class HW2000 implements CoreMemory
 			} catch (Exception ee) {}
 		}
 		halt = false;
-		u0 = System.nanoTime();
+		t0 = u0 = System.nanoTime();
 		while (!halt) {
 			if (SR == (-1 & am_mask)) {
 				trap(); // protect from Exceptions also?
@@ -1063,7 +1076,7 @@ public class HW2000 implements CoreMemory
 					oAAR = AAR;
 					oBAR = BAR;
 				}
-				execute();
+				clk = execute();
 				// NOTE: this does not cover the case of exceptions above
 				if (tracing) {
 					if (fp != null) {
@@ -1072,6 +1085,20 @@ public class HW2000 implements CoreMemory
 					}
 					traceInstr();
 					try { Thread.sleep(1); } catch (Exception ee) {}
+				} else if (throttled) { // "real" timing
+					limit -= clk;
+					if (limit <= 0) {
+						long t1 = System.nanoTime();
+						long dt = (checkIntv + limit) * nsPerTic;
+						long backlog = dt - (t1 - t0);
+						if (backlog > 0) try {
+							Thread.sleep(backlog / 1000000,
+								(int)(backlog % 1000000));
+							t1 = System.nanoTime();
+						} catch (Exception ee) {}
+						limit = checkIntv;
+						t0 = t1;
+					}
 				}
 			} catch (HaltException he) {
 				// Not fatal, but must cleanup CPU state...

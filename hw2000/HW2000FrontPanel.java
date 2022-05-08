@@ -62,6 +62,7 @@ public class HW2000FrontPanel extends JFrame
 	LightedButton[] control;
 	LightedButton[] sense;
 	JMenuItem mi_mon;
+	JMenuItem mi_thr;
 
 	int gbx;
 	File _last = null;
@@ -70,6 +71,7 @@ public class HW2000FrontPanel extends JFrame
 	boolean tape = false;
 	boolean disk = false;
 	boolean monitor = false;
+	boolean throttled = false;
 	boolean fortran = false;
 	boolean dumpOnHalt = false;
 	CompileFortran ftn = null;
@@ -217,6 +219,10 @@ public class HW2000FrontPanel extends JFrame
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Dump Full", KeyEvent.VK_N);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Throttle On", KeyEvent.VK_X);
+		mi_thr = mi;
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Clear Memory", KeyEvent.VK_Z);
@@ -2919,6 +2925,10 @@ ee.printStackTrace();
 			sys.clearMem();
 		} else if (mi.getMnemonic() == KeyEvent.VK_Y) {
 			sys.randMem();
+		} else if (mi.getMnemonic() == KeyEvent.VK_X) {
+			throttled = !throttled;
+			mi_thr.setText("Throttle " + (throttled ? "Off" : "On"));
+			sys.throttle(throttled);
 		} else if (mi.getMnemonic() == KeyEvent.VK_I) {
 			showAbout();
 		} else if (mi.getMnemonic() == KeyEvent.VK_E) {
