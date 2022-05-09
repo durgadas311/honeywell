@@ -2,6 +2,7 @@
 import java.math.BigDecimal;
 
 public class I_FMA implements Instruction {
+	public String mnem() { return "FMA"; }
 	// Floating-point Memory-Accumulator ops
 
 	public static long hwToBin(HW2000 sys, int ptr) {
@@ -107,6 +108,7 @@ public class I_FMA implements Instruction {
 		byte x = (byte)((sys.getXtra(0) & 070) >> 3);
 		byte y = (byte)(sys.getXtra(0) & 007);
 		byte op = (byte)(sys.getXtra(1) & 077);
+		sys.CTL.setV((byte)077); // VR is "unspecified" after this
 		boolean taken = false;
 		int ae;
 		long m;

@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_PCB implements Instruction {
+	public String mnem() { return "PCB"; }
 	// Peripheral Control and Branch
 
 	// Format: PCB/A,C1,C2,C3,...
@@ -9,6 +10,7 @@ public class I_PCB implements Instruction {
 	// Otherwise, it is C2.
 	public void execute(HW2000 sys) {
 		byte c1 = sys.getXtra(0);
+		sys.CTL.setV(c1);
 		boolean ce = PeriphDecode.isEsc(sys.getXtra(1));
 		RWChannel c = sys.getChannel(c1);
 		Peripheral p = null;

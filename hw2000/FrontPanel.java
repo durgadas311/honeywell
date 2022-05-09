@@ -36,7 +36,8 @@ public interface FrontPanel {
 	// From JFrame
 	public Container getContentPane();
 
-	public void listOut(String str);
+	public void traceOut(String str); // Debug Trace output
+	public void listOut(String str); // general output to LP
 	public void doRun(); // Same as user clicking RUN
 	public void doStop(); // Same as user clicking STOP
 }

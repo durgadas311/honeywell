@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_RVI implements Instruction {
+	public String mnem() { return "RVI"; }
 	// Restore Variant and Indicators
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() == 0) {

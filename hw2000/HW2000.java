@@ -923,19 +923,27 @@ public class HW2000 implements CoreMemory
 	// TODO: trace AAR/BAR (etc) after execute?
 	private void traceInstr() {
 		String op;
+		Character ac, bc;
 		if (op_exec == null) {
 			op = "null";
 		} else {
-			op = op_exec.getClass().getName();
+			op = op_exec.mnem();
 		}
-		String s = String.format("%07o: %s %07o %07o [%07o %07o] {%07o %07o}",
-				oSR, op, oAAR, oBAR, AAR, BAR,
-				getAddr(4), getAddr(8));
-		for (int x = 0; x < op_xtra_num; ++x) {
+		ac = hadA() ? ' ' : '_';
+		bc = hadB() ? ' ' : '_';
+		String s = String.format("%07o: %-3s%c%07o%c%07o [%07o %07o]",
+				oSR, op, ac, oAAR, bc, oBAR, AAR, BAR);
+		if (op_xtra_num == 0) {
+			s += String.format("_%02o", CTL.getV());
+		} else for (int x = 0; x < op_xtra_num; ++x) {
 			s += String.format(" %02o", op_xtra[x]);
 		}
-		s += "\n";
-		listOut(s);
+		s += String.format(" - %03o\n", CTL.peekCR(HW2000CCR.AIR));
+		if (fp != null) {
+			fp.traceOut(s);
+		} else {
+			System.err.format("%s", s);
+		}
 	}
 
 	public int execute() {

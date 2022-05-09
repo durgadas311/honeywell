@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_EXT implements Instruction {
+	public String mnem() { return "EXT"; }
 	// EXTract (logical product, i.e. AND)
 	public void execute(HW2000 sys) {
 		byte a = sys.readMem(sys.AAR);

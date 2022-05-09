@@ -1,7 +1,9 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_MCE implements Instruction {
+	public String mnem() { return "MCE"; }
 	// Move Characters and Edit
 	public void execute(HW2000 sys) {
+		sys.CTL.setV((byte)077); // VR is "unspecified" after this
 		int zar = sys.BAR; // should always get reset...
 		byte a =  sys.readMem(sys.AAR);
 		sys.incrAAR(-1);

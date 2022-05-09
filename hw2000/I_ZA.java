@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_ZA implements Instruction {
+	public String mnem() { return "ZA"; }
 	// Zero and Add (decimal)
 
 	public static void zero_add(HW2000 sys, boolean sub) {

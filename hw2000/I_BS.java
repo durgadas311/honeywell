@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BS implements Instruction {
+	public String mnem() { return "BS"; }
 	// Binary Subtract
 	public void execute(HW2000 sys) {
 		byte a = sys.readMem(sys.AAR);

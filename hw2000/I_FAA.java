@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_FAA implements Instruction {
+	public String mnem() { return "FAA"; }
 	// Floating-point Accumulator-Accumulator ops
 
 	public void execute(HW2000 sys) {
@@ -9,6 +10,7 @@ public class I_FAA implements Instruction {
 		byte x = (byte)((sys.getXtra(0) & 070) >> 3);
 		byte y = (byte)(sys.getXtra(0) & 007);
 		byte op = (byte)(sys.getXtra(1) & 077);
+		sys.CTL.setV((byte)077); // VR is "unspecified" after this
 
 		double a, b;
 		switch(op) {

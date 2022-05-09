@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_LCA implements Instruction {
+	public String mnem() { return "LCA"; }
 	// Load Characters to A-field word mark
 	public void execute(HW2000 sys) {
 		byte a;

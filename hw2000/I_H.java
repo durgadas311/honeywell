@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_H implements Instruction {
+	public String mnem() { return "H"; }
 	// Halt
 	public void execute(HW2000 sys) {
 		if (sys.hadA() && !sys.hadB()) {

@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_MCW implements Instruction {
+	public String mnem() { return "MCW"; }
 	// Move Characters to Word mark
 	public void execute(HW2000 sys) {
 		byte a;

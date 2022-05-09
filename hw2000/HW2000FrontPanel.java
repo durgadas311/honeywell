@@ -63,6 +63,7 @@ public class HW2000FrontPanel extends JFrame
 	LightedButton[] sense;
 	JMenuItem mi_mon;
 	JMenuItem mi_thr;
+	JMenuItem mi_trc;
 
 	int gbx;
 	File _last = null;
@@ -72,6 +73,7 @@ public class HW2000FrontPanel extends JFrame
 	boolean disk = false;
 	boolean monitor = false;
 	boolean throttled = false;
+	boolean trcCon = false;
 	boolean fortran = false;
 	boolean dumpOnHalt = false;
 	CompileFortran ftn = null;
@@ -206,6 +208,10 @@ public class HW2000FrontPanel extends JFrame
 		mu.add(mi);
 		mb.add(mu);
 		mu = new JMenu("Debug");
+		mi = new JMenuItem("Trace to CON", KeyEvent.VK_J);
+		mi_trc = mi;
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Trace", KeyEvent.VK_T);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -2732,6 +2738,14 @@ ee.printStackTrace();
 		return asm;
 	}
 
+	public void traceOut(String str) {
+		if (trcCon) {
+			getConsole().output(str);
+		} else {
+			getPrinter().output(str);
+		}
+	}
+
 	public void listOut(String str) {
 		getPrinter().output(str);
 	}
@@ -2929,6 +2943,9 @@ ee.printStackTrace();
 			throttled = !throttled;
 			mi_thr.setText("Throttle " + (throttled ? "Off" : "On"));
 			sys.throttle(throttled);
+		} else if (mi.getMnemonic() == KeyEvent.VK_J) {
+			trcCon = !trcCon;
+			mi_trc.setText("Trace to " + (trcCon ? "LP" : "CON"));
 		} else if (mi.getMnemonic() == KeyEvent.VK_I) {
 			showAbout();
 		} else if (mi.getMnemonic() == KeyEvent.VK_E) {

@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BBE implements Instruction {
+	public String mnem() { return "BBE"; }
 	// Branch if Bit(s) Equal
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() > 0) {

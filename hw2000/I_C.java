@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_C implements Instruction {
+	public String mnem() { return "C"; }
 	// Compare
 
 	// compares AAR to BAR...

@@ -67,15 +67,23 @@ more information.
 </UL>
 
 <B>Debug</B>
-<UL><B>Trace</B>
+<UL>
+<B>Trace to CON/LP</B>
+<UL>Select which device will receive Trace output.
+Default is Line Printer.</UL>
+<B>Trace</B>
 <UL>Trace is enabled for the range of memory of the last assembled program.
-Trace output will appear on the line printer.</UL>
+This only works if an address range was established by using the built-in assembler.
+</UL>
 <B>Trace Full</B>
 <UL>A dialog is presented for specifying the range of memory to trace.</UL>
 <B>Trace Off</B>
 <UL>Cancel any active tracing.</UL>
 <B>Dump</B>
-<UL>A memory dump is printed to the Line Printer for the range of memory of the last assembled program.</UL>
+<UL>A memory dump is printed to the Line Printer for
+the range of memory of the last assembled program.
+This only works if an address range was established by using the built-in assembler.
+</UL>
 <B>Dump Full</B>
 <UL>A dialog is presented for specifying the range of memory to dump.</UL>
 <B>Throttle On/Off</B>
@@ -116,6 +124,34 @@ BOOTSTRAP and RUN buttons to load and run the program. The loader,
 bootmt.mti, was created from bootstrap.ezc and brtloader.ezc in the sample programs.
 These programs cannot be assembled from the front panel, as they require
 a different output format than BRT.
+
+<H3>Tracing</H3>
+
+<P>Trace output has the basic format:
+
+<P><UL><I>SR</I>: <I>OP</I> <I>AAR</I> <I>BAR</I> [<I>next AAR/BAR</I>] <I>VR...</I> - <I>AIR</I></UL>
+
+<P>Where <I>SR</I> is the address in SR at the start of the fetch,
+<I>OP</I> is the fetched instruction opcode mnemonic,
+<I>AAR</I> is the starting AAR,
+<I>BAR</I> is the starting BAR,
+<I>next AAR/BAR</I> are the AAR and BAR at the end of instruction execution,
+<I>VR...</I> are the variant characters,
+and </I>AIR</I> is the contents of the AIR register at the end of instruction execution.
+AAR, BAR, or VR may be prefixed with '_' to indicate chained values,
+i.e. values were not specified in the current instruction.
+All numeric values are shown in octal.
+
+<H3>Dumping</H3>
+
+<P>Dump output uses a format based on a traditional Honeywell core dump.
+Each 128 memory locations are shown in a row of 5 lines.
+The first line shows the address headings (octal) for the subsequent lines.
+The second line shows the printed character representation of each location.
+Lines 3 and 4 show the octal character representation,
+line 3 being the most-significant digit.
+Line 5 shows the punctuation, 'W' for word mark, 'I' for item mark,
+and 'R' for both (record mark).
 
 </BODY>
 </HTML>

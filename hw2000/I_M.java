@@ -2,6 +2,7 @@
 import java.math.BigDecimal;
 
 public class I_M implements Instruction {
+	public String mnem() { return "M"; }
 	// Multiply (decimal)
 	public static int fieldStart(HW2000 sys, int adr) {
 		int a = adr;

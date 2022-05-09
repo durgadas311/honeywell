@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BCE implements Instruction {
+	public String mnem() { return "BCE"; }
 	// Branch on Character Equal
 	public void execute(HW2000 sys) {
 		if (sys.numXtra() > 0) {

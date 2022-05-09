@@ -2,6 +2,7 @@
 import java.math.BigDecimal;
 
 public class I_D implements Instruction {
+	public String mnem() { return "D"; }
 	// Divide (decimal)
 
 	public static int dividBot(HW2000 sys, int adr) {

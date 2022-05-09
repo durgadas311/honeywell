@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_PDT implements Instruction {
+	public String mnem() { return "PDT"; }
 	// Peripheral Data Transfer
 
 	// Format: PDT/A,C1,C2,C3,...
@@ -14,6 +15,7 @@ public class I_PDT implements Instruction {
 		}
 		sys.validAdr(sys.AAR);
 		byte c1 = sys.getXtra(0);
+		sys.CTL.setV(c1);
 		byte c2;
 		if (ce) {
 			c2 = sys.getXtra(2);

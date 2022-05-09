@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_MAT implements Instruction {
+	public String mnem() { return "MAT"; }
 	// Move characters to word mark And Translate
 	public void execute(HW2000 sys) {
 		int c = 0;
@@ -21,6 +22,7 @@ public class I_MAT implements Instruction {
 		} else {
 			throw new FaultException("MAT malformed");
 		}
+		sys.CTL.setV((byte)077); // VR is "unspecified" after this
 		byte a;
 		byte b;
 		do {

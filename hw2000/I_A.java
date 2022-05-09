@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_A implements Instruction {
+	public String mnem() { return "A"; }
 	// Add (decimal)
 	public static void add_sub(HW2000 sys, boolean sub) {
 		int bar = sys.BAR;

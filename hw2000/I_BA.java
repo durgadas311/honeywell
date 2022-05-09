@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BA implements Instruction {
+	public String mnem() { return "BA"; }
 	// Binary Add
 
 	public static void nativeToHw(HW2000 sys, Long li, int lsd, int msd) {

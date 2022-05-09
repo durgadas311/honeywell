@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_SIB implements Instruction {
+	public String mnem() { return "SIB"; }
 	// Store Index/Barricade register(s)
 	public void execute(HW2000 sys) {
 		byte a;

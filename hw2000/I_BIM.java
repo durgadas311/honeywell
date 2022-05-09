@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BIM implements Instruction {
+	public String mnem() { return "BIM"; }
 	// Binary Integer Multiply
 
 	public void execute(HW2000 sys) {

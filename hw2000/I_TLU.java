@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_TLU implements Instruction {
+	public String mnem() { return "TLU"; }
 	// Table Look-Up
 	public void execute(HW2000 sys) {
 		if (sys.hadB() && sys.numXtra() > 0) {

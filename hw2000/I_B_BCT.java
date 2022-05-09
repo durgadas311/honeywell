@@ -1,5 +1,7 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_B_BCT implements Instruction {
+	private String mn = "Bxx";
+	public String mnem() { return mn; } // not valid until after each execute
 	// Branch or Branch on Condition Test (actually, Branch and Link)
 
 	public static boolean check(HW2000 sys, byte v) {
@@ -35,6 +37,7 @@ public class I_B_BCT implements Instruction {
 		boolean taken = true;
 		if (!sys.hadA() || sys.numXtra() > 0) {
 			// BCT...
+			mn = "BCT";
 			taken = false;
 			if (sys.hadA()) {
 				// must have V then...
@@ -62,6 +65,8 @@ public class I_B_BCT implements Instruction {
 				v &= 017;
 				taken = ((ss & v) == v);
 			}
+		} else {
+			mn = "B";
 		}
 		if (taken) {
 			sys.BAR = sys.SR;

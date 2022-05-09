@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
 public class I_BMS implements Instruction {
+	public String mnem() { return "BMS"; }
 	// Binary Mantissa Shift
 
 	public void execute(HW2000 sys) {
