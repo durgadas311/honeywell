@@ -27,6 +27,10 @@ public class P_Time
 		// do not start timer until program asks for it.
 	}
 
+	public synchronized void cancel() {
+		// is this needed?
+	}
+
 	public void reset() {
 		// TODO
 	}

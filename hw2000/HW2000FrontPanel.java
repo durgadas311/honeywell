@@ -1860,9 +1860,16 @@ public class HW2000FrontPanel extends JFrame
 		top.add(pn);
 	}
 
+	// Input devices ONLY! TODO: exclude Console input?
+	// bootstrap clears punctation for all loaded locations.
 	private void doBootStrap() {
-		byte c1 = (byte)011;
+		byte c1 = (byte)011;	// RWC-1 is forced by hardware
 		byte c2 = (byte)contentsReg;
+		if ((c2 & 040) == PeriphDecode.P_OUT) {
+			PopupFactory.warning(this, "Bootstrap",
+				"Cannot bootstrap an Output device");
+			return;
+		}
 		sys.SR = addressReg;
 		sys.AAR = addressReg;
 		sys.BAR = addressReg;
@@ -2132,6 +2139,20 @@ public class HW2000FrontPanel extends JFrame
 		endCtrlMode();
 	}
 
+	private void doInitialize() {
+		monitor = false;
+		mi_mon.setEnabled(true);
+		sys.reset();
+		setAddress(sys.SR);
+		setContents(sys.rawReadMem(addressReg));
+		setInterrupt(-1);
+		setProtect(0);
+		setProgram(false);
+		setActive(false);
+		currLow = 0;
+		currHi = 0;
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			performMenu((JMenuItem)e.getSource());
@@ -2190,6 +2211,9 @@ public class HW2000FrontPanel extends JFrame
 				return;
 			}
 			if (a.equals("stop")) {
+				if ((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0) {
+					doInitialize();
+				}
 				doStop();
 			} else if (a.equals("inter")) {
 				getConsole().setInterrupt();
@@ -2213,17 +2237,7 @@ public class HW2000FrontPanel extends JFrame
 					// nothing of interest to do?
 					setProgram(false); // yes?
 				} else if (a.equals("init")) {
-					monitor = false;
-					mi_mon.setEnabled(true);
-					sys.reset();
-					setAddress(sys.SR);
-					setContents(sys.rawReadMem(addressReg));
-					setInterrupt(-1);
-					setProtect(0);
-					setProgram(false);
-					setActive(false);
-					currLow = 0;
-					currHi = 0;
+					doInitialize();
 				} else if (a.equals("boot")) {
 					doBootStrap();
 					endCtrlMode();

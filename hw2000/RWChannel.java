@@ -25,10 +25,16 @@ public class RWChannel implements Runnable {
 		slc = (byte)(clc + 010);
 	}
 
+	// Called from JAVA Event thread (HW2000FrontPanel)
 	public void reset() {
-		if (thr != null && thr.isAlive()) {
+		if (thr != null && thr.isAlive() ) {
 			// This doesn't really help anything
 			//thr.interrupt();
+			// peripherals need to be reset(),
+			// should happen by caller.
+		}
+		synchronized(this) {
+			if (periph != null) periph.cancel();
 		}
 	}
 
@@ -65,7 +71,13 @@ public class RWChannel implements Runnable {
 
 	// Returns puntuation bits.
 	public byte writeChar(byte c) {
-		return sys.rawWriteChar(sys.cr[clc], (byte)(c & 077));
+		if (sys.bootstrap) {
+			// Special-case for bootstrap - clear punctuation
+			sys.rawWriteMem(sys.cr[clc], (byte)(c & 077));
+			return (byte)0;
+		} else {
+			return sys.rawWriteChar(sys.cr[clc], (byte)(c & 077));
+		}
 	}
 
 	public byte readMem() {
@@ -89,6 +101,7 @@ public class RWChannel implements Runnable {
 		return (sys.cr[clc] == 0);
 	}
 
+	// Called from CPU execution thread
 	public void io(HW2000 hw, Peripheral p) {
 		if (periph != null) {
 			// should never happen - already checked.
@@ -100,7 +113,7 @@ public class RWChannel implements Runnable {
 			// TODO: throw exception?
 			return;
 		}
-		periph = p;
+		synchronized(this) { periph = p; }
 		loadCtl();
 		sys.cr[slc] = sys.validAdr(sys.AAR); // translate to physical address
 		lastSR = -1;
@@ -141,7 +154,7 @@ public class RWChannel implements Runnable {
 
 	public void run() {
 		periph.run(this);
-		periph = null;
+		synchronized(this) { periph = null; }
 		sys.endWait();
 	}
 }

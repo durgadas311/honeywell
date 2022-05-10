@@ -19,5 +19,6 @@ public interface Peripheral {
 	public void setInterrupt();
 	public boolean busy(byte c2);
 	public void reset();
+	public void cancel();
 	public void visible(boolean on);
 }

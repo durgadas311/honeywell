@@ -89,6 +89,8 @@ public class P_CardReaderPunch extends JFrame
 	LightedButton stop;
 	LightedButton runout;
 	boolean ready;
+	boolean canceled;
+	boolean active;
 
 	// Read rate is 300 or 400 cards/minute (200-150 mS).
 	// Punch rate is 50-270 cards/minute (depends on num cols).
@@ -374,6 +376,12 @@ public class P_CardReaderPunch extends JFrame
 		sts[1].card = new byte[160]; // 80 columns, 16 bits each
 	}
 
+	// called before reset(), in FP thread,
+	// locked on rwc. run() might have already returned.
+	public synchronized void cancel() {
+		if (active) canceled = true;
+	}
+
 	public void reset() {
 		unStall(true);
 		sts[0].busy = false;
@@ -426,22 +434,30 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public void run(RWChannel rwc) {
-		if (rwc.isInput()) {
-			if (!sts[1].busy) {
-				return;
-			}
-			doIn(rwc, sts[1]);
-			sts[1].busy = false;
-		} else {
-			if (!sts[0].busy) {
-				return;
-			}
-			doOut(rwc, sts[0]);
-			sts[0].busy = false;
+		int io = (rwc.isInput() ? 1 : 0);
+		if (!sts[io].busy) {
+			return;
 		}
+		synchronized(this) {
+			if (canceled) {
+				canceled = false;
+				return;
+			}
+			active = true;
+		}
+		if (io == 1) {
+			doIn(rwc, sts[1]);
+		} else {
+			doOut(rwc, sts[0]);
+		}
+		sts[io].busy = false;
 		if (!ready) {
 			stop.setOn(!ready);
 			start.setOn(ready);
+		}
+		synchronized(this) {
+			active = false;
+			canceled = false;
 		}
 	}
 
@@ -465,7 +481,7 @@ public class P_CardReaderPunch extends JFrame
 		}
 		// 'pcs' must be sts[1]...
 		int a;
-		while (true) {
+		while (!canceled) {
 			if (hopper.stackCount() == 0 || !ready) {
 				// Not an error, just stall...
 				doStall();
@@ -481,7 +497,7 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			}
 		}
-		return true;
+		return !canceled;
 	}
 
 	private void setReady(boolean rdy) {
@@ -543,7 +559,9 @@ public class P_CardReaderPunch extends JFrame
 		// need a card to punch...
 		if (sts[1].empty) {
 			// load card into read station...
-			getCard();
+			if (!getCard()) {
+				return;
+			}
 		}
 		// move card from read to punch...
 		passCard();
@@ -557,7 +575,7 @@ public class P_CardReaderPunch extends JFrame
 			return;
 		}
 		byte m;
-		for (int x = 0; x < 80; ++x) {
+		for (int x = 0; x < 80 && !canceled; ++x) {
 			boolean stop = false;
 			// Must not disturb punctuation...
 			int p = getCol(pcs, x);
@@ -584,6 +602,7 @@ public class P_CardReaderPunch extends JFrame
 				break;
 			}
 		}
+		if (canceled) return;
 		try {
 			Thread.sleep(100L); // reasonable compromise
 		} catch (Exception ee) {}
@@ -598,7 +617,7 @@ public class P_CardReaderPunch extends JFrame
 		int cnt = 0;
 		rwc.startCLC();
 		fillPunch();
-		for (int x = 0; x < 80; ++x) {
+		for (int x = 0; x < 80 && !canceled; ++x) {
 			int p = 0;
 			if (pcs.code == 2) {
 				p = (rwc.readChar() & 077) << 6;
@@ -619,6 +638,7 @@ public class P_CardReaderPunch extends JFrame
 				return;
 			}
 		}
+		if (canceled) return;
 		try {
 			Thread.sleep(100L); // reasonable compromise
 		} catch (Exception ee) {}

@@ -29,6 +29,8 @@ public class P_Console extends JFrame
 	boolean interrupt = false;
 	int irq;
 	boolean allow;
+	boolean canceled;
+	boolean active;
 	int ints;
 	HW2000 sys;
 	boolean dataTerm = false;
@@ -167,6 +169,10 @@ public class P_Console extends JFrame
 		return this.idev;
 	}
 
+	public synchronized void cancel() {
+		if (active) canceled = true;
+	}
+
 	public void reset() {
 		if (sts[1].busy) {
 			kq.add(-1);
@@ -211,11 +217,22 @@ public class P_Console extends JFrame
 		if (!sts[io].busy) {
 			return;
 		}
+		synchronized(this) {
+			if (canceled) {
+				canceled = false;
+				return;
+			}
+			active = true;
+		}
 		// TODO: wait for !offline?
 		if (io == 0) {
 			doOut(rwc, sts[io]);
 		} else {
 			doIn(rwc, sts[io]);
+		}
+		synchronized(this) {
+			active = false;
+			canceled = false;
 		}
 	}
 
@@ -230,7 +247,7 @@ public class P_Console extends JFrame
 			// TODO: what effect does c3 have? Print CR/LF before input?
 			// Or... use CR as termination of input?
 			byte c = 0;
-			while (true) {
+			while (!canceled) {
 				c = getChar(true);
 				if (c < 0) {
 					// caller must check CLC (CLC - SLC)
@@ -253,13 +270,14 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
+		if (type != null) {
+			type.setOn(false);
+		}
+		unit.busy = false;
+		if (canceled) return;
 		dataTerm = true;
 		if (allow) {
 			setInt(0);
-		}
-		unit.busy = false;
-		if (type != null) {
-			type.setOn(false);
 		}
 	}
 
@@ -287,7 +305,7 @@ public class P_Console extends JFrame
 		boolean print = true;
 		// Printing stops *before* char with record mark...
 		try {
-			while (print) {
+			while (!canceled && print) {
 				byte a = rwc.readMem();
 				if ((a & 0300)  == 0300) {
 					break;
@@ -307,11 +325,12 @@ public class P_Console extends JFrame
 		} catch (Exception ee) {
 			// TODO: handle exceptions? pass along?
 		}
+		unit.busy = false;
+		if (canceled) return;
 		interrupt = true;
 		if (allow) {
 			setInt(1);
 		}
-		unit.busy = false;
 	}
 
 	// Single character ONLY

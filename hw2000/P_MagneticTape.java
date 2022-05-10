@@ -74,6 +74,8 @@ public class P_MagneticTape extends JFrame
 	int irq;
 	boolean allow;
 	boolean intr;
+	boolean canceled;
+	boolean active;
 
 	public P_MagneticTape(int irq, HW2000 hw) {
 		super("H204B Magnetic Tape Unit");
@@ -135,6 +137,10 @@ public class P_MagneticTape extends JFrame
 	// embedded version, no GUI
 	public P_MagneticTape() {
 		super("embedded");	// not used
+	}
+
+	public synchronized void cancel() {
+		if (active) canceled = true;
 	}
 
 	public void reset() {
@@ -282,6 +288,13 @@ public class P_MagneticTape extends JFrame
 	}
 
 	public void run(RWChannel rwc) {
+		synchronized(this) {
+			if (canceled) {
+				canceled = false;
+				return;
+			}
+			active = true;
+		}
 		int unit = rwc.c3 & 007;
 		long cnt = sts[unit].len;
 		if ((rwc.c2 & 040) == PeriphDecode.P_OUT) {
@@ -299,13 +312,19 @@ public class P_MagneticTape extends JFrame
 		cnt /= 8; // HW packs 4x6bit chars in 3x8bit frames
 		if (cnt < 1) cnt = 1;
 		cnt *= UPF;
-		try {
-			Thread.sleep(cnt / 1000, (int)(cnt % 1000));
-		} catch (Exception ee) {}
+		if (!canceled) {
+			try {
+				Thread.sleep(cnt / 1000, (int)(cnt % 1000));
+			} catch (Exception ee) {}
+			if (allow) {
+				intr = true;
+				sys.CTL.setPC(irq);
+			}
+		}
 		updateDisp(unit);
-		if (allow) {
-			intr = true;
-			sys.CTL.setPC(irq);
+		synchronized(this) {
+			active = false;
+			canceled = false;
 		}
 	}
 
@@ -372,7 +391,7 @@ public class P_MagneticTape extends JFrame
 					unit.len += IRG;
 					break;
 				}
-			} while (true);
+			} while (!canceled);
 		} catch (Exception ee) {
 			// TODO: pass along EI/II exceptions
 		}
@@ -390,7 +409,7 @@ public class P_MagneticTape extends JFrame
 			return;
 		}
 		try {
-			while (true) {
+			while (!canceled) {
 				byte a = rwc.readMem();
 				if (unit.count == 0 && (a & 0300) == 0300) {
 					// "zero-length record" just means EOF,

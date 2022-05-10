@@ -23,6 +23,8 @@ public class P_LinePrinter extends JFrame
 	int irq;
 	boolean allow;
 	boolean intr;
+	boolean canceled;
+	boolean active;
 	HW2000 sys;
 	long lastLine;
 
@@ -123,6 +125,10 @@ public class P_LinePrinter extends JFrame
 		return this.dev;
 	}
 
+	public synchronized void cancel() {
+		if (active) canceled = true;
+	}
+
 	public void reset() {
 		allow = false;
 		intr = false;
@@ -187,6 +193,13 @@ public class P_LinePrinter extends JFrame
 		if (!busy) {
 			return;
 		}
+		synchronized(this) {
+			if (canceled) {
+				canceled = false;
+				return;
+			}
+			active = true;
+		}
 		rwc.startCLC();
 		// Cannot depend on any processor state here.
 		// The processor may be running a completely different program.
@@ -195,7 +208,8 @@ public class P_LinePrinter extends JFrame
 		// Printing stops *before* char with record mark...
 		try {
 			byte a;
-			while (print && ((a = rwc.readMem()) & 0300) != 0300) {
+			while (!canceled && print &&
+					((a = rwc.readMem()) & 0300) != 0300) {
 				a &= 077;
 				if (col >= 132) {
 					s += "\n";
@@ -210,51 +224,57 @@ public class P_LinePrinter extends JFrame
 					break;
 				}
 			}
-			byte c3 = rwc.c3;
-			if ((c3 & 060) == 040) {
-				// special forms-advance
-				int ch = 1;
-				if ((c3 & 003) != 003) {
-					ch = c3 & 007;
-					ch += 3;
-					if (ch > 5) {
-						ch -= 1;
-					}
-				}
-				ch = (1 << (ch - 1));
-				ch |= 1; // always stop at HOF?
-				while ((ftape[ln] & ch) == 0) {
-					s += "\n";
-					if (++ln >= ftape.length) ln = 0;
-				}
-			} else {
-				if ((c3 & 060) == 020) {
-					if ((ftape[ln] & 2) != 0) { // in EOF area?
-						while ((ftape[ln] & 1) == 0) {
-							s += "\n";
-							if (++ln >= ftape.length) ln = 0;
+			if (!canceled) {
+				byte c3 = rwc.c3;
+				if ((c3 & 060) == 040) {
+					// special forms-advance
+					int ch = 1;
+					if ((c3 & 003) != 003) {
+						ch = c3 & 007;
+						ch += 3;
+						if (ch > 5) {
+							ch -= 1;
 						}
+					}
+					ch = (1 << (ch - 1));
+					ch |= 1; // always stop at HOF?
+					while ((ftape[ln] & ch) == 0) {
+						s += "\n";
+						if (++ln >= ftape.length) ln = 0;
+					}
+				} else {
+					if ((c3 & 060) == 020) {
+						if ((ftape[ln] & 2) != 0) { // in EOF area?
+							while ((ftape[ln] & 1) == 0) {
+								s += "\n";
+								if (++ln >= ftape.length) ln = 0;
+							}
+							col = 0;
+							c3 = 0; // cancel any other action
+						}
+					}
+					c3 &= 017;
+					while (c3 > 0) {
+						s += "\n";
+						--c3;
 						col = 0;
-						c3 = 0; // cancel any other action
+						if (++ln >= ftape.length) ln = 0;
 					}
 				}
-				c3 &= 017;
-				while (c3 > 0) {
-					s += "\n";
-					--c3;
-					col = 0;
-					if (++ln >= ftape.length) ln = 0;
-				}
+				printBuf(s);
 			}
-			printBuf(s);
 		} catch (Exception ee) {
 			// TODO: handle exceptions? How to pass along EI/II exceptions to CPU?
 		}
-		if (allow) {
+		busy = false;
+		if (!canceled && allow) {
 			intr = true;
 			sys.CTL.setPC(irq);
 		}
-		busy = false;
+		synchronized(this) {
+			active = false;
+			canceled = false;
+		}
 	}
 
 	public void output(String s) {

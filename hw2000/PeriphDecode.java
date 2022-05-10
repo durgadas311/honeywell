@@ -60,16 +60,20 @@ public class PeriphDecode {
 	}
 
 	public void reset() {
-		for (int x = 0; x < p_idevs.length; ++x) {
-			if (p_idevs[x] != null) {
-				p_idevs[x].reset();
-			}
-		}
 		for (int x = 0; x < p_chans.length; ++x) {
 			if (p_chans[x] != null) {
 				p_chans[x].reset();
 				p_chans[x] = null;
 			}
+		}
+		for (int x = 0; x < p_idevs.length; ++x) {
+			if (p_idevs[x] != null) {
+				p_idevs[x].reset();
+			}
+		}
+		// Only P_LP is "output only", not reset by above
+		if (p_odevs[P_LP] != null) {
+			p_odevs[P_LP].reset();
 		}
 	}
 

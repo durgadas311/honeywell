@@ -128,6 +128,8 @@ public class P_Disk extends JFrame
 
 	// These are all stored by io() and used during run()...
 	boolean busy;
+	boolean canceled;
+	boolean active;
 	boolean fmt_allow = false; // switch setting, per drive?
 	boolean format = false;
 	boolean extended = false;
@@ -276,6 +278,10 @@ public class P_Disk extends JFrame
 
 		addWindowListener(this);
 		pack();
+	}
+
+	public synchronized void cancel() {
+		if (active) canceled = true;
 	}
 
 	public void reset() {
@@ -718,17 +724,33 @@ public class P_Disk extends JFrame
 		if (!busy) {
 			return;
 		}
+		synchronized(this) {
+			if (canceled) {
+				canceled = false;
+				return;
+			}
+			active = true;
+		}
 		if (rwc.isInput()) {
 			doIn(rwc);
 		} else {
 			doOut(rwc);
 		}
+		busy = false;
+		synchronized(this) {
+			active = false;
+			if (canceled) {
+				canceled = false;
+				return;
+			}
+		}
 		// cyl not changed by run()...
 		// but if we track record/sector...
+
+		// canceled doesn't get here, OK to set interrupt
 		if (cInts) {
 			setInt(0);
 		}
-		busy = false;
 	}
 
 	private int readChar() {
@@ -774,7 +796,7 @@ public class P_Disk extends JFrame
 			return;
 		}
 		// 'curr_pos' points to first data byte.
-		while (true) {
+		while (!canceled) {
 			int a = 0;
 			if (format) {
 				// check this in case track unformatted
@@ -890,7 +912,7 @@ public class P_Disk extends JFrame
 				return;
 			}
 		}
-		while (!error) {
+		while (!error && !canceled) {
 			byte a = rwc.readMem();
 			// TODO: how does extended fit with RM check?
 			if ((a & 0300) == 0300) {

@@ -18,8 +18,7 @@ when the STOP indicator is on. See <A HREF="h220console.html">Model 220 Console<
 
 <H2>Display</H2>
 <P>The Contents and Address indicators will light during a program run, however
-updates are limited to only the instruction op-code extraction and even then only every 20
-instructions. Otherwise, the GUI updates would signficantly slow down the run.
+updates are limited to updates about every 20mS due to JAVA GUI and video limitations.
 When a stop occurs, either by clicking STOP or by executing Halt, the Contents
 and Address are updated with the appropriate values.
 
@@ -136,14 +135,15 @@ instructions at the current SR. STOP halts the processor (after current instruct
 completes). INTERRUPT sets a Console/Front-Panel interrupt.
 TYPE button (220-3 only) is explained above.
 
+<P>Pressing STOP and INITIALIZE together is not possible on the GUI,
+so holding down the Shift key while clicking STOP is the equivalent.
+This combination will stop infinitely running instruction fetch or execution,
+as well as I/O.
+
 <P>INITIALIZE will reset nearly everything related to the hardware.
-NOTE: The INITIALIZE button currently also clears all memory locations.
-This behavior will be removed in the future.
-This helps avoid complications due to latent punctuation from previous
-programs, although assembling a program will replace punctuation for all
-segments that produce code
-(i.e. RESV, or regions skipped by ORGs, would otherwise retain previous punctuation
-unless CLEAR is used).
+This includes peripheral devices and RWCs.
+Note that clicking the STOP button while holding Shift down will also
+perform INITIALIZE.
 
 <P>SYSTEM CLEAR does not currently do anything. The original intent seemed to be
 to reset the processor to the "extraction state", but this implementation does
