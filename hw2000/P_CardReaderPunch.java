@@ -376,6 +376,8 @@ public class P_CardReaderPunch extends JFrame
 
 	public void reset() {
 		unStall(true);
+		sts[0].busy = false;
+		sts[1].busy = false;
 		ints = 0;
 	}
 
