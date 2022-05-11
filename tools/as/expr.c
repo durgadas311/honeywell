@@ -87,6 +87,20 @@ void term()
 			val = curseg->loc;
 			trm.rel = currel;
 			break;
+		/*
+		 * address mode
+		 */
+		case AT:
+			val = admode;
+			trm.rel = RABS;
+			break;
+		/*
+		 * address mode - 1
+		 */
+		case CAP:
+			val = admode - 1;
+			trm.rel = RABS;
+			break;
 
 		default:
 			xerror(errx);

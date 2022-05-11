@@ -158,9 +158,19 @@ int tok(lookup)
 
 		/* first character "alphabetic" */
 		if ( ctype & C_ALPHA) {
-			if (c=='.' && !(ctab[(int)*(p+1)] & C_ALPHA) ) {
-				++scanp;
-				return (DOT);
+			if (!(ctab[(int)*(p+1)] & C_ALPHA) ) {
+				if (c=='.') {	// current location counter
+					++scanp;
+					return (DOT);
+				}
+				if (c=='@') {	// current address mode
+					++scanp;
+					return (AT);
+				}
+				if (c=='^') {	// current adr mode - 1
+					++scanp;
+					return (CAP);
+				}
 			}
 			getsym();
 			if (lookup)

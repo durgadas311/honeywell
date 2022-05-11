@@ -114,6 +114,7 @@ extern int	nextfile();
 #define	QUOTE	'\''
 #define	DQUOTE	'"'
 #define	AT	'@'
+#define	CAP	'^'
 #define DOT	'.'
 #define COLON	':'
 #define SEMI	';'

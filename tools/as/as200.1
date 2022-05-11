@@ -108,6 +108,13 @@ indirect address mode.
 
 The default address mode is 4 character.
 
+The special symbol '\.' represents the current location counter.
+The special symbol '@' represents the current address mode value.
+The special symbol '^' represents the current address mode value minus one
+(the offset needed to adjust a symbol for indirect addressing).
+Note that address mode values may be invalid if the object referenced
+exists under a different address mode.
+
 .SH FILES
 /tmp/atm[1-3]?	temporary
 .br
