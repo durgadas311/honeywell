@@ -14,6 +14,11 @@ sets the Contents register from the first parameter
 and the Address register from the second.
 Basically, the Contents register provides the peripheral device address
 and the Address register provides the memory location where the record is loaded.
+Note that BOOTSTRAP is intended only for input devices, but there is
+nothing to prevent the operator from entering an output device address.
+Such operations do not generally end well, especially when there are no
+record marks in memory.
+One could even corrupt a tape, punch card, or disk pack by such a mistake.
 
 <P>The length of the "record" is determined by the periphal device and media.
 <UL>

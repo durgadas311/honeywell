@@ -1865,11 +1865,16 @@ public class HW2000FrontPanel extends JFrame
 	private void doBootStrap() {
 		byte c1 = (byte)011;	// RWC-1 is forced by hardware
 		byte c2 = (byte)contentsReg;
-		if ((c2 & 040) == PeriphDecode.P_OUT) {
-			PopupFactory.warning(this, "Bootstrap",
-				"Cannot bootstrap an Output device");
-			return;
-		}
+// It appears that the hardware was too simple to prevent
+// doing a BOOTSTRAP to an output device. Note that such
+// an operation is destined to end badly, especially if there
+// are no record marks in memory. One could potentially wipe out
+// a tape or maybe even a disk pack (track).
+//		if ((c2 & 040) == PeriphDecode.P_OUT) {
+//			PopupFactory.warning(this, "Bootstrap",
+//				"Cannot bootstrap an Output device");
+//			return;
+//		}
 		sys.SR = addressReg;
 		sys.AAR = addressReg;
 		sys.BAR = addressReg;
