@@ -114,7 +114,9 @@ The control register from last <B>P</B> or <B>A</B> command is also modified.</D
 <DT>B <I>per</I> <I>adr</I></DT>
 <DD>Bootstrap using the peripheral address and memory address.
 This is similar to entering <I>per</I> into CONTENTS, <I>adr</I> into ADDRESS,
-and pressing BOOTSTRAP.</DD>
+and pressing BOOTSTRAP.
+Details of bootstrap are <A HREF="h2000boot.html">here</A>.
+</DD>
 <DT>S</DT>
 <DD>Single step one instruction. This is similar to using the INSTRUCT button.</DD>
 <DT>L <I>text</I></DT>
@@ -162,6 +164,7 @@ At the end of a BOOTSTRAP, all of BAR, AAR, and SR will contain the value from A
 The intent is that the load address of the bootstrap code is the same as the start/run
 address for the bootstrap. The operator may, of course, change the SR (or any other
 registers) prior to pressing RUN.
+Details of bootstrap are <A HREF="h2000boot.html">here</A>.
 
 <P>Address Mode buttons "2", "3", and "4" set the (initial) address mode
 for the next RUN or INSTRUCT.
