@@ -4,8 +4,12 @@
 #include <strings.h>
 #include "a.out.h"
 
+struct nnlist {
+	struct nlist n;
+	uint16_t link;
+};
 static struct exec hdr;
-static struct nlist *symtab = NULL;
+static struct nnlist *symtab = NULL;
 static int nsyms = 0;
 #define END ((uint16_t)-1)
 static uint16_t by_val = END;
@@ -27,6 +31,8 @@ static int hflg = 0;
 #define RQ_C	0x04000	// Requires C operand
 #define RQ_V	0x08000	// Requires Variant
 #define B_BCT	0x00001	// Requires special handling
+
+static int admode = 0;	// address mode for *current* item, if getreloc() used.
 
 static char ascii[64] = {
 //       00   01   02   03   04   05   06   07   10   11   12   13   14   15   16   17
@@ -178,17 +184,31 @@ static void odump(uint8_t *b, int s, int e, int t) {
 static int get_addr(uint8_t *b, int s) {
 	int x;
 	int v = 0;
-	for (x = 0; x < 4; ++x) {
+	for (x = 0; x < admode; ++x) {
 		v <<= 6;
 		v |= b[s + x] & 077;
 	}
 	return v;
 }
 
+static int snoop_adm(uint8_t *r, int s) {
+	int v = r[s];
+	if (v & am_reltag(2)) {
+		admode = 2;
+	} else if (v & am_reltag(3)) {
+		admode = 3;
+	} else if (v & am_reltag(4)) {
+		admode = 4;
+	} else {
+		// error: corrupt .reloc
+	}
+	return v;
+}
+
 static int get_reloc(uint8_t *r, int s) {
-	int x;
-	int v = 0;
-	for (x = 0; x < 4; ++x) {
+	int x = 0;
+	int v = snoop_adm(r, s + x++);
+	for (; x < admode; ++x) {
 		v <<= 8;
 		v |= r[s + x];
 	}
@@ -196,20 +216,34 @@ static int get_reloc(uint8_t *r, int s) {
 }
 
 static int get_symbol(int a, int y) {
-	if (!(y & 0xe0000000)) {
+	if (!(y & ~am_relmsk(admode))) {
 		return -1;
 	}
-	y &= 0x1fffffff;
+	y &= am_relmsk(admode);
 	int z;
 	if (y & A_REXT) {
 		y = A_RINDEX(y);
 	} else if (by_val != END) {
-		for (y = by_val; symtab[y].n_pad1 != END; y = z) {
-			z = symtab[y].n_pad1;
-			if (a < symtab[y].n_value) {
+		for (y = by_val; symtab[y].link != END; y = z) {
+			z = symtab[y].link;
+			if (symtab[y].n.n_pad1) {
+				int b,e;
+				if (symtab[y].n.n_pad1 < 0) {
+					e = symtab[y].n.n_value;
+					b = e + symtab[y].n.n_pad1 + 1;
+				} else {
+					b = symtab[y].n.n_value;
+					e = b + symtab[y].n.n_pad1 - 1;
+				}
+				if (a >= b && a <= e) {
+					break;
+				}
 				continue;
 			}
-			if (a < symtab[z].n_value) {
+			if (a < symtab[y].n.n_value) {
+				continue;
+			}
+			if (z != END && a < symtab[z].n.n_value) {
 				break; // 'y' is the symbol
 			}
 		}
@@ -219,39 +253,85 @@ static int get_symbol(int a, int y) {
 	return y;
 }
 
+static int am_width() {
+	switch(admode) {
+	case 2: return 4;	// 12 bits in octal digits
+	case 3: return 5;	// 15 bits in octal digits
+	case 4: return 7;	// 19 bits in octal digits
+	}
+	return 0;
+}
+
+static uint32_t am_mask() {
+	switch(admode) {
+	case 2: return             0b111111111111;
+	case 3: return       0b000111111111111111;
+	case 4: return 0b000001111111111111111111;
+	}
+	return 0;
+}
+
+static uint32_t am_mod(int a) {
+	switch(admode) {
+	case 2: return 0;
+	case 3: return (a & ~0b000111111111111111) >> 15;
+	case 4: return (a & ~0b000001111111111111111111) >> 19;
+	}
+	return 0;
+}
+
+static int am_indir(int m) {
+	switch(admode) {
+	case 2: return 0;
+	case 3: return (m == 0b00111);
+	case 4: return (m == 0b10000);
+	}
+	return 0;
+}
+
+static int am_signx(int a) {
+	switch(admode) {
+	case 2: break;	// never called
+	case 3: if (a & 00040000) return (a | ~00077777);
+	case 4: if (a & 01000000) return (a | ~01777777);
+	}
+	return a;
+}
+
 // Assume symtab already loaded
 static void print_addr(uint8_t *b, uint8_t *r, int s, int t) {
-	int a = get_addr(b, s);
+	int a;
 	int y = -1;
-	// TODO: addr mode
-	int m = a >> 19;
-	a &= ((1 << 19) - 1);
 	if (r) {
+		// must do this first, to get admode set
 		y = get_reloc(r, s);
+	}
+	a = get_addr(b, s);
+	int m = am_mod(a);
+	a &= am_mask();
+	if (r) {
 		y = get_symbol(a, y);
 	}
 	int c;
 	if (!m) {
-		printf("%c%07o", t, a);
-	} else if (m == 0b10000) {
-		printf("%c(%07o)", t, a);
+		printf("%c%0*o", t, am_width(), a);
+	} else if (am_indir(m)) {
+		printf("%c(%0*o)", t, am_width(), a);
 	} else {
 		if (m > 15) {
 			c = 'y';
 		} else {
 			c = 'x';
 		}
-		if (a & 01000000) {
-			a |= ~01777777;
-		}
+		a = am_signx(a);
 		printf("%c%d(%c%d)", t, a, c, m & 0b01111);
 	}
-	if (y >= 0) {
-		int o = a - symtab[y].n_value;
+	if (r && y >= 0) {
+		int o = a - symtab[y].n.n_value;
 		if (o) {
-			printf("<%s+0x%x>", symtab[y].n_name, o);
+			printf(" <%s+0x%x>", symtab[y].n.n_name, o);
 		} else {
-			printf("<%s>", symtab[y].n_name);
+			printf(" <%s>", symtab[y].n.n_name);
 		}
 	}
 }
@@ -263,7 +343,8 @@ static int get_symtab(FILE *fp) {
 	if (symtab) {
 		return 0;
 	}
-	symtab = malloc(hdr.a_syms);
+	nsyms = hdr.a_syms / sizeof(struct nlist);
+	symtab = malloc(nsyms * sizeof(struct nnlist));
 	if (symtab == NULL) {
 		return -1;
 	}
@@ -273,28 +354,27 @@ static int get_symtab(FILE *fp) {
 		o += (hdr.a_text + hdr.a_data);
 	}
 	fseek(fp, o, SEEK_SET);
-	if (fread(symtab, hdr.a_syms, 1, fp) != 1) {
-		free(symtab);
-		symtab = NULL;
-		return -1;
-	}
-	nsyms = hdr.a_syms / sizeof(*symtab);
 	// Do not want file symbols here
 	for (x = 0; x < nsyms; ++x) {
-		if ((symtab[x].n_type & N_TYPE) == N_FN) {
+		if (fread(&symtab[x].n, sizeof(struct nlist), 1, fp) != 1) {
+			free(symtab);
+			symtab = NULL;
+			return -1;
+		}
+		if ((symtab[x].n.n_type & N_TYPE) == N_FN) {
 			continue;
 		}
 		if (by_val == END ||
-				symtab[by_val].n_value > symtab[x].n_value) {
-			symtab[x].n_pad1 = by_val;
+				symtab[by_val].n.n_value > symtab[x].n.n_value) {
+			symtab[x].link = by_val;
 			by_val = x;
 			continue;
 		}
-		for (y = by_val; ; y = symtab[y].n_pad1) {
-			z = symtab[y].n_pad1;
-			if (z == END || symtab[z].n_value > symtab[x].n_value) {
-				symtab[x].n_pad1 = z;
-				symtab[y].n_pad1 = x;
+		for (y = by_val; ; y = symtab[y].link) {
+			z = symtab[y].link;
+			if (z == END || symtab[z].n.n_value > symtab[x].n.n_value) {
+				symtab[x].link = z;
+				symtab[y].link = x;
 				break;
 			}
 		}
@@ -320,8 +400,8 @@ static int get_file_addr(FILE *fp) {
 	// But we're still expected to load symtab.
 #if 0
 	for (x = 0; x < nsyms; ++x) {
-		if ((symtab[x].n_type & N_TYPE) == N_FN) {
-			a = symtab[x].n_value;
+		if ((symtab[x].n.n_type & N_TYPE) == N_FN) {
+			a = symtab[x].n.n_value;
 			break;
 		}
 	}
@@ -391,7 +471,9 @@ static char *disas(FILE *fp) {
 	if (fread(buf, hdr.a_text, 1, fp) != 1) {
 		return "corrupt file";
 	}
-	if (rflg && !(hdr.a_flag & A_NRELFLG)) {
+	// always get reloc data, if available.
+	// either way, must have admode.
+	if (!(hdr.a_flag & A_NRELFLG)) {
 		rel = malloc(hdr.a_text);
 		if (rel == NULL) {
 			return "out of memory";
@@ -400,8 +482,11 @@ static char *disas(FILE *fp) {
 		if (fread(rel, hdr.a_text, 1, fp) != 1) {
 			return "corrupt file";
 		}
+	} else if (admode == 0) {
+		return "No relocation data and no address mode hint";
 	}
 	// TODO: -s: read symbols...
+	// TODO: need to scan ahead to first reloc, to get initial admode...
 	for (x = 0; x < hdr.a_text; x = y) {
 		// if no WM, warning?
 		for (y = x + 1; y < hdr.a_text && !(buf[y] & 0100); ++y);
@@ -411,39 +496,53 @@ static char *disas(FILE *fp) {
 			goto next;
 		}
 		f = op->flg;
-		if (rflg) {
-			int i = get_symbol(x + ba, 0xf0000000);
-			if (i >= 0) {
-				if (x + ba - symtab[i].n_value == 0) {
-					printf("%07o <%s>:\n", x + ba, symtab[i].n_name);
-				}
+		int i = get_symbol(x + ba, 0xf0000000);
+		if (i >= 0 && (symtab[i].n.n_type & N_EXT)) {
+			// TODO: recognize start of functions...
+			if (x + ba == symtab[i].n.n_value) {
+				printf("%07o <%s>:\n",
+						x + ba, symtab[i].n.n_name);
+				i = -1;
 			}
 		}
+		printf("%7o:", x + ba);
+		if (i >= 0) {
+			if (x + ba == symtab[i].n.n_value) {
+				printf("%s:", symtab[i].n.n_name);
+			} else if (y + ba - 1 == symtab[i].n.n_value) {
+				printf("%s::", symtab[i].n.n_name);
+			}
+		}
+		// TODO: local symbols here.
+		if (rel) {
+			// last-ditch effort to get the admode
+			(void)snoop_adm(rel, x + 1);
+		}
 		if (f & B_BCT) {
-			if (y - x - 1 != 4) {
-				printf("%07o:\tbct", x + ba);
+			if (y - x - 1 != admode) {
+				printf("\tbct");
 			} else {
-				printf("%07o:\tb", x + ba);
+				printf("\tb");
 			}
 		} else {
-			printf("%07o:\t%s", x + ba, op->mn);
+			printf("\t%s", op->mn);
 		}
 		t = '\t';
 		++x;
-		if ((f & RQ_A) || ((f & OP_A) && y - x >= 4)) {
+		if ((f & RQ_A) || ((f & OP_A) && y - x >= admode)) {
 			print_addr(buf, rel, x, t);
 			t = ',';
-			x += 4;
+			x += admode;
 		}
-		if ((f & RQ_B) || ((f & OP_B) && y - x >= 4)) {
+		if ((f & RQ_B) || ((f & OP_B) && y - x >= admode)) {
 			print_addr(buf, rel, x, t);
 			t = ',';
-			x += 4;
+			x += admode;
 		}
-		if ((f & RQ_C) || ((f & OP_C) && y - x >= 4)) {
+		if ((f & RQ_C) || ((f & OP_C) && y - x >= admode)) {
 			print_addr(buf, rel, x, t);
 			t = ',';
-			x += 4;
+			x += admode;
 		}
 		if (x < y) {
 			odump(buf, x, y, t);
@@ -531,8 +630,15 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
-	while ((x = getopt(argc, argv, "dhHj:rsw:")) != EOF) {
+	while ((x = getopt(argc, argv, "a:dhHj:rsw:")) != EOF) {
 		switch(x) {
+		case 'a':
+			admode = strtoul(optarg, NULL, 0);
+			if (admode < 2 || admode > 4) {
+				fprintf(stderr, "Invalid address mode \"%s\"\n", optarg);
+				exit(1);
+			}
+			break;
 		case 'd':
 			++dflg;
 			break;
