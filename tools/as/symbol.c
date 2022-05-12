@@ -75,6 +75,7 @@ int symlook(flag)
 		cursym->next  = NULL;
 		cursym->type  = 0;
 		cursym->value = 0;
+		cursym->len = 0;
 		if (symrev) {
 			cursym->type |= SREV;
 		}

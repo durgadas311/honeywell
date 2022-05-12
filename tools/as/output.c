@@ -326,6 +326,7 @@ void symout()
 		memcpy(symout.n_name, sp->name, sizeof(symout.n_name));
 		symout.n_type = sp->type & SMSK;
 		symout.n_value = sp->value;
+		symout.n_pad1 = sp->len;
 		d = write(ofile, &symout, sizeof(symout));
 	}
 }

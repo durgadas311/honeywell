@@ -355,10 +355,14 @@ next_stmt:
 			pnc = WM << 8;
 			do_machine(op);
 		}
+		// done with "statement"
 		if (after) {
 			int l = curseg->loc - 1;
 			if (l < start_loc) l = start_loc;
 			deflab(currel, l);
+			curlab->len = start_loc - curseg->loc; // negative
+		} else if (curlab) {
+			curlab->len = curseg->loc - start_loc; // positive
 		}
 		goto next_stmt;
 

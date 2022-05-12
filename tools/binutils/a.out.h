@@ -76,7 +76,7 @@ static inline uint32_t am_reltag32(int am) {
 struct nlist {
 	char    	n_name[8];	/* symbol name */
 	uint16_t     	n_type;    	/* type flag */
-	uint16_t	n_pad1;
+	int16_t		n_pad1;
 	uint32_t	n_value;	/* value */
 };
 /*

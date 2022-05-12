@@ -43,6 +43,7 @@ struct symbol {
 	struct symbol	*link;		/* chain to next symbol with next index */
 	char		name[8];	/* left-justified, zero-padded */
 	uint32_t	value;
+	int16_t		len;		/* length/range (may be (-) for RH syms) */
 	uint16_t	type;		/* relocatability type */
 	uint16_t	idx;		/* symbol index in symbol table */
 };
