@@ -12,12 +12,13 @@
 #include <fcntl.h>
 #include "a.out.h"
 
-int cflg;
-int nflg;
-int uflg;
+int cflg = 0;
+int nflg = 0;
+int uflg = 0;
 int rflg = 1;
-int gflg;
-int pflg;
+int gflg = 0;
+int pflg = 0;
+int fflg = 0;
 
 /*
  * Read a.out header. Return 0 on error.
@@ -132,7 +133,11 @@ badsym:		printf("%s: cannot read symbol table\n", filename);
 					"UATDBCF" : "uatdbcf") [j]);
 			}
 		}
-		printf("%.8s\n", nlp->n_name);
+		if (fflg && nlp->n_pad1) {
+			printf("%.8s (%d)\n", nlp->n_name, nlp->n_pad1);
+		} else {
+			printf("%.8s\n", nlp->n_name);
+		}
 	}
 	return 0;
 }
@@ -141,7 +146,7 @@ int
 main(int argc, char **argv) {
 	int x;
 	extern int optind;
-	while ((x = getopt(argc, argv, "ncgurp")) != EOF) {
+	while ((x = getopt(argc, argv, "ncgurpf")) != EOF) {
 		switch (x) {
 		case 'n':		/* sort numerically */
 			nflg++;
@@ -159,7 +164,10 @@ main(int argc, char **argv) {
 			rflg = -1;
 			break;
 		case 'p':		/* don't sort -- symbol table order */
-			pflg ++;
+			pflg++;
+			break;
+		case 'f':		/* include extra information */
+			fflg++;
 			break;
 		default:
 			break;
