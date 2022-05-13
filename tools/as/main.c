@@ -26,6 +26,9 @@ jmp_buf err_jmp;
 int main(argc, argv)
 	int argc; char **argv;
 {
+	char *s;
+	uint32_t v;
+	SYMBOL *sym;
 	sym_init();
 	/* Get flags & files */
 	while (--argc > 0 && **++argv == '-') {
@@ -42,6 +45,23 @@ int main(argc, argv)
 				exit(1);
 			}
 			ofname = *argv;
+			break;
+		case 'D':
+			if (--argc == 0 || **++argv == '-') {
+				fprintf(stderr, "No symbol\n");
+				exit(1);
+			}
+			s = strchr(*argv, '=');
+			if (!s) {
+				v = 1;
+			} else {
+				*s++ = '\0';
+				v = strtoul(s, NULL, 0);
+			}
+			sym = sym_enter(*argv);
+			sym->value = v;
+			sym->type = SABS;
+			sym->len = 0;
 			break;
 		}
 	}
