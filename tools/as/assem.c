@@ -275,6 +275,7 @@ int assemble()
 	register int t, op;
 	register int optype;
 	int start_loc;
+	int nlab, nlabn;
 
 	/*
 	 * Initialize for assembly pass
@@ -286,6 +287,7 @@ int assemble()
 	setjmp(err_jmp);
 	for (; get_line();putline(pnc)) {
 		pnc = 0;
+		nlab = 0;
 		start_loc = curseg->loc; // TODO: what if curseg changes?
 
 		/* list line address */
@@ -313,7 +315,12 @@ next_stmt:
 					deflab(currel, curseg->loc);
 				}
 			} else {
-				defnlab(conbuf, currel, curseg->loc);
+				if (!symrev) {
+					defnlab(conbuf, currel, curseg->loc);
+				} else {
+					nlab = 1;
+					nlabn = conbuf;
+				}
 				t = tok(0);
 			}
 		}
@@ -356,9 +363,11 @@ next_stmt:
 			do_machine(op);
 		}
 		// done with "statement"
-		if (after) {
-			int l = curseg->loc - 1;
-			if (l < start_loc) l = start_loc;
+		int l = curseg->loc - 1;
+		if (l < start_loc) l = start_loc;
+		if (nlab) {
+			defnlab(nlabn, currel, l);
+		} else if (after) {
 			deflab(currel, l);
 			curlab->len = start_loc - curseg->loc; // negative
 		} else if (curlab) {

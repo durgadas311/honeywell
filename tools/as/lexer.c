@@ -213,7 +213,11 @@ testnlab:
 						++scanp;
 						return(NIDENT);
 					case COLON:
+						symrev = (*scanp == COLON && scanp[1] == COLON);
 						++scanp;
+						if (symrev) {
+							++scanp;
+						}
 						return(NLABEL);
 					}
 				}
