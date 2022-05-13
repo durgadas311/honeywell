@@ -209,6 +209,8 @@ void putaddr(uint32_t val, int rel, int pnc) {
 				// error: sym index overflow
 			}
 			r |= am_reltag32(admode);
+		} else { // RABS - still need admode
+			r |= am_reltag32(admode);
 		}
 		for (x = admode - 1; x >= 0; --x) {
 			sp->tbuf[n + x] = (v & 077);

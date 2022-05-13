@@ -223,7 +223,7 @@ static int get_symbol(int a, int y) {
 	int z;
 	if (y & A_REXT) {
 		y = A_RINDEX(y);
-	} else if (by_val != END) {
+	} else if (y && by_val != END) {
 		for (y = by_val; symtab[y].link != END; y = z) {
 			z = symtab[y].link;
 			if (symtab[y].n.n_pad1) {
