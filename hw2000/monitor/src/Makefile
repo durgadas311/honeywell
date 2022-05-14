@@ -1,5 +1,5 @@
 
-all:
+all: pcdboot.pcd # mtiboot.mti or brtboot.mti?
 
 %.o: %.s
 	as200 -l -u -o $@ $? >$*.l
@@ -9,6 +9,12 @@ all:
 
 %.so: %.ss
 	as200 -l -u -o $@ $? >$*.sl
+
+%.mti: %.out
+	out2boot -o $@ $<
+
+%.pcd: %.out
+	out2boot -c -o $@ $<
 
 pcdboot.out: boot.o pcdboot1.so pcdboot1.o pcdboot2.so pcdboot2.o brdldr.so brdldr.o
 	ld200 -o $@ -a 0 $^
