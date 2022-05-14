@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <strings.h>
+#include <string.h>
 #include "a.out.h"
 
 struct nnlist {
@@ -21,6 +22,7 @@ static char *jflg;
 static int wflg = 80;
 static int Hflg = 0;
 static int hflg = 0;
+static int Sflg = 0;
 
 #define OP_A	0x00100	// May have A operand
 #define OP_B	0x00200	// May have B operand
@@ -452,7 +454,70 @@ static char *sect(FILE *fp, char *sec) {
 	return NULL;
 }
 
-// TODO: determine admode...
+static void do_swsi(uint8_t *buf, int len, char *base, char *op, int pu) {
+	int y = 0;
+	int z = -1;
+	int x;
+	for (x = 0; x < len; ++x) {
+		if ((buf[x] & pu) == 0) {
+			continue;
+		}
+		if (!y) {
+			printf("\t%s\t%s+%d,", op, base, x);
+			z = x;
+			y = 1;
+		} else {
+			printf("%s+%d\n", base, x);
+			y = 0;
+		}
+	}
+	if (y) {
+		printf("%s+%d\n", base, z);
+	}
+}
+
+static char *swsi(FILE *fp) {
+	uint8_t *buf;
+	int len = hdr.a_text + hdr.a_data;
+	int s, x, y, z;
+	char base[8];
+
+	get_symtab(fp);
+	// TODO: get reference symbol for start of .text (or .data if no .text)
+	s = -1;
+	for (x = 0; x < nsyms; ++x) {
+		if ((symtab[x].n.n_type & N_EXT) == 0 ||
+			symtab[x].n.n_value != 0) continue;
+		int t = symtab[x].n.n_type & N_TYPE;
+		if (t == N_TEXT || t == N_DATA) {
+			s = x;
+			break;
+		}
+	}
+	//s = get_symbol(0, 0xf0000000);
+	if (s >= 0) {
+		strncpy(base, symtab[s].n.n_name, 8);
+		printf("\t.globl\t%.8s\n", base);
+	} else {
+		strncpy(base, "base", 8);
+	}
+	// TODO: auto-detect address mode...
+	if (!admode) admode = 3;
+	printf("\t.admode\t%d\n", admode);
+	// TODO: handle complex linkage?
+	buf = malloc(len);
+	if (buf == NULL) {
+		return "out of memory";
+	}
+	fseek(fp, (off_t)sizeof(hdr), SEEK_SET);
+	if (fread(buf, len, 1, fp) != 1) {
+		return "corrupt file";
+	}
+	do_swsi(buf, len, base, "sw", 0100);
+	do_swsi(buf, len, base, "si", 0200);
+	return NULL;
+}
+
 static char *disas(FILE *fp) {
 	uint8_t *buf;
 	uint8_t *rel = NULL;
@@ -610,7 +675,9 @@ static void objdump(char *f) {
 		return;
 	}
 	char *err = NULL;
-	if (dflg) {
+	if (Sflg) {
+		err = swsi(fp);
+	} else if (dflg) {
 		err = disas(fp);
 //	} else if (rflg) {	// -r alone...
 //		err = reloc(fp);
@@ -630,7 +697,7 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
-	while ((x = getopt(argc, argv, "a:dhHj:rsw:")) != EOF) {
+	while ((x = getopt(argc, argv, "a:dhHj:rsSw:")) != EOF) {
 		switch(x) {
 		case 'a':
 			admode = strtoul(optarg, NULL, 0);
@@ -657,6 +724,9 @@ int main(int argc, char **argv) {
 		case 's':
 			++sflg;
 			break;
+		case 'S':
+			++Sflg;
+			break;
 		case 'w':
 			wflg = strtoul(optarg, NULL, 0);
 			break;
@@ -665,12 +735,15 @@ int main(int argc, char **argv) {
 	if (optind >= argc) {
 		fprintf(stderr,	"Usage: %s [options] <obj-file>[...]\n"
 				"Options:\n"
+				"    -a adm  Adr mode hint\n"
 				"    -d      Disassemble .text\n"
+				"    -h      Display header info\n"
 				"    -r      Show reloc info for -d\n"
 				"    -s      Dump section(s)\n"
 				"    -j sect Section (.text or .data) for -s\n"
 				"    -H      Use Honeywell style dump for -j\n"
-				"    -w wid  Ouput width for -j (hint only)\n",
+				"    -w wid  Ouput width for -s (hint only)\n"
+				"    -S      Generate SW/SI preamble\n",
 			argv[0]);
 		return 0;
 	}

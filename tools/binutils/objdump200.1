@@ -37,6 +37,19 @@ Display relocation/symbol information with \fB-d\fR.
 .TP
 .BI \-w\  width
 Provide a hint to the terminal line length, for \fB-s\fR.
+.TP
+.BI \-S
+Generate, to stdout, the as200 source code for set word- and item-mark
+preamble for the specified object file.
+Currently only works for a single object file,
+assuming \.text and \.data are contiguous.
+Default address mode is 3.
+Use \fB-a\fR to change.
+Looks for a global symbol for location 0, and uses that
+in the SW/SI instructions as the base address.
+If no global symbol is found, "base" is used.
+Typically, this code is assembled into a \.o and
+linked in front the object file to produce a bootstrap image.
 
 .SH "SEE ALSO"
 ld200 (1),
