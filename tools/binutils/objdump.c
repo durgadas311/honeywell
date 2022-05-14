@@ -557,6 +557,7 @@ static char *disas(FILE *fp) {
 		for (y = x + 1; y < hdr.a_text && !(buf[y] & 0100); ++y);
 		op = &dis[buf[x] & 077];
 		if (!op->mn) {
+			printf("%7o:\t?", x + ba);
 			odump(buf, x, y, '\t');
 			goto next;
 		}
