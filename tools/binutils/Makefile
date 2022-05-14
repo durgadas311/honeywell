@@ -2,7 +2,7 @@ CFLAGS = -O ${DEBUG}
 INSTDIR = /usr/local
 
 EXES = ld200 nm200 ar200 strip200 size200 objdump200 \
-	adr2line200 out2brt out2boot # out2lmc out2cas
+	adr2line200 out2brf out2boot # out2lmc out2cas
 
 all: ${EXES}
 
@@ -15,6 +15,7 @@ install:  all
 	cp objdump200 ${INSTDIR}/bin/objdump200
 	cp adr2line200 ${INSTDIR}/bin/adr2line200
 	cp out2boot ${INSTDIR}/bin/out2boot
+	cp out2brf ${INSTDIR}/bin/out2boot
 #	cp out2lmc ${INSTDIR}/bin/out2lmc
 #	cp out2cas ${INSTDIR}/bin/out2cas
 
@@ -40,7 +41,7 @@ adr2line200: adr2line.c a.out.h
 	${CC} ${CFLAGS} -o $@ $<
 out2boot: out2boot.o ../as/hw200.o
 	$(CC) -o $@ $< ../as/hw200.o
-out2brt: out2brt.o ../as/hw200.o
+out2brf: out2brf.o ../as/hw200.o
 	$(CC) -o $@ $< ../as/hw200.o
 
 ../as/hw200.o:

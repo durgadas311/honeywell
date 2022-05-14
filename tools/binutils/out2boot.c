@@ -99,6 +99,7 @@ static void objdump(char *f) {
 		fprintf(stderr, "%s: %s\n", f, err);
 	}
 	fclose(fp);
+	if (ofname) fclose(of);
 }
 
 int main(int argc, char **argv) {
