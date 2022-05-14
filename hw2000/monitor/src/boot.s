@@ -1,0 +1,2 @@
+	.globl	boot
+boot:
