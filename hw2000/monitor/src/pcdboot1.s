@@ -1,10 +1,15 @@
-// bootstrap code for card decks.
-// linked with brdldr (prefixed by SW/SI module)
+// primary bootstrap code for card decks.
+// bootstrap this into 01620 (octal) and RUN
+//	.org	01620	// done by linker
 	.admode	3
-	.globl	boot	// bootstrap addres, base address
+	.globl	boot
 	.globl	pcdboot1
 pcdboot1:
-	pdt	boot+80,011,041	// get another card (2)
+	pdt	boot+80,011,041	// get rest of bootstrap
 	pcb	.,011,041,010
-	nop	// need to ensure WM terminates PCB
-	// continue on with pcdboot2... SW/SI
+//	pdt	boot+160,011,041	// get next monitor card (3)
+//	pcb	.,011,041,010
+//	pdt	boot+240,011,041	// get next monitor card (4)
+//	pcb	.,011,041,010
+	nop	// need to ensure WM terminates last instr
+// continued in pcdboot2...

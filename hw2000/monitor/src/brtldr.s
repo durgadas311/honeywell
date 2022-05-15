@@ -3,6 +3,7 @@
 // by the time we reach here, we are
 // well above index register storage.
 	.globl	brtldr
+	.text
 brtldr:
 	lca	hptr,strt
 	lca	hptre,endc
@@ -45,7 +46,7 @@ move:	ba	slen,x5
 nexte:	ba	one,x6
 nextf:	c	x6,rend
 	bct	next,044		// cont if x6 < rend
-nextr:	ext	emsk,banr	// zero if not last
+endr:	ext	emsk,banr	// zero if not last
 	a	banr,banr	// get zero-balance status
 // done loading a record
 	bct	nextr,060	// loop if zero-balance (077)
@@ -66,7 +67,7 @@ ctlc:	bce	ldst,0(x6),060	// set dist ptr
 	bce	setw,0(x6),063	// set word mark
 	bce	seti,0(x6),064	// set item mark
 // we should only get 77 if banner is 50,41
-	bce	nextr,0(x6),077	// end of record
+	bce	endr,0(x6),077	// end of record
 //	error...
 	h	.
 //
@@ -90,7 +91,7 @@ seti:	si	-1(x5)
 // todo: can load resume? is this guaranteed last rec?
 term:	mcw	3(x6),x5	//set go adr
 	sst	neg1,banr,04	// force end-of-load cond
-	b	nextr		// todo: also indicate goto
+	b	endr		// todo: also indicate goto
 //
 // clear/fill memory - must clear punc too
 // caller sets strt, endc, fill (w/punc)
@@ -101,23 +102,23 @@ cleer:	scr	1f,070		// set return address
 	bct	2b,044		// cont if strt .lt. endc
 1::	b	0
 
-// Because these are not .data, must reverse symbol anchors
+	.data
 neg1:	.bin	077#1
 one:	.bin	1#1
 four:	.bin	4#1
 eight:	.bin	8#1
 emsk:	.bin	04#1	// mask for last record
-hptr::	.word	header
-hptre::	.word	header+256
+hptr:	.word	header
+hptre:	.word	header+256
 //
 fzero:	.byte	0
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
 clen:	.bin	0#1	// rec ctl len (hdr)
-rend::	.word	0	// record ptr
-zeroa::	.bin	0#3	// init for dist - must be 3 char
-strt::	.word	0	// clear start addr
-endc::	.word	0	// clear end addr
+rend:	.word	0	// record ptr
+zeroa:	.bin	0#3	// init for dist - must be 3 char
+strt:	.word	0	// clear start addr
+endc:	.word	0	// clear end addr
 fill:	.byte	0	// clear fill char
 //
 header	=	.

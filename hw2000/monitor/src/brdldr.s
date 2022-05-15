@@ -3,6 +3,7 @@
 // by the time we reach here, we are
 // well above index register storage.
 	.globl	brdldr
+	.text
 brdldr:
 	lca	hptr,strt
 	lca	hptre,endc
@@ -101,24 +102,24 @@ cleer:	scr	1f,070		// set return address
 	bct	2b,044		// cont if strt .lt. endc
 1::	b	0
 
-// Because these are not .data, must reverse symbol anchors
+	.data
 neg1:	.bin	077#1
 one:	.bin	1#1
 four:	.bin	4#1
 eight:	.bin	8#1
-eighty::	.bin	80#3
+eighty:	.bin	80#3
 emsk:	.bin	04#1	// mask for last record
-hptr::	.word	header
-hptre::	.word	header+80
+hptr:	.word	header
+hptre:	.word	header+80
 //
 fzero:	.byte	0
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
 clen:	.bin	0#1	// rec ctl len (hdr)
-rend::	.word	0	// record ptr
-zeroa::	.bin	0#3	// init for dist - must be 3 char
-strt::	.word	0	// clear start addr
-endc::	.word	0	// clear end addr
+rend:	.word	0	// record ptr
+zeroa:	.bin	0#3	// init for dist - must be 3 char
+strt:	.word	0	// clear start addr
+endc:	.word	0	// clear end addr
 fill:	.byte	0	// clear fill char
 //
 header	=	.
