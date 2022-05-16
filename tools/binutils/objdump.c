@@ -23,6 +23,8 @@ static int wflg = 80;
 static int Hflg = 0;
 static int hflg = 0;
 static int Sflg = 0;
+static int Nflg = 0;
+static int base;
 
 #define OP_A	0x00100	// May have A operand
 #define OP_B	0x00200	// May have B operand
@@ -454,52 +456,54 @@ static char *sect(FILE *fp, char *sec) {
 	return NULL;
 }
 
-static void do_swsi(uint8_t *buf, int len, char *base, char *op, int pu) {
+static void do_swsi(uint8_t *buf, int len, char *symb, char *op, int pu) {
 	int y = 0;
 	int z = -1;
+	int n = len;
 	int x;
-	for (x = 0; x < len; ++x) {
-		if ((buf[x] & pu) == 0) {
+	if (pu == 0100) { // for WM case only
+		++n;	// place WM after last char
+	}
+	for (x = 0; x < n; ++x) {
+		if (x < len && (buf[x] & pu) == 0) {
 			continue;
 		}
 		if (!y) {
-			printf("\t%s\t%s+%d,", op, base, x);
+			printf("\t%s\t%s+%d,", op, symb, x);
 			z = x;
 			y = 1;
 		} else {
-			printf("%s+%d\n", base, x);
+			printf("%s+%d\n", symb, x);
 			y = 0;
 		}
 	}
 	if (y) {
-		printf("%s+%d\n", base, z);
+		printf("%s+%d\n", symb, z);
 	}
 }
 
 static char *swsi(FILE *fp) {
 	uint8_t *buf;
 	int len = hdr.a_text + hdr.a_data;
-	int s, x, y, z;
-	char base[8];
+	int x;
+	char symb[8];
 
 	get_symtab(fp);
 	// TODO: get reference symbol for start of .text (or .data if no .text)
-	s = -1;
-	for (x = 0; x < nsyms; ++x) {
-		if ((symtab[x].n.n_type & N_EXT) == 0 ||
-			symtab[x].n.n_value != 0) continue;
-		int t = symtab[x].n.n_type & N_TYPE;
-		if (t == N_TEXT || t == N_DATA) {
-			s = x;
-			break;
-		}
-	}
-	//s = get_symbol(0, 0xf0000000);
-	if (s >= 0) {
-		strncpy(base, symtab[s].n.n_name, 8);
-		printf("\t.globl\t%.8s\n", base);
+	strncpy(symb, "base", 8);
+	if (Nflg) {
+		printf("%s\t=\t0%o\n", symb, base);
 	} else {
-		strncpy(base, "base", 8);
+		for (x = 0; x < nsyms; ++x) {
+			if ((symtab[x].n.n_type & N_EXT) == 0 ||
+				symtab[x].n.n_value != 0) continue;
+			int t = symtab[x].n.n_type & N_TYPE;
+			if (t == N_TEXT || t == N_DATA) {
+				strncpy(symb, symtab[x].n.n_name, 8);
+				printf("\t.globl\t%.8s\n", symb);
+				break;
+			}
+		}
 	}
 	// TODO: auto-detect address mode...
 	if (!admode) admode = 3;
@@ -513,8 +517,13 @@ static char *swsi(FILE *fp) {
 	if (fread(buf, len, 1, fp) != 1) {
 		return "corrupt file";
 	}
-	do_swsi(buf, len, base, "sw", 0100);
-	do_swsi(buf, len, base, "si", 0200);
+	do_swsi(buf, len, symb, "sw", 0100);
+	do_swsi(buf, len, symb, "si", 0200);
+	if (Nflg) {
+		x = 1 + 2 * admode; // length of SW instruction
+		printf("\tsw\t.+%d,.+%d\n", x, x + 1 + admode);
+		printf("\tb\t%s\n", symb);
+	}
 	return NULL;
 }
 
@@ -698,7 +707,7 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
-	while ((x = getopt(argc, argv, "a:dhHj:rsSw:")) != EOF) {
+	while ((x = getopt(argc, argv, "a:dhHj:N:rsSw:")) != EOF) {
 		switch(x) {
 		case 'a':
 			admode = strtoul(optarg, NULL, 0);
@@ -728,6 +737,10 @@ int main(int argc, char **argv) {
 		case 'S':
 			++Sflg;
 			break;
+		case 'N':
+			++Nflg;
+			base = strtoul(optarg, NULL, 0);
+			break;
 		case 'w':
 			wflg = strtoul(optarg, NULL, 0);
 			break;
@@ -744,7 +757,8 @@ int main(int argc, char **argv) {
 				"    -j sect Section (.text or .data) for -s\n"
 				"    -H      Use Honeywell style dump for -j\n"
 				"    -w wid  Ouput width for -s (hint only)\n"
-				"    -S      Generate SW/SI preamble\n",
+				"    -S      Generate SW/SI preamble\n"
+				"    -N adr  Standalone SW/SI base adr, for -S\n",
 			argv[0]);
 		return 0;
 	}
