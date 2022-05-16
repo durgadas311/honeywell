@@ -107,6 +107,7 @@ extern int	nextfile();
 #define	OR	'|'
 #define	AND	'&'
 #define	STAR	'*'
+#define	HASH	'#'
 #define	SLASH	'/'
 #define	SPACE	' '	/* blanks and/or tabs */
 #define	COMMA	','

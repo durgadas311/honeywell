@@ -31,6 +31,8 @@ int	strsiz;		/* returned length of last string */
 #define	C_TOKEN		0x10	/* Other special characters */
 #define	C_VALUE		0x0f	/* C_HEXDIGIT - numerical value of digit */
 
+static int inscanbin = 0;
+
 /*
  * Character type table
  */
@@ -40,7 +42,7 @@ unsigned char ctab[128] = {
 	0,	0,	0,	0,	0,	0,	0,	0,
 	0,	0,	0,	0,	0,	0,	0,	0,
 //	sp	!	"	#	$	%	&	'
-	0x10,	0x10,	0x10,	0,	0x10,	0,	0x10,	0x10,
+	0x10,	0x10,	0x10,	0x10,	0x10,	0,	0x10,	0x10,
 //	(	)	*	+	,	-	.	/
 	0x10,	0x10,	0x10,	0x10,	0x10,	0x10,	0x80,	0x10,
 //	0	1	2	3	4	5	6	7
@@ -252,6 +254,12 @@ testnlab:
 		}
 
 		switch (c) {
+			case '#':
+				if (inscanbin) {
+					return HASH;
+				}
+				xerror(errg);
+				break;
 
 			/* white space */
 			case ' ':
@@ -326,18 +334,22 @@ void check_punc(int *pnc) {
 	while (*scanp == ' ' || *scanp == '\t') ++scanp;
 }
 
-static char *field_width(char *p, int *w) {
+static char *field_width0(char *p, int *w) {
 	char *e;
 	unsigned long n;
-	if (*p != '#') {
-		return p;
-	}
-	n = strtoul(++p, &e, 10);
+	n = strtoul(p, &e, 10);
 	if (p == e || n == 0) {
 		cerror(errv);
 	}
 	*w = n;
 	return e;
+}
+
+static char *field_width(char *p, int *w) {
+	if (*p != '#') {
+		return p;
+	}
+	return field_width0(++p, w);
 }
 
 int scanit(int pnc, int (*isdig)(int), int (*cvdig)(int), int bpd) {
@@ -517,6 +529,43 @@ int scanchr(int pnc) {
 	return token();
 }
 
+static int scanexpr(int pnc) {
+	int w = 1; // TODO: fit to expr size?
+	int f = 0;
+	int vv;
+	inscanbin = 1;
+	int t = expr();
+	inscanbin = 0;
+	if (t != RABS) {
+		cerror(errv);
+	}
+	if (nexttoken == HASH) {
+		scanp = field_width0(scanp, &w);
+	} else {
+		// compute magnitude in 6-bit resolution
+		while ((res.val >> (w * 6)) != 0) {
+			++w;
+		}
+	}
+	w *= 6;
+	while (w > 0) {
+		w -= 6;
+		if (w >= sizeof(res.val) * 8) {
+			vv = 0;
+		} else {
+			vv = (res.val >> w) & 077;
+		}
+		if (f++ == 0) {
+			vv |= (pnc >> 8);
+		}
+		if (w == 0) {
+			vv |= (pnc & 0377);
+		}
+		putb(vv, 1);
+	}
+	return token();
+}
+
 int scan_bin(int pnc) {
 	if (*scanp == '\'') {
 		return scanchr(pnc);
@@ -533,7 +582,8 @@ int scan_bin(int pnc) {
 	} else if (isdigit(*scanp)) {
 		return scandec(pnc);
 	} else {
-		xerror(errv);
+		return scanexpr(pnc);
+		//xerror(errv);
 	}
 }
 
