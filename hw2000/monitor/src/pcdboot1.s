@@ -5,11 +5,16 @@
 	.globl	boot
 	.globl	pcdboot1
 pcdboot1:
-	pdt	boot+80,011,041	// get rest of bootstrap
+	pdt	boot+80,011,041		// get rest of bootstrap (2)
 	pcb	.,011,041,010
-//	pdt	boot+160,011,041	// get next monitor card (3)
-//	pcb	.,011,041,010
-//	pdt	boot+240,011,041	// get next monitor card (4)
-//	pcb	.,011,041,010
-	nop	// need to ensure WM terminates last instr
+	pdt	boot+160,011,041	// get next monitor card (3)
+	pcb	.,011,041,010
+	pdt	boot+240,011,041	// get next monitor card (4)
+	pcb	.,011,041,010
+	pdt	boot+320,011,041	// get next monitor card (5)
+	pcb	.,011,041,010
+	pdt	boot+400,011,041	// get next monitor card (6)
+	pcb	.,011,041,010
+	pdt	boot+480,011,041	// get next monitor card (7)
+	pcb	.,011,041,010
 // continued in pcdboot2...
