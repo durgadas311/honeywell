@@ -1,20 +1,26 @@
 // primary bootstrap code for card decks.
 // bootstrap this into 01620 (octal) and RUN
+ncards	=	5	// number of *additional* cards (BOOTSTRAP read 1)
 //	.org	01620	// done by linker
 	.admode	3
 	.globl	boot
+	.globl	one,zero,c80	// for use by pcdboot2
 	.globl	pcdboot1
+	// this will be preceeded by SW/SI instructions
 pcdboot1:
-	pdt	boot+80,011,041		// get rest of bootstrap (2)
+1:	pdt	(ptr-^),011,041	//
 	pcb	.,011,041,010
-	pdt	boot+160,011,041	// get next monitor card (3)
-	pcb	.,011,041,010
-	pdt	boot+240,011,041	// get next monitor card (4)
-	pcb	.,011,041,010
-	pdt	boot+320,011,041	// get next monitor card (5)
-	pcb	.,011,041,010
-	pdt	boot+400,011,041	// get next monitor card (6)
-	pcb	.,011,041,010
-	pdt	boot+480,011,041	// get next monitor card (7)
-	pcb	.,011,041,010
-// continued in pcdboot2...
+	ba	c80,ptr
+	bs	one,cnt
+	c	zero,cnt
+	bct	1b,045
+	b	2f	// fall-through to pcdboot2 SW/SI
+
+// Because these are not .data, must reverse symbol anchors
+c80::	.bin	80#2
+one:	.bin	1#1
+zero:	.bin	0#1
+cnt:	.bin	ncards#1
+ptr::	.word	boot+80
+
+2:
