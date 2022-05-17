@@ -34,6 +34,7 @@ static int base;
 #define RQ_B	0x02000	// Requires B operand
 #define RQ_C	0x04000	// Requires C operand
 #define RQ_V	0x08000	// Requires Variant
+#define NO_WM	0x10000	// no WM required (2 * admode + 1)
 #define B_BCT	0x00001	// Requires special handling
 
 static int admode = 0;	// address mode for *current* item, if getreloc() used.
@@ -67,8 +68,8 @@ static struct instr dis[64] = {
 [054] = 	{ "bcc", OP_A | OP_B | OP_V },
 [055] = 	{ "bce", OP_A | OP_B | OP_V },
 [056] = 	{ "bbe", OP_A | OP_B | OP_V },
-[022] = 	{ "sw",  OP_A | OP_B },
-[020] = 	{ "si",  OP_A | OP_B },
+[022] = 	{ "sw",  OP_A | OP_B | NO_WM },
+[020] = 	{ "si",  OP_A | OP_B | NO_WM },
 [023] = 	{ "cw",  OP_A | OP_B },
 [021] = 	{ "ci",  OP_A | OP_B },
 [045] = 	{ "h",   OP_A | OP_B | OP_V },
@@ -219,38 +220,46 @@ static int get_reloc(uint8_t *r, int s) {
 	return v;
 }
 
-static int get_symbol(int a, int y) {
-	if (!(y & ~am_relmsk(admode))) {
+static int get_symbol(int a, int r) {
+	if (!(r & ~am_relmsk(admode))) {
 		return -1;
 	}
-	y &= am_relmsk(admode);
-	int z;
-	if (y & A_REXT) {
-		y = A_RINDEX(y);
-	} else if (y && by_val != END) {
-		for (y = by_val; symtab[y].link != END; y = z) {
+	r &= am_relmsk(admode);
+	int y, z;
+	if (r & A_REXT) {
+		y = A_RINDEX(r);
+	} else if (r && by_val != END) {
+		for (y = by_val; y != END; y = z) {
 			z = symtab[y].link;
+			if ((symtab[y].n.n_type & N_TYPE) != r) continue;
 			if (symtab[y].n.n_pad1) {
 				int b,e;
 				if (symtab[y].n.n_pad1 < 0) {
 					e = symtab[y].n.n_value;
 					b = e + symtab[y].n.n_pad1 + 1;
-				} else {
+				} else if (symtab[y].n.n_pad1 > 0) {
 					b = symtab[y].n.n_value;
 					e = b + symtab[y].n.n_pad1 - 1;
+				} else {
+					b = e = symtab[y].n.n_value;
 				}
 				if (a >= b && a <= e) {
-					break;
+					return y;
 				}
 				continue;
 			}
 			if (a < symtab[y].n.n_value) {
 				continue;
 			}
-			if (z != END && a < symtab[z].n.n_value) {
-				break; // 'y' is the symbol
+			if (a == symtab[y].n.n_value) {
+				return y;
+			}
+			if (z != END && a < symtab[z].n.n_value &&
+					(symtab[z].n.n_type & N_TYPE) == r) {
+				return y; // 'y' is the symbol
 			}
 		}
+		y = -1;
 	} else {
 		y = -1;
 	}
@@ -333,9 +342,9 @@ static void print_addr(uint8_t *b, uint8_t *r, int s, int t) {
 	if (r && y >= 0) {
 		int o = a - symtab[y].n.n_value;
 		if (o) {
-			printf(" <%s+0x%x>", symtab[y].n.n_name, o);
+			printf(" <%.8s+0x%x>", symtab[y].n.n_name, o);
 		} else {
-			printf(" <%s>", symtab[y].n.n_name);
+			printf(" <%.8s>", symtab[y].n.n_name);
 		}
 	}
 }
@@ -531,7 +540,7 @@ static char *disas(FILE *fp) {
 	uint8_t *buf;
 	uint8_t *rel = NULL;
 	int x, y, f;
-	int t;
+	int t, u, w, z;
 	struct instr *op;
 	int ba = get_file_addr(fp);
 	if (ba < 0) {
@@ -563,35 +572,59 @@ static char *disas(FILE *fp) {
 	// TODO: need to scan ahead to first reloc, to get initial admode...
 	for (x = 0; x < hdr.a_text; x = y) {
 		// if no WM, warning?
-		for (y = x + 1; y < hdr.a_text && !(buf[y] & 0100); ++y);
 		op = &dis[buf[x] & 077];
-		if (!op->mn) {
-			printf("%7o:\t?", x + ba);
-			odump(buf, x, y, '\t');
-			goto next;
-		}
 		f = op->flg;
-		int i = get_symbol(x + ba, 0xf0000000);
+		if (rel) {
+			// last-ditch effort to get the admode
+			if (f & OP_A) {
+				(void)snoop_adm(rel, x + 1);
+			}
+		}
+		if (f & NO_WM) {
+			w = 2 * admode + 1;	// max for SW/SI
+		} else {
+			w = 3 * admode + 1;	// enough for PCB?
+		}
+		for (y = x + 1; y < hdr.a_text && !(buf[y] & 0100); ++y) {
+			if (y - x >= w) break;
+		}
+		int i = get_symbol(x + ba, am_reltag32(admode) | A_RTEXT);
+#if 0	// TODO: find a way to distinguish start of function
+//if (i >= 0) fprintf(stderr, "got %.8s\n", symtab[i].n.n_name);
 		if (i >= 0 && (symtab[i].n.n_type & N_EXT)) {
 			// TODO: recognize start of functions...
 			if (x + ba == symtab[i].n.n_value) {
-				printf("%07o <%s>:\n",
+				printf("%07o <%.8s>:\n",
 						x + ba, symtab[i].n.n_name);
 				i = -1;
 			}
 		}
-		printf("%7o:", x + ba);
+#endif
+		printf("%7o: ", x + ba);
+		w = 2 * admode + 4;	// covers all cases?
+		z = ((9 + (w * 3) + 7) & ~7) - 9;
+		w = z / 3;
+		u = z % 3;
+		for (z = 0; z < w; ++z) {
+			if (z >= y - x) break;
+			printf(" %02o", buf[x + z] & 077);
+		}
+		while (z < w) {
+			printf("   ");
+			++z;
+		}
+		printf("%.*s", u, "    ");
 		if (i >= 0) {
 			if (x + ba == symtab[i].n.n_value) {
-				printf("%s:", symtab[i].n.n_name);
+				printf("%.8s:", symtab[i].n.n_name);
 			} else if (y + ba - 1 == symtab[i].n.n_value) {
-				printf("%s::", symtab[i].n.n_name);
+				printf("%.8s::", symtab[i].n.n_name);
 			}
 		}
-		// TODO: local symbols here.
-		if (rel) {
-			// last-ditch effort to get the admode
-			(void)snoop_adm(rel, x + 1);
+		if (!op->mn) {
+			printf("\t?");
+			//odump(buf, x, y, '\t');
+			goto next;
 		}
 		if (f & B_BCT) {
 			if (y - x - 1 != admode) {
