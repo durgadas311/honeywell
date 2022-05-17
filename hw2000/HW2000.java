@@ -120,7 +120,7 @@ public class HW2000 implements CoreMemory
 		ATR = 0;
 		atrr = 0;
 		SR = 0;
-		setAM(HW2000CCR.AIR_AM_3C);
+		setAM(HW2000CCR.AIR_AM_2C);
 		CTL.reset();
 		pdc.reset();
 	}

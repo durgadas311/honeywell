@@ -1713,13 +1713,13 @@ public class HW2000FrontPanel extends JFrame
 
 		icn = new ImageIcon(getClass().getResource("icons/fp_am2.png"));
 		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
+		btn.setOn(true);
 		gc.gridx = 21;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
 		am2 = btn;
 		icn = new ImageIcon(getClass().getResource("icons/fp_am3.png"));
 		btn = new LightedButton(Peripheral.btnWhiteOn, Peripheral.btnWhiteOff, icn, 0);
-		btn.setOn(true);
 		gc.gridx = 22;
 		gbl.setConstraints(btn, gc);
 		npn.add(btn);
