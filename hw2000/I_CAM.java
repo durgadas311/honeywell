@@ -3,9 +3,6 @@ public class I_CAM implements Instruction {
 	public String mnem() { return "CAM"; }
 	// Change Address Mode
 	public void execute(HW2000 sys) {
-		if (sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte v = sys.CTL.getV();
 		sys.CTL.setS_MODE((v & 010) != 0);
 		sys.CTL.setTRAP((v & 004) != 0);

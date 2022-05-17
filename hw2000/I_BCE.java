@@ -3,9 +3,6 @@ public class I_BCE implements Instruction {
 	public String mnem() { return "BCE"; }
 	// Branch on Character Equal
 	public void execute(HW2000 sys) {
-		if (sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte v = sys.CTL.getV();
 		byte b = sys.readChar(sys.BAR);
 		sys.incrBAR(-1);

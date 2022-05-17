@@ -3,11 +3,8 @@ public class I_RVI implements Instruction {
 	public String mnem() { return "RVI"; }
 	// Restore Variant and Indicators
 	public void execute(HW2000 sys) {
-		if (sys.numXtra() == 0) {
-			throw new FaultException("SVI malformed");
-		}
 		sys.saveAAR();
-		byte v = sys.getXtra(0);
+		byte v = sys.CTL.getV();
 		byte a;
 		if ((v & 001) != 0) {
 			a = sys.readMem(sys.AAR);

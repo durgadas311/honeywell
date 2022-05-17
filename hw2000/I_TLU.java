@@ -3,9 +3,6 @@ public class I_TLU implements Instruction {
 	public String mnem() { return "TLU"; }
 	// Table Look-Up
 	public void execute(HW2000 sys) {
-		if (sys.hadB() && sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte bw;
 		byte v = sys.CTL.getV();
 		v &= 007;	// ensure we don't test OVR (destructive) or ZB

@@ -3,9 +3,6 @@ public class I_EXM implements Instruction {
 	public String mnem() { return "EXM"; }
 	// EXtended Move
 	public void execute(HW2000 sys) {
-		if (sys.hadB() && sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte v = sys.CTL.getV();
 		byte m = 0;	// bits to copy
 		byte k = 0;	// terminal punctuation sensed

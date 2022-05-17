@@ -3,9 +3,6 @@ public class I_BCC implements Instruction {
 	public String mnem() { return "BCC"; }
 	// Branch on Character Condition
 	public void execute(HW2000 sys) {
-		if (sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte v = sys.CTL.getV();
 		byte b = sys.readMem(sys.BAR);
 		sys.incrBAR(-1);

@@ -3,9 +3,6 @@ public class I_SST implements Instruction {
 	public String mnem() { return "SST"; }
 	// SubSTitute
 	public void execute(HW2000 sys) {
-		if (sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte a = sys.readMem(sys.AAR);
 		sys.incrAAR(-1);
 		byte b = sys.readMem(sys.BAR);

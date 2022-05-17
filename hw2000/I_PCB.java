@@ -10,7 +10,6 @@ public class I_PCB implements Instruction {
 	// Otherwise, it is C2.
 	public void execute(HW2000 sys) {
 		byte c1 = sys.getXtra(0);
-		sys.CTL.setV(c1);
 		boolean ce = PeriphDecode.isEsc(sys.getXtra(1));
 		RWChannel c = sys.getChannel(c1);
 		Peripheral p = null;

@@ -764,6 +764,7 @@ public class HW2000 implements CoreMemory
 	}
 
 	private void fetchXtra(int limit) {
+		byte vr = 0;
 		op_xtra_num = limit - fsr;
 		if (op_xtra_num <= 0) {
 			if (reqV()) {
@@ -773,12 +774,20 @@ public class HW2000 implements CoreMemory
 			}
 			return;
 		}
+		op_xflags |= InstrDecode.OP_HAS_V;
 		if (op_xtra_num > op_xtra_siz) {
 			op_xtra_siz = op_xtra_num + 2;
 			op_xtra = new byte[op_xtra_siz];
 		}
 		for (int x = 0; x < op_xtra_num; ++x) {
-			op_xtra[x] = readChar(fsr + x);
+			op_xtra[x] = vr = readChar(fsr + x);
+		}
+		if (hasV()) {
+			if ((op_flags & InstrDecode.OP_VR1) != 0) {
+				CTL.setV(op_xtra[0]);
+			} else {
+				CTL.setV(vr);
+			}
 		}
 	}
 

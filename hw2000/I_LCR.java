@@ -3,9 +3,6 @@ public class I_LCR implements Instruction {
 	public String mnem() { return "LCR"; }
 	// Load Control Register
 	public void execute(HW2000 sys) {
-		if (sys.hadA() && sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte v = sys.CTL.getV();
 		boolean allowed = (v == 064 || v == 067 || v == 070 || v == 077);
 		if (sys.CTL.inStdMode() && sys.CTL.isPROTECT() &&

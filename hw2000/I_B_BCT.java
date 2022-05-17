@@ -35,14 +35,10 @@ public class I_B_BCT implements Instruction {
 
 	public void execute(HW2000 sys) {
 		boolean taken = true;
-		if (!sys.hadA() || sys.numXtra() > 0) {
+		if (!sys.hadA() || sys.hadV()) {
 			// BCT...
 			mn = "BCT";
 			taken = false;
-			if (sys.hadA()) {
-				// must have V then...
-				sys.CTL.setV(sys.getXtra(0));
-			}
 			byte v = sys.CTL.getV();
 			if ((v & 040) != 0) {
 				boolean yes = I_B_BCT.check(sys, (byte)(v & 037));

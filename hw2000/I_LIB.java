@@ -16,8 +16,8 @@ public class I_LIB implements Instruction {
 			a = (byte)((sys.readChar(sys.BAR) << 6) | a);
 			sys.incrBAR(-1);
 			sys.BRR = a;
-			if (sys.numXtra() > 0) {
-				a = sys.getXtra(0);
+			if (sys.hadV()) {
+				a = sys.CTL.getV();
 				sys.CTL.setLIB(a);
 			}
 		}

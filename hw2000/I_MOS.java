@@ -3,9 +3,6 @@ public class I_MOS implements Instruction {
 	public String mnem() { return "MOS"; }
 	// Move Or Scan
 	public void execute(HW2000 sys) {
-		if (sys.hadB() && sys.numXtra() > 0) {
-			sys.CTL.setV(sys.getXtra(0));
-		}
 		byte v = sys.CTL.getV();
 		byte m = 0;	// bits to copy
 		byte k1 = (byte)0200;	// terminal character sensed ign WM

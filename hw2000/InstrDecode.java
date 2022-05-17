@@ -31,9 +31,10 @@ public class InstrDecode {
 	public static final int OP_REQ_B = 0x0040;
 	public static final int OP_REQ_V = 0x0080;
 	public static final int OP_REQ_C = 0x0100;	// mainly for Assembler
+	public static final int OP_VR1   = 0x0200;
 	public static final int OP_NO_WM = 0x1000;
-	public static final int OP_SPC = 0x2000;
-	public static final int OP_PRIV = 0x4000;
+	public static final int OP_SPC   = 0x2000;
+	public static final int OP_PRIV  = 0x4000;
 	public static final int OP_INVAL = 0x8000;
 
 	public static final byte OP_A = 036;	// Decimal Add
@@ -154,8 +155,8 @@ public class InstrDecode {
 
 		i_flags[OP_MCE] = OP_HAS_A | OP_HAS_B;
 
-		i_flags[OP_PDT] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
-		i_flags[OP_PCB] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
+		i_flags[OP_PDT] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV | OP_VR1;
+		i_flags[OP_PCB] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV | OP_VR1;
 
 		// TBD: i_flags[OP_IIC] = OP_PRIV;
 		// FPU
