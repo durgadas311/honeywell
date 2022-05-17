@@ -1959,15 +1959,11 @@ public class HW2000FrontPanel extends JFrame
 					sys.singleStep = true;
 					sys.halt = false;
 					return;
+				case ' ':
 				case '0':
 				case '1':
 				case '2':
 				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-					// TODO: only accept 0-3...
 					v = (c & 007);
 					dc = 1;
 					state = 'I';
@@ -2006,15 +2002,22 @@ public class HW2000FrontPanel extends JFrame
 					p.output("\n");
 					return;
 				}
-				// TODO: only accept 0-3 if dc == 0
-				if (c < '0' || c > '7') {
-					// suppress echo - ignore
-					//p.output("?\n");
-					break;
+				if ((dc % 4) == 0) {
+					if (c != ' ' && (c < '0' || c > '3')) {
+						// suppress echo - ignore
+						//p.output("?\n");
+						break;
+					}
+				} else {
+					if (c < '0' || c > '7') {
+						// suppress echo - ignore
+						//p.output("?\n");
+						break;
+					}
 				}
 				p.output(cEcho);
 				++dc;
-				v = (v << 3) | (c & 07);
+				v = (v << 3) | (c & 07); // ' ' == '0'
 				if ((dc % 4) == 3) {
 					setContents(v);
 					sys.rawWriteMem(addressReg, (byte)contentsReg);
