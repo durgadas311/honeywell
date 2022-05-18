@@ -94,6 +94,17 @@ FILE	*troutb;
 FILE	*droutb;
 FILE	*soutb;
 
+static int admode;	// address mode for *current* item, if getreloc() != 0.
+
+static uint32_t am_mask(int am) {
+	switch(am) {
+	case 2:	return             0b111111111111;
+	case 3:	return       0b000111111111111111;
+	case 4:	return 0b000001111111111111111111;
+	}
+	return 0;
+}
+
 // TODO: just look for '_'? or...?
 // Need to eliminate others, "Pxxxx", "@ssss", ".xxxx", ???
 #define local_sym(s)    (s.n_name[0] != 'L' && (!gflag || s.n_name[0] != '~'))
@@ -201,15 +212,13 @@ lookloc(limit, r)
 	register struct nlocal *clp;
 	register int sn;
 
-	sn = (r >> 4) & 07777;
+	sn = (r & am_mask(admode)) >> 4;
 	for (clp=local; clp<limit; clp++)
 		if (clp->symno == sn)
 			return clp->symref;
 	error(1, "Local symbol botch");
 	return 0;
 }
-
-int admode;	// address mode for *current* item, if getreloc() != 0.
 
 /*
  * Write 24-bit value big-endian to file.
@@ -833,15 +842,6 @@ setupout()
 	puthdr(toutb, &filhdr);
 }
 
-static uint32_t am_mask(int am) {
-	switch(am) {
-	case 2:	return             0b111111111111;
-	case 3:	return       0b000111111111111111;
-	case 4:	return 0b000001111111111111111111;
-	}
-	return 0;
-}
-
 void
 load2td(bytes, lp, creloc, b1, b2)
 	unsigned int bytes;
@@ -971,7 +971,7 @@ load2arg(filename)
 	char *p;
 
 	if (getfile(filename) == 0) {
-/*printf("load2arg: %s\n", filename);*/
+// fprintf(stderr, "load2arg: %s\n", filename);
 		reloc = fopen(filename, "r");
 		p = strrchr (filename, '/');
 		if (p)
