@@ -5,6 +5,7 @@
 	.globl	brdldr
 	.text
 brdldr:
+	cam	040	// 3-char mode
 	lca	hptr,strt
 	lca	hptre,endc
 	exm	fzero,fill,07	// clears punc

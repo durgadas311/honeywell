@@ -1,14 +1,16 @@
+BRDLDR_ORG = 0234	# ORG for card monitor code
+PCDBOOT_ORG = 01620	# ORG for card bootstrap code
 
-all: pcdboot.pcd # mtiboot.mti or brtboot.mti?
+all: brdboot.pcd # mtiboot.mti or brtboot.mti?
 
 %.o: %.s
-	as200 -l -u -o $@ $? >$*.l
+	as200 -l -o $@ $? >$*.l
 
 %.ss: %.o
-	objdump200 -S -a 3 $< >$@
+	objdump200 -S -a 2 $< >$@
 
 brdldr.ss: brdldr.o
-	objdump200 -S -N 0224 -a 3 $< >$@
+	objdump200 -S -N $(BRDLDR_ORG) -a 2 $< >$@
 
 %.so: %.ss
 	as200 -l -u -o $@ $? >$*.sl
@@ -20,10 +22,10 @@ brdldr.ss: brdldr.o
 	out2boot -c -o $@ $<
 
 pcdboot.out: boot.o pcdboot1.so pcdboot1.o pcdboot2.so pcdboot2.o brdldr.so
-	ld200 -o $@ -a 01620 $^
+	ld200 -o $@ -a $(PCDBOOT_ORG) $^
 
 brdldr.out: brdldr.o
-	ld200 -o $@ -a 0224 $^
+	ld200 -o $@ -a $(BRDLDR_ORG) $^
 
 brdboot.pcd: pcdboot.pcd brdldr.pcd
 	cat $^ >$@

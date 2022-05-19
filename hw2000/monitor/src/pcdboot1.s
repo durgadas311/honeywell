@@ -1,16 +1,16 @@
 // primary bootstrap code for card decks.
 // bootstrap this into 01620 (octal) and RUN
-ncards	=	5	// number of *additional* cards (BOOTSTRAP read 1)
+ncards	=	4	// number of *additional* cards (BOOTSTRAP read 1)
 //	.org	01620	// done by linker
-	.admode	3
+	.admode	2
 	.globl	boot
 	.globl	one,zero,c80	// for use by pcdboot2
 	.globl	pcdboot1
 	// this will be preceeded by SW/SI instructions
 pcdboot1:
-1:	pdt	(ptr-^),011,041	//
+1:	pdt	boot+80,011,041	//
 	pcb	.,011,041,010
-	ba	c80,ptr
+	ba	c80,1b+^+1	// OK if no overflow
 	bs	one,cnt
 	c	zero,cnt
 	bct	1b,045
@@ -21,6 +21,5 @@ c80::	.bin	80#2
 one:	.bin	1#1
 zero:	.bin	0#1
 cnt:	.bin	ncards#1
-ptr::	.word	boot+80
 
 2:
