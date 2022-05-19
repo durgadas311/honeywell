@@ -1,0 +1,26 @@
+.TH PCDDUMP 1 5/19/22 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+pcddump \- Honeywell 200/2000 card deck dump
+.SH SYNOPSIS
+.B pcddump
+[ \fIoptions\fR ]
+.I file
+[ \.\.\. ]
+.SH DESCRIPTION
+.B Pcddump
+converts an H200/H2000 card deck file into ASCII character equivalents.
+
+.SH OPTIONS
+.TP
+.BI \-n
+Number each card (line).
+.TP
+.BI \-s
+Use the alternate (special) HW card encoding for punch card format.
+This corresponds to PCB control character 26 on the H200/2000 reader/punch control.
+
+.SH "SEE ALSO"
+out2boot (1),
+out2brf (1),
+.SH DIAGNOSTICS
+.SH BUGS

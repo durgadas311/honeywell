@@ -2,7 +2,7 @@ CFLAGS = -O $(DEBUG)
 INSTDIR = /usr/local
 
 EXES = ld200 nm200 ar200 strip200 size200 objdump200 \
-	adr2line200 out2brf out2boot # out2lmc out2cas
+	adr2line200 out2brf out2boot pcddump # out2lmc out2cas
 
 all: $(EXES)
 
@@ -33,6 +33,8 @@ out2boot: out2boot.o ../as/hw200.o
 	$(CC) -o $@ $< ../as/hw200.o
 out2brf: out2brf.o ../as/hw200.o
 	$(CC) -o $@ $< ../as/hw200.o
+pcddump: pcddump.o
+	$(CC) -o $@ $<
 
 ../as/hw200.o:
 	$(MAKE) -C ../as hw200.o
