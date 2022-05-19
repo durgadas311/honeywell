@@ -158,6 +158,12 @@ Loaders must setup X1 to point to the end of \fB.bss\fR.
 \fB\-o\fR\ \fIname\fR
 Use \fIname\fR as the output file name, instead of \fBa.out\fR.
 .PP
+.SH "SPECIAL SYMBOLS"
+If the linked module(s) contain undefined external references
+to the symbols \fB\_etext\fR, \fB\_edata\fR, \fB\_ebss\fR, or \fB\_end\fR,
+these symbols will be given values reflecting the end (+1) of the respective
+sections. \fB\_ebss\fR\ includes any \fB\-t\fR value provided,
+and \fB\_end\fR\ includes any \fB\-h\fR or \fB\.heap\fR values provided.
 .SH "AUTOMATIC CONSTANTS"
 The sharing of constants is essential to controlling the size of
 H200 programs.

@@ -669,36 +669,38 @@ static char *fhdr(FILE *fp) {
 	if (base < 0) {
 		return "corrupt object file";
 	}
-	printf(		"Idx  Name   Size       VMA(oct)  LMA(oct)   File off\n");
+	printf(		"Idx  Name   Size(oct) VMA(oct)  LMA(oct)   File off\n");
 	if (hdr.a_text) {
-		printf(	"  %d  .text  %08x   %07o   %07o    %08x\n",
+		printf(	"  %d  .text  %07o   %07o   %07o    %08x\n",
 				idx++, hdr.a_text, base, 0, off);
 		off += hdr.a_text;
 		base += hdr.a_text;
 	}
 	if (hdr.a_data) {
-		printf(	"  %d  .data  %08x   %07o   %07o    %08x\n",
+		printf(	"  %d  .data  %07o   %07o   %07o    %08x\n",
 				idx++, hdr.a_data, base, 0, off);
 		off += hdr.a_data;
 		base += hdr.a_data;
 	}
 	if (hdr.a_bss) {
-		printf(	"  %d  .bss   %08x   %07o   %07o    %08x\n",
+		printf(	"  %d  .bss   %07o   %07o   %07o    %08x\n",
 				idx++, hdr.a_bss, base, 0, off);
+		base += hdr.a_bss;
 		// no 'off' change - .bss not in file
 	}
 	if (hdr.a_heap) {
-		printf(	"  %d  (heap) %08x   %07o   %07o    %08x\n",
+		printf(	"  %d  (heap) %07o   %07o   %07o    %08x\n",
 				idx++, hdr.a_heap, base, 0, off);
+		base += hdr.a_heap;
 		// no 'off' change - heap not in file
 	}
 	if (!(hdr.a_flag & A_NRELFLG)) {
-		printf(	"  %d  .reloc %08x   %07o   %07o    %08x\n",
+		printf(	"  %d  .reloc %07o   %07o   %07o    %08x\n",
 				idx++, hdr.a_text + hdr.a_data, 0, 0, off);
 		off += hdr.a_text + hdr.a_data;
 	}
 	if (hdr.a_syms) {
-		printf(	"  %d  .syms  %08x   %07o   %07o    %08x\n",
+		printf(	"  %d  .syms  %07o   %07o   %07o    %08x\n",
 				idx++, hdr.a_syms, 0, 0, off);
 	}
 	return NULL;

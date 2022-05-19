@@ -42,6 +42,7 @@ struct	nlist	*hshtab[NSYM+2];
 struct	nlist	*symp = symtab;		/* first free symbol table slot */
 struct	nlist	*p_etext;
 struct	nlist	*p_edata;
+struct	nlist	*p_ebss;
 struct	nlist	*p_end;
 
 struct nlocal {
@@ -708,7 +709,13 @@ middle()
 
 	p_etext = *lookup("_etext");
 	p_edata = *lookup("_edata");
+	p_ebss = *lookup("_ebss");
 	p_end = *lookup("_end");
+	bsize += tflag;
+	if (hflag) {
+		// TODO: warn/fail if hflag < hsize?
+		hsize = hflag;
+	}
 	/*
 	 * Automatically generate shared constants
 	 */
@@ -718,9 +725,9 @@ middle()
 	/*
 	 * If there are any undefined symbols, save the relocation bits.
 	 */
-	if (rflag==0) for (sp=symtab; sp<symp; sp++) {
-		if (sp->n_type==N_EXT+N_UNDF && sp->n_value==0
-		 && sp!=p_end && sp!=p_edata && sp!=p_etext) {
+	if (rflag==0) for (sp = symtab; sp < symp; ++sp) {
+		if (sp->n_type == N_EXT + N_UNDF && sp->n_value == 0
+		 && sp != p_end && sp != p_edata && sp != p_etext && sp != p_ebss) {
 			rflag++;
 			dflag = 0;
 			nflag = 0;
@@ -749,9 +756,13 @@ middle()
 			p_edata->n_type = N_EXT+N_DATA;
 			p_edata->n_value = dsize;
 		}
+		if (p_ebss && p_ebss->n_type==N_EXT+N_UNDF) {
+			p_ebss->n_type = N_EXT+N_BSS;
+			p_ebss->n_value = bsize;
+		}
 		if (p_end && p_end->n_type==N_EXT+N_UNDF) {
 			p_end->n_type = N_EXT+N_BSS;
-			p_end->n_value = bsize;
+			p_end->n_value = bsize + hsize;
 		}
 	}
 	/*
@@ -778,7 +789,7 @@ middle()
 			if (!rflag)
 				errlev |= 01;
 			if (arflag == 0 && sp->n_value == 0 && sp != p_end &&
-			    sp != p_edata && sp != p_etext) {
+			    sp != p_edata && sp != p_etext && sp != p_ebss) {
 				if (nund==0)
 					printf("Undefined:\n");
 				nund++;
@@ -837,10 +848,8 @@ setupout()
 		filhdr.a_magic = A_FMAGIC;
 	filhdr.a_text = tsize;
 	filhdr.a_data = dsize;
-	filhdr.a_bss = bsize + tflag;
-	if (hflag) {
-		filhdr.a_heap = hflag;
-	}
+	filhdr.a_bss = bsize;
+	filhdr.a_heap = hsize;
 	filhdr.a_syms = sflag ? 0 : (ssize + (sizeof cursym)*(symp-symtab));
 	filhdr.a_entry = aflag; /* use 'a_entry' for loading base address */
 	filhdr.a_flag = rflag ? 0 : A_NRELFLG;
@@ -1219,6 +1228,7 @@ main(argc, argv)
 		case 'l':
 			break;
 		case 'a':
+		case 'h':
 		case 't':
 		case 'u':
 		case 'o':
