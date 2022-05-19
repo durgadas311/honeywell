@@ -184,6 +184,7 @@ enter()
 	memset(sp->n_name, 0, sizeof(sp->n_name));
 	strncpy(sp->n_name, cursym.n_name, sizeof(sp->n_name));
 	sp->n_type = cursym.n_type;
+	sp->n_pad1 = cursym.n_pad1;
 	sp->n_value = cursym.n_value;
 	symp++;
 	return sp;
@@ -201,6 +202,7 @@ mkfsym(s)
 	memset(cursym.n_name, 0, sizeof(cursym.n_name));
 	strncpy(cursym.n_name, s, sizeof(cursym.n_name));
 	cursym.n_type = N_FN;
+	cursym.n_pad1 = filhdr.a_text;
 	cursym.n_value = torigin;
 }
 
@@ -522,12 +524,15 @@ load1(libflg, loff)
 		if (cursym.n_type == N_EXT+N_UNDF) {
 			if (cursym.n_value > sp->n_value)
 				sp->n_value = cursym.n_value;
+			if (sp->n_pad1 == 0)
+				sp->n_pad1 = cursym.n_pad1;
 			continue;
 		}
 		if (sp->n_value != 0 && cursym.n_type == N_EXT+N_TEXT)
 			continue;
 		ndef++;
 		sp->n_type = cursym.n_type;
+		sp->n_pad1 = cursym.n_pad1;
 		sp->n_value = cursym.n_value;
 	}
 	if (libflg==0 || ndef) {
@@ -900,14 +905,17 @@ load2td(bytes, lp, creloc, b1, b2)
 }
 
 void
-load2(loff)
+load2(loff, fn)
 	long loff;
+	char *fn;
 {
 	register struct nlist *sp;
 	register struct nlocal *lp;
 	register int symno, n;
 
 	readhdr(loff);
+	mkfsym(fn);
+	putsym(soutb, &cursym);
 	ctrel = torigin;
 	cdrel += dorigin;
 	cbrel += borigin;
@@ -976,9 +984,7 @@ load2arg(filename)
 		p = strrchr (filename, '/');
 		if (p)
 			filename = p+1;
-		mkfsym(filename);
-		putsym(soutb, &cursym);
-		load2(0L);
+		load2(0L, filename);
 		fclose(text);
 		fclose(reloc);
 		return;
@@ -991,9 +997,7 @@ load2arg(filename)
 			error(1, "Cannot read archive header");
 		}
 /*printf("load2arg%d/%d: %s(%.14s) offset %ld\n", fileno(text), fileno(reloc), filename, archdr.ar_name, *lp);*/
-		mkfsym(archdr.ar_name);
-		putsym(soutb, &cursym);
-		load2(*lp + sizeof(struct ar_hdr));
+		load2(*lp + sizeof(struct ar_hdr), archdr.ar_name);
 	}
 	libp = ++lp;
 	fclose(text);
