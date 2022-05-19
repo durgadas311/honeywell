@@ -1,6 +1,8 @@
 // Example showing stack/frame usage
 // Program initialization must ensure that 'x1' contains a word mark.
+	.globl	_end
 	.admode	4
+	.heap	64
 
 // On entry:          In body:
 //       +-------------+
@@ -86,7 +88,7 @@ recurs:
 	.data
 // main() data
 @main:	.bin	4#1	// local stack variables
-_stk:	.word	stack
+_stk:	.word	_end-@
 _m1::	.string	f:"main_"
 _m2::	.string f:" begin_"
 _m3::	.string f:" end_"
@@ -101,8 +103,3 @@ _r3::	.string f:" exit_"
 // general constants
 _c0:	.bin	0#4	// init for params, addrs
 _c1:	.bin	1#1
-
-// stack space
-	.bss
-	.space	64
-stack:	.space	0
