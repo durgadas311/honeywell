@@ -98,11 +98,13 @@ static char xlate_pun[128] = {
 };
 
 int cflg = 0;
+int dflg = 0;
 int oflg = 0;
 int sflg = 0;
 int reclen = 250;
 uint8_t *rec;
 int rno = 0;
+int dist = 0;
 unsigned short card[80];
 
 static void set_special() {
@@ -193,11 +195,14 @@ static int brfdump(uint8_t *buf, int len) {
 	while (x < len) {
 		if (oflg) {
 			printf("%4d %3d: ", rno, x);
+		} else if (dflg) {
+			printf("%07o: ", dist);
 		}
 		ctl = buf[x++] & 077;
 		if (ctl < 060) {
 			n = ctl & 017;
 			p = (ctl & 060) >> 4;
+			dist += n;
 			printf("string %c", "-WIR"[p]);
 			if (n == 0) {
 				printf(" zero length!");
@@ -210,9 +215,10 @@ static int brfdump(uint8_t *buf, int len) {
 			case 070:
 				printf("setdist");
 				a1 = brfadr(buf, x, len);
+				dist = a1 | ((ctl & 010) << 15);
 				x += 3;
 				if (a1 < 0) printf("!");
-				else printf(" %07o", a1 | ((ctl & 010) << 15));
+				else printf(" %07o", dist);
 				break;
 			case 061:	// end, START (also end record)
 			case 071:
@@ -235,10 +241,10 @@ static int brfdump(uint8_t *buf, int len) {
 					a2 | ((ctl & 010) << 15), f);
 				break;
 			case 063:	// SW DIST-1
-				printf("set word dist-1");
+				printf("set W %07o", dist - 1);
 				break;
 			case 064:	// SI DIST-1
-				printf("set item dist-1");
+				printf("set I %07o", dist - 1);
 				break;
 			case 077:	// end of record
 				printf("eor\n");
@@ -297,10 +303,13 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "cor:s")) != EOF) {
+	while ((x = getopt(argc, argv, "cdor:s")) != EOF) {
 		switch(x) {
 		case 'c':
 			++cflg;
+			break;
+		case 'd':
+			++dflg;
 			break;
 		case 'o':
 			++oflg;
