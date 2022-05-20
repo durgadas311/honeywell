@@ -100,6 +100,7 @@ public class P_Console extends JFrame
 			icn = new ImageIcon(getClass().getResource("icons/fp_type2.png"));
 			LightedButton btn = new LightedButton(Peripheral.btnWhiteOn,
 					Peripheral.btnWhiteOff, icn);
+			btn.setFocusable(false);
 			mb.add(btn);
 			type = btn;
 			pn = new JPanel();
@@ -108,6 +109,7 @@ public class P_Console extends JFrame
 			icn = new ImageIcon(getClass().getResource("icons/fp_log.png"));
 			btn = new LightedButton(Peripheral.btnWhiteOn,
 					Peripheral.btnWhiteOff, icn);
+			btn.setFocusable(false);
 			mb.add(btn);
 			log = btn;
 			log.addActionListener(this);
@@ -126,6 +128,8 @@ public class P_Console extends JFrame
 		pack();
 		tearOff();
 	}
+
+	public boolean hasLogButton() { return log != null; }
 
 	private void tearOff() {
 		text.setText("\u2588");
@@ -500,7 +504,11 @@ public class P_Console extends JFrame
 
 	public void keyTyped(KeyEvent e) {
 		char c = e.getKeyChar();
-		kq.add((int)c);
+		if (offline && hasLogButton()) {
+			putChar(new String(new byte[]{(byte)c}));
+		} else {
+			kq.add((int)c);
+		}
 	}
 	public void keyPressed(KeyEvent e) {}
 	public void keyReleased(KeyEvent e) { }

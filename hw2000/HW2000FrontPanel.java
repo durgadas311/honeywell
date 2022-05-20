@@ -1942,6 +1942,10 @@ public class HW2000FrontPanel extends JFrame
 					v = 0;
 					break;
 				case 'L':
+					if (p.hasLogButton()) {
+						// silently ignore
+						return;
+					}
 					getConsole().setOffline(true);
 					state = c;
 					dc = 0;
