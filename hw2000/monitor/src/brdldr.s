@@ -1,20 +1,64 @@
 // bootstrap loader for BRF data on punch cards
 	.admode	3
+
+// The communications area
+@comm	=	0100		// start of communications area
+@rev	=	0101		// REV of last unit loaded
+@prg	=	0104		// program name
+@seg	=	0112		// segment
+@halt	=	0115		// halt name (name+seg)
+@fxst0	=	0126		// fixed start 0 ()
+@fxst1	=	0132		// fixed start 1 ()
+@fxst2	=	0136		// fixed start 2 ()
+@fxst3	=	0142		// fixed start 3 ()
+@xtoc	=	0146		// exit to own-code
+@relau	=	0153		// relocation augment
+@relpos	=	0156		// relative position
+@semd	=	0157		// search mode
+@stmd	=	0160		// start mode
+@spst	=	0167		// special start location
+@ocrt1	=	0172		// own-code return 1
+@ocrt2	=	0176		// own-code return 2
+@nret	=	0202		// return for normal call
+@gret	=	0213		// general return address
+@date	=	0216		// current date, YYDDD
+@trap	=	0223		// trapping mode
+@aret	=	0224		// alternate return address
+@ecd	=	0227		// ECD field
+@cona	=	0233		// console typewriter availability (!IM)
+@comme	=	0234		// end (+1) of communications area
+@cbuf	=	01620		// card buffer
+@user	=	01750		// user program space
+
 // by the time we reach here, we are
 // well above index register storage.
 	.globl	brdldr
 	.text
 brdldr:
 	cam	040	// 3-char mode
-	lca	hptr,strt
-	lca	hptre,endc
-	exm	fzero,fill,07	// clears punc
+	// fill is alread 0 from load
+	lca	hptr,x3
+	lca	hptre,x4
 	b	cleer
-//
+	lca	cptr,x3
+	lca	cptre,x4
+	b	cleer
+	// setup WMs in comm area
+	sw	@rev,@prg
+	sw	@seg,@gret
+	// setup WMs in card buffer
+	sw	@cbuf+6,@cbuf+6		// hdrlen
+	// constants in comm area
+	lca	eptr,@gret+^	//
+	lca	nret		// BAR already set
+	lca			// one more instruction
+enter:
+// setup/re-init communications area
+	h	0,017002	// "halt 3" - ready to load
+normal:
 // load segment from cards
-// TODO what terminates load?
 	lca	zeroa,x5	// init dist ptr
-nextc:	pdt	header,011,041	// load header data
+nextc:	pdt	@cbuf,011,041	// load header data
 	pcb	.,011,041,010
 	pcb	done,011,041,041	// end of deck (error)
 //
@@ -23,22 +67,21 @@ nextc:	pdt	header,011,041	// load header data
 // works for card and tape records?
 	lca	hptr,x6		// starting ptr
 	mcw	0(x6),banr	// get banner char
-	lca	hptr,rend	// compute end of rec
-	ba	eighty,rend	// card len
-	mcw	6(x6),clen	// get rec ctl len
-//	any more data from hdr?
-	ba	clen,x6		// ptr to prog data
+	bbe	segm,banr,010	// is this a segment header card?
+	lca	hptre,rend	// compute end of rec
+	// any more data from hdr before changing x6?
+	ba	6(x6),x6	// ptr to prog data
 // parse next brt command
 next:	bcc	ctlc,0(x6),03	// check for 11xxxx
-//	4 lsb bits have string len
+	// 4 lsb bits have string len
 	sst	0(x6),slen,017	// len of string
 // must not set punc until after move (destroys punc)
-	lca	x6,endc
-	ba	slen,endc
-	ba	one,endc	// points one past last
-	sw	(endc-^)	// mark end of move
+	lca	x6,x4
+	ba	slen,x4
+	ba	one,x4		// points one past last
+	sw	0(x4)		// mark end of move
 	exm	1(x6),0(x5),037	// incl one extra+wm
-	cw	(endc-^)	// clear end of move
+	cw	0(x4)		// clear end of move
 	bcc	stw1,0(x6),01	// needs wm
 	bcc	sti1,0(x6),02	// needs im
 move:	ba	slen,x5
@@ -76,8 +119,8 @@ ldst:	mcw	3(x6),x5
 	ba	four,x6
 	b	nextf
 //
-cler:	mcw	3(x6),strt
-	mcw	6(x6),endc
+cler:	mcw	3(x6),x3
+	mcw	6(x6),x4
 	exm	7(x6),fill,07	// clears punc
 	ba	eight,x6
 	b	cleer
@@ -95,32 +138,42 @@ term:	mcw	3(x6),x5	//set go adr
 	b	nextr		// todo: also indicate goto
 //
 // clear/fill memory - must clear punc too
-// caller sets strt, endc, fill (w/punc)
+// caller sets x3, x4, fill (w/punc)
 cleer:	scr	1f,070		// set return address
-2:	exm	fill,(strt-^),07
-	c	strt,endc
-	ba	one,strt
-	bct	2b,044		// cont if strt .lt. endc
+2:	exm	fill,0(x3),07
+	c	x3,x4
+	ba	one,x3
+	bct	2b,044		// cont if x3 .lt. x4
 1::	b	0
+
+// segment header card, copy data to comm area
+segm:	scr	1f,070		// set return address
+	// these all terminate on B word mark!
+	mcw	@cbuf+17,@seg+1	// segment
+	mcw			// prog name
+	mcw			// revision
+1::	b	0
+
+// template code for RETURN FOR NORMAL CALL
+	scr	@aret,077		// return to program, if desired
+nret::	b	normal
 
 	.data
 neg1:	.bin	077#1
 one:	.bin	1#1
 four:	.bin	4#1
 eight:	.bin	8#1
-eighty:	.bin	80#3
-emsk:	.bin	04#1	// mask for last record
-hptr:	.word	header
-hptre:	.word	header+80
+emsk:	.bin	04#1	// banner mask for last record
+hptr:	.word	@cbuf
+hptre:	.word	@cbuf+80
+cptr:	.word	@comm
+cptre:	.word	@comme-1
+eptr:	.word	enter
 //
-fzero:	.byte	0
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
-clen:	.bin	0#1	// rec ctl len (hdr)
 rend:	.word	0	// record ptr
 zeroa:	.bin	0#3	// init for dist - must be 3 char
-strt:	.word	0	// clear start addr
-endc:	.word	0	// clear end addr
 fill:	.byte	0	// clear fill char
 //
 header	=	.
