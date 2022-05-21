@@ -732,7 +732,11 @@ public class HW2000 implements CoreMemory
 		}
 		op_xflags |= InstrDecode.OP_HAS_A;
 		iaar = AAR;
-		AAR = fetchAddr(fsr, 0);
+		if (op_exec instanceof I_NOP) {
+			tics += am_na;	// approximate timing
+		} else {
+			AAR = fetchAddr(fsr, 0);
+		}
 		fsr += am_na;
 	}
 
@@ -759,7 +763,11 @@ public class HW2000 implements CoreMemory
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_B;
-		BAR = fetchAddr(fsr, 0);
+		if (op_exec instanceof I_NOP) {
+			tics += am_na;	// approximate timing
+		} else {
+			BAR = fetchAddr(fsr, 0);
+		}
 		fsr += am_na;
 	}
 
