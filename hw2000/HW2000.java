@@ -72,6 +72,7 @@ public class HW2000 implements CoreMemory
 	InstrDecode idc;
 	PeriphDecode pdc;
 	FrontPanel fp;
+	boolean ioSleep = true;
 
 	public HW2000(Properties props) {
 		waitLock = new Semaphore(1);
@@ -89,6 +90,11 @@ public class HW2000 implements CoreMemory
 		pdc = new PeriphDecode(props, this);
 		op_xtra_siz = 8;
 		op_xtra = new byte[op_xtra_siz];
+
+		String s = props.getProperty("iosleep");
+		if (s != null && s.equalsIgnoreCase("no")) {
+			ioSleep = false;
+		}
 
 		adr_min = 0;
 		adr_max = 0x80000;
@@ -145,6 +151,7 @@ public class HW2000 implements CoreMemory
 	// A wait/wake mechanism to use for I/O to avoid spinning
 	private Semaphore waitLock;
 	public void waitIO() {
+		if (!ioSleep || throttled) return;
 		try {
 			waitLock.acquire();
 		} catch (Exception ee) {}

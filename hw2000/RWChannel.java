@@ -117,6 +117,7 @@ public class RWChannel implements Runnable {
 		loadCtl();
 		sys.cr[slc] = sys.validAdr(sys.AAR); // translate to physical address
 		lastSR = -1;
+		t0 = System.nanoTime();
 		sys.setupWait();
 		p.io(this);
 		thr = new Thread(this);
@@ -124,7 +125,7 @@ public class RWChannel implements Runnable {
 	}
 
 	int lastSR;
-	int count = 0;
+	long t0 = 0;
 
 	public void ctl(HW2000 hw, Peripheral p) {
 		int sr = hw.SR;
@@ -141,13 +142,14 @@ public class RWChannel implements Runnable {
 				hw.SR = hw.AAR;
 			}
 		}
+		long t1 = System.nanoTime();
 		if (sr != hw.SR && sr == lastSR && clc >= 0) {
-			if (++count >= 10000) {
+			if (t1 - t0 >= 100000000) {
 				hw.waitIO();
-				count = 0;
+				t0 = System.nanoTime();
 			}
 		} else {
-			count = 0;
+			t0 = t1;
 		}
 		lastSR = sr;
 	}
