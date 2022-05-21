@@ -529,6 +529,55 @@ int scanchr(int pnc) {
 	return token();
 }
 
+// scan expression into BCD field (unsigned?)
+static int scanex10(int pnc) {
+	int w;
+	int m;
+	int f;
+	int vv;
+	inscanbin = 1;
+	int t = expr();
+	inscanbin = 0;
+	if (t != RABS) {
+		cerror(errv);
+	}
+	if (nexttoken == HASH) {
+		scanp = field_width0(scanp, &w);
+		// integer 10^w...
+		for (f = w, m = 1; f-- > 0; m *= 10);
+	} else {
+		w = 1;
+		m = 10;
+		// compute magnitude in 6-bit resolution
+		while ((res.val / m) != 0) {
+			++w;
+			m *= 10;
+		}
+		if (w > 9) {
+			cerror(errv);
+		}
+	}
+	f = 0;
+	while (w > 0) {
+		--w;
+		m /= 10;
+		if (w > 9) {
+			vv = 0;
+		} else {
+			vv = (res.val / m) % 10;
+		}
+		if (f++ == 0) {
+			vv |= (pnc >> 8);
+		}
+		if (w == 0) {
+			vv |= (pnc & 0377);
+		}
+		putb(vv, 1);
+	}
+	return token();
+}
+
+// scan expression into binary field
 static int scanexpr(int pnc) {
 	int w = 1; // TODO: fit to expr size?
 	int f = 0;
@@ -633,7 +682,7 @@ int scanfp(int pnc) {
 	return token();
 }
 
-int scanbcd(int pnc) {
+static int scan10(int pnc) {
 	int v, c;
 	if (*scanp == MINUS) {
 		++scanp;
@@ -663,6 +712,14 @@ int scanbcd(int pnc) {
 		putb(v, 1);
 	}
 	return token();
+}
+
+int scanbcd(int pnc) {
+	if (isdigit(*scanp) || *scanp == MINUS || *scanp == PLUS) {
+		return scan10(pnc);
+	} else {
+		return scanex10(pnc);
+	}
 }
 
 int scanstr(int pnc) {
