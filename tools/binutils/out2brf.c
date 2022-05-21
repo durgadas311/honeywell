@@ -336,6 +336,9 @@ static char *do_out(FILE *fp) {
 	int len = hdr.a_text + hdr.a_data;
 	int x, y;
 
+	if ((hdr.a_entry & 01000000) != ((hdr.a_entry + len) & 01000000)) {
+		return "program spans 256k boundary";
+	}
 	buf = malloc(len + 1);
 	if (buf == NULL) {
 		return "out of memory";
@@ -352,6 +355,8 @@ static char *do_out(FILE *fp) {
 	begin(hdr.a_entry);
 	// TODO: end of range inclusive or exclusive?
 	range(hdr.a_entry, hdr.a_entry + len + hdr.a_bss + hdr.a_heap);
+	// clear .bss + .heap
+	clear(hdr.a_entry + len, hdr.a_entry + len + hdr.a_bss + hdr.a_heap - 1, 0);
 	x = 0;
 	while (x < len) {
 		for (y = x + 1; y < len; ++y) {
