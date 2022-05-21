@@ -92,7 +92,9 @@ public class HW2000 implements CoreMemory
 		op_xtra = new byte[op_xtra_siz];
 
 		String s = props.getProperty("iosleep");
-		if (s != null && s.equalsIgnoreCase("no")) {
+		if (s != null && (s.equalsIgnoreCase("no") ||
+				s.equalsIgnoreCase("off") ||
+				s.equalsIgnoreCase("0"))) {
 			ioSleep = false;
 		}
 

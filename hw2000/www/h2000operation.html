@@ -4,7 +4,15 @@
 </HEAD>
 <BODY>
 
-<P><A HREF="h2000frontpanel.html">Notes on operating the Front Panel</A>
+<P>See also <A HREF="h2000frontpanel.html">Notes on operating the Front Panel</A>.
+
+<P>The simulator by default will attempt to optimize programs spinning on
+PCB instructions such that they sleep. This will be done after 100mS of spinning,
+and will avoid hogging a CPU on the host for things like the card reader
+running out of cards. This feature can be turned off using the property
+(passed on the commandline) "iosleep=no".
+This feature is also disabled when running throttled
+(see Debug menu).
 
 <P> Menus are as follows:
 <UL>
