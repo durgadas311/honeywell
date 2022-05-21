@@ -2,7 +2,7 @@
 //	org   1340
 	.admode	3
 	.text
-start:	cam	40
+start:	cam	040
 //
 loop:	lca	(tabptr-^),fmtptr
 	bs	wlen,tabptr
