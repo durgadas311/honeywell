@@ -22,6 +22,6 @@ all:
 %.pcd: %.out
 	out2brf -c -o $@ $<
 
-.PRECIOUS: %.ss
+.PRECIOUS: %.out
 
 __FRC__:

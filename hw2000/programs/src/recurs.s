@@ -2,7 +2,7 @@
 // Program initialization must ensure that 'x1' contains a word mark.
 	.globl	_end
 	.admode	4
-	.heap	64
+	.heap	128
 
 // On entry:          In body:
 //       +-------------+
@@ -26,17 +26,17 @@ main:
 	cam	060
 	lca	_stk,x1		// setup stack
 	lca	x1,x2		// init frame pointer
-	bs	@main,x1	// alloc local variable 'level'
+	bs	_c4,x1		// alloc local variable 'level'
 	lca	_c0,-4(x2)	// init level=0
 	pdt	_m1,012,07,0	// print function name
 	pcb	.,012,07,010
 	pdt	_m2,012,07,01	// print start message
 	pcb	.,012,07,010
 	// callee can alter 'level' unless we copy it
-	lca	-4(x2),0(x1)	// push copy of 'level' on stack
-	bs	.recurs,x1	// (adjust for push)
+	lca	-4(x2),-4(x1)	// push copy of 'level' on stack
+	bs	_c4,x1		// (adjust for push)
 	b	recurs		// call recurs(level)
-	ba	.recurs,x1	// pop/discard 'level' copy
+	ba	_c4,x1		// pop/discard 'level' copy
 	pdt	_m1,012,07,0	// print function name
 	pcb	.,012,07,010
 	pdt	_m3,012,07,01	// print end message
@@ -53,14 +53,14 @@ main:
 recurs:
 ///////////////////////
 // function preamble:
-	scr	0(x1),070	// save return address
-	lca	x2,-4(x1)	// save frame pointer
+	scr	-4(x1),070	// save return address
+	lca	x2,-8(x1)	// save frame pointer
+	bs	_c8,x1		// adjust stack for function
 	lca	x1,x2		// set new frame pointer
-	bs	@recurs,x1	// adjust stack for function
-				// (alloc local storage)
+	bs	_c4,x1		// alloc local vars
 ///////////////////////
 // function body:
-	lca	4(x2),-4(x2)	// copy param to local var
+	lca	8(x2),-4(x2)	// copy param to local var
 	ba	_c1,-4(x2)	// increment level
 	exm	-4(x2),_r1+14,001 // put level (digit) in message
 	pdt	_r1,012,07,0	// print...
@@ -69,10 +69,10 @@ recurs:
 	pcb	.,012,07,010	//
 	bce	1f,-4(x2),05	// stop recursion at 5
 	// callee can modify level unless we copy
-	lca	-4(x2),0(x1)	// push 'lev' on stack
-	bs	.recurs,x1	// (adjust for push)
+	lca	-4(x2),-4(x1)	// push 'lev' on stack
+	bs	_c4,x1		// (adjust for push)
 	b	recurs		// call recurs(lev)
-	ba	.recurs,x1	// discard func param
+	ba	_c4,x1		// discard func param
 1:	exm	-4(x2),_r1+14,001 // put level in message
 	pdt	_r1,012,07,0	// print...
 	pcb	.,012,07,010	//
@@ -81,8 +81,8 @@ recurs:
 ///////////////////////
 // function postamble:
 	lca	x2,x1		// restore stack pointer
-	lca	-4(x1),x2	// restore frame pointer
-	lcr	0(x1),077	// "return": load direct to SR
+	lca	-8(x1),x2	// restore frame pointer
+	lcr	-4(x1),077	// "return": load direct to SR
 	nop // terminate prev instr - WM required at least
 
 	.data
@@ -103,3 +103,5 @@ _r3::	.string f:" exit_"
 // general constants
 _c0:	.bin	0#4	// init for params, addrs
 _c1:	.bin	1#1
+_c4:	.bin	4#1
+_c8:	.bin	8#1
