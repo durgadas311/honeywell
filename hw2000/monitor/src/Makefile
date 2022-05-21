@@ -21,7 +21,7 @@ brdldr.ss: brdldr.o
 %.pcd: %.out
 	out2boot -c -o $@ $<
 
-pcdboot.out: boot.o pcdboot1.so pcdboot1.o pcdboot2.so pcdboot2.o brdldr.so
+pcdboot.out: boot.o pcdboot0.so pcdboot0.o pcdboot1.so pcdboot1.o pcdboot2.so pcdboot2.o brdldr.so
 	ld200 -o $@ -a $(PCDBOOT_ORG) $^
 
 brdldr.out: brdldr.o
