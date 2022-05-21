@@ -56,7 +56,7 @@ struct optab opcodes[] = {
 	{ "cw",     023 | OP_A | OP_B },
 	{ "ci",     021 | OP_A | OP_B },
 	{ "h",      045 | OP_A | OP_B | OP_V },
-	{ "nop",    040 },
+	{ "nop",    040 | OP_A | OP_B | OP_V }, // operands ignored
 	{ "mcw",    014 | OP_A | OP_B },
 	{ "lca",    015 | OP_A | OP_B },
 	{ "scr",    024 | OP_A | OP_V },
