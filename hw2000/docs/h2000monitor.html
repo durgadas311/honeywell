@@ -1,0 +1,190 @@
+<HTML>
+<HEAD>
+<TITLE>Card Monitor B, Recreated</TITLE>
+</HEAD>
+<BODY>
+
+<H2>CARD DECKS</H2>
+
+<P>"Punch Card Decks" are files with the extension ".pcd" that
+are used to represent decks of punch cards on this simulator.
+Simple concatination may be used to combine decks in any order.
+The H2000 Card Reader/Punch allso allows "stacking" of multiple PCD files
+in the hopper, eliminating the need to manage large, static, concatinated files.
+Note that a card deck may be "duplicated" simply by using it multiple
+times (in concatination or in the hopper).
+
+<P>Decks for sample programs are in "hw2000/prorgams/bin" on the github repository.
+A bootable deck for the monitor is in "hw2000/monitor/bin" on the github repository.
+Source code for these decks is located in the associated "src" subdirectory.
+All of this source code uses the "as200" and companion binutils tools
+located in the "tools" directory on the github repository.
+
+<H2>CARD MONITOR B</H2>
+
+<P>This implementation of Card Monitor B is not totally complete, some
+features are not implemented. These features are represented via the
+communications area, which is located at 0100-0233 (octal).
+The following are functional to the extent described here.
+
+<P>NOTE! When making changes to the communication area, existing
+punctuation MUST be preserved.
+
+<DL>
+<DT>Program Name</DT>
+<DD>Locations 0104-0111 (octal) in the communications area contain
+the program name of the last segment card loaded.
+For search features, this field may be set to the desired program name to be loaded.
+</DD>
+<DT>Segment Name</DT>
+<DD>Locations 0112-0113 (octal) in the communications area contain
+the segment name of the last segment card loaded.
+For search features, this field may be set to the desired segment name to be loaded.
+</DD>
+<DT>Revision Number</DT>
+<DD>Locations 0101-0103 (octal) in the communications area contain
+the revision number of the last segment card loaded.
+</DD>
+<DT>Return for Normal Call</DT>
+<DD>A program may branch to location 0202 (octal), in 3-char address mode,
+to effectively exit and return to monitor control.
+The monitor will start loading the next program, according to parameters
+in the comunications area.
+</DD>
+<DT>General Return Address</DT>
+<DD>A program may branch to that address in location 0213 (octal), in 3-char address mode,
+to effectively exit and return to monitor control.
+The monitor will halt and await operator instructions/actions.
+</DD>
+<DT>Search Mode</DT>
+<DD>Location 0157 (octal) in the communications area contains
+the search mode key. It defaults to 077 (octal) and is reset by the
+General Return. The following search mode keys (octal) are implemented:
+<UL>
+<LI>077 - Load next segment.
+<LI>001 - Load Nth segment, as specified by the Relative Position field.
+<LI>anything else - Load the segment that matches
+the Program Name and Segment Name fields.
+</UL>
+<DT>Relative Position</DT>
+<DD>Location 0156 (octal) in the communications area contains
+the relative position for Search Mode 001.
+Default is 001, which indicates that the next segment is to be loaded
+(same effect as Search Mode 077).
+</DD>
+<DT>Start Mode</DT>
+<DD>Location 0160 (octal) in the communications area contains
+the start mode key. This directs the monitor what to do after
+loading a segment. The following are implemented:
+<UL>
+<LI>'N' - (045 octal) Branch to the starting location of the program.
+<LI>'R' - (051 octal) Return to the calling program
+(only valid when using Return for Normal Call).
+<LI>anything else - Halt with SR=starting location of the program (non-standard behavior).
+</UL>
+</DD>
+<DT>Halts</DT>
+<DD>The following halts are implemented:
+<UL>
+<LI>3 - (AAR=0 BAR=017002) Monitor is awaiting commands.
+Alter communication area if desired, load BRF decks if needed, press RUN.
+<LI>8 - (AAR=0 BAR=014011) Monitor encountered the "1EOF " card
+while searching for a program segment to load
+(or before the last BRF card of a segment).
+Load BRF deck(s) and press RUN.
+Note that conditions normally associated with "halt 9" will
+cause "halt 8" instead.
+</UL>
+</DD>
+</DL>
+
+<H2>BOOTSTRAP</H2>
+
+<P>The card deck containing Card Monitor B and the bootstrap routines
+is named "brdboot.pcd".
+
+<OL>
+<LI>Insert "brdboot.pcd" in the hopper.
+This must be the first/next deck in the hopper.
+<LI>Add any additional BRF program decks and the "1eof.pcd" terminator (optional).
+<LI>Press INITIALIZE
+<LI>Enter 041 in Control and 0001620 in Address and press BOOTSTRAP,
+or on the console type "B 41 0001620".
+<LI>Press RUN.
+</OL>
+<P>At this point, the system should halt with AAR=0 and BAR=017002 (octal).
+The monitor is now ready for operation.
+
+<H2>EXAMPLE</H2>
+<P>This example uses a set of "Hello World" programs, each having a different
+name that corresponds to its relative position in the card deck
+("HELLO1" is the first, "HELLO5" is the 5th/last).
+All these programs have the segment name "01".
+These programs are assembled into the card deck "hellos.pcd".
+
+<P>This example uses the console "control mode", but the equivalent tasks may
+be performed using the front panel.
+
+<OL>
+<LI>Load "brdboot.pcd", "hellos.pcd", "hellos.pcd", and "1eof.pcd" in the hopper.
+Note, "hellos.pcd" is intentionally loaded twice.
+<LI>Press INITIALIZE.
+<LI>Type "B 41 0001620".
+<LI>Press RUN.
+<LI>(optional) Confirm "halt 3" by typing "P 74" and seeing "0017002".
+<LI>Press RUN.
+The message "HELLO WORLD, I AM HELLO1/01" should be printed on the console.
+<LI>Press RUN.
+The message "HELLO WORLD, I AM HELLO2/01" should be printed on the console.
+This demonstrates the default mode, where the next program is loaded and run
+each time RUN is pressed.
+<LI>Setup search to run the third next program.
+	<OL>
+	<LI>Type "A 00 0000156"
+	<LI>Type "103" to enter 03 into the Relative Position (and keep WM).
+	<LI>Type "101" to enter 01 into the Search Mode (and keep WM).
+	Press RETURN.
+	<LI>Press RUN.
+The message "HELLO WORLD, I AM HELLO5/01" should be printed on the console.
+	</OL>
+<LI>Setup search to run the program named "HELLO3".
+	<OL>
+	<LI>Type "A 00 0000157"
+	<LI>Type "120" to enter 20 into the Search Mode (and keep WM).
+	Press RETURN.
+	<LI>Type "A 00 0000111"
+	<LI>Type "003" to enter '3' into the last character of program name.
+	Press RETURN.
+	<LI>Press RUN.
+The message "HELLO WORLD, I AM HELLO3/01" should be printed on the console.
+	</OL>
+</OL>
+
+<H2>PROGRAMS</H2>
+
+<P>The following example programs are provided:
+
+<DL>
+<DT>hellos.pcd</DT>
+<DD>Five "hello world" programs, named HELLO1 through HELLO5.
+This program will print a "hello" message on the console that includes the
+Program Name and Segment Name from the communication area.
+</DD>
+<DT>mcetests.pcd</DT>
+<DD>A program that was used to test the MCE
+(Move Characters and Edit) instruction.
+It runs the various examples given in the programmer's manual.
+Output is printed on the Line Printer.
+</DD>
+<DT>recurs.pcd</DT>
+<DD>An example/proof-of-concept for using index registers
+to implement a traditional stack/frame for function calls.
+This example uses recursion to demonstrate the stack.
+The function recurses until 5 levels are reached, and then
+returns up the stack. Messages are printed on the console showing
+entry and exit from each level.
+</DD>
+</DL>
+
+</BODY>
+</HTML>
