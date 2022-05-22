@@ -1,6 +1,6 @@
 # Makefile for building programs for H200/2000
 
-all:
+all: recurs.pcd mcetests.pcd hellos.pcd
 
 %.o: %.s
 	as200 -l -u -o $@ $? >$*.l
@@ -21,6 +21,12 @@ all:
 # Just make BRD deck, user assembles decks in hopper
 %.pcd: %.out
 	out2brf -c -o $@ $<
+
+hello%.pcd: hello.out
+	out2brf -c -o $@ -P HELLO$* $^
+
+hellos.pcd: hello1.pcd hello2.pcd hello3.pcd hello4.pcd hello5.pcd
+	cat $^ >$@
 
 .PRECIOUS: %.out
 
