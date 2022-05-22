@@ -53,6 +53,7 @@ brdldr:
 	lca	nret		// BAR already set
 	lca			// one more instruction
 enter:
+	lca	norm,@stmd	// default to 'N' start mode
 // setup/re-init communications area
 	h	0,017002	// "halt 3" - ready to load
 normal:
@@ -94,7 +95,10 @@ nextr:	ext	emsk,banr	// zero if not last
 	a	banr,banr	// get zero-balance status
 // done loading a card
 	bct	nextc,060	// loop if zero-balance (077)
-done:	h	(x5)		// or b (x5)?
+done:	bce	0(x5),@stmd,'N'
+	bce	(@aret),@stmd,'R'
+//	bce	(@spst),@stmd,'S'
+	h	0(x5)
 //
 // exit is via ctlc on case of 61 char
 // next rec is via ctlc on case of 77 char
@@ -112,7 +116,7 @@ ctlc:	bce	ldst,0(x6),060	// set dist ptr
 	bce	seti,0(x6),064	// set item mark
 // we should only get 77 if banner is 50,41
 	bce	nextr,0(x6),077	// end of record
-//	error...
+//	error... invalid control
 	h	.
 //
 ldst:	mcw	3(x6),x5
@@ -155,7 +159,7 @@ segm:	scr	1f,070		// set return address
 1::	b	0
 
 // template code for RETURN FOR NORMAL CALL
-	scr	@aret,077		// return to program, if desired
+	scr	@aret+^,077	// return to program, if desired
 nret::	b	normal
 
 	.data
@@ -175,5 +179,6 @@ slen:	.bin	0#1	// string len
 rend:	.word	0	// record ptr
 zeroa:	.bin	0#3	// init for dist - must be 3 char
 fill:	.byte	0	// clear fill char
+norm:	.bin	'N'#1
 //
 header	=	.
