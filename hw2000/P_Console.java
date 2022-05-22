@@ -27,6 +27,7 @@ public class P_Console extends JFrame
 	boolean isOn = false;
 	boolean offline = false;
 	boolean interrupt = false;
+	boolean inInChar = false;
 	int irq;
 	boolean allow;
 	boolean canceled;
@@ -185,6 +186,12 @@ public class P_Console extends JFrame
 		ints = 0;
 		interrupt = false;
 		dataTerm = false;
+		if (inInChar) {
+			poke();
+		}
+		if (col > 0) {
+			putChar("\n");
+		}
 	}
 
 	// I.e. Front Panel switch
@@ -390,7 +397,9 @@ public class P_Console extends JFrame
 	public int inChar() {
 		byte c = -2;
 		try {
+			inInChar = true;
 			c = getChar(false);
+			inInChar = false;
 		} catch (Exception ee) {}
 		if (c < -1) {
 			return -1;

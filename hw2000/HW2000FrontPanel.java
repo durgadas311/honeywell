@@ -1917,9 +1917,7 @@ public class HW2000FrontPanel extends JFrame
 				c = p.inChar();
 			}
 			if (c < 0) {
-				if (state != 0) {
-					p.output("!\n");
-				}
+				// should only mean INITIALIZE
 				return;
 			}
 			String cEcho = "" + (char)c;
