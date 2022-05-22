@@ -1,7 +1,12 @@
 BRDLDR_ORG = 0234	# ORG for card monitor code
 PCDBOOT_ORG = 01620	# ORG for card bootstrap code
 
-all: brdboot.pcd # mtiboot.mti or brtboot.mti?
+PCDS = brdboot.pcd
+
+all: $(PCDS) # mtiboot.mti or brtboot.mti?
+
+ship: all
+	cp -uv $(PCDS) ../bin
 
 %.o: %.s
 	as200 -l -o $@ $? >$*.l
