@@ -52,7 +52,7 @@ The monitor will start loading the next program, according to parameters
 in the comunications area.
 </DD>
 <DT>General Return Address</DT>
-<DD>A program may branch to that address in location 0213 (octal), in 3-char address mode,
+<DD>A program may branch to the address in location 0213 (octal), in 3-char address mode,
 to effectively exit and return to monitor control.
 The monitor will halt and await operator instructions/actions.
 </DD>
@@ -131,7 +131,7 @@ Note, "hellos.pcd" is intentionally loaded twice.
 <LI>Press INITIALIZE.
 <LI>Type "B 41 0001620".
 <LI>Press RUN.
-<LI>(optional) Confirm "halt 3" by typing "P 74" and seeing "0017002".
+<LI>(optional) Confirm "halt 3" by typing "P 70" and seeing "0017002".
 <LI>Press RUN.
 The message "HELLO WORLD, I AM HELLO1/01" should be printed on the console.
 <LI>Press RUN.

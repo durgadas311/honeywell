@@ -45,14 +45,8 @@ similar to the one provided on the 220-3 console (shown right).
 Here is a short video of it running MACHIN, the Pi computation program (under monitor).
 <A HREF="https://youtu.be/-bhXYxyJZQE">YouTube Video</A>
 <P>
-Sample programs include "monitor.ezc", a simple monitor program that
-will run a job in protected/relocated mode and service interrupts for
-privileged op codes (and allow PDT/PCB), and abort on address violations
-or disallowed op-codes. It is interactive on the console. Two commands are recognized,
-"L" to list currently queued job (if any), and "R" to run current job.
-When job finishes (executes a halt instruction) the monitor prints information including
-the total amount of time used based on the ATR register (and overflows),
-assuming 2 microseconds per count.
+Sample programs include <A HREF="h2000monitor.html">Card Monitor B</A>,
+a re-creation of the monitor used to load and run programs from punch cards.
 
 <P><A HREF="h2000operation.html">Basic Operation</A>
 <P><A HREF="h2000rwc.html">Notes on Peripheral Read/Write Channels</A>
@@ -71,22 +65,12 @@ assuming 2 microseconds per count.
 <LI><A HREF="h213timedevices.html">Models 213-3/4 Interval Timer/Time-of-day Clock</A>
 </UL>
 <P>
-The simulation has two implied modes of operation.
-The default (without monitor) allows a program to be assembled
-(File->Assemble) into memory directly and can be executed by pressing the
-"Run" button (i.e. SR is setup by assembler).
-The second mode is entered by selecting File->Monitor and
-choosing "monitor.ezc" (or equivalent), then pressing Run.
-Note, the file browse window has a checkbox for "Listing" which
-enables generation of an assembler listing.
-<P>
-There are still some complications with monitor mode, it may be necessary to
-press Initialize when switching between modes.
-<P>
 The built-in assembler is basic but functional.
 Not all Easycoder directives are supported, but there should be enough to get by.
 All main op-codes are supported,
 but non of the "pseudo" op-codes (e.g. implied variants).
+There is also a Unix-style assembler, linker, and other binutils
+provided in the "tools" subdirectory.
 <P>
 The sample programs include "machin.ezc", which is the program from
 <A HREF="http://www.honeypi.org.uk/">The Honey Pi Project</A>,
@@ -107,7 +91,9 @@ Note, programs used with this loader must be ORG'ed (at least) at 1340 (decimal)
 The program "mcetests.ezc" can be assembled with this option, and yields an image that
 can be mounted on Tape Drive Unit 000 and used with the BOOTSTRAP function. Use a boot address of 0.
 <P>
-Downloads are available at <A HREF="http://sebhc.durgadas.com/hw2000">sebhc.durgadas.com/hw2000</A>
+Downloads are available at <A HREF="http://sebhc.durgadas.com/hw2000">sebhc.durgadas.com/hw2000</A>.
+This project is also hosted on github
+<A HREF="https://github.com/durgadas311/honeywell">here</A>.
 <P>
 Contact: <A HREF="emailto:durgadas311@gmail">durgadas311@gmail</A>
 <P>
