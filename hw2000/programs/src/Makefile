@@ -1,6 +1,6 @@
 # Makefile for building programs for H200/2000
 
-PCDS = recurs.pcd mcetests.pcd hellos.pcd
+PCDS = recurs.pcd mcetests.pcd hellos.pcd chain.pcd
 
 all: $(PCDS)
 

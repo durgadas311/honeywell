@@ -165,6 +165,17 @@ The message "HELLO WORLD, I AM HELLO3/01" should be printed on the console.
 <P>The following example programs are provided:
 
 <DL>
+<DT>chain.pcd</DT>
+<DD>A demo program that reads a program name (and optional segment)
+on the console and then sets up a search for that program
+and does a Return for Normal Call to start the search.
+The searched program will be run when it is loaded.
+Typical use is to add "chain.pcd" after "brdboot.pcd"
+and before the program deck(s), then press RUN after booting the monitor.
+The prompt "ENTER PROGRAM: " will be printed on the console,
+where the operator then enters the program name. If a segment name is
+to be included, the program name must be padded to 6 characters.
+</DD>
 <DT>hellos.pcd</DT>
 <DD>Five "hello world" programs, named HELLO1 through HELLO5.
 This program will print a "hello" message on the console that includes the
