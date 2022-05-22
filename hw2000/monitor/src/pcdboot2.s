@@ -1,7 +1,7 @@
 // secondary bootstrap code for card decks.
 // linked with pcdboot1 after prefixing with SW/SI module
 load	=	0234	// load address for monitor code
-ncards	=	7	// TODO: auto-count how many cards
+ncards	=	9	// TODO: auto-count how many cards
 //
 	.admode	2
 	.globl	one,zero,c80

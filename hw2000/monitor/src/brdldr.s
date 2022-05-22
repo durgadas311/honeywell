@@ -54,21 +54,24 @@ brdldr:
 	lca			// one more instruction
 enter:
 	lca	norm,@stmd	// default to 'N' start mode
+	lca	one,@relpos
+	lca	neg1,@semd
 // setup/re-init communications area
 	h	0,017002	// "halt 3" - ready to load
 normal:
 // load segment from cards
+	sst	neg1,found,01	// reset found flag
 	lca	zeroa,x5	// init dist ptr
 nextc:	pdt	@cbuf,011,041	// load header data
 	pcb	.,011,041,010
 	pcb	done,011,041,041	// end of deck (error)
-//
 // load program data from header
 // returns zero-balance if not last record
 // works for card and tape records?
 	lca	hptr,x6		// starting ptr
 	mcw	0(x6),banr	// get banner char
 	bbe	segm,banr,010	// is this a segment header card?
+	bbe	nextc,found,01	// keep searching until found
 	lca	hptre,rend	// compute end of rec
 	// any more data from hdr before changing x6?
 	ba	6(x6),x6	// ptr to prog data
@@ -95,10 +98,11 @@ nextr:	ext	emsk,banr	// zero if not last
 	a	banr,banr	// get zero-balance status
 // done loading a card
 	bct	nextc,060	// loop if zero-balance (077)
-done:	bce	0(x5),@stmd,'N'
+	// TODO: set 020 in @semd...
+	bce	0(x5),@stmd,'N'
 	bce	(@aret),@stmd,'R'
 //	bce	(@spst),@stmd,'S'
-	h	0(x5)
+done:	h	0(x5)	// error condition
 //
 // exit is via ctlc on case of 61 char
 // next rec is via ctlc on case of 77 char
@@ -152,11 +156,28 @@ cleer:	scr	1f,070		// set return address
 
 // segment header card, copy data to comm area
 segm:	scr	1f,070		// set return address
+	// TODO: check search mode - compare prog/segm...
+	bce	2f,@semd,077
+	bce	rel,@semd,001
+//	bcc	xxx,@semd,001	// 060 or 020 search
+//				// else 040/000 search
+	c	@cbuf+17,@seg+1
+	bct	3f,045		// return if !=
+	c	@cbuf+15,@prg+5
+	bct	3f,045		// return if !=
+
+	// copy prog,segm,rev to communications area
 	// these all terminate on B word mark!
-	mcw	@cbuf+17,@seg+1	// segment
+2:	mcw	@cbuf+17,@seg+1	// segment
 	mcw			// prog name
 	mcw			// revision
+	sst	eight,found,01	// start loading now... (anything with bit 01 clear)
+3:
 1::	b	0
+
+rel:	bce	2b,@relpos,01	// stop when counter reaches 1
+	bs	one,@relpos
+	b	3b
 
 // template code for RETURN FOR NORMAL CALL
 	scr	@aret+^,077	// return to program, if desired
@@ -180,5 +201,4 @@ rend:	.word	0	// record ptr
 zeroa:	.bin	0#3	// init for dist - must be 3 char
 fill:	.byte	0	// clear fill char
 norm:	.bin	'N'#1
-//
-header	=	.
+found:	.bin	1#1

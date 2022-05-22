@@ -1,5 +1,5 @@
 // Primary bootstrap code, part 2, for card decks.
-ncards	=	5	// number of *additional* cards (BOOTSTRAP read 1)
+ncards	=	6	// number of *additional* cards (BOOTSTRAP read 1)
 	.admode	2
 	.globl	boot
 	.globl	one,zero,c80	// for use by pcdboot2
