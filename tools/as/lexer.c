@@ -514,13 +514,12 @@ int scanchr(int pnc) {
 	e = field_width(p, &w);
 	n = w;
 	while (n > 0) {
-		vv = 0;
+		vv = (n == 1 ? c : 0);
 		if (n == w) {
 			vv |= (pnc >> 8);
 		}
 		--n;
 		if (n == 0) {
-			vv = c;
 			vv |= (pnc & 0377);
 		}
 		putb(vv, 1);
