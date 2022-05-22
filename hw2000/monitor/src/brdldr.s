@@ -70,6 +70,7 @@ nextc:	pdt	@cbuf,011,041	// load header data
 // works for card and tape records?
 	lca	hptr,x6		// starting ptr
 	mcw	0(x6),banr	// get banner char
+	bce	nofo,banr,'1'	// assume '1' is "1EOF "...
 	bbe	segm,banr,010	// is this a segment header card?
 	bbe	nextc,found,01	// keep searching until found
 	lca	hptre,rend	// compute end of rec
@@ -178,6 +179,9 @@ segm:	scr	1f,070		// set return address
 rel:	bce	2b,@relpos,01	// stop when counter reaches 1
 	bs	one,@relpos
 	b	3b
+
+nofo:	h	0,014011	// "halt 8", or possibly "halt 9"
+	b	nextc		// Pressing RUN means "more cards added"
 
 // template code for RETURN FOR NORMAL CALL
 	scr	@aret+^,077	// return to program, if desired
