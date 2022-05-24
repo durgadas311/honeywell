@@ -133,7 +133,7 @@ public class InstrDecode {
 		i_flags[OP_CW] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_CI] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_H] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_PRIV;
-		i_flags[OP_NOP] = 0;
+		i_flags[OP_NOP] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_MCW] = OP_HAS_A | OP_HAS_B;
 		i_flags[OP_LCA] = OP_HAS_A | OP_HAS_B;
 		i_flags[OP_SCR] = OP_HAS_A | OP_HAS_V;
