@@ -1,4 +1,7 @@
+SPATH = -sourcepath .:../cardpunch:../easycoder:../fortran4
+
 JAVAS = $(wildcard *.java)
+
 CLASSES = $(subst .java,.class,$(JAVAS))
 
 CPCLASSES =	CharConverter.class \
@@ -15,7 +18,7 @@ CPCLASSES =	CharConverter.class \
 
 F4CLASSES =	FortranLibrary.class
 
-EZCLASSES =	Assembler*.class \
+EZCLASSES =	Assembler.class \
 		MacroDef.class \
 		Loader.class \
 		BRTLoader.class \
@@ -90,6 +93,7 @@ H2000.jar: all docs/About.html
 # If any of these classes get rebuilt, we need to add them also.
 # Basically, just always add them.
 ../easycoder/EasyCoder.jar: __FRC__
+	$(MAKE) -C ../easycoder EasyCoder.jar
 	jar uf $@ MacroLibMOD1MSIO.class MOD1MSIORunTime.class HW2000Trap.class
 
 docs/About.html: __FRC__
@@ -102,15 +106,20 @@ hwprogs.zip: $(addprefix bringup/,$(PROGS))
 	zip -j $@ $(addprefix bringup/,$(PROGS))
 
 %.class: %.java
-	javac $?
+	javac $(SPATH) $?
 
-$(CPCLASSES):
-	ln -s ../cardpunch/$@ .
+# Be sure to pick up all inner classes (ln -sf ../xxx/$**.class .)
+$(CPCLASSES): %.class: ../cardpunch/%.java
+	$(MAKE) -C ../cardpunch $@
+	ln -sf ../cardpunch/$**.class .
 
-$(F4CLASSES):
-	ln -s ../fortran4/$@ .
+$(F4CLASSES): %.class: ../fortran4/%.java
+	$(MAKE) -C ../fortran4 $@
+	ln -sf ../fortran4/$**.class .
 
-$(EZCLASSES):
-	ln -s ../easycoder/$@ .
+$(EZCLASSES): %.class: ../easycoder/%.java
+	$(MAKE) -C ../easycoder $@
+	ln -sf ../easycoder/$**.class .
+
 
 __FRC__:

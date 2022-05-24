@@ -1,7 +1,12 @@
+SPATH = -sourcepath .:../cardpunch:../hw2000
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
-CPCLASSES =     CharConverter.class
+CPCLASSES =     CharConverter.class \
+		CardHandler.class \
+		CardStacker.class \
+		CardHopper.class
+
 HWCLASSES =     CoreMemory.class \
 		CoreLoader.class \
 		RWChannel.class \
@@ -12,8 +17,8 @@ HWCLASSES =     CoreMemory.class \
 		PopupFactory.class \
 		PeriphLoader.class \
 		SequentialRecordIO.class \
-		P_MagneticTape*.class \
-		P_CardReaderPunch*.class \
+		P_MagneticTape.class \
+		P_CardReaderPunch.class \
 		InstrDecode.class
 
 EXTCLASSES = $(CPCLASSES) $(HWCLASSES)
@@ -23,16 +28,16 @@ all: $(EXTCLASSES) $(CLASSES)
 jar: EasyCoder.jar
 
 %.class: %.java
-	javac $?
+	javac $(SPATH) $?
 
 Assembler.class: $(JAVAS)
-	javac Assembler.java
+	javac $(SPATH) Assembler.java
 
 ezc.class: ezc.java Assembler.class
-	javac ezc.java
+	javac $(SPATH) ezc.java
 
 EasyCoder.class: EasyCoder.java Assembler.class
-	javac EasyCoder.java
+	javac $(SPATH) EasyCoder.java
 
 EasyCoder.jar: all bootmt.mti
 	echo "Main-Class: EasyCoder" >Manifest.txt
@@ -41,10 +46,12 @@ EasyCoder.jar: all bootmt.mti
 bootmt.mti:
 	ln -s ../hw2000/bringup/bootmt.mti .
 
-$(CPCLASSES):
-	ln -s ../cardpunch/$@ .
+$(CPCLASSES): %.class: ../cardpunch/%.java
+	$(MAKE) -C ../cardpunch $@
+	ln -sf ../cardpunch/$**.class .
 
-$(HWCLASSES):
-	ln -s ../hw2000/$@ .
+$(HWCLASSES): %.class: ../hw2000/%.java
+	$(MAKE) -C ../hw2000 $@
+	ln -sf ../hw2000/$**.class .
 
 __FRC__:

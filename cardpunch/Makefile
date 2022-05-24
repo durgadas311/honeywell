@@ -1,3 +1,4 @@
+SPATH = -sourcepath .:../hw2000
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 
@@ -6,7 +7,7 @@ HWCLASSES = PopupFactory.class
 all: $(HWCLASSES) $(CLASSES)
 
 %.class: %.java
-	javac $?
+	javac $(SPATH) $?
 
 jar: CardPunch.jar Viewer.jar DataCenter.jar
 
@@ -59,8 +60,9 @@ docs/About5.html: __FRC__
 www: __FRC__
 	rsync -Wuv www/*.* durgadas.com:/var/www/html/sims/punchcards
 
-$(HWCLASSES):
-	ln -s ../hw2000/$@ .
+$(HWCLASSES): %.class: ../hw2000/%.java
+	$(MAKE) -C ../hw2000 $@
+	ln -sf ../hw2000/$**.class .
 
 clobber:
 	rm -f *.jar *.class
