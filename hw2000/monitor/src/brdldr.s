@@ -7,7 +7,7 @@
 @prg	=	0104		// program name
 @seg	=	0112		// segment
 @halt	=	0115		// halt name (name+seg)
-@fxst0	=	0126		// fixed start 0 ()
+@fxst0	=	0126		// fixed start 0 (general return)
 @fxst1	=	0132		// fixed start 1 ()
 @fxst2	=	0136		// fixed start 2 ()
 @fxst3	=	0142		// fixed start 3 ()
@@ -52,6 +52,9 @@ brdldr:
 	lca	eptr,@gret+^	//
 	lca	nret		// BAR already set
 	lca			// one more instruction
+	sw	@fxst0,@fxst1	// setup fixed start 0 (general return)
+	mcw	eptr
+	mcw	branch
 enter:
 	lca	norm,@stmd	// default to 'N' start mode
 	lca	one,@relpos
@@ -185,6 +188,7 @@ nofo:	h	0,014011	// "halt 8", or possibly "halt 9"
 
 // template code for RETURN FOR NORMAL CALL
 	scr	@aret+^,077	// return to program, if desired
+branch:	// a B instruction opcode - any one will do
 nret::	b	normal
 
 	.data

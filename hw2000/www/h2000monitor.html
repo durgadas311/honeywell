@@ -56,6 +56,13 @@ in the comunications area.
 to effectively exit and return to monitor control.
 The monitor will halt and await operator instructions/actions.
 </DD>
+<DT>Fixed Start 0</DT>
+<DD>A program may branch to location 0126 (octal), in 3-char address mode,
+to effectively exit and return to monitor control.
+The monitor will halt and await operator instructions/actions.
+This is also a convenient way to return to the monitor from the front panel (or console).
+For example, type "A 77 0000126" on the console, press 3-char address mode, and press RUN.
+</DD>
 <DT>Search Mode</DT>
 <DD>Location 0157 (octal) in the communications area contains
 the search mode key. It defaults to 077 (octal) and is reset by the
