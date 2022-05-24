@@ -969,7 +969,7 @@ public class HW2000 implements CoreMemory
 		String op;
 		Character ac, bc;
 		if (op_exec == null) {
-			op = "null";
+			op = String.format(" %02o", opSR);
 		} else {
 			op = op_exec.mnem();
 		}
