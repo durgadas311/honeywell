@@ -227,6 +227,9 @@ public class HW2000FrontPanel extends JFrame
 		mi = new JMenuItem("Dump Full", KeyEvent.VK_N);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Dump CCR", KeyEvent.VK_W);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Throttle On", KeyEvent.VK_X);
 		mi_thr = mi;
 		mi.addActionListener(this);
@@ -2959,6 +2962,8 @@ ee.printStackTrace();
 			if (dumpDialog("Dump Parameters") > 0) {
 				sys.dumpHW(dumpLow, dumpHi);
 			}
+		} else if (mi.getMnemonic() == KeyEvent.VK_W) {
+			sys.dumpCR();
 		} else if (mi.getMnemonic() == KeyEvent.VK_Z) {
 			sys.clearMem();
 		} else if (mi.getMnemonic() == KeyEvent.VK_Y) {

@@ -686,6 +686,24 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	private void syncCtlReg(int reg) {
+		cr[reg] = getCtrlReg((byte)reg);
+	}
+	private void syncCtlReg() {
+		syncCtlReg(054);
+		syncCtlReg(064);
+		syncCtlReg(066);
+		syncCtlReg(070);
+		syncCtlReg(074);
+		syncCtlReg(076);
+		syncCtlReg(077);
+		// FP ACC registers
+		for (int x = 041; x < 060; ++x) {
+			if ((x & 003) == 0) continue;
+			syncCtlReg(x);
+		}
+	}
+
 	// 
 	private int fetchAddr(int ptr, int ref) {
 		int a = 0;
@@ -1224,6 +1242,23 @@ public class HW2000 implements CoreMemory
 
 	public CharConverter cvt() {
 		return pdc.cvt;
+	}
+
+	public void dumpCR() {
+		// first, sync-up
+		syncCtlReg();
+		listOut("\n\nControl Memory Registers\n");
+		for (int x = 0; x < 020; ++x) {
+			listOut(String.format(	"%02o=%07o  " +
+						"%02o=%07o  " +
+						"%02o=%07o  " +
+						"%02o=%07o\n",
+				x, cr[x],
+				x + 020, cr[x + 020],
+				x + 040, cr[x + 040],
+				x + 060, cr[x + 060]));
+		}
+		listOut(CTL.dumpDebug());
 	}
 
 	// Honeywell-style memory dump.
