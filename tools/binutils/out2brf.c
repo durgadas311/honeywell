@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <string.h>
 #include "a.out.h"
 
 extern char hw200[128];
@@ -17,7 +18,7 @@ static int sflg = 0;
 static char *ofname = NULL;
 static FILE *of = NULL;	// file or stdout
 static long visi = 0400000000000L;
-static int revi = 0;
+static char *revi = "000";
 static char *prog = NULL;
 static char *segm = "01";
 
@@ -53,18 +54,32 @@ static int end(int start);
 
 // Return string 'max' chars long, blank-padded or truncated.
 // Also toupper(). Dot also terminates input string.
-static char *trunc_pad(char *in, int max) {
+static char *trunc_pad(char *in, int max, int left) {
 	char *out = malloc(max + 1);
+	int x;
 	if (out == NULL) {
 		return NULL;
 	}
-	int x;
-	for (x = 0; x < max; ++x) {
-		if (!in[x] || in[x] == '.') break;
-		out[x] = toupper(in[x]);
-	}
-	while (x < max) {
-		out[x++] = ' ';
+	if (!left) {
+		// 'in' might be a filename
+		for (x = 0; x < max; ++x) {
+			if (!in[x] || in[x] == '.') break;
+			out[x] = toupper(in[x]);
+		}
+		while (x < max) {
+			out[x++] = ' ';
+		}
+	} else {
+		// 'in' is just alpha-numeric
+		int l = strlen(in);
+		x = 0;
+		while (x < max - l) {
+			out[x++] = '0';
+		}
+		while (x < max) {
+			out[x] = toupper(in[x - (max - l)]);
+			++x;
+		}
 	}
 	out[x] = '\0';
 	return out;
@@ -170,8 +185,7 @@ static int init_seg() {
 		put_seq(seq);	//
 	}
 	reccnt = 7;
-	sprintf(rv, "%03d", revi % 1000);
-	put_str(rv);	// TODO: string or binary?
+	put_str(revi);
 	put_str(prog);
 	put_str(segm);
 	// visi not used by card loaders...
@@ -413,13 +427,13 @@ int main(int argc, char **argv) {
 			ofname = optarg;
 			break;
 		case 'P':
-			prog = trunc_pad(optarg, 6);
+			prog = trunc_pad(optarg, 6, 0);
 			break;
 		case 'R':
-			revi = strtoul(optarg, NULL, 0);
+			revi = trunc_pad(optarg, 3, 1);
 			break;
 		case 'S':
-			segm = trunc_pad(optarg, 2);
+			segm = trunc_pad(optarg, 2, 1);
 			break;
 		case 'V':
 			visi = strtoul(optarg, NULL, 0);
@@ -433,7 +447,7 @@ int main(int argc, char **argv) {
 				"    -s      Use HW special punch codes (-c)\n"
 				"    -o file Ouput to file instead of stdout\n"
 				"    -P str  Use str as program name\n"
-				"    -R num  Use num as program revision\n"
+				"    -R str  Use num as program revision\n"
 				"    -S str  Use str as program segment\n"
 				"    -V num  Use num as program visibility\n",
 			argv[0]);
@@ -441,9 +455,9 @@ int main(int argc, char **argv) {
 	}
 	if (!prog) {
 		if (ofname) {
-			prog = trunc_pad(ofname, 6);
+			prog = trunc_pad(ofname, 6, 0);
 		} else {
-			prog = trunc_pad(argv[optind], 6);
+			prog = trunc_pad(argv[optind], 6, 0);
 		}
 	}
 	objdump(argv[optind]);
