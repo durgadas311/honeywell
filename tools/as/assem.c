@@ -260,6 +260,9 @@ static void do_expr_or_assign() {
 	default:
 		xerror(errx);
 	}
+	if (pass_lst) {	// special case for EQU
+		lstequ(res.rel, res.val);
+	}
 }
 
 #define before(t) \

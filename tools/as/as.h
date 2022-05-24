@@ -249,6 +249,7 @@ extern void do_machine(int op);
 extern void putline(int pnc);
 extern void lstinit();
 extern void lstloc();
+extern void lstequ(int rel, int val);
 extern void lstb(int val, int rel);
 extern void lstaddr(uint32_t val, int rel);
 

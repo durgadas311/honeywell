@@ -117,7 +117,6 @@ void putline(int pnc) {
 	}
 }
 
-
 /* list location counter value */
 void lstloc()
 {
@@ -127,4 +126,12 @@ void lstloc()
 	lstx(loc, 7, lstbuf.l_loc, currel);
 }
 
+/* list EQU statements */
+void lstequ(int rel, int val)
+{
+	int loc;
 
+	loc = reloc(val, rel);
+	lstx(loc, 7, lstbuf.l_loc, currel);
+	lstbuf.l_data[0] = '=';
+}
