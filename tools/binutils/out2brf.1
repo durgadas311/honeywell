@@ -19,6 +19,10 @@ Output in punch card format, instead of mag tape.
 Use the alternate (special) HW card encoding for punch card format.
 This corresponds to PCB control character 26 on the H200/2000 reader/punch control.
 .TP
+.BI \-m\  number
+Create a minimum of \fInumber\fR records.
+A warning is printed if \fInumber\fR is exceeded.
+.TP
 .BI \-o\  file
 Send output to \fIfile\fR instead of stdout.
 Note that the output is binary, so it cannot be displayed on a terminal.

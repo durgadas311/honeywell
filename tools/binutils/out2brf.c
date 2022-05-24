@@ -14,6 +14,7 @@ extern unsigned short hw2pc_[64];
 
 static struct exec hdr;
 static int cflg = 0;
+static int mflg = 0;
 static int sflg = 0;
 static char *ofname = NULL;
 static FILE *of = NULL;	// file or stdout
@@ -226,7 +227,7 @@ static void end_rec(int last) {
 // Data always follows...
 static int mk_space(int len) {
 	dirty = 1;
-	if (reccnt + len >= reclen) {
+	if (len < 0 || reccnt + len >= reclen) {
 		if (!fin_rec(0)) {
 			return 0;
 		}
@@ -379,7 +380,12 @@ static char *do_out(FILE *fp) {
 		set_code(x + hdr.a_entry, buf + x, y - x);
 		x = y;
 	}
-	// TODO: add clear() for .bss? .heap?
+	while (mflg > seq) {
+		mk_space(-1);
+	}
+	if (mflg && seq > mflg) {
+		fprintf(stderr, "Warning: exceeded -m record limit\n");
+	}
 	exec(hdr.a_entry);
 	return NULL;
 }
@@ -415,13 +421,16 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
-	while ((x = getopt(argc, argv, "co:sP:R:S:V:")) != EOF) {
+	while ((x = getopt(argc, argv, "cm:o:sP:R:S:V:")) != EOF) {
 		switch(x) {
 		case 'c':
 			++cflg;
 			break;
 		case 's':
 			++sflg;
+			break;
+		case 'm':
+			mflg = strtoul(optarg, NULL, 0);
 			break;
 		case 'o':
 			ofname = optarg;
@@ -444,6 +453,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr,	"Usage: %s [options] <a.out-file>\n"
 				"Options:\n"
 				"    -c      Output card deck instead of tape\n"
+				"    -m num  Mandatory number of records\n"
 				"    -s      Use HW special punch codes (-c)\n"
 				"    -o file Ouput to file instead of stdout\n"
 				"    -P str  Use str as program name\n"
