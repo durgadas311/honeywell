@@ -150,9 +150,9 @@ static int pun2code(int pun) {
 	return 0x80;	// invalid (unsupported) punch
 }
 
-static char pun2ascii(int pun) {
+static char pun2hw(int pun) {
 	int b = pun2code(pun);
-	if (!b) return ' ';
+	if (!b) return 015;
 	if (b & 0x80) return 0;	// TODO: what's the best "invalid char"?
 	b = xlate_pun[b];
 	//if (!b) return 0; // TODO: what's the best "invalid char"?
@@ -181,6 +181,12 @@ static int brfdump(uint8_t *buf, int len) {
 	case 054:
 		printf("segment \"");
 		printh(buf + 10, 8);
+		printf("\" rev \"");
+		printh(buf + 7, 3);
+		if (!cflg) {
+			printf("\" vis \"");
+			printh(buf + 18, 6);
+		}
 		printf("\"\n");
 		break;
 	case 041:
@@ -247,7 +253,7 @@ static int brfdump(uint8_t *buf, int len) {
 				printf("set I %07o", dist - 1);
 				break;
 			case 077:	// end of record
-				printf("eor\n");
+				printf("eor -----\n");
 				return 0;	// TODO: check bnr?
 			default:
 				printf("invalid: %02o", ctl);
@@ -269,7 +275,7 @@ static void deck(char *file) {
 	}
 	while (read(fd, card, sizeof(card)) > 0) {
 		for (c = 0; c < 80; ++c) {
-			rec[c] = pun2ascii(card[c]);
+			rec[c] = pun2hw(card[c]);
 		}
 		if (brfdump(rec, 80)) {
 			break;
