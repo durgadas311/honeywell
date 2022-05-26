@@ -246,7 +246,7 @@ static int brfdump(uint8_t *buf, int len) {
 				a1 = brfadr(buf, x, len);
 				if (a1 < 0) printf("!\n");
 				else printf(" %07o\n", a1 | ((ctl & 010) << 15));
-				return -1;	// TODO: check bnr?
+				return 0;	// TODO: check bnr?
 			case 062:	// clear START END FILL
 			case 072:
 				printf("clear");
