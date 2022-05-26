@@ -28,13 +28,12 @@ brdldr.ss: brdldr.o
 
 mtiboot-a.out: mtiboot0.so mtiboot0.o mtiboot1.so mtiboot1.o
 	ld200 -o $@ -a 0 $^
-#	objdump200 -d -a2 $@
 
-mtiboot-b.out: mtildr0.o
+mtiboot-b.out: mtibldr.o
 	ld200 -o $@ -a 1340 $^
 
 mtiboot-b.mti: mtiboot-b.out
-	out2brf -b -o $@ $<
+	out2brf -b -m 14 -o $@ $<
 
 tapeboot.mti: mtiboot-a.mti mtiboot-b.mti
 	cat $^ >$@
