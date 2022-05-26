@@ -290,7 +290,7 @@ static int set_code(int adr, uint8_t *code, int len) {
 			ctrl |= 0040;
 		}
 	}
-	if (dist != adr && !set_adr(adr, 060)) {
+	if (!bflg && dist != adr && !set_adr(adr, 060)) {
 		return 0;
 	}
 	int n = 0;
