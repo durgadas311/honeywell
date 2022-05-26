@@ -168,6 +168,16 @@ static int brfadr(uint8_t *buf, int idx, int len) {
 	return adr;
 }
 
+static int get_seq(uint8_t *buf) {
+	if (cflg) {
+		return ((buf[1] & 017) * 100) +
+			((buf[2] & 017) * 10) +
+			(buf[3] & 017);
+	} else {
+		return ((buf[4] & 077) << 6) | (buf[5] & 077);
+	}
+}
+
 static int brfdump(uint8_t *buf, int len) {
 	int x = 0;
 	int bnr;
@@ -179,7 +189,8 @@ static int brfdump(uint8_t *buf, int len) {
 	switch (bnr) {
 	case 050:
 	case 054:
-		printf("segment \"");
+		n = get_seq(buf);
+		printf("%02o: seq %d segment \"", bnr, n);
 		printh(buf + 10, 8);
 		printf("\" rev \"");
 		printh(buf + 7, 3);
@@ -191,7 +202,9 @@ static int brfdump(uint8_t *buf, int len) {
 		break;
 	case 041:
 	case 044:
-	case 042:
+	case 042: // should only be tape format
+		n = get_seq(buf);
+		printf("%02o: seq %d\n", bnr, n);
 		break;
 	default:
 		printf("invalid banner %02o\n", bnr);
@@ -310,13 +323,17 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 
-	while ((x = getopt(argc, argv, "cdor:s")) != EOF) {
+	while ((x = getopt(argc, argv, "cdD:or:s")) != EOF) {
 		switch(x) {
 		case 'c':
 			++cflg;
 			break;
 		case 'd':
 			++dflg;
+			break;
+		case 'D':
+			++dflg;
+			dist = strtoul(optarg, NULL, 0);
 			break;
 		case 'o':
 			++oflg;
