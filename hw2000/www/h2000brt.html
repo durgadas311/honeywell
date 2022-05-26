@@ -49,8 +49,8 @@ as a control character followed by zero or more data characters, defined as foll
 <TR><TD>54</TD><TD>Only record of single-record segment</TD><TD></TD></TR>
 <TR><TD>41</TD><TD>Second record of multi-record segment</TD><TD></TD></TR>
 <TR><TD>44</TD><TD>Last record of multi-record segment</TD><TD></TD></TR>
-<TR><TD>22</TD><TD>Unformatted (no header) bootstrap record</TD><TD>Record may be >250</TD></TR>
-<TR><TD>42</TD><TD>Unformatted (no header?) boot image</TD><TD>See notes</TD></TR>
+<TR><TD>22</TD><TD>Unformatted (no header) bootstrap record</TD><TD></TD></TR>
+<TR><TD>42</TD><TD>"Unformatted" (no segment header) boot image</TD><TD>See notes</TD></TR>
 <TR><TD>46</TD><TD>Undefined</TD><TD>T.B.D.</TD></TR>
 </TABLE>
 
@@ -77,8 +77,8 @@ be directly loaded into memory and executed (via the BOOTSTRAP function).
 Such code must establish punctuation on at least instructions and so must
 begin with a series of SW (and possibly SI) instructions.
 This code must be sufficient to load the subsequent
-"banner 42" records and possibly setup their
-punctuation. TODO: Find a definition of "banner 42" records.
+"banner 42" records and setup their punctuation.
+Note that "banner 42" records are only hinted at, described as a "subset" of BRF.
 
 <P>NOTE: SW and SI instructions, when coded for both addresses,
 are the only ones that do not require punctuation.
@@ -104,22 +104,13 @@ so control codes 70-72 have the same meaning as the corresponding codes 60-62
 except that the 19th bit is set to "1" (CLEAR cannot span the boundary).
 
 <H4>Banner 42 Records</H4>
-<P>Characters 2-EOR are loaded, w/o punctuation, to successive regions or memory.
-The bootstrap program is hard-coded for load/run address and number of records.
-Loading aborts (fatal) if a non-42 record is encountered.
-
-<P>It is assumed that the 42 banner code is not related to the CAM instruction opcode,
-but rather is a variation of the 41/44 code scheme. This could imply that these
-records contain a formal header, similar to 41/44 records. It may also allow for
-a "terminal record" notation, such as 44 (or 46).
-
-<P>Current assumption is that 42 records do not contain BRT control codes,
-instead they contain straight code. It would seem difficult to write a bootstrap
-program that could fit in a reasonable tape record size and still decode
-BRT control codes. Current bootstrap code simply loads records into memory
-and branches to the start address. This means that 42 records (the loader program
-image) must contain sufficient code to restore punctuation. The current bootstrap
-code ensures that punctuation is cleared for the loaded image.
+<P>Contains the same header as banner 041, 044 records.
+BRF control characters start at offset 7 (char 8).
+The only BRF controls permitted are 001-017, 021-037, 077, and 061 (address ignored).
+The DIST is an implied address, and the code must agree on the ORG address.
+Current Tape Bootstrap code expects the ORG address to be 01750 (octal).
+The bootstrap program is hard-coded for load/run address and number of records (14) -
+although the end of bootstrap is signaled by the required 061 control in the last record.
 
 </BODY>
 </HTML>
