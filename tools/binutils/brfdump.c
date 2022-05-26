@@ -191,6 +191,7 @@ static int brfdump(uint8_t *buf, int len) {
 		break;
 	case 041:
 	case 044:
+	case 042:
 		break;
 	default:
 		printf("invalid banner %02o\n", bnr);

@@ -12,6 +12,10 @@ suitable for use with the simulators and HW Loader/Monitor programs.
 
 .SH OPTIONS
 .TP
+.BI \-b
+Output in bootstrap format (banner 042 records).
+Uses a restricted subset of BRF.
+.TP
 .BI \-c
 Output in punch card format, instead of mag tape.
 .TP
@@ -45,6 +49,8 @@ Default is 0400000000000 (a.k.a. "A").
 
 .SH "SEE ALSO"
 out2boot (1),
+brfdump (1),
+pcddump (1),
 ld200 (1),
 a.out.200 (5).
 .SH DIAGNOSTICS

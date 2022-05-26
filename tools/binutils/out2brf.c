@@ -13,6 +13,7 @@ extern unsigned short hw2pc[64];
 extern unsigned short hw2pc_[64];
 
 static struct exec hdr;
+static int bflg = 0;
 static int cflg = 0;
 static int mflg = 0;
 static int sflg = 0;
@@ -132,9 +133,11 @@ static int fin_rec(int last) {
 	end_rec(last);
 	++seq;
 	put_len(reccnt);
-	if (last) {
-		record[0] &= ~07;
-		record[0] |= 04;
+	if (!bflg) {
+		if (last) {
+			record[0] &= ~07;
+			record[0] |= 04;
+		}
 	}
 	if (!write_rec(record, reccnt)) {
 		return 0;
@@ -159,7 +162,7 @@ static void put_seq(int seq) {
 
 static void init_rec() {
 	reccnt = 0;
-	record[0] = (uint8_t)041; // modified to 044 at end if last
+	record[0] = (uint8_t)(bflg ? 042 : 041); // modified to 044 at end if last
 	put_len(0);	// updated later...
 	put_seq(seq);
 	reccnt = 7;
@@ -175,12 +178,12 @@ static void put_str(char *str) {
 
 // initialize segment record (first of program, maybe also last)
 static int init_seg() {
-	char rv[8];
+	char sq[8];
 	record[0] = (uint8_t)050; // modified to 054 at end if last
 	if (cflg) {
 		reccnt = 1;
-		sprintf(rv, "%03d", seq % 1000);
-		put_str(rv);	// TODO: string or binary?
+		sprintf(sq, "%03d", seq % 1000);
+		put_str(sq);	// TODO: string or binary?
 	} else {
 		put_len(0);	// updated later...
 		put_seq(seq);	//
@@ -200,7 +203,10 @@ static int init_seg() {
 }
 
 static int begin(int adr) {
-	if (!init_seg()) {
+	if (bflg) {
+		init_rec();
+		seq = 1;
+	} else if (!init_seg()) {
 		return 0;
 	}
 	// set_adr(adr); // let first set_code do this...
@@ -368,16 +374,23 @@ static char *do_out(FILE *fp) {
 		return "corrupt file";
 	}
 	begin(hdr.a_entry);
-	// TODO: end of range inclusive or exclusive?
-	range(hdr.a_entry, hdr.a_entry + len + hdr.a_bss + hdr.a_heap);
-	// clear .bss + .heap
-	clear(hdr.a_entry + len, hdr.a_entry + len + hdr.a_bss + hdr.a_heap - 1, 0);
+	if (!bflg) {
+		// TODO: end of range inclusive or exclusive?
+		range(hdr.a_entry, hdr.a_entry + len + hdr.a_bss + hdr.a_heap);
+		// clear .bss + .heap
+		clear(hdr.a_entry + len, hdr.a_entry + len + hdr.a_bss + hdr.a_heap - 1, 0);
+	}
 	x = 0;
 	while (x < len) {
+		if (bflg && (buf[x] & 0200)) {
+			return "IM/RM not allowed in bootstrap";
+		}
 		for (y = x + 1; y < len; ++y) {
 			if ((buf[y] & 0300) != 0) break;
 		}
-		set_code(x + hdr.a_entry, buf + x, y - x);
+		if (!set_code(x + hdr.a_entry, buf + x, y - x)) {
+			return "set_code() error";
+		}
 		x = y;
 	}
 	while (mflg > seq) {
@@ -421,8 +434,11 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
-	while ((x = getopt(argc, argv, "cm:o:sP:R:S:V:")) != EOF) {
+	while ((x = getopt(argc, argv, "bcm:o:sP:R:S:V:")) != EOF) {
 		switch(x) {
+		case 'b':
+			++bflg;
+			break;
 		case 'c':
 			++cflg;
 			break;
@@ -452,6 +468,7 @@ int main(int argc, char **argv) {
 	if (optind + 1 != argc) {
 		fprintf(stderr,	"Usage: %s [options] <a.out-file>\n"
 				"Options:\n"
+				"    -b      Output bootstrap records (BRF subset)\n"
 				"    -c      Output card deck instead of tape\n"
 				"    -m num  Mandatory number of records\n"
 				"    -s      Use HW special punch codes (-c)\n"
