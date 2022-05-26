@@ -150,14 +150,22 @@ static int fin_rec(int last) {
 }
 
 static void put_len(int len) {
-	record[1] = (uint8_t)((len >> 12) & 077);
-	record[2] = (uint8_t)((len >> 6) & 077);
-	record[3] = (uint8_t)((len >> 0) & 077);
+	if (!cflg) {
+		record[1] = (uint8_t)((len >> 12) & 077);
+		record[2] = (uint8_t)((len >> 6) & 077);
+		record[3] = (uint8_t)((len >> 0) & 077);
+	}
 }
 
 static void put_seq(int seq) {
-	record[4] = (uint8_t)((seq >> 6) & 077);
-	record[5] = (uint8_t)((seq >> 0) & 077);
+	if (cflg) {
+		record[1] = (uint8_t)((seq / 100) % 10);
+		record[2] = (uint8_t)((seq / 10) % 10);
+		record[3] = (uint8_t)((seq / 1) % 10);
+	} else {
+		record[4] = (uint8_t)((seq >> 6) & 077);
+		record[5] = (uint8_t)((seq >> 0) & 077);
+	}
 }
 
 static void init_rec() {
@@ -182,11 +190,12 @@ static int init_seg() {
 	record[0] = (uint8_t)050; // modified to 054 at end if last
 	if (cflg) {
 		reccnt = 1;
-		sprintf(sq, "%03d", seq % 1000);
-		put_str(sq);	// TODO: string or binary?
+		seq = 1;	// 1,2,3,...
+		put_seq(seq);
 	} else {
 		put_len(0);	// updated later...
 		put_seq(seq);	//
+		seq = 1;	// 0,2,3,...
 	}
 	reccnt = 7;
 	put_str(revi);
@@ -198,7 +207,6 @@ static int init_seg() {
 	// assert reccnt == 24...
 	reccnt = 24;
 	record[6] = (uint8_t)reccnt; // header length
-	seq = 1;
 	return 1;
 }
 
