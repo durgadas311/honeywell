@@ -209,7 +209,11 @@ static int brfdump(uint8_t *buf, int len) {
 	case 044:
 	case 042: // should only be tape format
 		n = get_seq(buf);
-		printf("%02o: seq %d\n", bnr, n);
+		if (bnr == 042) {
+			printf("%02o: seq %d boot loader\n", bnr, n);
+		} else {
+			printf("%02o: seq %d\n", bnr, n);
+		}
 		break;
 	case 022: // should only be tape format
 		printf("%02o: bootstrap\n", bnr);
