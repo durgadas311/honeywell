@@ -1,0 +1,8 @@
+*.o
+*.l
+*.so
+*.ss
+*.sl
+*.out
+*.pcd
+*.mti
