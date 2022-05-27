@@ -37,10 +37,16 @@ mtiboot-a.out: mtiboot0.so mtiboot0.o mtiboot1.so mtiboot1.o
 mtiboot-b.out: mtibldr.o
 	ld200 -o $@ -a 1340 $^
 
+brtldr.out: brtldr.o
+	ld200 -o $@ -a $(BRDLDR_ORG) $^
+
 mtiboot-b.mti: mtiboot-b.out
 	out2brf -b -m 14 -o $@ $<
 
-tapeboot.mti: mtiboot-a.mti mtiboot-b.mti
+brtldr.mti: brtldr.out
+	out2brf -o $@ -P AAAMON -S S1 -m 6 $<
+
+tapeboot.mti: mtiboot-a.mti mtiboot-b.mti brtldr.mti
 	brtcat -v -o $@ $^
 
 pcdboot.out: boot.o pcdboot0.so pcdboot0.o pcdboot1.so pcdboot1.o pcdboot2.so pcdboot2.o brdldr.so
