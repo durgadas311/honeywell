@@ -23,6 +23,9 @@ struct optab opcodes[] = {
 
 	{ ".globl",	P_OP | PGLOBL },
 	{ ".if",	P_OP | PIF    },
+	{ ".ifdef",	P_OP | PIFDEF },
+	{ ".ifndef",	P_OP | PIFNDEF},
+	{ ".else",	P_OP | PELSE  },
 	{ ".endif",	P_OP | PENDIF },
 	{ ".text",	P_OP | PTEXT  },
 	{ ".data",	P_OP | PDATA  },

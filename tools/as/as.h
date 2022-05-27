@@ -178,6 +178,9 @@ extern int scanstr(int pnc);
 #define PWARN	17
 #define PLINE	18
 #define PHEAP	19
+#define PIFDEF	20
+#define PIFNDEF	21
+#define PELSE	22
 
 /* symbol types */
 

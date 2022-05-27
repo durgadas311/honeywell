@@ -24,6 +24,22 @@ void do_pseudo(int op) {
 
 	switch (op) {
 
+	case PIFDEF:
+	case PIFNDEF:
+		if (tok(0) != IDENT) {
+			cerror(errx);
+		}
+		c = symlook(1);
+		t = tok(0);
+		if (t != EOL && t != COMMENT) {
+			cerror(errx);
+		}
+		if ((op == PIFDEF && c != 0) ||
+				(op == PIFNDEF && c == 0)) {
+			ifcount++;
+			break;
+		}
+		goto if_com;
 	case PIF:
 		t = expr();
 		if (t != RABS) {
@@ -33,6 +49,7 @@ void do_pseudo(int op) {
 			ifcount++;
 			break;
 		}
+if_com:
 		putline(0);
 		count = 1;
 		while (count > 0) {
@@ -45,10 +62,20 @@ void do_pseudo(int op) {
 			switch (cursym->value & OP_MSK) {
 			case PIF:	count++; break;
 			case PENDIF:	count--; break;
+			case PELSE:
+				if (count == 1) {
+					count = 0;
+					++ifcount;
+				}
+				break;
 			}
 		}
 		break;
 
+	case PELSE:
+		// we were accepting lines, now stop...
+		if (--ifcount < 0) cerror(erri);
+		goto if_com;
 	case PENDIF:
 		if (--ifcount < 0) cerror(erri);
 		break;

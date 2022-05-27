@@ -19,20 +19,24 @@ int	lflag	 = 0;	/* listing */
 
 char *ofname = "a.out";
 
-char *usage = "Usage: as [-o object-file] [-u] [-l] input-file [...]\n";
+char *usage = "Usage: as [-o obj-file] [-u] [-l] [-D sym=val] input-file [...]\n";
 
 jmp_buf err_jmp;
 
 int main(argc, argv)
 	int argc; char **argv;
 {
+	int x;
 	char *s;
 	uint32_t v;
 	SYMBOL *sym;
+	extern int optind;
+	extern char *optarg;
+
 	sym_init();
 	/* Get flags & files */
-	while (--argc > 0 && **++argv == '-') {
-		switch (argv[0][1]) {
+	while ((x = getopt(argc, argv, "D:lo:u")) != EOF) {
+		switch (x) {
 		case 'u':
 			uflag++;
 			break;
@@ -40,36 +44,31 @@ int main(argc, argv)
 			lflag++;
 			break;
 		case 'o':
-			if (--argc == 0 || **++argv == '-') {
-				fprintf(stderr, "No object filename\n");
-				exit(1);
-			}
-			ofname = *argv;
+			ofname = optarg;
 			break;
 		case 'D':
-			if (--argc == 0 || **++argv == '-') {
-				fprintf(stderr, "No symbol\n");
-				exit(1);
-			}
-			s = strchr(*argv, '=');
+			s = strchr(optarg, '=');
 			if (!s) {
 				v = 1;
 			} else {
 				*s++ = '\0';
 				v = strtoul(s, NULL, 0);
 			}
-			sym = sym_enter(*argv);
+			sym = sym_enter(optarg);
 			sym->value = v;
 			sym->type = SABS;
 			sym->len = 0;
 			break;
+		default:
+			goto error;
 		}
 	}
-	if ((nifiles = argc) < 1) {
+	if ((nifiles = argc - optind) < 1) {
+error:
 		fprintf(stderr, "%s", usage);
 		exit(1);
 	}
-	ifiles = argv;
+	ifiles = &argv[optind];
 
 	/* symbol table generation pass */
 	assemble();
