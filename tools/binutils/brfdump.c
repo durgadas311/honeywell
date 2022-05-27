@@ -185,6 +185,11 @@ static int brfdump(uint8_t *buf, int len) {
 	int a1, a2;
 	int f, n, p;
 
+	if (oflg) {
+		printf("%4d %3d: ", rno, x);
+	} else if (dflg) {
+		printf("%07o: ", dist);
+	}
 	bnr = buf[x++] & 077;
 	switch (bnr) {
 	case 050:
@@ -206,6 +211,13 @@ static int brfdump(uint8_t *buf, int len) {
 		n = get_seq(buf);
 		printf("%02o: seq %d\n", bnr, n);
 		break;
+	case 022: // should only be tape format
+		printf("%02o: bootstrap\n", bnr);
+		return 0;
+	case 001:
+		printh(buf, 5);
+		printf("\n");
+		return 0;
 	default:
 		printf("invalid banner %02o\n", bnr);
 		return -1;	// quit processing file

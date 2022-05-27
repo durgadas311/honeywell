@@ -1,0 +1,35 @@
+.TH BRTCAT 1 5/26/22 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+brtcat \- Honeywell 200/2000 BRF to BRT
+.SH SYNOPSIS
+.B brtcat
+[ \fIoptions\fR ]
+.I file
+[ \.\.\. ]
+.SH DESCRIPTION
+.B Brtcat
+combines BRF mag tape images into a BRT,
+adjusting segment header sequence numbers as required.
+Any existing "1HDR ", "1EOF ", and "1ERI " records
+are removed, and new ones added before and after all BRF records.
+
+.SH OPTIONS
+.TP
+.BI \-v
+Show segment header and bootstrap info.
+.TP
+.BI \-o\  file
+Use \fIfile\fR as the output file, instead of stdout.
+.TP
+.BI \-r\  len
+Use \fIlen\fR as record length in mag tape image.
+
+.PP
+The BRF file can contain at most one set of bootstrap records.
+
+.SH "SEE ALSO"
+brfdump (1),
+out2boot (1),
+out2brf (1),
+.SH DIAGNOSTICS
+.SH BUGS
