@@ -192,8 +192,10 @@ public class P_MagneticTape extends JFrame
 		// (in) 100xxx = Space Forward
 		// (in) 000xxx = Back Space
 		//(out) 000xxx = Erase
+		//      xx1xxx = Even Parity
+		// ??? conflicts with Read Forward/Space Forward:
 		//	1xxxxx = C4 present
-		//	11xxxx = C5,C6,C7 present (extended I/O)
+		//	11xxxx = C4,C5,C6,C7 present (extended I/O)
 		// C4:
 		//	000000 = RM, 4x3 (char compression)
 		//	000001 = RM, 2x1 (char compression) **
@@ -207,6 +209,7 @@ public class P_MagneticTape extends JFrame
 		//	010011 = Count Field, Load mode (1x1) ***
 		//	010100 = Count Field, EBCDIC
 		//	1xxxxx = 8-bit mode (N/A for tape?)
+		//		RM => num chars in "record header area"
 		//
 		// * Special hardware option.
 		// ** Packed-decimal? 2 digits per tape "byte"? signs? fields?
