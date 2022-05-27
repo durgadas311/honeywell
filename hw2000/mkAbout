@@ -1,9 +1,12 @@
 #!/bin/bash
 
+DATE=$(date +'%d-%b-%Y %H:%M:%S')
+REV=$(git describe --tags)
+
 cat <<EOF
 <HTML><CENTER>
 Honeywell Series 2000 Simulator<BR>
-Build: $(date)<BR>
+Build: ${REV} / ${DATE}<BR>
 <BR>
 <IMG SRC="h2000-sm.png">
 <BR>
