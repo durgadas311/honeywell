@@ -27,11 +27,24 @@ uint8_t *rec;
 int rno = 0;
 int seq = 0;
 int nseg = 0;
+int has_boot = 0;
+int has_mon = 0;
+int last = 0;	// last banner char seen
+char *mon = "AAAMON";
 
 static void printh(uint8_t *b, int l) {
 	while (l-- > 0) {
 		fputc(hw2ascii[*b++], stderr);
 	}
+}
+
+static int is_aaamon(uint8_t *b) {
+	int x = 10;
+	char *s = mon;
+	while (*s) {
+		if (b[x++] != hw200[*s++]) return 0;
+	}
+	return 1;
 }
 
 static void print_rec(char *tag) {
@@ -71,8 +84,20 @@ static int brfdump(uint8_t *buf, int len) {
 	switch (bnr) {
 	case 050:
 	case 054:
-		if (nseg++) {
-			put_seq(buf, seq + 1);
+		if (is_aaamon(buf)) {
+			if (has_mon) {
+				fprintf(stderr, "Warning: duplicate AAAMON (rec %d)\n", rno);
+				if (nseg++) {
+					put_seq(buf, seq + 1);
+				}
+			} else if (last != 042) {
+				fprintf(stderr, "Warning: AAAMON position (rec %d)\n", rno);
+			}
+			has_mon = 1;
+		} else {
+			if (nseg++) {
+				put_seq(buf, seq + 1);
+			}
 		}
 		seq = 0;
 		if (vflg) {
@@ -86,12 +111,24 @@ static int brfdump(uint8_t *buf, int len) {
 	case 044:
 		// non-header segment records
 		break;
-	case 042: // bootstrap records
+	case 042: // boot loader records
+		if (!has_boot) {
+			fprintf(stderr, "Warning: boot loader w/o bootstrap (rec %d)\n", rno);
+			has_boot = 1; // silence future warnings
+		} else if (last != 022 && last != 042) {
+			fprintf(stderr, "Warning: stray boot loader (rec %d)\n", rno);
+		}
 		break;
 	case 022: // bootstrap record
 		if (vflg) {
 			fprintf(stderr, "%3d: BOOTSTRAP\n", rno);
 		}
+		if (has_boot) {
+			fprintf(stderr, "Warning: duplicate bootstrap (rec %d)\n", rno);
+		} else if (rno != 1) {
+			fprintf(stderr, "Warning: bootstrap order wrong (rec %d)\n", rno);
+		}
+		has_boot = 1;
 		break;
 	case 001: // HDR/EOF/ERI...
 		return 1;
@@ -103,6 +140,7 @@ static int brfdump(uint8_t *buf, int len) {
 		perror("fwrite");
 		return -1;
 	}
+	last = bnr;
 	return 0;
 }
 
