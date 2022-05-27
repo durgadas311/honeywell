@@ -386,7 +386,10 @@ static char *do_out(FILE *fp) {
 		// TODO: end of range inclusive or exclusive?
 		range(hdr.a_entry, hdr.a_entry + len + hdr.a_bss + hdr.a_heap);
 		// clear .bss + .heap
-		clear(hdr.a_entry + len, hdr.a_entry + len + hdr.a_bss + hdr.a_heap - 1, 0);
+		if (hdr.a_bss + hdr.a_heap) {
+			clear(hdr.a_entry + len,
+				hdr.a_entry + len + hdr.a_bss + hdr.a_heap - 1, 0);
+		}
 	}
 	x = 0;
 	while (x < len) {
