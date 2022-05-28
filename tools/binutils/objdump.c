@@ -25,6 +25,7 @@ static int hflg = 0;
 static int Sflg = 0;
 static int Nflg = 0;
 static int base;
+static int entry;
 
 #define OP_A	0x00100	// May have A operand
 #define OP_B	0x00200	// May have B operand
@@ -496,12 +497,15 @@ static char *swsi(FILE *fp) {
 	int len = hdr.a_text + hdr.a_data;
 	int x;
 	char symb[8];
+	char symb2[8];
 
 	get_symtab(fp);
 	// TODO: get reference symbol for start of .text (or .data if no .text)
 	strncpy(symb, "base", 8);
+	strncpy(symb2, "entry", 8);
 	if (Nflg) {
 		printf("%s\t=\t0%o\n", symb, base);
+		printf("%s\t=\t0%o\n", symb2, entry);
 	} else {
 		for (x = 0; x < nsyms; ++x) {
 			if ((symtab[x].n.n_type & N_EXT) == 0 ||
@@ -509,6 +513,7 @@ static char *swsi(FILE *fp) {
 			int t = symtab[x].n.n_type & N_TYPE;
 			if (t == N_TEXT || t == N_DATA) {
 				strncpy(symb, symtab[x].n.n_name, 8);
+				strncpy(symb2, symtab[x].n.n_name, 8);
 				printf("\t.globl\t%.8s\n", symb);
 				break;
 			}
@@ -531,7 +536,7 @@ static char *swsi(FILE *fp) {
 	if (Nflg) {
 		x = 1 + 2 * admode; // length of SW instruction
 		printf("\tsw\t.+%d,.+%d\n", x, x + 1 + admode);
-		printf("\tb\t%s\n", symb);
+		printf("\tb\t%s\n", symb2);
 	}
 	return NULL;
 }
@@ -742,6 +747,7 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
+	char *e;
 	while ((x = getopt(argc, argv, "a:dhHj:N:rsSw:")) != EOF) {
 		switch(x) {
 		case 'a':
@@ -774,7 +780,14 @@ int main(int argc, char **argv) {
 			break;
 		case 'N':
 			++Nflg;
-			base = strtoul(optarg, NULL, 0);
+			entry = base = strtoul(optarg, &e, 0);
+			if (*e == ',') {
+				entry = strtoul(e + 1, &e, 0);
+			}
+			if (*e) {
+				fprintf(stderr, "Invalid -N: \"%s\"\n", optarg);
+				goto usage;
+			}
 			break;
 		case 'w':
 			wflg = strtoul(optarg, NULL, 0);
@@ -782,6 +795,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (optind >= argc) {
+usage:
 		fprintf(stderr,	"Usage: %s [options] <obj-file>[...]\n"
 				"Options:\n"
 				"    -a adm  Adr mode hint\n"
@@ -793,7 +807,7 @@ int main(int argc, char **argv) {
 				"    -H      Use Honeywell style dump for -j\n"
 				"    -w wid  Ouput width for -s (hint only)\n"
 				"    -S      Generate SW/SI preamble\n"
-				"    -N adr  Standalone SW/SI base adr, for -S\n",
+				"    -N adr[,adr]  Standalone SW/SI base adr, for -S\n",
 			argv[0]);
 		return 0;
 	}

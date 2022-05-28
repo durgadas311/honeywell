@@ -52,10 +52,11 @@ If no global symbol is found, "base" is used.
 Typically, this code is assembled into a \.o and
 linked in front the object file to produce a bootstrap image.
 .TP
-.BI \-N\  addr
+\fB\-N\fI addr\fR[\fB,\fIentry\fR]
 With \fB-S\fR, generate a standalone SW/SI block using \fIaddr\fR 
 as the base/load address for the object code.
 Also appends a branch to \fIaddr\fR (with punctuation setup).
+If \fIentry\fR is given, the branch is to \fIentry\fR instead.
 This is for cases where the punctuation setup is not be
 part of the loaded program, for example for Card Loader
 where space is a premium.
