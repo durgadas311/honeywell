@@ -165,17 +165,14 @@ where the banner character is actually part of the image.
 .SH "BOOT IMAGE"
 
 The boot image, typically loaded by the bootstrap record, is
-a series of raw (unformatted) records that begin with banner character
-42 (octal). It is assumed that the boot image ends when a record
-is found that does not contain 42 as the banner character.
+a series of BRF records that begin with banner character
+42 (octal).
+These records contain a strict subset of BRF commands.
+Only 01-17, 21-37, 61, and 77 are supported, and the start
+address for command 61 is ignored
+(bootstrap code uses a hard-coded load/start address).
 Documentation also declares there to be 14 boot image records,
 so it is not clear if this can be variable length or not.
-
-Data payload (characters 2-N) of the records are loaded into successive memory
-locations and executed at a predefined address. It seems possible
-that this payload could be BRF, provided enough code could be
-fit in the bootstrap record to handle that. Otherwise, this
-code must be self-punctuating.
 
 The purpose of the boot image code is to search and load the necessary segments
 for the OS or monitor. It is also possible for a stand-alone program
@@ -196,6 +193,8 @@ It is not clear if these records must be 250 characters in length.
 For use on disk packs, the bootstrap code is placed in track 0,
 and BOOTSTRAP loads all records of track 0. This code must still
 be self-punctuating, or at least the first part of it must be.
+There is some reference to using 8-bit mode on disk packs, which
+would allow loading punctuation with code.
 
 The solution used here is to treat the track as a contiguous image,
 but the first part of that track is self-punctuating bootstrap code
@@ -213,21 +212,32 @@ It seems apparent that the first card must be "raw" and begin with
 octal 22 (SW instruction), a.k.a. the letter "B". It is not clear if
 subsequent boot image cards have any special formatting.
 
-It seems unlikely that full BRF interpretation could be contained in 80
-characters of code, especially with SW instructions required to restore
-punctuation. So it is likely that the first card contains enough to read
-in several subsequent cards, which must also be self-punctuating, and
-then the BRF interpreting code is ready to load the monitor. This would
-suggest the follow deck layout:
+Because of the limitations of 80 characters per card, and each
+card loaded requires executing a PDT/PCB sequence, the card bootstrap
+is divided into several stages.
+The first stage clears punctuation in a chunk of memory after the first card,
+sets up punctuation for the PDT/PCB loop,
+and the second stage starts loading subsequent cards.
+The code up to and including the PDT/PCB must fit on the first card.
+A pre-determined number of cards are loaded, so the code typically has
+to do a final assembly after determining the total number of cards.
+These cards also include the punctuation setup for the third stage.
+The third stage contains the actual monitor code, and is loaded into
+the final origin address for the monitor.
+Punctuation has already been setup.
+
 .TP
 card 1
 Raw, self-punctuating, bootstrap code, loaded by BOOTSTRAP.
+Must contain enough code to begin loading subsequent cards.
 .TP
 2-L
 Raw, self-punctuating, boot image code, loaded by card 1.
+This contains the remainder of the boot code needed to
+load and setup the monitor code.
 .TP
 L-M
-Banner 42 BRF records containing the Card Loader-Monitor.
+Raw monitor code image, punctuation setup was part of cards 2-L.
 .TP
 M-N
 Full BRF program segments, to be searched, loaded, and executed by
