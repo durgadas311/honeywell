@@ -1,5 +1,9 @@
-BRDLDR_ORG = 0234	# ORG for card monitor code
+# ORG and ENTRY for card monitor code
+BRDLDR_ORG = 0100
+BRDLDR_RUN = 0234
+# bootstrap addr for card boot
 PCDBOOT_ORG = 01620	# ORG for card bootstrap code
+# special records ("1HDR ", ...)
 RECS = $(subst .s,.out,$(wildcard 1*.s))
 
 PCDS = brdboot.pcd
@@ -17,7 +21,7 @@ ship: all
 	objdump200 -S -a 2 $< >$@
 
 brdldr.ss: brdldr.o
-	objdump200 -S -N $(BRDLDR_ORG) -a 2 $< >$@
+	objdump200 -S -N $(BRDLDR_ORG),$(BRDLDR_RUN) -a 2 $< >$@
 
 %.so: %.ss
 	as200 -l -u -o $@ $? >$*.sl

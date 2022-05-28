@@ -1,60 +1,53 @@
 // bootstrap loader for BRF data on punch cards
 	.admode	3
+	.globl	brdldr
+	.text
 
-// The communications area
-@comm	=	0100		// start of communications area
-@rev	=	0101		// REV of last unit loaded
-@prg	=	0104		// program name
-@seg	=	0112		// segment
-@halt	=	0115		// halt name (name+seg)
-@fxst0	=	0126		// fixed start 0 (general return)
-@fxst1	=	0132		// fixed start 1 ()
-@fxst2	=	0136		// fixed start 2 ()
-@fxst3	=	0142		// fixed start 3 ()
-@xtoc	=	0146		// exit to own-code
-@relau	=	0153		// relocation augment
-@relpos	=	0156		// relative position
-@semd	=	0157		// search mode
-@stmd	=	0160		// start mode
-@spst	=	0167		// special start location
-@ocrt1	=	0172		// own-code return 1
-@ocrt2	=	0176		// own-code return 2
-@nret	=	0202		// return for normal call
-@gret	=	0213		// general return address
-@date	=	0216		// current date, YYDDD
-@trap	=	0223		// trapping mode
-@aret	=	0224		// alternate return address
-@ecd	=	0227		// ECD field
-@cona	=	0233		// console typewriter availability (!IM)
+// The communications area - always org 0100
+// NOTE: this is .text, so labels assigned to left char
+@comm:				// start of communications area
+	.bin	0#1		// reserved
+@rev:	.string	"   "		// REV of last unit loaded
+@prg:	.string	"      "	// program name
+@seg:	.string	"  "		// segment
+	.bin	0#1		// reserved
+@halt:	.string	"        "	// halt name (name+seg)
+	.bin	0#1		// reserved
+@fxst0:	b	enter		// fixed start 0 (general return)
+@fxst1:	.bin	0#4		// fixed start 1 ()
+@fxst2:	.bin	0#4		// fixed start 2 ()
+@fxst3:	.bin	0#4		// fixed start 3 ()
+@xtoc:	.bin	0#4		// exit to own-code
+	.bin	0#1		// reserved
+@relau:	.bin	0#3		// relocation augment
+@relpos: .bin	1#1		// relative position
+@semd:	.bin	020#1		// search mode
+@stmd:	.bin	'N'#1		// start mode
+	.bin	0#6		// reserved
+@spst:	.word	0		// special start location
+@ocrt1:	.bin	0#4		// own-code return 1
+@ocrt2:	.bin	0#4		// own-code return 2
+@nret:				// return for normal call
+	scr	@aret+^,077	// ... return to program, if desired
+	b	normal		// ... resume monitor
+@gret:	.word	enter		// general return address
+@date:	.string	"     "		// current date, YYDDD
+@trap:	.bin	0#1		// trapping mode
+@aret:	.word	0		// alternate return address (read call card)
+@ecd:	.string	"JJ0#"		// ECD field
+@cona:	.byte	0		// console typewriter availability (!IM)
 @comme	=	0234		// end (+1) of communications area
 @cbuf	=	01620		// card buffer
 @user	=	01750		// user program space
 
-// by the time we reach here, we are
-// well above index register storage.
-	.globl	brdldr
-	.text
 brdldr:
 	cam	040	// 3-char mode
 	// fill is alread 0 from load
 	lca	hptr,x3
 	lca	hptre,x4
 	b	cleer
-	lca	cptr,x3
-	lca	cptre,x4
-	b	cleer
-	// setup WMs in comm area
-	sw	@rev,@prg
-	sw	@seg,@gret
 	// setup WMs in card buffer
-	sw	@cbuf+6,@cbuf+6		// hdrlen
-	// constants in comm area
-	lca	eptr,@gret+^	//
-	lca	nret		// BAR already set
-	lca			// one more instruction
-	sw	@fxst0,@fxst1	// setup fixed start 0 (general return)
-	mcw	eptr
-	mcw	branch
+	sw	@cbuf+6		// allow BA on hdrlen
 enter:
 	lca	norm,@stmd	// default to 'N' start mode
 	lca	one,@relpos
@@ -197,16 +190,13 @@ one:	.bin	1#1
 four:	.bin	4#1
 eight:	.bin	8#1
 emsk:	.bin	04#1	// banner mask for last record
+norm:	.bin	'N'#1
+zeroa:	.bin	0#3	// init for dist - must be 3 char
 hptr:	.word	@cbuf
 hptre:	.word	@cbuf+80
-cptr:	.word	@comm
-cptre:	.word	@comme-1
-eptr:	.word	enter
 //
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
 rend:	.word	0	// record ptr
-zeroa:	.bin	0#3	// init for dist - must be 3 char
 fill:	.byte	0	// clear fill char
-norm:	.bin	'N'#1
 found:	.bin	1#1
