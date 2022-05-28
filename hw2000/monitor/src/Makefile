@@ -38,13 +38,13 @@ mtiboot-b.out: mtibldr.o
 	ld200 -o $@ -a 1340 $^
 
 brtldr.out: brtldr.o
-	ld200 -o $@ -a $(BRDLDR_ORG) $^
+	ld200 -o $@ -a 0100 $^
 
 mtiboot-b.mti: mtiboot-b.out
 	out2brf -b -m 14 -o $@ $<
 
 brtldr.mti: brtldr.out
-	out2brf -o $@ -P AAAMON -S S1 -m 6 $<
+	out2brf -e 0234 -o $@ -P AAAMON -S S1 -m 6 $<
 
 tapeboot.mti: mtiboot-a.mti mtiboot-b.mti brtldr.mti
 	brtcat -v -o $@ $^
