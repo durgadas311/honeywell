@@ -2,7 +2,7 @@ CFLAGS = -O $(DEBUG)
 INSTDIR = /usr/local
 
 EXES = ld200 nm200 ar200 strip200 size200 objdump200 \
-	adr2line200 out2brf out2boot pcddump brfdump brtcat
+	adr2line200 out2brf out2boot pcddump brfdump brtcat callcard
 
 all: $(EXES)
 
@@ -38,6 +38,8 @@ pcddump: pcddump.o
 brfdump: brfdump.o
 	$(CC) -o $@ $<
 brtcat: brtcat.o ../as/hw200.o
+	$(CC) -o $@ $^
+callcard: callcard.o ../as/hw200.o
 	$(CC) -o $@ $^
 
 ../as/hw200.o:

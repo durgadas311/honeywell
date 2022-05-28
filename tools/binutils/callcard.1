@@ -1,0 +1,41 @@
+.TH CALLCARD 1 5/26/22 "binutils-H200" "Honeywell 200/2000 Tools"
+.SH NAME
+callcard \- Honeywell 200/2000 Create Monitor Call Card
+.SH SYNOPSIS
+.B callcard
+[ \fIoptions\fR ]
+.SH DESCRIPTION
+.B Callcard
+creates a call card image. If an output file is given,
+the call card will be \fIappended\fR to the file.
+
+.SH OPTIONS
+.TP
+.BI \-s
+Use the alternate (special) HW card encoding for punch card format.
+This corresponds to PCB control character 26 on the H200/2000 reader/punch control.
+.TP
+.BI \-o\  file
+Use \fIfile\fR as the output file, instead of stdout.
+If the file exists, the call card will be appended.
+.TP
+.BI \-P\  prog
+Use \fIprog\fR as the program name on the call card.
+This is a required option.
+.TP
+.BI \-S\  segment
+Use \fIsegment\fR as the segment name on the call card.
+This is a required option.
+.TP
+.BI \-H\  halt
+Use \fIhalt\fR as the halt name on the call card.
+Default is blank.
+.TP
+.BI \-d\  drive
+Use \fIdrive\fR as the tape drive number (0-7) on the call card.
+Default is 0.
+
+.SH "SEE ALSO"
+pcddump (1),
+.SH DIAGNOSTICS
+.SH BUGS
