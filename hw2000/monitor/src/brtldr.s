@@ -4,7 +4,7 @@
 
 // The communications area
 @comm	=	0100		// start of communications area
-@calm	=	0100		// call method, 0=manual, 1=call card
+@calm	=	0100		// call method, 1=manual, 0=call card
 @rev	=	0101		// REV of last unit loaded
 @prg	=	0104		// program name
 @seg	=	0112		// segment
@@ -55,14 +55,15 @@ brtldr:
 	// patch PDT/PCB instructions PCU from bootstrap
 	sst	0065,p1+@+2,077
 	sst	0073,p2+@+2,077
-	sst	0101,p3+@+2,077
+	sst	0101,p3+@+2,077	// this is the output device
+	sst	0065,p4+@+2,077
+	sst	0073,p5+@+2,077
 	// TODO: clear index registers?
 	// setup WMs in comm area
 	sw	@rev,@prg
 	sw	@seg,@gret
-	sw	@drv
-	// setup WMs in card buffer
-	sw	@buf+6		// hdrlen
+	sw	@drv,@halt
+	bs	@drv	// initial tape drive LUN = 0
 	// constants in comm area
 	lca	eptr,@gret+^	// (sets WM)
 	lca	nret		// BAR already set (sets WM)
@@ -70,32 +71,47 @@ brtldr:
 	sw	@fxst0,@fxst1	// setup fixed start 0 (general return)
 	mcw	eptr
 	mcw	branch
-	bs	@drv	// initial tape drive LUN = 0
 enter:
 	lca	norm,@stmd	// default to 'N' start mode
 	lca	one,@relpos
 	lca	neg1,@semd
+	lca	fwd,@sdir
 	// setup/re-init communications area
 	h	0,017002	// "halt 3" - ready to load
 normal:
-	sst	@drv,p1+@+3,007
+	// TODO: set search mode...? resets?
+	bbe	manu,@calm,001
+	// process a call card
+1:	pdt	@buf,011,041
+	pcb	.,011,041,010
+	pcb	nofo2,011,041,041
+	bce	cc,@buf+17,054	// TODO: needs copy to comm area
+	b	1b
+cc:	// move data to comm area (must have WMs)
+	mcw	@buf+17,@star	// '*' and halt name
+	mcw			// tape drive
+	mcw			// segment
+	mcw			// prog name
+manu:	sst	@drv,p1+@+3,007
 	sst	@drv,p2+@+3,007
 	sst	@drv,p3+@+3,007
-	// load segment from tape
-	sst	neg1,found,01	// reset found flag
+	sst	@drv,p4+@+3,007
+	sst	@drv,p5+@+3,007
+	// find and load segment from tape
+	sst	neg1,nfnd,01	// reset found flag
 	lca	zeroa,x5	// init dist ptr
 nextc:
 p1:	pdt	@buf,011,040,060	// load header data
 p2:	pcb	.,011,040,010
 p3:	pcb	nofo2,011,040,060	// end of tape (error)
 // load program data from header
-// returns zero-balance if not last record
 // works for card and tape records?
 	lca	hptr,x6		// starting ptr
 	mcw	0(x6),banr	// get banner char
 	bce	nofo,banr,'1'	// assume '1' is "1EOF "...
 	bbe	segm,banr,010	// is this a segment header card?
-	bbe	nextc,found,01	// keep searching until found
+	// TODO: needs backspace handling
+	bbe	nextc,nfnd,01	// keep searching until found
 	lca	hptre,rend	// compute end of rec
 	// any more data from hdr before changing x6?
 	ba	6(x6),x6	// ptr to prog data
@@ -119,10 +135,13 @@ nexte:	ba	one,x6
 nextf:	c	x6,rend
 	bct	next,044		// cont if x6 < rend
 nextr:	// done loading a record
-	bbe	done,banr,004	// last record of segment?
+	bbe	ldone,banr,004	// last record of segment - should not see this
 	b	nextc
 	// TODO: set 020 in @semd...
-done:	bce	0(x5),@stmd,'N'
+	// TODO: check halt name...
+ldone:
+	lca	fwd,@sdir	// reset @sdir to fwd
+	bce	0(x5),@stmd,'N'
 	bce	(@aret),@stmd,'R'
 //	bce	(@spst),@stmd,'S'
 	h	0(x5)	// error condition
@@ -165,8 +184,7 @@ seti:	si	-1(x5)
 //
 // todo: can load resume? is this guaranteed last rec?
 term:	mcw	3(x6),x5	// set go adr
-	sst	neg1,banr,04	// force end-of-load cond
-	b	nextr		// todo: also indicate goto
+	b	ldone		// todo: also indicate goto
 //
 // clear/fill memory - must clear punc too
 // caller sets x3, x4, fill (w/punc)
@@ -179,7 +197,7 @@ cleer:	scr	1f,070		// set return address
 
 // segment header card, copy data to comm area
 segm:	scr	1f,070		// set return address
-	// TODO: check search mode - compare prog/segm...
+	// TODO: check @sdir, need backup...
 	bce	2f,@semd,077
 	bce	rel,@semd,001
 //	bcc	xxx,@semd,001	// 060 or 020 search
@@ -189,25 +207,51 @@ segm:	scr	1f,070		// set return address
 	c	@buf+15,@prg+5
 	bct	3f,045		// return if !=
 
+	// found - load this program unit.
 	// copy prog,segm,rev to communications area
 	// these all terminate on B word mark!
 2:	mcw	@buf+17,@seg+1	// segment
 	mcw			// prog name
 	mcw			// revision
-	sst	eight,found,01	// start loading now... (anything with bit 01 clear)
-3:
+	sst	zeroa,nfnd,01	// start loading now...
+4:
 1::	b	0
+
+3:	bbe	revers,@sdir,001
+	b	4b
+	
+// seeks previous segment header...
+// this also works if current rec is non-header (041, 044)
+revers:
+	mcw	@buf+5,bsc
+	c	zeroa,bsc
+	bct	nofo2,042	// TODO: proper behavior - set fwd dir...
+p4:	pdt	@buf,011,040,000
+p5:	pcb	.,011,040,010
+	bs	one,bsc
+	c	zeroa,bsc
+	bct	p4,045
+	b	4b
 
 rel:	bce	2b,@relpos,01	// stop when counter reaches 1
 	bs	one,@relpos
 	b	3b
 
 nofo:	// TODO: switch to backward search...
+	//	bbe	nofo2,@sdir,001
+	//	sst	neg1,@sdir,001	// set bwd bit
+	//	Need to backup to previous segment header... how?
+	//	can backup 2 and read end-seg (non-hdr) record,
+	//	then use seq to backup to seg hdr. But, it might be
+	//	a seg-hdr, so need to check that.
+	// but don't know where that is...
+	// could read last record, us it's seq to find it's segment...
+	// messy...
 	// should never hit "1HDR " going backward (stops at segment seq=0)
 	//
 nofo2:	// manual intervention required...
 	h	0,014011	// "halt 8", or possibly "halt 9"
-	b	nextc		// Pressing RUN means "more cards added"
+	b	nextc		// Pressing RUN means "ready to load"
 
 // template code for RETURN FOR NORMAL CALL
 	scr	@aret+^,077	// return to program, if desired
@@ -215,10 +259,15 @@ branch:	// a B instruction opcode - any one will do
 nret::	b	normal
 
 	.data
+// constants
 neg1:	.bin	077#1
 one:	.bin	1#1
 four:	.bin	4#1
 eight:	.bin	8#1
+norm:	.bin	'N'#1
+fwd:	.bin	022#1
+zeroa:	.bin	0#3	// init for dist - must be 3 char
+
 hptr:	.word	@buf
 hptre:	.word	@buf+250
 cptr:	.word	@comm
@@ -228,7 +277,6 @@ eptr:	.word	enter
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
 rend:	.word	0	// record ptr
-zeroa:	.bin	0#3	// init for dist - must be 3 char
 fill:	.byte	0	// clear fill char
-norm:	.bin	'N'#1
-found:	.bin	1#1
+nfnd:	.bin	1#1	// 0 if the seg-hdr found (if loading)
+bsc:	.bin	0#2	// counter for backspacing tape
