@@ -15,6 +15,7 @@ extern unsigned short hw2pc_[64];
 static struct exec hdr;
 static int bflg = 0;
 static int cflg = 0;
+static int eflg = -1;
 static int mflg = 0;
 static int sflg = 0;
 static char *ofname = NULL;
@@ -410,7 +411,7 @@ static char *do_out(FILE *fp) {
 	if (mflg && seq > mflg) {
 		fprintf(stderr, "Warning: exceeded -m record limit\n");
 	}
-	exec(hdr.a_entry);
+	exec(eflg >= 0 ? eflg : hdr.a_entry);
 	return NULL;
 }
 
@@ -445,7 +446,7 @@ int main(int argc, char **argv) {
 	extern int optind;
 	extern char *optarg;
 	int x;
-	while ((x = getopt(argc, argv, "bcm:o:sP:R:S:V:")) != EOF) {
+	while ((x = getopt(argc, argv, "bce:m:o:sP:R:S:V:")) != EOF) {
 		switch(x) {
 		case 'b':
 			++bflg;
@@ -453,8 +454,8 @@ int main(int argc, char **argv) {
 		case 'c':
 			++cflg;
 			break;
-		case 's':
-			++sflg;
+		case 'e':
+			eflg = strtoul(optarg, NULL, 0);
 			break;
 		case 'm':
 			mflg = strtoul(optarg, NULL, 0);
@@ -467,6 +468,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'R':
 			revi = trunc_pad(optarg, 3, 1);
+			break;
+		case 's':
+			++sflg;
 			break;
 		case 'S':
 			segm = trunc_pad(optarg, 2, 1);
