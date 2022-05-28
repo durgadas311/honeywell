@@ -50,6 +50,7 @@ brtldr:
 	// set RM in buffer
 	sw	@buf+250
 	si	@buf+250
+	sw	@buf+6	// this allows BA of hdrlen
 	// patch PDT/PCB instructions PCU from bootstrap
 	sst	0065,p1+@+2,077
 	sst	0073,p2+@+2,077
