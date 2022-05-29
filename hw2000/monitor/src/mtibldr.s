@@ -1,5 +1,6 @@
 // bootstrap loader for BRF data on mag tape
 // ORG at 1340 (01750 octal)
+@vis	=	0124	// doc says 0124-0129 (invalid octal)
 	.admode	3
 
 	.globl	mtibldr
@@ -15,10 +16,10 @@ mtibldr:
 	b	cleer	// clear tape buffer
 	sw	0(x4)	//
 	si	0(x4)	// RM at end of buffer
-	lca	monvi,0131	// default visibility
+	lca	monvi,@vis+5	// default visibility
 enter:
-	h	0,017001	// "halt 1" - ready to load
-	sst	neg1,found,01	// reset found flag
+	h	@vis,017001	// "halt 1" - ready to load
+	sst	one,found,01	// reset found flag
 	lca	zeroa,x5	// init dist ptr
 nextt:
 1:	pdt	tbuf,011,040,060	// load header data
@@ -99,8 +100,7 @@ seti:	si	-1(x5)
 //
 // todo: can load resume? is this guaranteed last rec?
 term:	mcw	3(x6),x5	//set go adr
-	sst	neg1,banr,04	// force end-of-load cond
-	b	nextr		// todo: also indicate goto
+	b	0(x5)		// start monitor
 //
 // clear/fill memory - must clear punc too
 // caller sets x3, x4, fill (w/punc)
@@ -118,7 +118,7 @@ segm:	scr	1f,070		// set return address
 	bct	3f,045		// if !=
 	c	15(x6),monnm
 	bct	3f,045		// if !=
-	ext	monvi,23(x6)
+	ext	@vis+5,23(x6)
 	c	23(x6),zervi
 	bct	3f,042		// if 0, no match
 
@@ -130,7 +130,6 @@ nofo:	h	0,014011	// "halt 8", or possibly "halt 9"
 	b	nextt		// Pressing RUN means "(new) tape rewound"
 
 	.data
-neg1:	.bin	077#1
 one:	.bin	1#1
 four:	.bin	4#1
 eight:	.bin	8#1
@@ -142,11 +141,11 @@ monnm:	.string	"AAAMON"
 monsg:	.string	"S1"
 monvi:	.bin	0400000000000#6
 zervi:	.bin	0#6
+zeroa:	.bin	0#3	// init for dist - must be 3 char
 //
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
 rend:	.word	0	// record ptr
-zeroa:	.bin	0#3	// init for dist - must be 3 char
 fill:	.byte	0	// clear fill char
 found:	.bin	1#1	// 0 = found
 
