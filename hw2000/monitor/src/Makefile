@@ -7,7 +7,7 @@ PCDBOOT_ORG = 01620	# ORG for card bootstrap code
 RECS = $(subst .s,.out,$(wildcard 1*.s))
 
 PCDS = brdboot.pcd
-MTIS = tapeboot.mti $(subst .out,.mti,$(RECS))
+MTIS = brtboot.mti $(subst .out,.mti,$(RECS))
 
 all: $(PCDS) $(MTIS)
 
@@ -50,7 +50,7 @@ mtiboot-b.mti: mtiboot-b.out
 brtldr.mti: brtldr.out
 	out2brf -e 0234 -o $@ -P AAAMON -S S1 -m 6 $<
 
-tapeboot.mti: mtiboot-a.mti mtiboot-b.mti brtldr.mti
+brtboot.mti: mtiboot-a.mti mtiboot-b.mti brtldr.mti
 	brtcat -v -o $@ $^
 
 pcdboot.out: boot.o pcdboot0.so pcdboot0.o pcdboot1.so pcdboot1.o pcdboot2.so pcdboot2.o brdldr.so

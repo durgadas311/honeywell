@@ -38,19 +38,14 @@
 @ecd:	.string	"JJ0#"		// ECD field
 @cona:	.byte	0		// console typewriter availability (!IM)
 @comme	=	0234		// end (+1) of communications area
-@buf	=	02100		// buffer (tape and card)
 @user	=	02474		// user program space
 
 brtldr:
 	cam	040	// 3-char mode
-	// fill is alread 0 from load
-	lca	hptr,x3
-	lca	hptre,x4
-	b	cleer
+	// @buf cleared by loader
 	// set RM in buffer
-	sw	@buf+250
+	sw	@buf+250,@buf+6
 	si	@buf+250
-	sw	@buf+6	// this allows BA of hdrlen
 	// patch PDT/PCB instructions PCU from bootstrap
 	sst	0065,p1+@+2,077
 	sst	0073,p2+@+2,077
@@ -74,7 +69,8 @@ normal:	// entry for automated loading
 	bce	cc,@buf+17,'*'
 	b	1b
 cc:	// move data to comm area
-	mcw	@buf+17,@star	// '*' and halt name
+	mcw	@buf+17,@star	// '*'
+	mcw			// halt name
 	mcw			// tape drive
 	mcw			// segment
 	mcw			// prog name
@@ -93,11 +89,13 @@ nextl:
 	mcw	0(x6),banr	// get banner char
 	bce	nofo,banr,'1'	// assume '1' is "1EOF "...
 	bbe	segm,banr,010	// is this a segment header card?
-	// TODO: needs backspace handling
+	// backspace done by segm routine, as needed
 	bbe	nextc,nfnd,01	// keep searching until found
+	// got segment header we want, start loading...
+	// TODO: setup halt name flag.
 	lca	hptre,rend	// compute end of rec
 	// any more data from hdr before changing x6?
-	ba	6(x6),x6	// ptr to prog data
+	ba	6(x6),x6	// ptr to prog data (req WM at @buf+6)
 // parse next brt command
 next:	bcc	ctlc,0(x6),03	// check for 11xxxx
 	// 4 lsb bits have string len
@@ -178,42 +176,52 @@ cleer:	scr	1f,070		// set return address
 	bct	2b,044		// cont if x3 .lt. x4
 1::	b	0
 
-// segment header card, copy data to comm area
+// segment header card, copy data to comm area if match.
+// If no match and searching backward, position tape accordingly.
 segm:	scr	1f,070		// set return address
 	// TODO: check @sdir, need backup...
-	bce	2f,@semd,077
-	bce	rel,@semd,001
-//	bcc	xxx,@semd,001	// 060 or 020 search
-//				// else 040/000 search
+	bce	2f,@semd,077	// simple case, any segment matches
+	bce	rel,@semd,001	// count down @relpos to 01
+	// segment always checked (00,20,40,60)
 	c	@buf+17,@seg+1
-	bct	3f,045		// return if !=
-	c	@buf+15,@prg+5
-	bct	3f,045		// return if !=
-
+	bct	not1,045	// return if !=
+	bcc	5f,@semd,001	// check prog (20,60)
+3:	bcc	6f,@semd,002	// check vis (40,60)
 	// found - load this program unit.
 	// copy prog,segm,rev to communications area
 	// these all terminate on B word mark!
 2:	mcw	@buf+17,@seg+1	// segment
 	mcw			// prog name
 	mcw			// revision
-	sst	zeroa,nfnd,01	// start loading now...
+	sst	zero,nfnd,01	// start loading now...
 4:
 1::	b	0		// return to main
 
+// test program name
+5:	c	@buf+15,@prg+5
+	bct	not1,045	// return if !=
+	b	3b
+// test visibility mask
+6:	ext	@vis+5,@buf+23	// extract visibility bits
+	c	@buf+23,zvis	// check for 0 (fail)
+	bct	not1,042	// if no bits left, no match
+	b	2b
+
+// TODO: check vis, too - but what does that mean if fail?
 rel:	bce	2b,@relpos,01	// stop when counter reaches 1
 	bs	one,@relpos
 	// now get next segment header...
-3:	bbe	revers,@sdir,001
+not1:	bbe	revers,@sdir,001
 	b	4b		// goto return
-	
+
 // seeks previous segment header...
 // this also works if current rec is non-header (041, 044)
 revers:
 	mcw	@buf+5,bsc
-	c	zeroa,bsc
-	bct	nofo2,042	// TODO: proper behavior - set fwd dir...
+	c	zero2,bsc
+	bct	nofo2,042
 	b	bksp		// backspace tape 'bsc' records
-	b	4b		// continue
+	b	4b		// goto return
 
 read:	scr	1f,070
 p1:	pdt	@buf,011,040,060	// load header data
@@ -226,12 +234,13 @@ bksp:	scr	1f,070
 p4:	pdt	@buf,011,040,000
 p5:	pcb	.,011,040,010
 	bs	one,bsc
-	c	zeroa,bsc
+	c	zero2,bsc
 	bct	p4,045
 1::	b	0
 
-nofo:	// TODO: switch to backward search...
-	bbe	nofo2,@sdir,001	// if already searching bkwd, done
+// hit "1EOF " record (at least banner 01) in main loop
+nofo:	// switch to backward search...
+	bbe	nofo2,@sdir,001	// if already searching bkwd, done (fail)
 	sst	neg1,@sdir,001	// set bkwd bit
 	// backup 2 to locate a valid record...
 	mcw	two,bsc
@@ -245,7 +254,7 @@ nofo:	// TODO: switch to backward search...
 	// should never hit "1HDR " going backward (stops at segment seq=0)
 	//
 nofo2:	// manual intervention required...
-	sst	zeroa,@sdir,001	// clear bkwd bit
+	sst	zero,@sdir,001	// clear bkwd bit
 	h	0,014011	// "halt 8", or possibly "halt 9"
 	b	nextc		// Pressing RUN means "ready to load"
 
@@ -258,12 +267,13 @@ four:	.bin	4#1
 eight:	.bin	8#1
 norm:	.bin	'N'#1
 fwd:	.bin	022#1
-zeroa:	.bin	0#3	// init for dist - must be 3 char
+zero:	.bin	0#1
+zero2:	.byte	0
+zeroa:	.byte	0	// init for dist - must be 3 char
+zvis:	.byte	0,0,0	// visibility zero when combined w/...zero
 
 hptr:	.word	@buf
 hptre:	.word	@buf+250
-cptr:	.word	@comm
-cptre:	.word	@comme-1
 //
 banr:	.bin	0#1	// banner char
 slen:	.bin	0#1	// string len
@@ -271,3 +281,6 @@ rend:	.word	0	// record ptr
 fill:	.byte	0	// clear fill char
 nfnd:	.bin	1#1	// 0 if the seg-hdr found (if loading)
 bsc:	.bin	0#2	// counter for backspacing tape
+
+	.bss	// this will be cleared by loader
+@buf:	.space	250
