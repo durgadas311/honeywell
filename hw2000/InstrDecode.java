@@ -31,7 +31,8 @@ public class InstrDecode {
 	public static final int OP_REQ_B = 0x0040;
 	public static final int OP_REQ_V = 0x0080;
 	public static final int OP_REQ_C = 0x0100;	// mainly for Assembler
-	public static final int OP_VR1   = 0x0200;
+	public static final int OP_VR1   = 0x0200;	// VR is first variant
+	public static final int OP_VR0   = 0x0400;	// VR is not stored
 	public static final int OP_NO_WM = 0x1000;
 	public static final int OP_SPC   = 0x2000;
 	public static final int OP_PRIV  = 0x4000;
@@ -148,7 +149,7 @@ public class InstrDecode {
 		i_flags[OP_TLU] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_MOS] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 
-		i_flags[OP_SVI] = OP_HAS_V | OP_REQ_V | OP_PRIV;
+		i_flags[OP_SVI] = OP_HAS_V | OP_REQ_V | OP_PRIV | OP_VR0;
 		i_flags[OP_RVI] = OP_HAS_A | OP_HAS_V | OP_REQ_A | OP_REQ_V | OP_PRIV;
 		i_flags[OP_MC] = 0;
 		i_flags[OP_RNM] = OP_HAS_A | OP_HAS_B | OP_PRIV;

@@ -45,9 +45,10 @@ public class HW2000 implements CoreMemory
 	public byte opSR; // op-code at oSR (physical)
 	int op_flags;
 	int op_xflags;
-	private byte[] op_xtra;
 	private int op_xtra_siz;
 	private int op_xtra_num;
+	private int op_xtra_vsr;
+	private byte[] op_xtra_bst;
 	private boolean isPDT;
 	private boolean protViol;	// delayed exception
 	private int protAdr;
@@ -88,8 +89,6 @@ public class HW2000 implements CoreMemory
 		Arrays.fill(cr, 0);
 		idc = new InstrDecode(false);
 		pdc = new PeriphDecode(props, this);
-		op_xtra_siz = 8;
-		op_xtra = new byte[op_xtra_siz];
 
 		String s = props.getProperty("iosleep");
 		if (s != null && (s.equalsIgnoreCase("no") ||
@@ -751,7 +750,7 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void fetchAAR(int limit) {
-		if (!hasA() || limit - fsr < am_na) {
+		if (!hasA() || ((limit - fsr) & am_mask) < am_na) {
 			if (reqA()) {
 				throw new FaultException(String.format("Missing required A-field %07o", oSR));
 			}
@@ -780,7 +779,7 @@ public class HW2000 implements CoreMemory
 	}
 
 	public void fetchBAR(int limit) {
-		if (!hadA() || !hasB() || limit - fsr < am_na) {
+		if (!hadA() || !hasB() || ((limit - fsr) & am_mask) < am_na) {
 			if (reqB()) {
 				throw new FaultException(String.format("Missing required B-field %07o", oSR));
 			}
@@ -798,9 +797,10 @@ public class HW2000 implements CoreMemory
 		fsr += am_na;
 	}
 
+	// 'limit' is +1 from last variant.
+	// 'fsr' is first variant
 	private void fetchXtra(int limit) {
-		byte vr = 0;
-		op_xtra_num = limit - fsr;
+		op_xtra_num = (limit - fsr) & am_mask;
 		if (op_xtra_num <= 0) {
 			if (reqV()) {
 				// probably just let instructions do this...
@@ -810,19 +810,15 @@ public class HW2000 implements CoreMemory
 			return;
 		}
 		op_xflags |= InstrDecode.OP_HAS_V;
-		if (op_xtra_num > op_xtra_siz) {
-			op_xtra_siz = op_xtra_num + 2;
-			op_xtra = new byte[op_xtra_siz];
-		}
-		for (int x = 0; x < op_xtra_num; ++x) {
-			op_xtra[x] = vr = readChar(fsr + x);
-		}
-		if (hasV()) {
+		op_xtra_vsr = fsr;
+		if (hasV() && (op_flags & InstrDecode.OP_VR0) == 0) {
+			int vra;
 			if ((op_flags & InstrDecode.OP_VR1) != 0) {
-				CTL.setV(op_xtra[0]);
+				vra = fsr;
 			} else {
-				CTL.setV(vr);
+				vra = incrAdr(limit, -1);
 			}
+			CTL.setV((byte)(mem[vra] & 077));
 		}
 	}
 
@@ -830,22 +826,21 @@ public class HW2000 implements CoreMemory
 		return op_xtra_num;
 	}
 
+	// used only by BOOTSTRAP
 	public void setXtra(byte[] xt) {
 		op_xtra_num = xt.length;
-		if (op_xtra_num > op_xtra_siz) {
-			op_xtra_siz = op_xtra_num + 2;
-			op_xtra = new byte[op_xtra_siz];
-		}
-		for (int x = 0; x < op_xtra_num; ++x) {
-			op_xtra[x] = xt[x];
-		}
+		op_xtra_bst = xt;
 	}
 
 	public byte getXtra(int ix) {
 		if (ix >= op_xtra_num) {
 			return 0;
 		}
-		return op_xtra[ix];
+		if (bootstrap) {
+			return op_xtra_bst[ix];
+		}
+		int a = incrAdr(op_xtra_vsr, ix);
+		return (byte)(mem[a] & 077);
 	}
 
 	public void checkIntr() {
@@ -895,6 +890,21 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
+	// 'adr' is assumed to be current WM+1...
+	public int nextWM(int adr, int max) {
+		int end = incrAdr(adr, -1);
+		int nxt = adr;
+		while (nxt != end && ((nxt - adr) & am_mask) < max &&
+				(mem[nxt] & 0100) == 0) {
+			// With enforced max, this check may not be needed.
+			if (halt) {
+				throw new HaltException("extraction");
+			}
+			nxt = incrAdr(nxt, 1);
+		}
+		return nxt;
+	}
+
 	public void fetch() {
 		if (CTL.inStdMode()) {
 			_proceed = CTL.isPROCEED();
@@ -914,37 +924,29 @@ public class HW2000 implements CoreMemory
 		oSR = SR;
 		fsr = SR;
 		iaar = -1;
-		opSR = readMem(fsr++); // might throw address violation
+		opSR = readMem(fsr); // might throw address violation
+		fsr = incrAdr(fsr, 1);
 		setOp(opSR);	// might throw illegal op-code
 		// TODO: how to avoid including garbage in variant array.
-		int isr = fsr & 0x7ffff;
 		// The problem with enforcing a max here is that some programs
 		// turned off WMs in order to implement conditional execution
 		// of instructions. However, it seems unlikely that such code
 		// would be using that technique to turn off large blocks of
 		// instructions (conditional branches would be more practical).
-		int max = 500; // a reasonable limitation?
+		int max = 0x80000; // what is a reasonable limitation?
 		if (noWM()) {
 			max = (hasA() ? am_na : 0);
 			max += (hasB() ? am_na : 0);
 		}
-		while (isr != 0 && isr - fsr < max && !chkWord(isr)) {
-			// With enforced max, this check may not be needed.
-			if (halt) {
-				throw new HaltException("extraction");
-			}
-			// TODO: add visual feedback?
-			isr = (isr + 1) & 0x7ffff;
-		}
-		if ((isr == 0 || isr - fsr >= max) && CTL.inStdMode() &&
-				CTL.isPROTECT() && CTL.isTIMOUT()) {
-			throw new IIException("Instruction Timeout, extract",
-				HW2000CCR.IIR_TIMOUT);
-		}
+		int isr = nextWM(fsr, max);
 		// Caller handles exceptions, leave SR at start of instruction
 		// (if during fetch/extract). Exceptions during execute
 		// terminate instruction and leave SR at next.
-		if (isr == 0) {
+		if (isr == oSR) {
+			if (CTL.inStdMode() && CTL.isPROTECT() && CTL.isTIMOUT()) {
+				throw new IIException("Instruction Timeout, extract",
+					HW2000CCR.IIR_TIMOUT);
+			}
 			// ran off end of memory... need to halt...
 			halt = true;
 			throw new FaultException(String.format("ran off end of memory %07o", oSR));
@@ -980,7 +982,7 @@ public class HW2000 implements CoreMemory
 		if (op_xtra_num == 0) {
 			s += String.format("_%02o", CTL.getV());
 		} else for (int x = 0; x < op_xtra_num; ++x) {
-			s += String.format(" %02o", op_xtra[x]);
+			s += String.format(" %02o", getXtra(x));
 		}
 		s += String.format(" - %03o\n", CTL.peekCR(HW2000CCR.AIR));
 		if (fp != null) {
