@@ -56,7 +56,7 @@ brtldr:
 enter:
 	lca	norm,@stmd	// default to 'N' start mode
 	lca	one,@relpos
-	lca	neg1,@semd
+	lca	defs,@semd
 	lca	fwd,@sdir
 	h	0,017002	// "halt 3" - ready to load
 normal:	// entry for automated loading
@@ -80,7 +80,7 @@ manu:	sst	@drv,p1+@+3,007
 	sst	@drv,p4+@+3,007
 	sst	@drv,p5+@+3,007
 	// find and load segment from tape
-	sst	neg1,nfnd,01	// reset found flag
+	sst	one,nfnd,01	// reset found flag
 	lca	zeroa,x5	// init dist ptr
 nextc:
 	b	read
@@ -180,7 +180,7 @@ cleer:	scr	1f,070		// set return address
 // If no match and searching backward, position tape accordingly.
 segm:	scr	1f,070		// set return address
 	// TODO: check @sdir, need backup...
-	bce	2f,@semd,077	// simple case, any segment matches
+//	bce	2f,@semd,077	// simple case, any segment matches - not for BRT?
 	bce	rel,@semd,001	// count down @relpos to 01
 	// segment always checked (00,20,40,60)
 	c	@buf+17,@seg+1
@@ -241,7 +241,7 @@ p5:	pcb	.,011,040,010
 // hit "1EOF " record (at least banner 01) in main loop
 nofo:	// switch to backward search...
 	bbe	nofo2,@sdir,001	// if already searching bkwd, done (fail)
-	sst	neg1,@sdir,001	// set bkwd bit
+	sst	one,@sdir,001	// set bkwd bit
 	// backup 2 to locate a valid record...
 	mcw	two,bsc
 	b	bksp
@@ -260,13 +260,13 @@ nofo2:	// manual intervention required...
 
 	.data
 // constants
-neg1:	.bin	077#1
 one:	.bin	1#1
 two:	.bin	2#2
 four:	.bin	4#1
 eight:	.bin	8#1
 norm:	.bin	'N'#1
 fwd:	.bin	022#1
+defs:	.bin	020#1
 zero:	.bin	0#1
 zero2:	.byte	0
 zeroa:	.byte	0	// init for dist - must be 3 char
