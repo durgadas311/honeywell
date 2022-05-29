@@ -14,8 +14,8 @@ mtibldr:
 	lca	hptr,x3
 	lca	hptre,x4
 	b	cleer	// clear tape buffer
-	sw	0(x4)	//
-	si	0(x4)	// RM at end of buffer
+	sw	tbuf+250,tbuf+6	// WM for BA of hdrlen
+	si	tbuf+250	// +RM at end of buffer
 	lca	monvi,@vis+5	// default visibility
 enter:
 	h	@vis,017001	// "halt 1" - ready to load

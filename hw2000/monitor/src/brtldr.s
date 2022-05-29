@@ -283,4 +283,4 @@ nfnd:	.bin	1#1	// 0 if the seg-hdr found (if loading)
 bsc:	.bin	0#2	// counter for backspacing tape
 
 	.bss	// this will be cleared by loader
-@buf:	.space	250
+@buf::	.space	250
