@@ -342,10 +342,15 @@ public class P_MagneticTape extends JFrame
 			// TODO: READ REVERSE: CLC/SLC is *rightmost* char,
 			// and must rwc.decrCLC()... and RM is leftmost?
 			if (unit.backspace) {
+				// normally, fp will be char after IRG,
+				// must backup before IRG to do proper
+				// backspace. Tape should always be positioned
+				// at first char of record (or next IRG for file mark)
 				fp = unit.dev.getFilePointer();
-				if (fp == 0) {
-					return;
-				}
+				if (fp == 0) return;
+				unit.dev.seek(--fp);
+				if (fp == 0) return;	// TODO: might not be IRG?
+				unit.len -= IRG;	// TODO: might not be IRG?
 			}
 			do {
 				if (unit.backspace) {
@@ -366,8 +371,8 @@ public class P_MagneticTape extends JFrame
 					// (CLC == SLC) means EOF (File Mark)
 					if (unit.backspace) {
 						unit.len -= IRG;
-						// TODO: proper location to leave...
-						unit.dev.seek(fp);
+						// right now, file points *after* IRG,
+						// that's where we want it.
 					} else {
 						unit.len += IRG;
 					}
