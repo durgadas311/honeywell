@@ -1,0 +1,188 @@
+<HTML>
+<HEAD>
+<TITLE>Tape Monitor C, Recreated</TITLE>
+</HEAD>
+<BODY>
+
+<H2>TAPE MONITOR C</H2>
+
+<P>This implementation of Tape Monitor C is mostly complete, some
+features are not implemented. These features are represented via the
+communications area, which is located at 0100-0233 (octal).
+The following are functional to the extent described here.
+
+<P>NOTE! When making changes to the communication area, existing
+punctuation MUST be preserved.
+
+<DL>
+<DT>Program Name</DT>
+<DD>Locations 0104-0111 (octal) in the communications area contain
+the program name of the last segment card loaded.
+For search features, this field may be set to the desired program name to be loaded.
+</DD>
+<DT>Segment Name</DT>
+<DD>Locations 0112-0113 (octal) in the communications area contain
+the segment name of the last segment card loaded.
+For search features, this field may be set to the desired segment name to be loaded.
+</DD>
+<DT>Visibility Mask</DT>
+<DD>Locations 0161-0166 (octal) in the communications area contain
+the visibility mask. Default is 0400000000000, "A".
+</DD>
+<DT>Revision Number</DT>
+<DD>Locations 0101-0103 (octal) in the communications area contain
+the revision number of the last segment card loaded.
+</DD>
+<DT>Return for Normal Call</DT>
+<DD>A program may branch to location 0202 (octal), in 3-char address mode,
+to effectively exit and return to monitor control.
+The monitor will start loading the next program, according to parameters
+in the comunications area.
+</DD>
+<DT>Call Method</DT>
+<DD>Location 0100 (octal) contains the call method.
+000 is to retrieve call cards from the card reader.
+001 is to use call parameters from the communications area (manually entered).
+</DD>
+<DT>General Return Address</DT>
+<DD>A program may branch to the address in location 0213 (octal), in 3-char address mode,
+to effectively exit and return to monitor control.
+The monitor will halt and await operator instructions/actions.
+</DD>
+<DT>Fixed Start 0</DT>
+<DD>A program may branch to location 0126 (octal), in 3-char address mode,
+to effectively exit and return to monitor control.
+The monitor will halt and await operator instructions/actions.
+This is also a convenient way to return to the monitor from the front panel (or console).
+For example, type "A 77 0000126" on the console, press 3-char address mode, and press RUN.
+</DD>
+<DT>Tape Drive</DT>
+<DD>Location 0114 (octal) in the communications area contains
+the tape drive number, 0-7.</DD>
+<DT>Search Mode</DT>
+<DD>Location 0157 (octal) in the communications area contains
+the search mode key. It defaults to 077 (octal) and is reset by the
+General Return. The following search mode keys (octal) are implemented:
+<UL>
+<LI>001 - Load Nth segment, as specified by the Relative Position field.
+<LI>000 - Load segment by Segment (same program).
+<LI>020 - Load segment by Program/Segment.
+<LI>040 - Load segment by Segment/Visibility.
+<LI>060 - Load segment by Program/Segment/Visibility.
+</UL>
+<DT>Relative Position</DT>
+<DD>Location 0156 (octal) in the communications area contains
+the relative position for Search Mode 001.
+Default is 001, which indicates that the next segment is to be loaded
+(same effect as Search Mode 077).
+</DD>
+<DT>Start Mode</DT>
+<DD>Location 0160 (octal) in the communications area contains
+the start mode key. This directs the monitor what to do after
+loading a segment. The following are implemented:
+<UL>
+<LI>'N' - (045 octal) Branch to the starting location of the program.
+<LI>'R' - (051 octal) Return to the calling program
+(only valid when using Return for Normal Call).
+<LI>anything else - Halt with SR=starting location of the program (non-standard behavior).
+</UL>
+</DD>
+<DT>Search Direction</DT>
+<DD>Location 0152 (octal) contains the search direction.
+This is usually not specified, the search will proceed forward until the end of the tape,
+then search backward to the beginning.
+<UL>
+<LI>022 - search forward (then backward)
+<LI>023 - search backward
+</UL>
+</DD>
+</UL>
+</DD>
+<DT>Halts</DT>
+<DD>The following halts are implemented:
+<UL>
+<LI>1 - (AAR=0124 BAR=017001) Boot loader is awaiting customization of visibility at locations
+0124-0131 (octal).
+Alter communication area if desired, load BRF decks if needed, press RUN.
+<LI>3 - (AAR=0 BAR=017002) Monitor is awaiting commands.
+Alter communication area if desired, load BRF decks if needed, press RUN.
+<LI>8 - (AAR=0 BAR=014011) Monitor was not able to locate the program.
+Note that conditions normally associated with "halt 9" will
+cause "halt 8" instead.
+</UL>
+</DD>
+</DL>
+
+<H2>BOOTSTRAP</H2>
+
+<P>The tape image containing Card Monitor C (only)
+is named "brtboot.mti". This is normally not used, rather
+an image is created from this with program segments appended.
+This procedure uses the tape PCU address "40".
+If the tape control is at a different PCU address, substitute
+that PCU in the instructions.
+
+<OL>
+<LI>Insert "brtboot.pcd" in tape drive 0.
+<LI>Add any call cards to the card reader hopper.
+<LI>Press INITIALIZE
+<LI>Enter 040 in Control and 0000000 in Address and press BOOTSTRAP,
+or on the console type "B 40 0000000". This loads the "1HDR " record, which is not used.
+<LI>Enter 040 in Control and 0000000 in Address and press BOOTSTRAP,
+or on the console type "B 40 0000000". This loads the bootstrap record.
+At this point, the tape PCU address may be entered, if something other than 040.
+Locations 065, 073, and 0101 (octal) must be updated with the desired PCU.
+<LI>Press RUN. This gets to "halt 1".
+<LI>Press RUN. This gets to "halt 3".
+</OL>
+<P>At this point, the system should halt with AAR=0 and BAR=017002 (octal).
+The monitor is now ready for operation.
+
+<H2>EXAMPLE</H2>
+<P>This example uses a set of "Hello World" programs, each having a different
+name that corresponds to its relative position in the tape image
+("HELLO1" is the first, "HELLO5" is the 5th/last).
+All these programs have the segment name "01".
+These programs, with the bootstrap, are assembled into the tape image "test1.mti".
+
+<P>This example uses the console "control mode", but the equivalent tasks may
+be performed using the front panel.
+
+<OL>
+<LI>Load "test1.mti" on tape drive 0.
+<LI>Load "calls.pcd" in the card reader hopper.
+<LI>Press INITIALIZE.
+<LI>Type "B 40 0000000" to skip "1HDR ".
+<LI>Type "B 40 0000000".
+<LI>Press RUN.
+<LI>(optional) Confirm "halt 1" by typing "P 70" and seeing "0017001".
+<LI>Press RUN.
+<LI>(optional) Confirm "halt 3" by typing "P 70" and seeing "0017002".
+<LI>Press RUN to start reading call cards. The first in "HELLO3", and the
+message "HELLO WORLD, I AM HELLO3/01" should appear on the console.
+<LI>Press RUN to read the next call card. This is "HELLO5".
+<LI>Press RUN to read the next call card. This is "HELLO3".
+<LI>Press RUN to read the next call card. This is "HELLO1".
+<LI>Press RUN to read the next call card. This is "HELLO4".
+<LI>Press RUN to read the next call card. This is "HELLO2".
+</OL>
+
+<H2>CALL CARDS</H2>
+<P>Call cards may be created using the tools utility "callcard", which will append
+new call cards to the specified "pcd" file. As an alternative, the KeyPunch simulator
+may be used to create call cards manually. Call cards have the following format:
+<UL>
+<LI>Cols 1-6 - Program name
+<LI>Cols 7-8 - Segment name
+<LI>Col 9 - Tape Drive number, 0-7
+<LI>Cols 10-17 - Halt name (not implemented)
+<LI>Col 18 - '*', required to recognize the card as a call card
+</UL>
+
+<H2>APPENDIX</H2>
+<P>Comparison of memory usage by monitors:
+
+<P><IMG SRC="monitor.png">
+
+</BODY>
+</HTML>

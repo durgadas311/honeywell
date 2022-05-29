@@ -14,6 +14,9 @@ all: $(PCDS) $(MTIS)
 ship: all
 	cp -uv $(PCDS) $(MTIS) ../bin
 
+publish: ship
+	rsync -uWv ../bin/* durgadas.com:/var/www/html/sebhc/hw2000/images
+
 %.o: %.s
 	as200 -l -o $@ $? >$*.l
 

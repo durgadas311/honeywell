@@ -1,7 +1,7 @@
 # Makefile for building programs for H200/2000
 
 PCDS = recurs.pcd mcetests.pcd hellos.pcd chain.pcd
-MTIS = recurs.mti mcetests.mti hellos.mti
+MTIS = recurs.mti mcetests.mti hellos.mti test1.mti
 
 # override with "make ... ORG=nnnn"
 ORG = 1340 # min for Tape Monitors, OK for Card Monitor (min 1000)
@@ -10,6 +10,9 @@ all: $(PCDS) $(MTIS)
 
 ship: all
 	cp -uv $(PCDS) $(MTIS) ../bin
+
+publish: ship
+	rsync -uWv ../bin/* durgadas.com:/var/www/html/sebhc/hw2000/images
 
 %.o: %.s
 	as200 -l -u -o $@ $? >$*.l
@@ -35,6 +38,9 @@ hellos.pcd: hello1.pcd hello2.pcd hello3.pcd hello4.pcd hello5.pcd
 
 hellos.mti: hello1.mti hello2.mti hello3.mti hello4.mti hello5.mti
 	cat $^ >$@
+
+test1.mti: hellos.mti
+	brtcat -v -o test1.mti ../../monitor/bin/brtboot.mti hellos.mti
 
 .PRECIOUS: %.out
 
