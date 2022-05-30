@@ -682,7 +682,7 @@ int scanfp(int pnc) {
 }
 
 static int scan10(int pnc) {
-	int v, c;
+	int v, c, w = 0;
 	if (*scanp == MINUS) {
 		++scanp;
 		pnc |= NEG;
@@ -693,12 +693,26 @@ static int scan10(int pnc) {
 		}
 	}
 	char *p = scanp;
+	char *t;
 	while (isdigit(*p)) ++p;
 	if (scanp == p) {
 		cerror(errv);
 	}
+	t = p;
 	// TODO: check termination
+	if (*t == '#') {
+		t = field_width0(t + 1, &w);
+	}
 	c = 0;
+	while (w - (p - scanp) > 0) {
+		v = 0;
+		if (!c) {
+			v |= (pnc >> 8);
+		}
+		++c;
+		putb(v, 1);
+		--w;
+	}
 	while (scanp < p) {
 		v = *scanp++ - '0';	// 000..011
 		if (!c) {
@@ -710,6 +724,7 @@ static int scan10(int pnc) {
 		++c;
 		putb(v, 1);
 	}
+	scanp = t;
 	return token();
 }
 
