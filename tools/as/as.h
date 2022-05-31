@@ -174,13 +174,14 @@ extern int scanstr(int pnc);
 #define PBIN	13
 #define PSPACE	14
 #define PADMODE	15
-#define PERR	16
-#define PWARN	17
-#define PLINE	18
-#define PHEAP	19
-#define PIFDEF	20
-#define PIFNDEF	21
-#define PELSE	22
+// these must not conflict with BINOP..NIDENT or ASCII chars (any tokens)
+#define PERR	16+0x80
+#define PWARN	17+0x80
+#define PLINE	18+0x80
+#define PHEAP	19+0x80
+#define PIFDEF	20+0x80
+#define PIFNDEF	21+0x80
+#define PELSE	22+0x80
 
 /* symbol types */
 
