@@ -15,8 +15,6 @@ public class I_A implements Instruction {
 			negA = !negA;
 		}
 		boolean negB = ((b & 0060) == 0040);
-		a &= 017;
-		b &= 017;
 		boolean trueAdd = (negA == negB);
 		byte s;
 		byte cy = 0;
@@ -27,6 +25,8 @@ public class I_A implements Instruction {
 			s = (byte)(negB ? 040 : 020);
 			cy = 1;
 		}
+		a &= 017;
+		b &= 017;
 		boolean aDone = false;
 		byte z = 0;
 		while (true) {
