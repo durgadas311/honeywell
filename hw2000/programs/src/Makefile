@@ -1,7 +1,7 @@
 # Makefile for building programs for H200/2000
 
-PCDS = recurs.pcd mcetests.pcd hellos.pcd chain.pcd
-MTIS = recurs.mti mcetests.mti hellos.mti test1.mti
+PCDS = recurs.pcd mcetests.pcd hellos.pcd chain.pcd machin.pcd
+MTIS = recurs.mti mcetests.mti hellos.mti test1.mti machin.mti
 
 # override with "make ... ORG=nnnn"
 ORG = 1340 # min for Tape Monitors, OK for Card Monitor (min 1000)
