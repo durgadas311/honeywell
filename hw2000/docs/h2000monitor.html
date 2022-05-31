@@ -202,6 +202,17 @@ The function recurses until 5 levels are reached, and then
 returns up the stack. Messages are printed on the console showing
 entry and exit from each level.
 </DD>
+<DT>machin.pcd</DT>
+<DD>A version of the famous Pi computation program,
+written for 3-char address mode and use with the monitors.
+Prints 776 digits of Pi on the line printer, as each digit is computed.
+Uses over 16K of memory (560 elements) for the "terms" array, in order to
+compute Pi past the Feynman point.
+Uses the decimal multiply and divide instructions,
+and 10-digit decimal variables and constants throughout.
+Program size is about the same as the original 2K "space optimized" version,
+and run time seems on-par.
+</DD>
 </DL>
 
 <H2>APPENDIX</H2>
