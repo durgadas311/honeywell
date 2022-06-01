@@ -77,37 +77,42 @@ more information.
 <B>Debug</B>
 <UL>
 <B>Trace to CON/LP</B>
-<UL>Select which device will receive Trace output.
-Default is Line Printer.</UL>
+	<UL>Select which device will receive Trace output.
+	Default is Line Printer.</UL>
 <B>Trace</B>
-<UL>Trace is enabled for the range of memory of the last assembled program.
-This only works if an address range was established by using the built-in assembler.
-</UL>
+	<UL>Trace is enabled for the range of memory of the last assembled program.
+	This only works if an address range was established by using the built-in assembler.
+	</UL>
 <B>Trace Full</B>
-<UL>A dialog is presented for specifying the range of memory to trace.</UL>
+	<UL>A dialog is presented for specifying the range of memory to trace.</UL>
 <B>Trace Off</B>
-<UL>Cancel any active tracing.</UL>
+	<UL>Cancel any active tracing.</UL>
 <B>Dump</B>
-<UL>A memory dump is printed to the Line Printer for
-the range of memory of the last assembled program.
-This only works if an address range was established by using the built-in assembler.
-</UL>
+	<UL>A memory dump is printed to the Line Printer for
+	the range of memory of the last assembled program.
+	This only works if an address range was established by using the built-in assembler.
+	</UL>
 <B>Dump Full</B>
-<UL>A dialog is presented for specifying the range of memory to dump.</UL>
-<B>Throttle On/Off</B>
-<UL>By default, the simulation runs at full host speed.
-Setting Throttle On will reduce the average throughput
-to a more-realistic (approximately) 2 microseconds per cycle.
-Note that throttling is not done on every cycle, rather at
-about 1000 cycle intervals.
-</UL>
+	<UL>A dialog is presented for specifying the range of memory to dump.</UL>
 <B>Dump CCR</B>
-<UL>Dump control and condition registers.</UL>
+	<UL>Dump control and condition registers.</UL>
+<B>CPU time</B>
+	<UL>Report CPU time, in cycles and seconds,
+	since last INITIALIZE or use of this menu item
+	(i.e. reporting CPU time also clears the counter).
+	The seconds value is based on a 2 microsecond memory cycle.</UL>
+<B>Throttle On/Off</B>
+	<UL>By default, the simulation runs at full host speed.
+	Setting Throttle On will reduce the average throughput
+	to a more-realistic (approximately) 2 microseconds per cycle.
+	Note that throttling is not done on every cycle, rather at
+	about 1000 cycle intervals.
+	</UL>
 <B>Clear Memory</B>
-<UL>Fill all of memory with 000.</UL>
+	<UL>Fill all of memory with 000.</UL>
 <B>Rand Memory</B>
-<UL>Fill all of memory with a random pattern.
-Note that WM and IM bits are included.</UL>
+	<UL>Fill all of memory with a random pattern.
+	Note that WM and IM bits are included.</UL>
 </UL>
 
 <P>The assemble dialogs have a checkbox for "Listing". This causes an assembly

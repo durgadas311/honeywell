@@ -11,6 +11,7 @@ import java.lang.reflect.Constructor;
 public class HW2000 implements CoreMemory
 {
 	public static final int checkIntv = 1000; // number of tics between sleeps
+	// TODO: this needs to be configurable for different processors
 	public static final long nsPerTic = 2000; // 2uS per tic (cycle)
 
 	public static final byte M_IM = (byte)0x80;
@@ -26,6 +27,7 @@ public class HW2000 implements CoreMemory
 
 	int ATR;
 	int atrr;
+	long cpuTics;
 	public int CSR;
 	public int EIR;
 	public int AAR;
@@ -126,6 +128,7 @@ public class HW2000 implements CoreMemory
 		tics = 0;
 		ATR = 0;
 		atrr = 0;
+		cpuTics = 0;
 		SR = 0;
 		setAM(HW2000CCR.AIR_AM_2C);
 		CTL.reset();
@@ -175,6 +178,8 @@ public class HW2000 implements CoreMemory
 		// TODO: don't even advance clock unless enabled?
 		if (CTL.isPROTECT() && CTL.allowCLK()) {
 			atrr += tics;	// TODO: always incr?
+			// TODO: prescale may need to be configurable,
+			// for different (multi-char) processors.
 			int cy = atrr & ~0377;
 			atrr &= 0377;	// (i.e. free-running?)
 			if (cy != 0) {
@@ -187,6 +192,7 @@ public class HW2000 implements CoreMemory
 			}
 		}
 		// In all cases, reset tics
+		cpuTics += tics;
 		tics = 0;
 	}
 
@@ -1244,6 +1250,12 @@ public class HW2000 implements CoreMemory
 
 	public CharConverter cvt() {
 		return pdc.cvt;
+	}
+
+	public void dumpTime() {
+		double val = ((double)cpuTics * nsPerTic) / 1.0e9;
+		listOut(String.format("%d CYCLES, %g SECONDS\n", cpuTics, val));
+		cpuTics = 0;
 	}
 
 	public void dumpCR() {
