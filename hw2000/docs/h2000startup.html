@@ -1,0 +1,88 @@
+<HTML>
+<HEAD>
+<TITLE>H200/H2000 Startup Procedures</TITLE>
+</HEAD>
+<BODY>
+<H2>H200/H2000 Startup Procedures</H2>
+
+<H3>Clearing Memory</H3>
+<P>While the original hardware contained "core memory" which retains
+it's contents when the power is off, it was common practice to manually
+clear memory before starting operations.
+One reason for this was that parity errors were known to arise after
+a power cycle, and these errors might appear at any character and interrupt
+a job.
+It is also the case that programs which were "careless" about
+initializing memory might be exposed to issues that do not appear if memory
+has been cleared (particularly punctuation bits).
+Here are a couple procedures for clearing memory to a known-state.
+These procedures are presented using the console typewriter "control mode",
+but could also be performed using the full frontpanel.
+
+<OL>
+<LI>This program performs an LCA instruction, but instruction is
+entered such that it overwrites itself and never finds a word-mark.
+Thus, the instruction extraction phase completes but the execut phase
+does not. After allowing the instruction to run "about 10 seconds",
+the STOP+INITIALIZE buttons are pressed (Shift+STOP on the simulator) to 
+terminate execution. Note that the simulator, when running "unthrottled",
+will clear memory in much less than 10 seconds.
+Note, when using the console control mode, the console will enter
+the blank spaces between parameters, and also will return the carriage
+for commands that have a defined end.
+The steps are:
+<P>	<OL>
+	<LI>Enter "A 00 0000000" on the console.
+	<LI>Enter "115 115 015 015" and press Return on the console.
+	<LI>Enter "A 77 0000000" on the console.
+	<LI>Enter "A 74 0000003" on the console.
+	<LI>Enter "A 70 0000002" on the console.
+	<LI>Press RUN (let run for "about 10 seconds").
+	<LI>Press STOP+INITIALIZE (Shift+STOP).
+	</OL>
+<P>Memory contents can be checked by entering "A 00 0000000" and then
+pressing (or holding down) the TYPE button and observing the stream
+of "015 015 015 ..." values being printed.
+Press Return when done using TYPE.
+
+<P>Note that the last character of the program, "015" (the blank character),
+may be changed to any character value to fill memory with that character value.
+
+<P>For reference, the program being entered is essentially
+(in EasyCoder form):
+<UL><PRE>LCA           LOAD CHAR DATA+PUNC
+LCA           TERM FOR PREV INSTR
+DC    #1C15   SPACE FOR FILL
+DC    #1C15   FILL CHAR</PRE></UL>
+
+<LI>This program performs an EXM instruction with variant to
+copy both data and punctuation, left-to-right, until a word-mark.
+similar to the previous example, no word-mark is ever found and
+so the instruction execution phase does not end naturally.
+<P>	<OL>
+	<LI>Enter "A 00 0000000" on the console.
+	<LI>Enter "025 140 077 110 110" and press Return on the console.
+	<LI>Enter "A 77 0000001" on the console.
+	<LI>Enter "A 74 0000000" on the console.
+	<LI>Enter "A 70 0000001" on the console.
+	<LI>Press RUN (let run for "about 10 seconds").
+	<LI>Press STOP+INITIALIZE (Shift+STOP).
+	</OL>
+<P>Similar to the previous example, memory contents may be checked
+using the same procedure. In this case, memory will be filled
+with "025".
+<P>Note that the first character of the program, "025" (the 'E' character),
+may be changed to any character value to fill memory with that character value.
+
+<P>For reference, the program being entered is essentially
+(in EasyCoder form):
+<UL><PRE>DC    #1C25   FILL CHAR
+NOP           PRELOADS VARIANT REG
+DC    #1C77   VARIANT FOR NOP
+EXM           EXTENED MOVE DATA+PUNC
+EXM           TERM FOR PREV INSTR</PRE></UL>
+
+</OL>
+
+</BODY>
+</HTML>
