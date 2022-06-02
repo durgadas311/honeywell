@@ -27,16 +27,22 @@ does not. After allowing the instruction to run "about 10 seconds",
 the STOP+INITIALIZE buttons are pressed (Shift+STOP on the simulator) to 
 terminate execution. Note that the simulator, when running "unthrottled",
 will clear memory in much less than 10 seconds.
-Note, when using the console control mode, the console will enter
+Memory is filled backward, starting at 0000002 and
+immediately overwriting the instructions and
+then wrapping around to high memory.
+
+<P>Note, when using the console control mode, the console will enter
 the blank spaces between parameters, and also will return the carriage
 for commands that have a defined end.
 The steps are:
 <P>	<OL>
+	<LI>Press INITIALIZE.
 	<LI>Enter "A 00 0000000" on the console.
 	<LI>Enter "115 115 015 015" and press Return on the console.
 	<LI>Enter "A 77 0000000" on the console.
 	<LI>Enter "A 74 0000003" on the console.
 	<LI>Enter "A 70 0000002" on the console.
+	<LI>Press (address mode) 4 (so all memory will be cleared).
 	<LI>Press RUN (let run for "about 10 seconds").
 	<LI>Press STOP+INITIALIZE (Shift+STOP).
 	</OL>
@@ -48,6 +54,9 @@ Press Return when done using TYPE.
 <P>Note that the last character of the program, "015" (the blank character),
 may be changed to any character value to fill memory with that character value.
 
+<P>The address mode setting determines how much of memory will be cleared.
+In the default 2-char mode only the first 4K will be cleared.
+
 <P>For reference, the program being entered is essentially
 (in EasyCoder form):
 <UL><PRE>LCA           LOAD CHAR DATA+PUNC
@@ -57,22 +66,31 @@ DC    #1C15   FILL CHAR</PRE></UL>
 
 <LI>This program performs an EXM instruction with variant to
 copy both data and punctuation, left-to-right, until a word-mark.
-similar to the previous example, no word-mark is ever found and
+Similar to the previous example, no word-mark is ever found and
 so the instruction execution phase does not end naturally.
+Memory is filled forward, starting at 0000001 and
+immediately overwriting the instructions and
+eventually wrapping around from high memory to low.
 <P>	<OL>
+	<LI>Press INITIALIZE.
 	<LI>Enter "A 00 0000000" on the console.
 	<LI>Enter "025 140 077 110 110" and press Return on the console.
 	<LI>Enter "A 77 0000001" on the console.
 	<LI>Enter "A 74 0000000" on the console.
 	<LI>Enter "A 70 0000001" on the console.
+	<LI>Press (address mode) 4 (so all memory will be cleared).
 	<LI>Press RUN (let run for "about 10 seconds").
 	<LI>Press STOP+INITIALIZE (Shift+STOP).
 	</OL>
 <P>Similar to the previous example, memory contents may be checked
-using the same procedure. In this case, memory will be filled
+using the described procedure. In this case, memory will be filled
 with "025".
+
 <P>Note that the first character of the program, "025" (the 'E' character),
 may be changed to any character value to fill memory with that character value.
+
+<P>The address mode setting determines how much of memory will be cleared.
+In the default 2-char mode only the first 4K will be cleared.
 
 <P>For reference, the program being entered is essentially
 (in EasyCoder form):
