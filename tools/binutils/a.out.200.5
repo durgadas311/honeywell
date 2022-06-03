@@ -1,4 +1,4 @@
-.TH A.OUT 5 9/9/73 "binutils-H200" "Honeywell 200/2000 Tools"
+.TH A.OUT 5 6/3/22 "binutils-H200" "Honeywell 200/2000 Tools"
 .SH NAME
 a.out \- assembler and link editor output for Honeywell 200/2000 Tools
 .SH DESCRIPTION
@@ -7,10 +7,6 @@ is the output file of the assembler
 .B as200
 and the link editor
 .BR ld200 .
-Both programs make
-.B a.out
-executable if there were no
-errors and no unresolved external references.
 The name
 .B a.out
 represents any object file, regardless of whether the default name was overridden.
@@ -25,6 +21,11 @@ of
 .B ld200
 or if the symbols and relocation have been removed by
 .BR strip200 .
+Relocation bits are not retained by
+.B ld200
+unless the \fB\-r\fR option is used.
+The relocation bits also contain information about the address mode
+of the code or data.
 
 The header always contains 8 words (32-bit, LE):
 
@@ -48,7 +49,7 @@ The size of the symbol table
 The entry location (0 until set by \fBld200\fR)
 .TP
 7
-Unused
+The size of the heap (additional memory reserved after bss)
 .TP
 8
 A flag indicating relocation bits have been suppressed
@@ -60,16 +61,19 @@ The size of the header is not included in any of the other sizes.
 The text and data sections contain raw memory data, i.e. 6-bit character
 plus WM and IM bits stored in an 8-bit byte. This means that addresses
 stored in the program image cannot be directly interpreted, they must have
-the 6-bit character values assembled into a 24-bit integer (in the case
-of 4-character address mode).
+the 6-bit character values assembled into a 24-bit integer (e.g. in the case
+of 4-character address mode). The bss segment is dictated by the source code
+data declarations. The heap is an unformatted number of bytes after the bss.
+Note that the heap size may also be set with an \fBld200\fR option.
 
 These object files do not conform to anything used on
 original Honeywell 200 Series computers, and thus cannot be
-loaded by conventional means. Use \fBout2brt\fR to convert an object file
-to BRT (binary run tape) format for conventional loading.
+loaded by conventional means. Use \fBout2brf\fR to convert an object file
+to BRT (binary run tape) or BRD (binary run deck) format for conventional loading.
 The simulator does allow direct loading of object files into memory.
 In that case, text and data are loaded into contiguous memory at
-the entry address, and following is a cleared area of the size specified for bss.
+the entry address, and following is a cleared area of the size specified for bss
+and heap.
 
 There is no formal concept of a stack on Honeywell 200 Series computers,
 so it is up to user code to establish any conventions there.
@@ -77,19 +81,29 @@ Typically, an index register would be used to implement a stack-like
 environment.
 
 \fBobjdump200\fR may be used to dump various parts of the object file.
+Note that disassembly of text requires knowledge of the address mode,
+and if the relocation bits have been stripped then the address mode
+must be specified on the commandline, and must apply to all of text.
+
+Note that \fBld200\fR creates special symbols for the resolved addresses
+of the ends of the various segments. These symbols may be used
+by programs to reference the segments, particularly the end of
+reserved memory (end of bss+heap) e.g. for setting up a stack.
 
 The symbol table consists of the following 16-byte structure,
 repeated for each entry:
 
 .TP
 +0
-8-byte symbol name field, NUL terminated.
+8-byte symbol name field, NUL terminated if less than 8 characters.
 .TP
 +8
 16-bit LE type field.
 .TP
 +10
-16-bit unused field.
+16-bit field length, negative values indicate the field extends before the symbol.
+Zero indicates the field length is unknown.
+The \fBnm200\fR option \fB-f\fR will display this information.
 .TP
 +12
 32-bit LE value field.
@@ -131,9 +145,6 @@ data segment external symbol
 bss segment external symbol
 .PP
 
-Values other than those given above may
-occur if the user has defined some of his own instructions.
-
 If the symbol's type is undefined external,
 and the value field is non-zero,
 the symbol is interpreted by the loader
@@ -163,7 +174,10 @@ There is no relocation information if the ``suppress relocation''
 flag in the header is on.
 
 The first byte of the relocation information indicates the address mode
-of the corresponding address. The following binary values are recognized:
+of the corresponding address.
+Note that absolute address fields also contain relocation bits,
+but but are ignored during linking.
+The following binary values are recognized:
 
 .TP
 00000000
