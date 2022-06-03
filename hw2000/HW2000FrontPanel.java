@@ -2383,9 +2383,8 @@ public class HW2000FrontPanel extends JFrame
 		int dat = ldInt(hdr, 2);	// a_data
 		int bss = ldInt(hdr, 3);	// a_bss
 		int heap = ldInt(hdr, 6);	// a_heap
-		// TODO: leave bss as-is, or pad with stack space?
-		// TODO: what about heap?
-		bss += 256; // user can add more, via -t
+		bss += heap; // user can add more, via -t or -h
+		// .bss now includes .heap
 		try {
 			obj.read(sys.mem, adr, txt + dat);
 		} catch (Exception ee) {
@@ -2396,25 +2395,35 @@ public class HW2000FrontPanel extends JFrame
 		try { obj.close(); } catch (Exception ee) {}
 		currLow = adr;
 		currHi = adr + txt + dat + bss;
-		// Put top of .bss in X1... stack pointer
-		sys.putAddr(4, currHi, sys.M_WM);
-		// Equiv of RANGE directive
-		if (heap != 0) {
-			currHi += heap;
-		} else {
-			currHi += 64*1024; // TODO: should there be any default?
+		if (currLow >= 0100) {
+			// Put top of .bss+.heap in X1... stack pointer
+			sys.putAddr(4, currHi, sys.M_WM);
 		}
 		// Since running stand-alone, no need for IBR/BRR or memory
 		// allocation, etc.
-		// Put data in MOD1 locations...
-		sys.putStr(65, String.format("%03d", rev), 3);
-		sys.putStr(68, src.getName().split("\\.")[0], 8);
-		sys.putRaw(118, vis, 6);
-		sys.putAddr(189, currHi, sys.M_WM); // EOM, give program some "heap"
-		sys.setWord(65);	// REV
-		sys.setWord(68);	// PGM
-		sys.setWord(74);	// SEG
-		sys.setWord(113);	// VIS
+		if (adr >= 0234) {
+			// Put data in Monitor/MOD1 locations...
+			sys.putStr(65, String.format("%03d", rev), 3);
+			sys.putStr(68, src.getName().split("\\.")[0], 6);
+			sys.putStr(74, "01", 2);
+			sys.putRaw(118, vis, 6);
+			sys.setWord(65);	// REV
+			sys.setWord(68);	// PGM
+			sys.setWord(74);	// SEG
+			sys.setWord(113);	// VIS
+			// setup halts for "return to monitor"
+			sys.putRaw(86, 045, 1);	// Halt
+			sys.setWord(86);
+			sys.setWord(87);
+			sys.putRaw(130, 045, 1);	// Halt
+			sys.setWord(130);
+			sys.setWord(131);
+			sys.putRaw(139+2, 86, 3);	// Address of Halt
+			sys.setWord(139);
+		}
+		if (adr >= 0276) {
+			sys.putAddr(189, currHi, sys.M_WM); // EOM, give program some "heap"
+		}
 		sys.SR = adr;
 		_last = src;
 	}
