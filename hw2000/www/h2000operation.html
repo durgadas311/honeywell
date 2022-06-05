@@ -37,12 +37,26 @@ current directory or location of H2000.jar). </UL>
 the program will be assembled into a memory region that is relocated
 above the monitor, and the monitor data structures will be filled-in
 to indicate how to run the job.</UL>
+<B>Load Obj</B>
+<UL>Load an object file that was prepared using the
+<B>as200</B> and <B>ld200</B> tools.
+A minimal communications area is setup,
+provided the program origin is above a certain address.
+Index register 1 is also set to point to the highest address reserved
+by the program.
+The standard Return To Monitor entry points result
+in a safe halt at address 0126 (octal).
+</UL>
 <B>Monitor</B>
-<UL>Assemble the monitor program and setup the Assemble option to use it.
+<UL>DEPRECATED.
+Assemble the monitor program and setup the Assemble option to use it.
+Note, this is not any of the standard Honeywell Monitors.
 There is a monitor program supplied in the sample programs tarball,
 "monitor.ezc".
 When the monitor is active, this menu option will be disabled (grayed-out).
 Clicking INITIALIZE (after STOP) will reset monitor mode.</UL>
+<B>Quit</B>
+<UL>End the simulation.</UL>
 </UL>
 <B>Disk Util</B>
 <UL><B>Initialize Volume</B>

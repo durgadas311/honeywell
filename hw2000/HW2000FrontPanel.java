@@ -2412,12 +2412,12 @@ public class HW2000FrontPanel extends JFrame
 			sys.setWord(74);	// SEG
 			sys.setWord(113);	// VIS
 			// setup halts for "return to monitor"
-			sys.putRaw(86, 045, 1);	// Halt
+			sys.putRaw(86+3, 045000126, 4);	// Halt "H ."
 			sys.setWord(86);
-			sys.setWord(87);
-			sys.putRaw(130, 045, 1);	// Halt
+			sys.setWord(90);
+			sys.putRaw(130+3, 065000126, 4);	// B 86
 			sys.setWord(130);
-			sys.setWord(131);
+			sys.setWord(134);
 			sys.putRaw(139+2, 86, 3);	// Address of Halt
 			sys.setWord(139);
 		}
@@ -2426,6 +2426,8 @@ public class HW2000FrontPanel extends JFrame
 		}
 		sys.SR = adr;
 		_last = src;
+		PopupFactory.inform(this, op, String.format("Loaded %s %07o %07o %07o",
+			src.getName(), currLow, currHi, sys.SR));
 	}
 
 	private void fortranFile() {
