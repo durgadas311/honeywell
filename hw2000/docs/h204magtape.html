@@ -7,7 +7,7 @@
 <P>The model 204 9-track tape units implement basic sequential-only storage.
 This implementation uses a window to represent and control the 8 tape drives.
 <P>
-The device is at the traditional address of 00/40.
+The device control is at the traditional address of 00/40.
 This implementation relies on tape record marks to delimit records.
 Two adjacent record marks indicate a file mark.
 Furthermore, a RM in the memory buffer will stop a transfer.
@@ -24,17 +24,17 @@ however exact placement after backspace needs to be confirmed
 with details of how real hardware worked.
 
 <P>
-<P>Each drive has a mount/unmount button that is labeled for the
-drive number (000 - 007). Clicking this button opens a file dialog window
+<P>Each drive has a mount/unmount button that is depicted as the tape reels.
+Clicking on the tape reels opens a file dialog window
 for selecting the tape image to be mounted (pressing Cancel will leave no
 image mounted).
 In addition, a rewind button exists. Active drives will show current 
 tape position in characters.
-Also, a PERMIT button/indicator allows control over writing to the tape.
+Also, a Permit (PER) button/indicator allows control over writing to the tape.
 If the tape was mounted with a "Write Ring" (checkbox in the file selction dialog),
-then clicking PERMIT will toggle between write (illuminated) and protected (off).
-If the PERMIT indicator will not light when the button is clicked, the tape was
-mounted without "Write Ring".
+then clicking PER will toggle between write (illuminated) and protected (off).
+If the PER indicator will not light when the button is clicked, then the tape was
+mounted without a "Write Ring".
 
 <P>The details of the control and multiple drives with respect to
 interrupts is not known. While the "rewind" (and unload) function is

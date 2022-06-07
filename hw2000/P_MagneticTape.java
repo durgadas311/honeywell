@@ -34,6 +34,7 @@ public class P_MagneticTape extends JFrame
 
 	private class MagTapeStatus {
 		RandomAccessFile dev;
+		MagTapeDrive skin;
 		long len; // approximate length of unspooled tape
 		boolean beg;
 		boolean end;
@@ -50,9 +51,6 @@ public class P_MagneticTape extends JFrame
 		boolean error;
 		int errno;
 		boolean fwdspace;
-		JButton perm_bt;
-		JLabel stat_pn;
-		JLabel mnt_pn;
 
 		public MagTapeStatus() {
 			dev = null;
@@ -92,40 +90,34 @@ public class P_MagneticTape extends JFrame
 		setFont(font);
 		wp = new JCheckBox("Write Ring");
 
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.CENTER;
+		GridBagLayout gb = new GridBagLayout();
+		setLayout(gb);
+
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new MagTapeStatus();
+			sts[x].skin = new MagTapeDrive(x);
 			sts[x].busy = new javax.swing.Timer(1, this);
 			sts[x].busy.setActionCommand(String.format("%d", x));
 			sts[x].busy.setRepeats(false);
-			JPanel pn = new JPanel();
-			pn.setLayout(new FlowLayout());
-			JButton bt = new JButton(String.format("%03o", x));
-			bt.setActionCommand(String.format("%d", x));
-			bt.addActionListener(this);
-			pn.add(bt);
-			bt = new JButton("\u25c4\u25c4");
-			bt.setActionCommand(String.format("R%d", x));
-			bt.addActionListener(this);
-			pn.add(bt);
-			bt = new JButton("PERMIT");
-			bt.setMargin(new Insets(2, 1, 2, 1));
-			bt.setBackground(Peripheral.btnWhiteOff);
-			bt.setActionCommand(String.format("P%d", x));
-			bt.addActionListener(this);
-			pn.add(bt);
-			sts[x].perm_bt = bt;
-			sts[x].stat_pn = new JLabel();
-			sts[x].stat_pn.setPreferredSize(new Dimension(75, 20));
-			sts[x].stat_pn.setOpaque(true);
-			sts[x].stat_pn.setBackground(Color.white);
-			pn.add(sts[x].stat_pn);
-			sts[x].mnt_pn = new JLabel();
-			sts[x].mnt_pn.setPreferredSize(new Dimension(400, 20));
-			sts[x].mnt_pn.setBackground(Color.white);
-			sts[x].mnt_pn.setOpaque(true);
-			sts[x].mnt_pn.setText("No Tape");
-			pn.add(sts[x].mnt_pn);
-			add(pn);
+			sts[x].skin.reelListener(this);
+			sts[x].skin.rewListener(this);
+			sts[x].skin.permitListener(this);
+			gb.setConstraints(sts[x].skin, gc);
+			add(sts[x].skin);
+			++gc.gridx;
 		}
 		allow = false;
 		intr = false;
@@ -168,7 +160,7 @@ public class P_MagneticTape extends JFrame
 	private void updateDisp(int unit) {
 		try {
 			long p = sts[unit].dev.getFilePointer();
-			sts[unit].stat_pn.setText(String.format("%d", p));
+			sts[unit].skin.setPos(p);
 			sts[unit].beg = (p == 0);
 			if (sts[unit].beg) {
 				sts[unit].end = false;
@@ -465,7 +457,7 @@ public class P_MagneticTape extends JFrame
 
 	private void startRew(int unit) {
 		long len = 0;
-		sts[unit].stat_pn.setText("...");
+		sts[unit].skin.setPos("...");
 		sts[unit].end = false;
 		sts[unit].beg = false;
 		len = (sts[unit].len / BPI); // approx. inches
@@ -571,11 +563,10 @@ public class P_MagneticTape extends JFrame
 				try {
 					sts[un].dev.seek(0L);
 				} catch (Exception ee) {}
-				sts[un].stat_pn.setText("0");
+				sts[un].skin.setPos(0);
 				sts[un].beg = true;
 			} else {
-				sts[un].stat_pn.setText("");
-				sts[un].mnt_pn.setText("No Tape");
+				sts[un].skin.setTape(null);
 			}
 			return;
 		}
@@ -593,24 +584,20 @@ public class P_MagneticTape extends JFrame
 			int c = b.getActionCommand().charAt(1) - '0';
 			if (sts[c].dev != null) {
 				sts[c].permit = !sts[c].permit;
-				sts[c].perm_bt.setBackground(
-					sts[c].permit  && sts[c].wrRing ?
-					Peripheral.btnWhiteOn :
-					Peripheral.btnWhiteOff);
+				sts[c].skin.setPermit(sts[c].permit && sts[c].wrRing);
 			}
-		} else {
-			int c = a - '0';
+		} else if (a == 'M') {
+			int c = b.getActionCommand().charAt(1) - '0';
 			String s = String.format("Mount %03o", c);
 			if (sts[c].dev != null) {
 				try {
 					sts[c].dev.close();
 				} catch (Exception ee) {}
 				sts[c].dev = null;
-				sts[c].stat_pn.setText("");
-				sts[c].mnt_pn.setText("No Tape");
+				sts[c].skin.setTape(null);
 				sts[c].wrRing = false;
 				sts[c].permit = false;
-				sts[c].perm_bt.setBackground(Peripheral.btnWhiteOff);
+				sts[c].skin.setPermit(false);
 			}
 			wp.setSelected(false);
 			File f = pickFile(s);
@@ -622,12 +609,9 @@ public class P_MagneticTape extends JFrame
 				sts[c].dev = new RandomAccessFile(f, "rw");
 				sts[c].end = false;
 				sts[c].beg = true;
-				sts[c].stat_pn.setText("0");
-				sts[c].mnt_pn.setText(f.getName());
-				sts[c].perm_bt.setBackground(
-					sts[c].permit  && sts[c].wrRing ?
-					Peripheral.btnWhiteOn :
-					Peripheral.btnWhiteOff);
+				sts[c].skin.setTape(f.getName());
+				sts[c].skin.setPermit(sts[c].permit && sts[c].wrRing);
+				sts[c].skin.setPos(0);
 				return;
 			} catch (Exception ee) {
 				PopupFactory.warning(this, s, ee.toString());
