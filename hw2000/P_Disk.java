@@ -110,15 +110,10 @@ public class P_Disk extends JFrame
 
 	private class DiskStatus {
 		RandomAccessFile dev;
+		DiskDrive skin;
 		int cyl;
 		javax.swing.Timer busy;
 		byte flag;
-		JButton a_bt;
-		JButton b_bt;
-		JButton f_bt;
-		JButton d_bt;
-		JLabel cyl_pn;
-		JLabel mnt_pn;
 		public DiskStatus() {
 			dev = null;
 			cyl = 0;
@@ -215,62 +210,43 @@ public class P_Disk extends JFrame
 		track_trk = -1;
 		track_unit = -1;
 
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.CENTER;
+		GridBagLayout gb = new GridBagLayout();
+		setLayout(gb);
+
 		for (int x = 0; x < 8; ++x) {
 			sts[x] = new DiskStatus();
+			sts[x].skin = new DiskDrive(x);
 			sts[x].busy = new javax.swing.Timer(1, this);
 			sts[x].busy.setActionCommand(String.format("%d", x));
-			JPanel pn = new JPanel();
-			pn.setLayout(new FlowLayout());
-			JButton bt = new JButton(String.format("%03o", x));
-			bt.setActionCommand(String.format("%d", x));
-			bt.addActionListener(this);
-			pn.add(bt);
-			bt = new JButton("A");
-			bt.setActionCommand(String.format("A%d", x));
-			bt.addActionListener(this);
-			bt.setBackground(Peripheral.btnWhiteOff);
-			bt.setMargin(new Insets(0, 0, 0, 0));
-			bt.setPreferredSize(new Dimension(25, 25));
-			pn.add(bt);
-			sts[x].a_bt = bt;
-			bt = new JButton("B");
-			bt.setActionCommand(String.format("B%d", x));
-			bt.addActionListener(this);
-			bt.setBackground(Peripheral.btnWhiteOff);
-			bt.setMargin(new Insets(0, 0, 0, 0));
-			bt.setPreferredSize(new Dimension(25, 25));
-			pn.add(bt);
-			sts[x].b_bt = bt;
-			bt = new JButton("FMT");
-			bt.setFont(smallFont);
-			bt.setActionCommand(String.format("F%d", x));
-			bt.addActionListener(this);
-			bt.setBackground(Peripheral.btnWhiteOff);
-			bt.setMargin(new Insets(0, 0, 0, 0));
-			bt.setPreferredSize(new Dimension(25, 25));
-			pn.add(bt);
-			sts[x].f_bt = bt;
-			bt = new JButton("DAT");
-			bt.setFont(smallFont);
-			bt.setActionCommand(String.format("D%d", x));
-			bt.addActionListener(this);
-			bt.setBackground(Peripheral.btnWhiteOff);
-			bt.setMargin(new Insets(0, 0, 0, 0));
-			bt.setPreferredSize(new Dimension(25, 25));
-			pn.add(bt);
-			sts[x].d_bt = bt;
-			sts[x].cyl_pn = new JLabel();
-			sts[x].cyl_pn.setPreferredSize(new Dimension(50, 20));
-			sts[x].cyl_pn.setOpaque(true);
-			sts[x].cyl_pn.setBackground(Color.white);
-			sts[x].mnt_pn = new JLabel();
-			sts[x].mnt_pn.setPreferredSize(new Dimension(400, 20));
-			sts[x].mnt_pn.setBackground(Color.white);
-			sts[x].mnt_pn.setOpaque(true);
-			sts[x].mnt_pn.setText("No Disk Pack");
-			pn.add(sts[x].cyl_pn);
-			pn.add(sts[x].mnt_pn);
-			add(pn);
+			add(sts[x].skin, gc);
+			++gc.gridx;
+			if (x == 3) {
+				gc.gridx = 0;
+				++gc.gridy;
+				JPanel pn = new JPanel();
+				pn.setPreferredSize(new Dimension(5, 5));
+				pn.setOpaque(false);
+				add(pn, gc);
+				++gc.gridy;
+			}
+			sts[x].skin.a_Listener(this);
+			sts[x].skin.b_Listener(this);
+			sts[x].skin.fmtListener(this);
+			sts[x].skin.datListener(this);
+			sts[x].skin.packListener(this);
 		}
 		cInts = false;
 		dInts = false;
@@ -295,7 +271,7 @@ public class P_Disk extends JFrame
 		// must at least restore heads on drive 0, for BOOTSTRAP
 		if (sts[0].dev != null) {
 			sts[0].cyl = 0;
-			sts[0].cyl_pn.setText("000-00");
+			sts[0].skin.setPos(0, 0);
 		}
 		cInts = false;
 		dInts = false;
@@ -361,7 +337,7 @@ public class P_Disk extends JFrame
 			return false;
 		}
 		sts[adr_lun].cyl = cyl;
-		sts[adr_lun].cyl_pn.setText(String.format("%03d-%02d", cyl, trk));
+		sts[adr_lun].skin.setPos(cyl, trk);
 		track_unit = adr_lun;
 		track_cyl = cyl;
 		track_trk = trk;
@@ -1053,7 +1029,7 @@ public class P_Disk extends JFrame
 			diff = -diff;
 		}
 		sts[lun].cyl = cyl;
-		sts[lun].cyl_pn.setText(String.format("%03d-%02d", sts[lun].cyl, adr_trk));
+		sts[lun].skin.setPos(sts[lun].cyl, adr_trk);
 		// TODO: what is cyl-to-cyl seek time? assume 1mS...
 		sts[lun].busy.setDelay(diff); // seek time, mS
 		sts[lun].busy.start();
@@ -1173,22 +1149,10 @@ public class P_Disk extends JFrame
 
 	private void updateFlags(DiskStatus unit, int flg) {
 		unit.flag = (byte)flg;
-		unit.a_bt.setBackground(
-			(unit.flag & PERMIT_A) == 0 ?
-			Peripheral.btnWhiteOff :
-			Peripheral.btnWhiteOn);
-		unit.b_bt.setBackground(
-			(unit.flag & PERMIT_B) == 0 ?
-			Peripheral.btnWhiteOff :
-			Peripheral.btnWhiteOn);
-		unit.f_bt.setBackground(
-			(unit.flag & PERMIT_FMT) == 0 ?
-			Peripheral.btnWhiteOff :
-			Peripheral.btnWhiteOn);
-		unit.d_bt.setBackground(
-			(unit.flag & PERMIT_DAT) == 0 ?
-			Peripheral.btnWhiteOff :
-			Peripheral.btnWhiteOn);
+		unit.skin.setA((unit.flag & PERMIT_A) != 0);
+		unit.skin.setB((unit.flag & PERMIT_B) != 0);
+		unit.skin.setFMT((unit.flag & PERMIT_FMT) != 0);
+		unit.skin.setDAT((unit.flag & PERMIT_DAT) != 0);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -1216,8 +1180,8 @@ public class P_Disk extends JFrame
 		} else if (a.charAt(0) == 'D') {
 			int c = a.charAt(1) - '0';
 			updateFlags(sts[c], sts[c].flag ^ PERMIT_DAT);
-		} else {
-			int c = a.charAt(0) - '0';
+		} else if (a.charAt(0) == 'M') {
+			int c = a.charAt(1) - '0';
 			String s = String.format("Mount %03o", c);
 			if (sts[c].dev != null) {
 				try {
@@ -1225,8 +1189,7 @@ public class P_Disk extends JFrame
 				} catch (Exception ee) {}
 				sts[c].dev = null;
 				sts[c].cyl = 0;
-				sts[c].cyl_pn.setText("");
-				sts[c].mnt_pn.setText("No Disk Pack");
+				sts[c].skin.setDisk(null);
 			}
 			updateFlags(sts[c], 0);
 			File f = pickFile(s);
@@ -1236,8 +1199,8 @@ public class P_Disk extends JFrame
 			try {
 				sts[c].dev = new RandomAccessFile(f, "rw");
 				sts[c].cyl = 0;
-				sts[c].cyl_pn.setText("000-00");
-				sts[c].mnt_pn.setText(f.getName());
+				sts[c].skin.setDisk(f.getName());
+				sts[c].skin.setPos(0, 0);
 				return;
 			} catch (Exception ee) {
 				PopupFactory.warning(this, s, ee.toString());

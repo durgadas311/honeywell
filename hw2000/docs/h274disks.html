@@ -9,7 +9,7 @@ The model 274 disk drives (any similar model controller) implements
 "random access" storage.
 This implementation uses a window to provide basic control for the 8 drives.
 <P>
-The device is at the traditional address of 04/44.
+The device control is at the traditional address of 04/44.
 Some details are lacking regarding various command specifics.
 
 <P>The Disks window is hidden by default. It may be made visible,
@@ -36,8 +36,8 @@ Bytes from the End Mark to 10000th byte are ignored, although format commands
 can write there. The file size grows as tracks get formatted, with "non-existent"
 data effectively being "unformatted".
 
-<P>Each drive has a mount/unmount button that is labeled for the
-drive number (000 - 007). Clicking this button opens a file dialog window
+<P>Each drive has a mount/unmount button that is depicted as the disk pack well.
+Clicking on the disk pack well opens a file dialog window
 for selecting the disk image to be mounted (clicking Cancel will leave no
 image mounted).
 Additionally, "FMT" and "DAT" buttons permit writing of track format
