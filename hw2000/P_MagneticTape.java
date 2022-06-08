@@ -1,4 +1,5 @@
 // Copyright (c) 2017 Douglas Miller <durgadas311@gmail.com>
+import java.util.Properties;
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -75,7 +76,7 @@ public class P_MagneticTape extends JFrame
 	boolean canceled;
 	boolean active;
 
-	public P_MagneticTape(int irq, HW2000 hw) {
+	public P_MagneticTape(Properties props, int irq, HW2000 hw) {
 		super("H204B Magnetic Tape Unit");
 		java.net.URL url = getClass().getResource("icons/mti-96.png");
 		if (url != null) {
@@ -85,6 +86,13 @@ public class P_MagneticTape extends JFrame
 		this.irq = irq;
 		this.sys = hw;
 		sts = new MagTapeStatus[8];
+		int nt = 8;
+		String s = props.getProperty("num_tape");
+		if (s != null) {
+			nt = Integer.valueOf(s);
+			if (nt > 8) nt = 8;
+			if (nt < 2) nt = 2;
+		}
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
@@ -106,7 +114,7 @@ public class P_MagneticTape extends JFrame
 		GridBagLayout gb = new GridBagLayout();
 		setLayout(gb);
 
-		for (int x = 0; x < 8; ++x) {
+		for (int x = 0; x < nt; ++x) {
 			sts[x] = new MagTapeStatus();
 			sts[x].skin = new MagTapeDrive(x);
 			sts[x].busy = new javax.swing.Timer(1, this);
@@ -207,6 +215,9 @@ public class P_MagneticTape extends JFrame
 		// ** Packed-decimal? 2 digits per tape "byte"? signs? fields?
 		// *** Full punctuation transfer?
 		int unit = rwc.c3 & 007;
+		if (sts[unit] == null) {
+			return;	// error?
+		}
 		sts[unit].reverse = false;
 		sts[unit].backspace = false;
 		sts[unit].erase = false;
@@ -291,6 +302,9 @@ public class P_MagneticTape extends JFrame
 			active = true;
 		}
 		int unit = rwc.c3 & 007;
+		if (sts[unit] == null) {
+			return;	// error?
+		}
 		long cnt = sts[unit].len;
 		if ((rwc.c2 & 040) == PeriphDecode.P_OUT) {
 			doOut(rwc, sts[unit]);
@@ -446,6 +460,9 @@ public class P_MagneticTape extends JFrame
 		//if (sts[unit].busy.isRunning()) {
 		//	return true;
 		//}
+		if (sts[unit] == null) {
+			return false;
+		}
 		if (in && sts[unit].read) {
 			return true;
 		}
@@ -457,6 +474,7 @@ public class P_MagneticTape extends JFrame
 
 	private void startRew(int unit) {
 		long len = 0;
+		if (sts[unit] == null) return;
 		sts[unit].skin.setPos("...");
 		sts[unit].end = false;
 		sts[unit].beg = false;
@@ -511,18 +529,21 @@ public class P_MagneticTape extends JFrame
 			break;
 		case 060:
 			unit = rwc.c3 & 007;
+			if (sts[unit] == null) break;
 			if ((in && sts[unit].beg) || (!in && sts[unit].end)) {
 				branch = true;
 			}
 			break;
 		case 040:
 			unit = rwc.c3 & 007;
+			if (sts[unit] == null) break;
 			// never any R/W errors? write permit errors...
 			branch = sts[unit].error;
 			sts[unit].error = false;
 			break;
 		case 020:
 			unit = rwc.c3 & 007;
+			if (sts[unit] == null) break;
 			if (in) {
 				// close, unmount
 				try {
@@ -534,6 +555,7 @@ public class P_MagneticTape extends JFrame
 			break;
 		case 000:
 			unit = rwc.c3 & 007;
+			if (sts[unit] == null) break;
 			if (chkBusy(unit, in)) {
 				branch = true;
 			}
@@ -632,6 +654,7 @@ public class P_MagneticTape extends JFrame
 
 	// TODO: mutex with PDC/PCB...
 	public boolean begin(int unit) {
+		if (sts[unit & 7] == null) return false;
 		vUnit = unit & 07;
 		vWritten = false;
 		sts[vUnit].errno = 0;

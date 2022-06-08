@@ -5,6 +5,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.util.Arrays;
+import java.util.Properties;
 
 public class P_LinePrinter extends JFrame
 		implements Peripheral, ActionListener, WindowListener {
@@ -28,7 +29,7 @@ public class P_LinePrinter extends JFrame
 	HW2000 sys;
 	long lastLine;
 
-	public P_LinePrinter(int irq, HW2000 hw) {
+	public P_LinePrinter(Properties props, int irq, HW2000 hw) {
 		super("H222 Line Printer");
 		java.net.URL url = getClass().getResource("icons/prt-96.png");
 		if (url != null) {

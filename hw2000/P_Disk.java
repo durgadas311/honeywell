@@ -5,6 +5,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.util.Arrays;
+import java.util.Properties;
 
 // Honeywell "Disk Pack" Devices:
 //
@@ -189,7 +190,7 @@ public class P_Disk extends JFrame
 	// 11 platters, 20 usable surfaces
 	// 200 cyls (0000-0312 or 203?)
 	// 10400 char/trk
-	public P_Disk(int irq, HW2000 hw) {
+	public P_Disk(Properties props, int irq, HW2000 hw) {
 		super("H278 Disk Pack Devices");
 		java.net.URL url = getClass().getResource("icons/dpi-96.png");
 		if (url != null) {
@@ -200,6 +201,13 @@ public class P_Disk extends JFrame
 		this.irq = irq;
 		this.sys = hw;
 		busy = false;
+		int nd = 8;
+		String s = props.getProperty("num_disk");
+		if (s != null) {
+			nd = Integer.valueOf(s);
+			if (nd > 8) nd = 8;
+			if (nd < 2) nd = 2;
+		}
 		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		Font font = new Font("Monospaced", Font.PLAIN, 12);
 		setFont(font);
@@ -226,7 +234,7 @@ public class P_Disk extends JFrame
 		GridBagLayout gb = new GridBagLayout();
 		setLayout(gb);
 
-		for (int x = 0; x < 8; ++x) {
+		for (int x = 0; x < nd; ++x) {
 			sts[x] = new DiskStatus();
 			sts[x].skin = new DiskDrive(x);
 			sts[x].busy = new javax.swing.Timer(1, this);
@@ -662,6 +670,9 @@ public class P_Disk extends JFrame
 			rwc.c3 = (byte)020;	// EXTENDED READ INITIAL
 			rwc.c4 = (byte)000;
 		}
+		if (sts[adr_lun] == null) {
+			return;
+		}
 		// C3:
 		//	04	Store/Load address reg
 		//	00/10	Read/Write initial
@@ -706,6 +717,9 @@ public class P_Disk extends JFrame
 				return;
 			}
 			active = true;
+		}
+		if (sts[adr_lun] == null) {
+			return;
 		}
 		if (rwc.isInput()) {
 			doIn(rwc);
@@ -1016,6 +1030,9 @@ public class P_Disk extends JFrame
 	}
 
 	private boolean chkBusy(int lun) {
+		if (sts[lun] == null) {
+			return false;
+		}
 		if (sts[lun].busy.isRunning()) {
 			return true;
 		}
@@ -1066,6 +1083,7 @@ public class P_Disk extends JFrame
 			}
 			// device busy...
 			lun = rwc.c3 & 007;
+			if (sts[lun] == null) break;
 			if (chkBusy(lun)) {
 				branch = true;
 			}
@@ -1084,6 +1102,7 @@ public class P_Disk extends JFrame
 				break;
 			}
 			lun = rwc.c3 & 007;
+			if (sts[lun] == null) break;
 			if (chkBusy(lun)) {
 				branch = true;
 			} else {
@@ -1095,6 +1114,7 @@ public class P_Disk extends JFrame
 				break;
 			}
 			lun = rwc.c3 & 007;
+			if (sts[lun] == null) break;
 			if (chkBusy(lun)) {
 				branch = true;
 			} else {
@@ -1224,7 +1244,7 @@ public class P_Disk extends JFrame
 		// TODO: reset status?
 		errno = 0;
 		// TODO: mutex with PDT/PCB...
-		if (lun < 0 || lun > sts.length) {
+		if (lun < 0 || lun > sts.length || sts[lun] == null) {
 			adr_prt |= STS_DEVBAD;
 			errno = 00501; // device inoperable
 			return false;

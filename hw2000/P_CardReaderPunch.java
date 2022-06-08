@@ -2,6 +2,7 @@
 import java.io.*;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Properties;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -96,7 +97,7 @@ public class P_CardReaderPunch extends JFrame
 	// Punch rate is 50-270 cards/minute (depends on num cols).
 	// (1200-222 mS, ~12mS per col + 200 mS)
 
-	public P_CardReaderPunch(CharConverter cvt, int irq, HW2000 hw) {
+	public P_CardReaderPunch(Properties props, CharConverter cvt, int irq, HW2000 hw) {
 		super("H214-2 Card Reader/Punch");
 		java.net.URL url = getClass().getResource("icons/pcd-96.png");
 		if (url != null) {
