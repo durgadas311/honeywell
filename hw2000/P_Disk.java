@@ -235,13 +235,7 @@ public class P_Disk extends JFrame
 		setLayout(gb);
 
 		for (int x = 0; x < nd; ++x) {
-			sts[x] = new DiskStatus();
-			sts[x].skin = new DiskDrive(x);
-			sts[x].busy = new javax.swing.Timer(1, this);
-			sts[x].busy.setActionCommand(String.format("%d", x));
-			add(sts[x].skin, gc);
-			++gc.gridx;
-			if (x == 3) {
+			if (x == 4) {
 				gc.gridx = 0;
 				++gc.gridy;
 				JPanel pn = new JPanel();
@@ -250,6 +244,12 @@ public class P_Disk extends JFrame
 				add(pn, gc);
 				++gc.gridy;
 			}
+			sts[x] = new DiskStatus();
+			sts[x].skin = new DiskDrive(x);
+			sts[x].busy = new javax.swing.Timer(1, this);
+			sts[x].busy.setActionCommand(String.format("%d", x));
+			add(sts[x].skin, gc);
+			++gc.gridx;
 			sts[x].skin.a_Listener(this);
 			sts[x].skin.b_Listener(this);
 			sts[x].skin.fmtListener(this);
