@@ -2567,7 +2567,8 @@ ee.printStackTrace();
 			PopupFactory.inform(this, op, String.format("Compile complete. %07o %07o %07o",
 				currLow, currHi, sys.SR));
 			if (cmp.hasData()) {
-				P_CardReaderPunch cp = (P_CardReaderPunch)sys.pdc.getPeriph(PeriphDecode.P_PP);
+				byte pcu = (byte)(PeriphDecode.P_PP | PeriphDecode.P_IN);
+				P_CardReaderPunch cp = (P_CardReaderPunch)sys.pdc.getPeriph(pcu);
 				cp.addInput(new CardInputStream(cmp.getData(), sys.pdc.cvt),
 						src.getName(), lc - cmp.lineCount());
 				cp.visible(true);
@@ -2937,9 +2938,14 @@ ee.printStackTrace();
 				p.visible(true);
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_H) {
-			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_PP);
-			if (p != null) {
-				p.visible(true);
+			byte pcu = (byte)(PeriphDecode.P_PP | PeriphDecode.P_IN);
+			Peripheral pp = sys.pdc.getPeriph(PeriphDecode.P_PP);
+			Peripheral pr = sys.pdc.getPeriph(pcu);
+			if (pp != null) {
+				pp.visible(true);
+			}
+			if (pr != pp) {
+				pr.visible(true);
 			}
 		} else if (mi.getMnemonic() == KeyEvent.VK_K) {
 			Peripheral p = sys.pdc.getPeriph(PeriphDecode.P_DK);

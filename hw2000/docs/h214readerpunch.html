@@ -11,13 +11,20 @@ The device is a single-path punch card handler:
 Cards are taken from the input hopper, optionally read, optionally punched,
 and finally deposited at the output stacker. Punching a card, when no card was previously
 read, will cause a card to be loaded from the input and by-pass the reader.
-<P>
-The device is at the traditional address of 01/41.
+
+<P>The device is at the traditional address of 01/41.
 PDT instructions always operate on a full card, regardless of any RM in memory.
 However, transfer of characters stops at RM (or after column 80).
 
+<P>An optional configuration of an H223 Card Reader and an H214 Card Reader/Punch
+may be selected with the proerty "readers=2". In this case, the Reader
+is at address 41 and the Reader/Punch is at 01/43.
+Note that the reader hopper cannot be filled with BLANK cards,
+and the operator controls and hopper are arranged differently.
+
 <P>The PunchCard window is hidden by default. It may be made visible,
-and raised to the top, using the Front Panel menu "I/O" and selecting PunchCard.
+and raised to the top, using the Front Panel menu "I/O" and selecting "PunchCard".
+If the optional second reader is configured, both windows are made visible.
 Closing the window only hides it, having no effect on the operation of the devices.
 
 <P>This device operates similar to the original equipment, in the sense that it

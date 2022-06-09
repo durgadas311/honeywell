@@ -128,6 +128,7 @@ public class P_Console extends JFrame
 		text.addKeyListener(this);
 		pack();
 		tearOff();
+		//setLocationByPlatform(true); // does not keep custom position
 	}
 
 	public boolean hasLogButton() { return log != null; }

@@ -54,6 +54,7 @@ public class P_CardReaderPunch extends JFrame
 	CardHopper hopper;
 	CardStacker stacker;
 	CardViewer viewer;
+	boolean hasPunch;
 
 	private class PunchCardStatus {
 		boolean busy = false;
@@ -97,8 +98,10 @@ public class P_CardReaderPunch extends JFrame
 	// Punch rate is 50-270 cards/minute (depends on num cols).
 	// (1200-222 mS, ~12mS per col + 200 mS)
 
-	public P_CardReaderPunch(Properties props, CharConverter cvt, int irq, HW2000 hw) {
-		super("H214-2 Card Reader/Punch");
+	private P_CardReaderPunch(String title, Properties props, CharConverter cvt,
+				int irq, HW2000 hw, boolean hasPunch) {
+		super(title);
+		this.hasPunch = hasPunch;
 		java.net.URL url = getClass().getResource("icons/pcd-96.png");
 		if (url != null) {
 			setIconImage(Toolkit.getDefaultToolkit().getImage(url));
@@ -108,11 +111,30 @@ public class P_CardReaderPunch extends JFrame
 		this.sys = hw;
 		viewer = null;
 		stall = new Semaphore(0);
-		hopper = new CardHopper("Hopper", 20, 100, 4, false);
+		if (hasPunch) {
+			hopper = new CardHopper("Hopper", 20, 100, 4, false);
+		} else {
+			hopper = new CardHopper("Hopper", -100, 20, 4, false);
+		}
 		stacker = new CardStacker("Stacker", 20, 100, 4, true);
 		hopper.setListener(this);
 		stacker.setListener(this);
 		_last = new File(System.getProperty("user.dir"));
+		if (hasPunch) {
+			RP();
+		} else {
+			R();
+		}
+		addWindowListener(this);
+		pack();
+		ints = 0;
+
+		updateStacker();
+		setReady(true);
+		//setLocationByPlatform(true); // does not keep custom position
+	}
+
+	private void RP() {
 		JButton bt;
 		JPanel pn;
 		JLabel lb;
@@ -354,19 +376,274 @@ public class P_CardReaderPunch extends JFrame
 		pn.setPreferredSize(new Dimension(10, 5));
 		gb.setConstraints(pn, gc);
 		add(pn);
-
-		addWindowListener(this);
-		pack();
-		ints = 0;
-
 		hopper.addBlank(50);
-		updateStacker();
-		setReady(true);
+	}
+
+	private void R() {
+		JButton bt;
+		JPanel pn;
+		JLabel lb;
+		GridBagLayout gb;
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.insets.bottom = 0;
+		gc.insets.top = 0;
+		gc.insets.left = 0;
+		gc.insets.right = 0;
+		gc.anchor = GridBagConstraints.CENTER;
+
+		sts = new PunchCardStatus[2];
+		// Output
+		sts[0] = new PunchCardStatus(); // output - punch
+		sts[0].card = new byte[160]; // 80 columns, 16 bits each
+		sts[0].count_pn = new JLabel();
+		sts[0].count_pn.setPreferredSize(new Dimension(75, 20));
+		sts[0].count_pn.setOpaque(true);
+		sts[0].count_pn.setBackground(Color.white);
+		sts[0].deck_pn = new JLabel(); // not used...
+		sts[0].hopr_pn = stacker;
+		// Input
+		sts[1] = new PunchCardStatus(); // input - reader
+		sts[1].card = new byte[160]; // 80 columns, 16 bits each
+		sts[1].count_pn = new JLabel();
+		sts[1].count_pn.setPreferredSize(new Dimension(75, 20));
+		sts[1].count_pn.setOpaque(true);
+		sts[1].count_pn.setBackground(Color.white);
+		sts[1].deck_pn = new JLabel();
+		sts[1].deck_pn.setPreferredSize(new Dimension(350, 20));
+		sts[1].deck_pn.setBackground(Color.white);
+		sts[1].deck_pn.setHorizontalAlignment(SwingConstants.RIGHT);
+		sts[1].deck_pn.setOpaque(true);
+		sts[1].hopr_pn = hopper;
+		setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+		Font font = new Font("Monospaced", Font.PLAIN, 12);
+		setFont(font);
+		gb = new GridBagLayout();
+		setLayout(gb);
+
+		// Top border - 0,0
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridy;
+		int top = gc.gridy;
+///
+		// Left border - 0,1
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 10));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		// Left inner border - 2,1
+		gc.gridx = 2;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 10));
+		gb.setConstraints(pn, gc);
+		add(pn);
+if (false) {
+		// Right inner border - 12,1
+		gc.gridx = 12;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 10));
+		gb.setConstraints(pn, gc);
+		add(pn);
+}
+		// Right border - 14,1
+		gc.gridx = 14;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 10));
+		gb.setConstraints(pn, gc);
+		add(pn);
+
+		// Left side card handler... 1,3-1,6
+		gc.gridheight = 4;
+		gc.gridy = 3;
+		gc.gridx = 1;
+		gb.setConstraints(sts[0].hopr_pn, gc);
+		add(sts[0].hopr_pn);
+		gc.gridheight = 1;
+		// Right side card handler... 10,2-13,2
+		gc.gridwidth = 4;
+		gc.gridy = top + 1;
+		gc.gridx = 10;
+		gc.anchor = GridBagConstraints.EAST;
+		gb.setConstraints(sts[1].hopr_pn, gc);
+		add(sts[1].hopr_pn);
+		gc.anchor = GridBagConstraints.CENTER;
+		int left = gc.gridx = 3;
+		gc.gridwidth = 1;
+		gc.gridy = top;
+///
+		// Card hopper contents (top) - 4,1-13,1
+		pn = new JPanel();	// spacer - needed?
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		gc.gridwidth = 10;
+		gb.setConstraints(sts[1].deck_pn, gc);
+		add(sts[1].deck_pn);
+		++gc.gridy;
+		gc.gridwidth = 1;
+
+		// spacer - 3,2-9,2
+		gc.gridx = left;
+		gc.gridwidth = 7;
+		pn = new JPanel();
+		// TODO: adjust height if needed
+		pn.setPreferredSize(new Dimension(10, 50));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridy;
+		gc.gridwidth = 1;
+
+		// Card handler counter headers...
+		lb = new JLabel("Stacker");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		gc.gridwidth = 6;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		gc.gridx += 6;
+		gc.gridwidth = 1;
+		// width customizes placement of "Hopper" et al.
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(70, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		gc.gridwidth = 3;
+		lb = new JLabel("Hopper");
+		gb.setConstraints(lb, gc);
+		gc.gridwidth = 1;
+		add(lb);
+		++gc.gridy;
+///
+		// Card handler counters... and button headers
+		gc.gridx = left;
+		gb.setConstraints(sts[0].count_pn, gc);
+		add(sts[0].count_pn);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(45, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		gc.anchor = GridBagConstraints.SOUTH;
+		lb = new JLabel("RUNOUT");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("START");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(15, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		lb = new JLabel("STOP");
+		gb.setConstraints(lb, gc);
+		add(lb);
+		++gc.gridx;
+		gc.anchor = GridBagConstraints.CENTER;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		gc.gridwidth = 3;
+		gb.setConstraints(sts[1].count_pn, gc);
+		add(sts[1].count_pn);
+		gc.gridwidth = 1;
+		++gc.gridy;
+		gc.gridx = left;
+///
+		// Buttons...
+		gc.gridwidth = 2;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		gc.gridx += 2;
+		gc.gridwidth = 1;
+		gc.anchor = GridBagConstraints.NORTH;
+		runout = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff);
+		runout.setActionCommand("runout");
+		runout.addActionListener(this);
+		gb.setConstraints(runout, gc);
+		add(runout);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		start = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff);
+		start.setActionCommand("start");
+		start.addActionListener(this);
+		gb.setConstraints(start, gc);
+		add(start);
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(10, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridx;
+		stop = new LightedButton(Peripheral.btnWhiteOn,
+					Peripheral.btnWhiteOff);
+		stop.setActionCommand("stop");
+		stop.addActionListener(this);
+		gb.setConstraints(stop, gc);
+		add(stop);
+		++gc.gridx;
+		gc.anchor = GridBagConstraints.CENTER;
+		gc.gridwidth = 2;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(50, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridy;
+///
+		gc.gridx = left;
+		gc.gridwidth = 9;
+		pn = new JPanel();
+		// TODO: adjust height if needed
+		pn.setPreferredSize(new Dimension(10, 30));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		++gc.gridy;
+		// Bottom border
+		gc.gridx = 14;
+		gc.gridwidth = 1;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		add(pn);
+		updateHopper();
 	}
 
 	// embedded version
 	public P_CardReaderPunch(CharConverter cvt) {
 		super("embedded");	// not used
+		hasPunch = true;
 		this.cvt = cvt;
 		sts = new PunchCardStatus[2];
 		// Output
@@ -375,6 +652,16 @@ public class P_CardReaderPunch extends JFrame
 		// Input
 		sts[1] = new PunchCardStatus(); // input - reader
 		sts[1].card = new byte[160]; // 80 columns, 16 bits each
+	}
+
+	public static P_CardReaderPunch Reader(Properties props, CharConverter cvt, int irq, HW2000 hw) {
+		return new P_CardReaderPunch("H223-2 Card Reader",
+						props, cvt, irq, hw, false);
+	}
+
+	public static P_CardReaderPunch ReaderPunch(Properties props, CharConverter cvt, int irq, HW2000 hw) {
+		return new P_CardReaderPunch("H214-2 Card Reader/Punch",
+						props, cvt, irq, hw, true);
 	}
 
 	// called before reset(), in FP thread,
@@ -436,7 +723,7 @@ public class P_CardReaderPunch extends JFrame
 
 	public void run(RWChannel rwc) {
 		int io = (rwc.isInput() ? 1 : 0);
-		if (!sts[io].busy) {
+		if (sts[io] != null && !sts[io].busy) {
 			return;
 		}
 		synchronized(this) {
@@ -448,8 +735,10 @@ public class P_CardReaderPunch extends JFrame
 		}
 		if (io == 1) {
 			doIn(rwc, sts[1]);
-		} else {
+		} else if (hasPunch) {
 			doOut(rwc, sts[0]);
+		} else {
+			return;
 		}
 		sts[io].busy = false;
 		if (!ready) {
@@ -605,7 +894,11 @@ public class P_CardReaderPunch extends JFrame
 		}
 		if (canceled) return;
 		try {
-			Thread.sleep(100L); // reasonable compromise
+			if (hasPunch) {
+				Thread.sleep(150L); // 400 cpm
+			} else {
+				Thread.sleep(57L); // 1050 cpm
+			}
 		} catch (Exception ee) {}
 		// make sure we don't read same card twice
 		vacateReader();
@@ -615,6 +908,7 @@ public class P_CardReaderPunch extends JFrame
 	}
 
 	public void doOut(RWChannel rwc, PunchCardStatus pcs) {
+		if (!hasPunch) return;
 		int cnt = 0;
 		rwc.startCLC();
 		fillPunch();
@@ -641,7 +935,7 @@ public class P_CardReaderPunch extends JFrame
 		}
 		if (canceled) return;
 		try {
-			Thread.sleep(100L); // reasonable compromise
+			Thread.sleep(150L); // 400 cpm
 		} catch (Exception ee) {}
 		// make sure we don't punch same card twice
 		vacatePunch();
@@ -694,8 +988,10 @@ public class P_CardReaderPunch extends JFrame
 		PunchCardStatus pcs;
 		if (in) {
 			pcs = sts[1];
-		} else {
+		} else if (hasPunch)  {
 			pcs = sts[0];
+		} else {
+			return branch;
 		}
 		byte[] cx = new byte[]{ rwc.c3, rwc.c4, rwc.c5, rwc.c6, rwc.c7 };
 		for (int x = 0; x < rwc.cn - 2; ++x) {
@@ -816,16 +1112,20 @@ public class P_CardReaderPunch extends JFrame
 			CardHandlerEvent ae = (CardHandlerEvent)e;
 			CardHandler cs = (CardHandler)e.getSource();
 			String act = e.getActionCommand();
+			boolean input = (cs == sts[1].hopr_pn);
 			if (act.equals("repaint")) {
 				// don't consume, we also want default...
-				if (cs == sts[0].hopr_pn) {
-					updateStacker();
-				} else {
+				if (input) {
 					updateHopper();
+				} else {
+					updateStacker();
 				}
-			} else if (act.equals("LEFT") && cs == sts[0].hopr_pn) {
+			} else if (act.equals("LEFT") && !input) {
 				ae.consume();
 				viewStacker();
+			} else if (act.equals("right") && input && !hasPunch) {
+				// Adding blank cards to reader makes no sense
+				ae.consume();
 			}
 			return;
 		}

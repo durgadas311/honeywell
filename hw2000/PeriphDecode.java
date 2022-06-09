@@ -48,14 +48,24 @@ public class PeriphDecode {
 		p_idevs[P_CO] = p_odevs[P_CO];
 		p_odevs[P_MT] = new P_MagneticTape(props, P_MT, hw);
 		p_idevs[P_MT] = p_odevs[P_MT];
-		p_odevs[P_PP] = new P_CardReaderPunch(props, cvt, P_PP, hw);
-		p_idevs[P_PP] = p_odevs[P_PP];
+		p_odevs[P_PP] = P_CardReaderPunch.ReaderPunch(props, cvt, P_PP, hw);
+		int rdrs = 1;
+		String s = props.getProperty("readers");
+		if (s != null) {
+			rdrs = Integer.valueOf(s);
+		}
+		if (rdrs > 1) {
+			p_idevs[P_PP] = P_CardReaderPunch.Reader(props, cvt, P_PP2, hw);
+			p_idevs[P_PP2] = p_odevs[P_PP];
+		} else {
+			p_idevs[P_PP] = p_odevs[P_PP];
+		}
 		p_odevs[P_DK] = new P_Disk(props, P_DK, hw);
 		p_idevs[P_DK] = p_odevs[P_DK];
 		p_odevs[P_TI] = new P_Time(P_TI, hw);
 		p_idevs[P_TI] = p_odevs[P_TI];
 		nullRWC = new RWChannel((byte)-1); // no I/O, never busy...
-		String s = props.getProperty("rwc");
+		s = props.getProperty("rwc");
 		mapRWC = (s != null && s.equals("map"));
 	}
 
@@ -78,7 +88,7 @@ public class PeriphDecode {
 	}
 
 	public Peripheral getPeriph(byte pa) {
-		if ((pa & 040) != 0) { // input
+		if ((pa & P_IN) != 0) { // input
 			return p_idevs[pa & 007];
 		} else {
 			return p_odevs[pa & 007];
