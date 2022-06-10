@@ -108,7 +108,8 @@ public class P_LinePrinter extends JFrame
 		addWindowListener(this);
 		pack();
 		tearOff();
-		//setLocationByPlatform(true); // does not keep custom position
+		// bug in openjdk? does not remember current position
+		setLocationByPlatform(true);
 	}
 
 	private void tearOff() {

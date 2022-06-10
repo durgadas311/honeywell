@@ -131,7 +131,8 @@ public class P_CardReaderPunch extends JFrame
 
 		updateStacker();
 		setReady(true);
-		//setLocationByPlatform(true); // does not keep custom position
+		// bug in openjdk? does not remember current position
+		setLocationByPlatform(true);
 	}
 
 	private void RP() {

@@ -128,7 +128,8 @@ public class P_Console extends JFrame
 		text.addKeyListener(this);
 		pack();
 		tearOff();
-		//setLocationByPlatform(true); // does not keep custom position
+		// bug in openjdk? does not remember current position
+		setLocationByPlatform(true);
 	}
 
 	public boolean hasLogButton() { return log != null; }

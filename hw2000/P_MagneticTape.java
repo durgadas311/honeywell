@@ -132,7 +132,8 @@ public class P_MagneticTape extends JFrame
 
 		addWindowListener(this);
 		pack();
-		//setLocationByPlatform(true); // does not keep custom position
+		// bug in openjdk? does not remember current position
+		setLocationByPlatform(true);
 	}
 
 	// embedded version, no GUI

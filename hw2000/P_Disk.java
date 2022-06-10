@@ -262,7 +262,8 @@ public class P_Disk extends JFrame
 
 		addWindowListener(this);
 		pack();
-		//setLocationByPlatform(true); // does not keep custom position
+		// bug in openjdk? does not remember current position
+		setLocationByPlatform(true);
 	}
 
 	public synchronized void cancel() {
