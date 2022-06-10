@@ -24,6 +24,7 @@ public class CardStacker extends CardHandler implements MouseListener {
 	private static final int bdw = 3;	// width of BevelBorder
 	private Color clr;
 	private boolean topDown;
+	private boolean leftRight;
 	private int width;
 	private int height;
 	private int scale;
@@ -37,12 +38,15 @@ public class CardStacker extends CardHandler implements MouseListener {
 		super();
 		this.name = name;
 		this.topDown = topDown;
+		if (wid < 0) {
+			leftRight = true;
+			wid = -wid;
+		}
 		width = wid;
 		height = hit;
 		scale = sca;
 		// TODO: share?
 		oprv = new File(System.getProperty("user.dir"));
-		this.topDown = topDown;
 		setPreferredSize(new Dimension(wid + 2 * bdw, hit + 2 * bdw));
 		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		setBackground(Color.white);
@@ -211,13 +215,30 @@ public class CardStacker extends CardHandler implements MouseListener {
 		}
 	}
 
-	@Override
-	public void paint(Graphics g) {
-		super.paint(g);
-		Graphics2D g2d = (Graphics2D)g;
-		g2d.translate(bdw, bdw);	// based on border width
-		g2d.setColor(clr);
-		int n = (cards + scale - 1) / scale;
+	private void horiz(Graphics2D g2d, int n) {
+		boolean max = false;
+		if (n > width) {
+			max = true;
+			n = width;
+		}
+		if (n > 0) {
+			if (topDown) {	// i.e. right-fill
+				g2d.fillRect(width - n, 0, width + 1, height + 1);
+				if (max) {
+					g2d.setColor(Color.red);
+					g2d.drawLine(0, 0, 0, height);
+				}
+			} else {	// i.e. left-fill
+				g2d.fillRect(0, 0, n + 1, height + 1);
+				if (max) {
+					g2d.setColor(Color.red);
+					g2d.drawLine(width, 0, width, height);
+				}
+			}
+		}
+	}
+
+	private void vert(Graphics2D g2d, int n) {
 		boolean max = false;
 		if (n > height) {
 			max = true;
@@ -226,13 +247,31 @@ public class CardStacker extends CardHandler implements MouseListener {
 		if (n > 0) {
 			if (topDown) {
 				g2d.fillRect(0, 0, width + 1, n + 1);
+				if (max) {
+					g2d.setColor(Color.red);
+					g2d.drawLine(0, height, width, height);
+				}
 			} else {
 				g2d.fillRect(0, height - n, width + 1, n + 1);
+				if (max) {
+					g2d.setColor(Color.red);
+					g2d.drawLine(0, 0, width, 0);
+				}
 			}
-			if (max) {
-				g2d.setColor(Color.red);
-				g2d.drawLine(0, 0, width, 0);
-			}
+		}
+	}
+
+	@Override
+	public void paint(Graphics g) {
+		super.paint(g);
+		Graphics2D g2d = (Graphics2D)g;
+		g2d.translate(bdw, bdw);	// based on border width
+		g2d.setColor(clr);
+		int n = (cards + scale - 1) / scale;
+		if (leftRight) {
+			horiz(g2d, n);
+		} else {
+			vert(g2d, n);
 		}
 	}
 

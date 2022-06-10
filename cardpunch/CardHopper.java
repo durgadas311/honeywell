@@ -42,6 +42,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 	public CardHopper(String name, int wid, int hit, int sca, boolean topDown) {
 		super();
 		this.name = name;
+		this.topDown = topDown;
 		if (wid < 0) {
 			leftRight = true;
 			wid = -wid;
@@ -49,7 +50,6 @@ public class CardHopper extends CardHandler implements MouseListener {
 		width = wid;
 		height = hit;
 		scale = sca;
-		this.topDown = topDown;
 		// TODO: share?
 		iprv = new File(System.getProperty("user.dir"));
 		setPreferredSize(new Dimension(wid + 2 * bdw, hit + 2 * bdw));
