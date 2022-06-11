@@ -608,8 +608,8 @@ if (false) {
 		gb.setConstraints(pn, gc);
 		add(pn);
 		++gc.gridx;
-		stop = new LightedButton(Peripheral.btnWhiteOn,
-					Peripheral.btnWhiteOff);
+		stop = new LightedButton(Peripheral.btnRedOn,
+					Peripheral.btnRedOff);
 		stop.setActionCommand("stop");
 		stop.addActionListener(this);
 		gb.setConstraints(stop, gc);

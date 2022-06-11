@@ -16,11 +16,12 @@ read, will cause a card to be loaded from the input and by-pass the reader.
 PDT instructions always operate on a full card, regardless of any RM in memory.
 However, transfer of characters stops at RM (or after column 80).
 
-<P>An optional configuration of an H223 Card Reader and an H214 Card Reader/Punch
-may be selected with the proerty "readers=2". In this case, the Reader
-is at address 41 and the Reader/Punch is at 01/43.
+<P>An optional configuration of an H223 Card Reader in addition to
+the H214 Card Reader/Punch may be selected with the property "readers=2".
+In this case, the Reader is at address 41 and the Reader/Punch is at 01/43.
 Note that the reader hopper cannot be filled with BLANK cards,
 and the operator controls and hopper are arranged differently.
+<P><IMG SRC="h223.png">
 
 <P>The PunchCard window is hidden by default. It may be made visible,
 and raised to the top, using the Front Panel menu "I/O" and selecting "PunchCard".
@@ -44,14 +45,14 @@ after reading a deck of cards will not destroy the deck.
 
 <P>The number of cards in the input hopper and output stacker is shown,
 along with a visual representation of the respective card stacks.
-A red line on top of a stack indicates more cards than can be shown,
+A red line on top of a stack indicates there are more cards than can be shown,
 however there are no physical limitations on the number of cards
 on the input hopper or output stacker - unlike original equipment.
 
 <P>The START, STOP, and RUNOUT buttons should behave similar to the original
 equipment.  The RUNOUT button may be necessary under
 certain conditions to flush all cards through the device, especially
-when the output stacker contents is to be saved.
+when cards are being punched and the output stacker contents is to be saved.
 
 <P>NOTE: Punch cards are virtual objects in this implementation, and are
 not required to exist in only one place. Reading a deck of cards results in
