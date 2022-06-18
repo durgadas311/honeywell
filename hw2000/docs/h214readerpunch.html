@@ -1,29 +1,29 @@
 <HTML>
 <HEAD>
-<TITLE>Series 2000 Model 214 Card Punch/Reader</TITLE>
+<TITLE>Series 2000 Model 214 Card Reader/Punch</TITLE>
 </HEAD>
 <BODY>
 <IMG SRC="h214.png">
 <P>
-The model 214 punch/reader is a input/output device that uses full 12-punch codes.
+The model 214 Card Reader/Punch is an input/output device that uses full 12-punch codes.
 This implementation uses a window to represent the device.
 The device is a single-path punch card handler:
 Cards are taken from the input hopper, optionally read, optionally punched,
 and finally deposited at the output stacker. Punching a card, when no card was previously
 read, will cause a card to be loaded from the input and by-pass the reader.
 
-<P>The device is at the traditional address of 01/41.
+<P>The device is at the traditional address of 41/01.
 PDT instructions always operate on a full card, regardless of any RM in memory.
 However, transfer of characters stops at RM (or after column 80).
 
 <P>An optional configuration of an H223 Card Reader in addition to
 the H214 Card Reader/Punch may be selected with the property "readers=2".
-In this case, the Reader is at address 41 and the Reader/Punch is at 01/43.
-Note that the reader hopper cannot be filled with BLANK cards,
+In this case, the H223 Reader is at address 41 and the H214 Reader/Punch is at 43/01.
+Note that the H223 hopper cannot be filled with BLANK cards,
 and the operator controls and hopper are arranged differently.
 <P><IMG SRC="h223.png">
 
-<P>The PunchCard window is hidden by default. It may be made visible,
+<P>The device window is hidden by default. It may be made visible,
 and raised to the top, using the Front Panel menu "I/O" and selecting "PunchCard".
 If the optional second reader is configured, both windows are made visible.
 Closing the window only hides it, having no effect on the operation of the devices.
