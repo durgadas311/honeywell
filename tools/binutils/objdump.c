@@ -479,16 +479,16 @@ static void do_swsi(uint8_t *buf, int len, char *symb, char *op, int pu) {
 			continue;
 		}
 		if (!y) {
-			printf("\t%s\t%s+%d,", op, symb, x);
+			printf("\t%.8s\t%.8s+%d,", op, symb, x);
 			z = x;
 			y = 1;
 		} else {
-			printf("%s+%d\n", symb, x);
+			printf("%.8s+%d\n", symb, x);
 			y = 0;
 		}
 	}
 	if (y) {
-		printf("%s+%d\n", symb, z);
+		printf("%.8s+%d\n", symb, z);
 	}
 }
 
