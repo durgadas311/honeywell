@@ -36,6 +36,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 	private String name;
 	private JPanel acc;
 	JCheckBox acc_cb;
+	JCheckBox atf_cb;
 	JTextArea acc_stk;
 	private File iprv;
 
@@ -87,6 +88,10 @@ public class CardHopper extends CardHandler implements MouseListener {
 		gb.setConstraints(acc_cb, gc);
 		acc.add(acc_cb);
 		++gc.gridy;
+		atf_cb = new JCheckBox("At Front");
+		gb.setConstraints(acc_cb, gc);
+		acc.add(acc_cb);
+		++gc.gridy;
 		acc_stk = new JTextArea(4, 15);
 		acc_stk.setEditable(false);
 		gb.setConstraints(acc_stk, gc);
@@ -120,7 +125,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 	}
 
 	public void addInput(InputStream deck, String src, int count,
-							boolean clear) {
+					boolean clear, boolean front) {
 		// TODO: reject if hopper not empty? close it?
 		// stack after? stack before?
 		if (src == null) src = "Program";
@@ -133,6 +138,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 	public File addDialog(String purp, File prev) {
 		acc_stk.setText(stackList('\n', false));
 		acc_cb.setSelected(false);
+		atf_cb.setSelected(false);
 		SuffFileChooser ch = new SuffFileChooser(purp,
 			new String[]{"pcd"}, new String[]{"Punch Card Deck"}, prev, acc);
 		int rv = ch.showDialog(this);
@@ -150,7 +156,7 @@ public class CardHopper extends CardHandler implements MouseListener {
 				n = n.substring(0, n.length() - 4);
 			}
 			int c = (int)((fi.length() + 159) / 160);
-			addInput(f, n, c, acc_cb.isSelected());
+			addInput(f, n, c, acc_cb.isSelected(), atf_cb.isSelected());
 		} catch (Exception ee) {
 			// TODO: errors
 			return null;

@@ -244,7 +244,7 @@ class CardViewer implements Machine, ActionListener
 				n = n.substring(0, n.length() - 4);
 			}
 			int c = (int)((fi.length() + 159) / 160);
-			hop.addInput(f, n, c, true);
+			hop.addInput(f, n, c, true, false);
 			if (update && manager != null) {
 				manager.setCardDir(fi);
 			}

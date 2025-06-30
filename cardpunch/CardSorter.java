@@ -539,7 +539,7 @@ class CardSorter implements Machine, ActionListener, Runnable
 					n = n.substring(0, n.length() - 4);
 				}
 				int c = (int)((fi.length() + 159) / 160);
-				hopper.addInput(f, n, c, empty);
+				hopper.addInput(f, n, c, empty, false);
 			} catch (Exception ee) {
 				// TODO: PopupFactory
 				ee.printStackTrace();

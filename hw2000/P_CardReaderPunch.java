@@ -698,7 +698,7 @@ if (false) {
 	public void addInput(InputStream deck, String src, int count) {
 		// TODO: clear hopper before adding?
 		if (src == null) src = "Program";
-		hopper.addInput(deck, src, count, false);
+		hopper.addInput(deck, src, count, false, false);
 	}
 
 	private int getCol(PunchCardStatus pcs, int ix) {
