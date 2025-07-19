@@ -755,8 +755,9 @@ public class HW2000 implements CoreMemory
 		return a;
 	}
 
-	public void fetchAAR(int limit) {
-		if (!hasA() || ((limit - fsr) & am_mask) < am_na) {
+	public void fetchAAR() {
+		if (!hasA() || chkWord(fsr)) {
+			// No A-addr present
 			if (reqA()) {
 				throw new FaultException(String.format("Missing required A-field %07o", oSR));
 			}
@@ -784,8 +785,9 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
-	public void fetchBAR(int limit) {
-		if (!hadA() || !hasB() || ((limit - fsr) & am_mask) < am_na) {
+	public void fetchBAR() {
+		if (!hadA() || !hasB() || chkWord(fsr)) {
+			// No B-addr present
 			if (reqB()) {
 				throw new FaultException(String.format("Missing required B-field %07o", oSR));
 			}
@@ -817,9 +819,10 @@ public class HW2000 implements CoreMemory
 		}
 		op_xflags |= InstrDecode.OP_HAS_V;
 		op_xtra_vsr = fsr;
-		if (hasV() && (op_flags & InstrDecode.OP_VR0) == 0) {
+		// Set V register if appropriate
+		if (hasV() && (op_flags & InstrDecode.OP_VR0) == 0) { // !SVI
 			int vra;
-			if ((op_flags & InstrDecode.OP_VR1) != 0) {
+			if ((op_flags & InstrDecode.OP_VR1) != 0) { // PDT/PCB
 				vra = fsr;
 			} else {
 				vra = incrAdr(limit, -1);
@@ -896,19 +899,23 @@ public class HW2000 implements CoreMemory
 		}
 	}
 
-	// 'adr' is assumed to be current WM+1...
+	// Find next instruction (end of current), based on WM
+	// 'adr' is somewhere after opcode and address(es).
 	public int nextWM(int adr, int max) {
-		int end = incrAdr(adr, -1);
+		int end = oSR; // ...or? incrAdr(oSR, max);
 		int nxt = adr;
-		while (nxt != end && ((nxt - adr) & am_mask) < max &&
-				(mem[nxt] & 0100) == 0) {
+		if (max == 0) return nxt; // no WM required
+		while (nxt != end && (mem[nxt] & 0100) == 0) {
 			// With enforced max, this check may not be needed.
 			if (halt) {
 				throw new HaltException("extraction");
 			}
 			nxt = incrAdr(nxt, 1);
 		}
-		return nxt;
+		if ((mem[nxt] & 0100) != 0) { // found WM
+			return nxt;
+		}
+		return -1; // there is no WM - fault
 	}
 
 	public void fetch() {
@@ -939,16 +946,21 @@ public class HW2000 implements CoreMemory
 		// of instructions. However, it seems unlikely that such code
 		// would be using that technique to turn off large blocks of
 		// instructions (conditional branches would be more practical).
-		int max = 0x80000; // what is a reasonable limitation?
+		//
+		// The value below is effectively ignored, except for testing against 0.
+		int max = 100;
 		if (noWM()) {
-			max = (hasA() ? am_na : 0);
-			max += (hasB() ? am_na : 0);
+			max = 0; // nothing beyond addrs
 		}
+		// WMs ignored unless at start of addr
+		fetchAAR();	// might throw exceptions
+		fetchBAR();	// might throw exceptions
+		// all WMs are significant now (SVI is special)
 		int isr = nextWM(fsr, max);
 		// Caller handles exceptions, leave SR at start of instruction
 		// (if during fetch/extract). Exceptions during execute
 		// terminate instruction and leave SR at next.
-		if (isr == oSR) {
+		if (isr < 0) {
 			if (CTL.inStdMode() && CTL.isPROTECT() && CTL.isTIMOUT()) {
 				throw new IIException("Instruction Timeout, extract",
 					HW2000CCR.IIR_TIMOUT);
@@ -957,8 +969,6 @@ public class HW2000 implements CoreMemory
 			halt = true;
 			throw new FaultException(String.format("ran off end of memory %07o", oSR));
 		}
-		fetchAAR(isr);	// might throw exceptions
-		fetchBAR(isr);	// might throw exceptions
 		// just get all extra characters, let implementations
 		// sort it out...
 		fetchXtra(isr);

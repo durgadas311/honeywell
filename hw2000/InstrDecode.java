@@ -122,8 +122,10 @@ public class InstrDecode {
 			// Not true opcodes, but converted later. Need separate flags.
 			i_flags[OP_B_B] = OP_HAS_A | OP_REQ_A | OP_SPC;
 			i_flags[OP_B_BCT] = OP_HAS_A | OP_HAS_V | OP_SPC;
+			i_flags[OP_NOP] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		} else {
 			i_flags[OP_B] = OP_HAS_A | OP_HAS_V; // B, and BCT (conditionally priv)
+			i_flags[OP_NOP] = 0;
 		}
 		i_flags[OP_BCC] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_BCE] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
@@ -134,7 +136,6 @@ public class InstrDecode {
 		i_flags[OP_CW] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_CI] = OP_HAS_A | OP_HAS_B | OP_DUP_A;
 		i_flags[OP_H] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_PRIV;
-		i_flags[OP_NOP] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_MCW] = OP_HAS_A | OP_HAS_B;
 		i_flags[OP_LCA] = OP_HAS_A | OP_HAS_B;
 		i_flags[OP_SCR] = OP_HAS_A | OP_HAS_V;
@@ -142,8 +143,10 @@ public class InstrDecode {
 		i_flags[OP_CAM] = OP_HAS_V;
 		i_flags[OP_CSM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
 		i_flags[OP_EXM] = OP_HAS_A | OP_HAS_B | OP_HAS_V;
-		i_flags[OP_MAT] = OP_HAS_A | OP_HAS_B | OP_HAS_C | OP_REQ_A | OP_REQ_B | OP_REQ_C;
-		i_flags[OP_MIT] = OP_HAS_A | OP_HAS_B | OP_HAS_V | OP_REQ_A | OP_REQ_B | OP_REQ_V;
+		i_flags[OP_MAT] = OP_HAS_A | OP_HAS_B | OP_HAS_C |
+				OP_REQ_A | OP_REQ_B | OP_REQ_C;
+		i_flags[OP_MIT] = OP_HAS_A | OP_HAS_B | OP_HAS_C | OP_HAS_V |
+				OP_REQ_A | OP_REQ_B | OP_REQ_C | OP_REQ_V;
 		i_flags[OP_LIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B | OP_PRIV;
 		i_flags[OP_SIB] = OP_HAS_A | OP_REQ_A | OP_HAS_B;
 		i_flags[OP_TLU] = OP_HAS_A | OP_HAS_B | OP_HAS_V;

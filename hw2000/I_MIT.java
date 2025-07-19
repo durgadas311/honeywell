@@ -5,23 +5,14 @@ public class I_MIT implements Instruction {
 	public void execute(HW2000 sys) {
 		int c = 0;
 		byte v = 0;
-		if (sys.numXtra() == 3) {
+		if (sys.numXtra() >= 3) {
 			v = sys.getXtra(2);
-			// TODO: how to tell between 2-char C-address and V1,V2
 			c = (((sys.getXtra(0) & 077) << 6) | (sys.getXtra(1) & 077)) << 6;
 			if (sys.am_na == 4) {
 				c |= (sys.AAR & 0x40000);
 			} else {
 				c = (c & 0x7fff) | (sys.AAR & 0x78000);
 			}
-		} else if (sys.numXtra() == sys.am_na + 1) {
-			v = sys.getXtra(sys.am_na);
-			for (int x = 0; x < sys.am_na; ++x) {
-				c = (c << 6) | (sys.getXtra(x) & 077);
-			}
-			// TODO: does C-address allow indirection/indexing?
-			c = (sys.AAR & ~sys.am_mask) | (c & sys.am_mask);
-			c &= ~077; // needed?
 		} else {
 			throw new FaultException("MIT malformed");
 		}

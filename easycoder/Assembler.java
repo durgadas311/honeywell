@@ -900,6 +900,8 @@ public class Assembler {
 		int a = 0;
 		int b = 0;
 		int c = 0;
+		int nc = 0;
+		int vx = 0;
 		byte[] v = null;
 		String[] opds = opd.split(",");
 		int ox = 0;
@@ -939,24 +941,44 @@ public class Assembler {
 				return -1;
 			}
 		}
+		// must distinguish between "c-addr [var]" and "var var [var]"
+		// MAT and MIT w/c-addr cannot have extraneous variants
+		if ((flags & InstrDecode.OP_HAS_C) != 0) {
+			nc = ox + 1;
+			if ((flags & InstrDecode.OP_HAS_V) != 0) ++nc;
+		}
 		if ((flags & InstrDecode.OP_HAS_C) != 0 &&
-				ox + 1 == opds.length) {
+				nc == opds.length) {
+			// At this point, we have c-addr formats,
+			// so OP_REQ_C is enforced.
 			if (ox < opds.length && opds[ox].length() > 0) {
+				int n = 2;
+				if ((flags & InstrDecode.OP_HAS_V) != 0) ++n;
 				c = parseAdr(opds[ox], false);
-				il += adrMode;
-				xflags |= InstrDecode.OP_HAS_C;
+				v = new byte[n];
+				// TODO: check alignment? (c & 077) == 0
+				v[vx++] = (byte)((c >> 12) & 077);
+				v[vx++] = (byte)((c >> 6) & 077);
+				il += 2;
 				++ox;
 			} else if ((flags & InstrDecode.OP_REQ_C) != 0) {
 				errsAdd("Reqd C field missing");
 				return -1;
 			}
-		} else if (ox < opds.length && opds[ox].length() > 0) {
+		}
+		if (ox < opds.length && opds[ox].length() > 0) {
 			// If programmer added variants, assemble them regardless...
-			int n = opds.length - ox;
-			// TODO: req'd number of variants?
-			v = new byte[n];
+			int n;
+			if (v == null) {
+				n = opds.length - ox;
+				// TODO: req'd number of variants?
+				v = new byte[n];
+			} else {
+				// assuming MIT c-addr var
+				n = v.length - vx;
+			}
 			for (int y = 0; y < n; ++y) {
-				v[y] = parseVar(opds[ox + y]);
+				v[vx++] = parseVar(opds[ox + y]);
 			}
 			il += n;
 			xflags |= InstrDecode.OP_HAS_V;
@@ -981,10 +1003,6 @@ public class Assembler {
 		}
 		if ((xflags & InstrDecode.OP_HAS_B) != 0) {
 			putAdr(code, x, b);
-			x += adrMode;
-		}
-		if ((xflags & InstrDecode.OP_HAS_C) != 0) {
-			putAdr(code, x, c);
 			x += adrMode;
 		}
 		if ((xflags & InstrDecode.OP_HAS_V) != 0) {
